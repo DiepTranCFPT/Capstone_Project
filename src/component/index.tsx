@@ -2,9 +2,7 @@
 
 function index() {
   return (
-    <div>
-      aa
-    </div>
+   <div>aa</div>
   )
 }
 
