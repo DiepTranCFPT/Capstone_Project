@@ -3,19 +3,17 @@ import { forgotPasswordApi, loginApi, registerApi } from "~/services/authService
 import type { User } from "~/types/auth";
 import { AuthContext } from "./AuthContext";
 
-
 interface AuthProviderProps {
     children: React.ReactNode;
 }
 
 const AuthProvider = ({ children }: AuthProviderProps) => {
-    const [user, setUser] = useState<User | null >(null);
+    const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-
-    const handleAuthResponse = (response: {user: User, token: string}) => {
+    const handleAuthResponse = (response: { user: User, token: string }) => {
         setUser(response.user);
         setToken(response.token);
         setIsAuthenticated(true);
@@ -25,9 +23,10 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
 
     const login = async (email: string, password: string) => {
         setLoading(true);
-        try{
+        try {
             const response = await loginApi(email, password);
             handleAuthResponse(response);
+            console.log(response)
         } catch (err: unknown) {
             if (err instanceof Error) {
                 setError(err.message);
@@ -39,11 +38,11 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         }
     };
 
-    const register = async (email: string, password:string) => {
+    const register = async (name: string, email: string, password: string) => {
         setLoading(true);
         setError(null);
-        try{
-            const response = await registerApi(email, password);
+        try {
+            const response = await registerApi(name, email, password);
             handleAuthResponse(response);
         } catch (err: unknown) {
             if (err instanceof Error) {
@@ -59,7 +58,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     const forgotPassword = async (email: string) => {
         setLoading(true);
         setError(null);
-        try{
+        try {
             await forgotPasswordApi(email);
             console.log('Password reset link sent to your email');
         } catch (err: unknown) {
@@ -83,7 +82,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     return (
         <AuthContext.Provider
             value={{
-                user, 
+                user,
                 token,
                 isAuthenticated,
                 loading,

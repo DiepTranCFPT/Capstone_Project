@@ -28,8 +28,8 @@ export const loginApi = async (email: string, password: string) => {
     return mockApiCall({ email });
 };
 
-export const registerApi = async (email: string, password: string) => {
-    console.log('Call register API with: ',{ email, password});
+export const registerApi = async (name: string,email: string, password: string) => {
+    console.log('Call register API with: ', { name, email, password});
     return mockApiCall({ email });
 };
 

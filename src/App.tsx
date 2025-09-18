@@ -2,8 +2,10 @@ import { BrowserRouter as Router, Route, Routes, Outlet } from "react-router-dom
 import Footer from "./layout/Footer";
 import Navbar from "./layout/Navbar";
 import HomePages from "./pages/home/HomePages";
-import LoginPage from "./pages/auth/LoginPage";
-import RegisterPage from "./pages/auth/RegisterPage";
+// import LoginPage from "./pages/auth/LoginPage";
+// import RegisterPage from "./pages/auth/RegisterPage";
+import AuthPage from "./pages/auth/AuthPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPassword";
 
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -20,10 +22,12 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Auth routes */}
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
         <Route element={<Layout />}>
-          <Route path="/" element={<HomePages />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/" element={<HomePages />} />         
         </Route>
       </Routes>
     </Router>
