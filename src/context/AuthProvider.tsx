@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { forgotPasswordApi, loginApi, registerApi } from "~/services/authService";
+import { forgotPasswordApi, loginApi, registerApi, resetPasswordApi } from "~/services/authService";
 import type { User } from "~/types/auth";
 import { AuthContext } from "./AuthContext";
 
@@ -72,6 +72,23 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         }
     };
 
+    const resetPassword = async (token: string, password: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            await resetPasswordApi(token, password);
+            console.log('Password has been reset successfully');
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('Password reset failed');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const logout = () => {
         setUser(null);
         setToken(null);
@@ -91,6 +108,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
                 register,
                 logout,
                 forgotPassword,
+                resetPassword,
             }}
         >
             {children}

@@ -6,6 +6,7 @@ import HomePages from "./pages/home/HomePages";
 // import RegisterPage from "./pages/auth/RegisterPage";
 import AuthPage from "./pages/auth/AuthPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPassword";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -25,6 +26,7 @@ function App() {
         {/* Auth routes */}
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
         <Route element={<Layout />}>
           <Route path="/" element={<HomePages />} />         

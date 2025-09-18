@@ -4,6 +4,7 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
 import { useAuth } from '~/hooks/useAuth';
+import google from '/google-icon.svg';
 
 const LoginSchema = Yup.object().shape({
     email: Yup.string().email('Invalid email').required('Required'),
@@ -80,14 +81,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ buttonClasses }) => {
 
                             <div className="flex items-center justify-between">
                                 {/* Remember me & Forgot password */}
-                                <div className='flex items-center gap-2'>
-
-                                    <Field
-                                        id="remember-me"
-                                        name="rememberMe"
-                                        type="checkbox"
-                                        className="mt-2"
-                                    />
+                                <div className='flex items-center justify-center gap-2'>
+                                    <div>
+                                        <Field
+                                            id="remember-me"
+                                            name="rememberMe"
+                                            type="checkbox"
+                                            className="mt-2"
+                                        />
+                                    </div>
                                     <label htmlFor="remember-me" className="block text-sm font-medium text-gray-600">Remember me</label>
                                 </div>
                                 <div>
@@ -101,7 +103,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ buttonClasses }) => {
                         </Form>
                     )}
                 </Formik>
+                <div className="flex items-center my-6">
+                    <div className="flex-grow h-px bg-gray-200" />
+                    <span className="mx-3 text-gray-900 text-sm">or</span>
+                    <div className="flex-grow h-px bg-gray-200" />
+                </div>
                 {/* Social buttons and other links */}
+                <div className='flex justify-center items-center gap-3 border border-gray-300 py-2.5 px-4 rounded-lg hover:cursor-pointer
+                 hover:scale-101 transform transition-all duration-200 hover:border-backgroundColor'>
+                    <img src={google} alt="Google logo" width={30} />
+                </div>
             </div>
         </div>
     )

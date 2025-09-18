@@ -42,3 +42,11 @@ export const forgotPasswordApi = async (email: string): Promise<{ message: strin
     });
 };
 
+export const resetPasswordApi = async (token: string, password: string): Promise<{ message: string }> => {
+    console.log('Call reset password API with: ',{ token, password });
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve({ message: 'Password has been reset successfully' });
+        }, 1000);
+    });
+};
