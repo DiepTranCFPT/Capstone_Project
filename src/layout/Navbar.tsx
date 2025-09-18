@@ -1,6 +1,9 @@
 import React from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "~/hooks/useAuth";
 
 const Navbar: React.FC = () => {
+  const { isAuthenticated, logout } = useAuth()
   return (
     <header className="w-full h-28 bg-white flex items-center justify-between px-16 shadow">
       {/* Logo */}
@@ -30,10 +33,20 @@ const Navbar: React.FC = () => {
 
       {/* Actions */}
       <div className="flex items-center gap-4">
-        <button className="text-black text-base font-semibold">Sign In</button>
-        <button className="bg-teal-400 text-white text-base font-semibold px-4 py-2 rounded-md">
-          Sign Up
-        </button>
+        {isAuthenticated ? (
+          <button className="bg-red-400 text-white text-base font-semibold px-4 py-2 rounded-md" onClick={logout}>
+            Sign Out
+          </button>
+        ) : (
+          <>
+            <button className="text-black text-base font-semibold">
+              <Link to="/auth">Sign In</Link>
+            </button>
+            <button className="bg-teal-400 text-white text-base font-semibold px-4 py-2 rounded-md">
+              <Link to="/auth">Sign Up</Link>
+            </button>
+          </>
+        )}
       </div>
     </header>
   );

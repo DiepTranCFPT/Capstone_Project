@@ -1,13 +1,13 @@
 import React from 'react'
-import AboutSection from '~/component/home/AboutSection';
-import ExamsSection from '~/component/home/ExamsSection';
-import ExamsTrendingSection from '~/component/home/ExamsTrendingSection';
-import FeaturedMaterials from '~/component/home/FeaturedMaterials';
-import Hero from '~/component/home/Hero';
-import InstructorSection from '~/component/home/InstructorSection';
-import LanguageNewsletter from '~/component/home/LanguageNewsletter';
-import NewsletterSection from '~/component/home/NewsletterSection';
-import StatsSection from '~/component/home/StatsSection';
+import AboutSection from '~/components/home/AboutSection';
+import ExamsSection from '~/components/home/ExamsSection';
+import ExamsTrendingSection from '~/components/home/ExamsTrendingSection';
+import FeaturedMaterials from '~/components/home/FeaturedMaterials';
+import Hero from '~/components/home/Hero';
+import InstructorSection from '~/components/home/InstructorSection';
+import LanguageNewsletter from '~/components/home/LanguageNewsletter';
+import NewsletterSection from '~/components/home/NewsletterSection';
+import StatsSection from '~/components/home/StatsSection';
 
 
 const HomePages : React.FC  = () => {
