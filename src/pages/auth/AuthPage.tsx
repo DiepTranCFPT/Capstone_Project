@@ -8,7 +8,7 @@ import log from "/signin.svg";
 import register from "/signup.svg";
 
 const AuthPage: React.FC = () => {
-    const [isSignUpMode, setIsSignUpMode] = useState(false);
+    const [isSignUpMode, setIsSignUpMode] = useState<boolean>(false);
 
     const toggleSignUpMode = () => {
         setIsSignUpMode(!isSignUpMode);
