@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { forgotPasswordApi, loginApi, registerApi, resetPasswordApi } from "~/services/authService";
 import type { User } from "~/types/auth";
 import { AuthContext } from "./AuthContext";
@@ -11,7 +11,24 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-    const [loading, setLoading] = useState<boolean>(false);
+    const [initialLoading, setInitialLoading] = useState<boolean>(true);
+
+    // Restore auth state from localStorage when component mounts
+    useEffect(() => {
+        const initializeAuth = async () => {
+            const storedToken = localStorage.getItem('token');
+            const storedUser = localStorage.getItem('user');
+
+            if (storedToken && storedUser) {
+                setToken(storedToken);
+                setUser(JSON.parse(storedUser));
+                setIsAuthenticated(true);
+            }
+            setInitialLoading(false);
+        };
+
+        initializeAuth();
+    }, []); const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const handleAuthResponse = (response: { user: User, token: string }) => {
         setUser(response.user);
@@ -19,6 +36,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         setIsAuthenticated(true);
         setError(null);
         localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
     };
 
     const login = async (email: string, password: string) => {
@@ -109,9 +127,10 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
                 logout,
                 forgotPassword,
                 resetPassword,
+                initialLoading,
             }}
         >
-            {children}
+            {!initialLoading ? children : null}
         </AuthContext.Provider>
     )
 };
