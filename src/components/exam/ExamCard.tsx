@@ -13,7 +13,7 @@ interface ExamCardProps {
 
 const ExamCard: React.FC<ExamCardProps> = ({ id, title, level, questions, parts, duration }) => {
     return (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-md p-4 flex flex-col hover:shadow-xl transition-shadow duration-300">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-md p-4 flex flex-col hover:shadow-xl transition-shadow duration-300 h-max">
             <h3 className="text-lg font-bold text-gray-800">{title}</h3>
             <p className="text-sm text-gray-500 mb-3">{level}</p>
 

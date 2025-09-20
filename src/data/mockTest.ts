@@ -12,14 +12,14 @@ const mockFRQ = [
 
 const exams = [
     // Dữ liệu giả lập, bạn có thể thay bằng API call
-    { id: 1, title: "English Language Test", level: "Level B1", questions: 50, parts: 7, duration: 60 },
-    { id: 2, title: "Advanced Mathematics", level: "Level C1", questions: 40, parts: 5, duration: 90 },
-    { id: 3, title: "History of Arts", level: "Level A2", questions: 60, parts: 8, duration: 45 },
-    { id: 4, title: "Physics Olympiad Prep", level: "Level C2", questions: 30, parts: 4, duration: 120 },
-    { id: 5, title: "Biology Basics", level: "Level A1", questions: 70, parts: 10, duration: 50 },
-    { id: 6, title: "Chemistry Exam", level: "Level B2", questions: 45, parts: 6, duration: 75 },
-    { id: 7, title: "Music Theory", level: "Level B1", questions: 55, parts: 7, duration: 60 },
-    { id: 8, title: "General Knowledge", level: "Level A2", questions: 100, parts: 10, duration: 60 },
+    { id: 1, title: "English Language Test", level: "Level B1", questions: 50, parts: 7, duration: 60, category: "English" },
+    { id: 2, title: "Advanced Mathematics", level: "Level C1", questions: 40, parts: 5, duration: 90, category: "Math" },
+    { id: 3, title: "History of Arts", level: "Level A2", questions: 60, parts: 8, duration: 45, category: "History" },
+    { id: 4, title: "Physics Olympiad Prep", level: "Level C2", questions: 30, parts: 4, duration: 120, category: "Physics" },
+    { id: 5, title: "Biology Basics", level: "Level A1", questions: 70, parts: 10, duration: 50, category: "Biology" },
+    { id: 6, title: "Chemistry Exam", level: "Level B2", questions: 45, parts: 6, duration: 75, category: "Chemistry" },
+    { id: 7, title: "Music Theory", level: "Level B1", questions: 55, parts: 7, duration: 60, category: "Music" },
+    { id: 8, title: "General Knowledge", level: "Level A2", questions: 100, parts: 10, duration: 60, category: "Art" },
 ];
 
 // Dữ liệu giả lập cho báo cáo nâng cao

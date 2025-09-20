@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ExamCard from '~/components/exam/ExamCard';
 import StatCard from '~/components/exam/StatCard';
 import { FiSearch, FiAward, FiUsers, FiClipboard, FiFileText } from 'react-icons/fi';
@@ -8,6 +8,12 @@ import { exams } from '~/data/mockTest';
 const categories = ["All", "Math", "History", "Art", "Biology", "Chemistry", "Physics", "English", "Music"];
 
 const ExamTestPage: React.FC = () => {
+    const [selectedCategory, setSelectedCategory] = useState("All");
+
+    const filteredExams = selectedCategory === "All"
+        ? exams
+        : exams.filter(exam => exam.category === selectedCategory);
+
     return (
         <div className="bg-slate-50">
             {/* Page Title Section */}
@@ -23,10 +29,11 @@ const ExamTestPage: React.FC = () => {
 
                         {/* Filter Buttons */}
                         <div className="flex flex-wrap gap-2 mb-6">
-                            {categories.map((cat, index) => (
+                            {categories.map((cat) => (
                                 <button
                                     key={cat}
-                                    className={`px-5 py-2 text-sm font-medium rounded-full transition-colors duration-300 ${index === 0
+                                    onClick={() => setSelectedCategory(cat)}
+                                    className={`px-5 py-2 text-sm font-medium rounded-full transition-colors duration-300 ${selectedCategory === cat
                                         ? 'bg-teal-500 text-white'
                                         : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
                                         }`}
@@ -54,8 +61,8 @@ const ExamTestPage: React.FC = () => {
                     <div className='flex sm:flex-row flex-col gap-8'>
                         {/* Left Side: Exams Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-6 w-full">
-                            {exams.map((exam, index) => (
-                                <ExamCard key={index} {...exam} />
+                            {filteredExams.map((exam) => (
+                                <ExamCard key={exam.id} {...exam} />
                             ))}
                         </div>
 
