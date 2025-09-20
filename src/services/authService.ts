@@ -7,7 +7,7 @@ const mockApiCall = (data: unknown): Promise<AuthResponse> => {
     return new Promise((resolve) => {
         setTimeout(() => {
             resolve({
-                user: { id: 1, name: 'Jonh Doe', email: (data as { email: string }).email },
+                user: { id: 1, name: 'Jonh Doe', email: (data as { email: string }).email, avatar: 'https://i.pravatar.cc/150?img=1', role:'student' },
                 token: 'fake-jwt-token',
             });
         }, 1000);

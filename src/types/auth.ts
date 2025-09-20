@@ -2,6 +2,8 @@ export interface User {
     id: number;
     name: string;
     email: string;
+    avatar: string;
+    role: 'student' | 'teacher';
 };
 
 export interface AuthResponse {
@@ -14,9 +16,10 @@ export interface AuthContextType {
     token: string | null;
     isAuthenticated: boolean;
     loading: boolean;
+    initialLoading: boolean;
     error: string | null;
     login: (email: string, password: string) => Promise<void>;
-    register: (name: string,email: string, password: string) => Promise<void>;
+    register: (name: string, email: string, password: string) => Promise<void>;
     logout: () => void;
     forgotPassword: (email: string) => Promise<void>;
     resetPassword: (token: string, password: string) => Promise<void>;
