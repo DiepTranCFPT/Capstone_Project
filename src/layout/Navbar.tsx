@@ -23,10 +23,10 @@ const Navbar: React.FC = () => {
 
       {/* Navigation */}
       <nav className="flex items-center gap-11">
-        <a href="#" className="text-black text-base font-semibold">
+        <a href="/" className="text-black text-base font-semibold">
           Home
         </a>
-        <a href="#" className="text-black text-base font-semibold">
+        <a href="/materials" className="text-black text-base font-semibold">
           Materials
         </a>
         <a href="/exam-test" className="text-black text-base font-semibold">

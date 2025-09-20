@@ -7,10 +7,15 @@ import HomePages from "./pages/home/HomePages";
 import AuthPage from "./pages/auth/AuthPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPassword";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+
 import ExamTestPage from "./pages/exam/ExamTestPage";
 import ExamDetailsPage from "./pages/exam/ExamDetailsPage";
 import TestResultPage from "./pages/exam/TestResultPage";
 import DoTestPage from "./pages/exam/DoTestPage";
+
+import MaterialsPage from "./pages/generics/materials/MaterialsPage";
+import MaterialsDetailPage from "./pages/generics/materials/MaterialsDetailPage";
+
 
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -35,11 +40,18 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
         <Route element={<Layout />}>
+
           <Route path="/" element={<HomePages />} />         
           <Route path="/exam-test" element={<ExamTestPage />} />    
           <Route path="/exam-test/:examId" element={<ExamDetailsPage />} />
           <Route path="/test-result/:submissionId" element={<TestResultPage />} />
+
+          <Route path="/" element={<HomePages />} />    
+          <Route path="/materials" element={<MaterialsPage/>} />  
+          <Route path="/materials/:id" element={<MaterialsDetailPage />} />
+
         </Route>
+
       </Routes>
     </Router>
   );
