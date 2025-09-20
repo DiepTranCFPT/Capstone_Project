@@ -7,6 +7,10 @@ import HomePages from "./pages/home/HomePages";
 import AuthPage from "./pages/auth/AuthPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPassword";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import ExamTestPage from "./pages/exam/ExamTestPage";
+import ExamDetailsPage from "./pages/exam/ExamDetailsPage";
+import TestResultPage from "./pages/exam/TestResultPage";
+import DoTestPage from "./pages/exam/DoTestPage";
 
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -23,6 +27,8 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Routes không có Layout (Navbar/Footer) */}
+        <Route path="/do-test/:examId/:testType" element={<DoTestPage />} />
         {/* Auth routes */}
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -30,6 +36,9 @@ function App() {
 
         <Route element={<Layout />}>
           <Route path="/" element={<HomePages />} />         
+          <Route path="/exam-test" element={<ExamTestPage />} />    
+          <Route path="/exam-test/:examId" element={<ExamDetailsPage />} />
+          <Route path="/test-result/:submissionId" element={<TestResultPage />} />
         </Route>
       </Routes>
     </Router>

@@ -29,7 +29,7 @@ const Navbar: React.FC = () => {
         <a href="#" className="text-black text-base font-semibold">
           Materials
         </a>
-        <a href="#" className="text-black text-base font-semibold">
+        <a href="/exam-test" className="text-black text-base font-semibold">
           Exam Test
         </a>
         <a href="#" className="text-black text-base font-semibold">
@@ -69,9 +69,9 @@ const Navbar: React.FC = () => {
           </>
         )}
         {/* popup */}
-        <div>
+        
           {showModal && (
-            <div className="absolute top-20 right-18 bg-white border border-gray-300 rounded-md shadow-lg w-30">
+            <div className="absolute top-20 right-18 bg-white border border-gray-300 rounded-md shadow-lg w-30 z-10">
               <ul className="flex flex-col">
                 <li className="flex items-center gap-2 px-4 py-2 hover:cursor-pointer hover:bg-gray-100 rounded-md">
                   <button className="w-full hover:cursor-pointer">
@@ -88,7 +88,7 @@ const Navbar: React.FC = () => {
               </ul>
             </div>
           )}
-        </div>
+        
       </div>
     </header>
   );
