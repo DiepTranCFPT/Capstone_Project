@@ -7,6 +7,8 @@ import HomePages from "./pages/home/HomePages";
 import AuthPage from "./pages/auth/AuthPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPassword";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import MaterialsPage from "./pages/generics/materials/MaterialsPage";
+import MaterialsDetailPage from "./pages/generics/materials/MaterialsDetailPage";
 
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -29,8 +31,11 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
         <Route element={<Layout />}>
-          <Route path="/" element={<HomePages />} />         
+          <Route path="/" element={<HomePages />} />    
+          <Route path="/materials" element={<MaterialsPage/>} />  
+          <Route path="/materials/:id" element={<MaterialsDetailPage />} />
         </Route>
+
       </Routes>
     </Router>
   );
