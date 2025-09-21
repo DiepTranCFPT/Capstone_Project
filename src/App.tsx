@@ -15,6 +15,7 @@ import DoTestPage from "./pages/exam/DoTestPage";
 
 import MaterialsPage from "./pages/generics/materials/MaterialsPage";
 import MaterialsDetailPage from "./pages/generics/materials/MaterialsDetailPage";
+import CommunityPage from "./pages/community/CommunityPage";
 
 
 // Layout Wrapper for common UI elements
@@ -49,6 +50,8 @@ function App() {
           <Route path="/" element={<HomePages />} />    
           <Route path="/materials" element={<MaterialsPage/>} />  
           <Route path="/materials/:id" element={<MaterialsDetailPage />} />
+
+          <Route path="/community" element={<CommunityPage />} />
 
         </Route>
 

@@ -32,14 +32,17 @@ const Navbar: React.FC = () => {
         <a href="/exam-test" className="text-black text-base font-semibold">
           Exam Test
         </a>
-        <a href="#" className="text-black text-base font-semibold">
+        {/* <a href="#" className="text-black text-base font-semibold">
           About
         </a>
         <a href="#" className="text-black text-base font-semibold">
           Contact
-        </a>
+        </a> */}
         <a href="#" className="text-black text-base font-semibold">
           Ranking
+        </a>
+        <a href="/community" className="text-black text-base font-semibold">
+          Community
         </a>
       </nav>
 
@@ -69,26 +72,26 @@ const Navbar: React.FC = () => {
           </>
         )}
         {/* popup */}
-        
-          {showModal && (
-            <div className="absolute top-20 right-18 bg-white border border-gray-300 rounded-md shadow-lg w-30 z-10">
-              <ul className="flex flex-col">
-                <li className="flex items-center gap-2 px-4 py-2 hover:cursor-pointer hover:bg-gray-100 rounded-md">
-                  <button className="w-full hover:cursor-pointer">
-                    <Link to="/profile" className="">Profile</Link>
-                  </button>
-                  <IoPersonCircleOutline />
-                </li>
-                <li className="flex items-center gap-2 hover:cursor-pointer hover:bg-red-500 px-4 py-2 rounded-md hover:text-white ">
-                  <button onClick={handleLogout} className="w-full hover:cursor-pointer">
-                    Logout
-                  </button>
-                  <FaSignOutAlt />
-                </li>
-              </ul>
-            </div>
-          )}
-        
+
+        {showModal && (
+          <div className="absolute top-20 right-18 bg-white border border-gray-300 rounded-md shadow-lg w-30 z-10">
+            <ul className="flex flex-col">
+              <li className="flex items-center gap-2 px-4 py-2 hover:cursor-pointer hover:bg-gray-100 rounded-md">
+                <button className="w-full hover:cursor-pointer">
+                  <Link to="/profile" className="">Profile</Link>
+                </button>
+                <IoPersonCircleOutline />
+              </li>
+              <li className="flex items-center gap-2 hover:cursor-pointer hover:bg-red-500 px-4 py-2 rounded-md hover:text-white ">
+                <button onClick={handleLogout} className="w-full hover:cursor-pointer">
+                  Logout
+                </button>
+                <FaSignOutAlt />
+              </li>
+            </ul>
+          </div>
+        )}
+
       </div>
     </header>
   );
