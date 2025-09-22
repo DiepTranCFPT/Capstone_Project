@@ -1,9 +1,5 @@
 import React from 'react';
-
-interface FRQ {
-    id: number;
-    text: string;
-}
+import type { FRQ } from '~/types/test';
 
 interface FRQCardProps {
     question: FRQ;

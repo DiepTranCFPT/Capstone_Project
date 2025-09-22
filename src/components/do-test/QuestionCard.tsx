@@ -1,15 +1,5 @@
 import React from 'react';
-
-interface Option {
-    id: string;
-    text: string;
-}
-
-interface Question {
-    id: number;
-    text: string;
-    options: Option[];
-}
+import type { Question } from '~/types/test';
 
 interface QuestionCardProps {
     question: Question;

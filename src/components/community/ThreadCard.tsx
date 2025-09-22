@@ -1,25 +1,10 @@
 import React, { useState } from "react";
 import { FiThumbsUp, FiMessageSquare, FiMoreHorizontal } from 'react-icons/fi';
 import { useAuth } from "~/hooks/useAuth";
-
-interface Comment {
-    id: number;
-    user: { name: string, avatar: string };
-    text: string;
-    replies: Comment[];
-};
+import type { Comment, Thread } from "~/types/community";
 
 interface ThreadCardProps {
-    thread: {
-        id: number;
-        user: { name: string; avatar: string };
-        content: string;
-        tags: string[];
-        likes: number;
-        comments: number;
-        image?: string | null;
-        commentsData: Comment[];
-    };
+    thread: Thread
 };
 
 const ThreadCard: React.FC<ThreadCardProps> = ({ thread }) => {
