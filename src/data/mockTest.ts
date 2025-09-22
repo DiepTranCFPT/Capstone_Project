@@ -53,4 +53,27 @@ const advancedData = {
     ]
 };
 
-export { mockMCQ, mockFRQ, exams, advancedData };
+const completedTests = [
+    {
+        id: 1,
+        title: "English Language Test",
+        date: "2025-09-20",
+        score: 85,
+        mcqTime: 25,
+        frqTime: 35,
+        apScore: 4,
+        progress: 75
+    },
+    {
+        id: 2,
+        title: "Advanced Mathematics",
+        date: "2025-09-18",
+        score: 92,
+        mcqTime: 40,
+        frqTime: 50,
+        apScore: 5,
+        progress: 90
+    },
+];
+
+export { mockMCQ, mockFRQ, exams, advancedData, completedTests };
