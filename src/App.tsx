@@ -16,6 +16,8 @@ import DoTestPage from "./pages/exam/DoTestPage";
 import MaterialsPage from "./pages/generics/materials/MaterialsPage";
 import MaterialsDetailPage from "./pages/generics/materials/MaterialsDetailPage";
 import CommunityPage from "./pages/community/CommunityPage";
+import StudentDashboardPage from "./pages/students/StudentDashboardPage";
+import StudentLayout from "./layout/students/StudentLayout";
 
 
 // Layout Wrapper for common UI elements
@@ -40,19 +42,20 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-        <Route element={<Layout />}>
 
+        <Route element={<Layout />}>
           <Route path="/" element={<HomePages />} />         
           <Route path="/exam-test" element={<ExamTestPage />} />    
           <Route path="/exam-test/:examId" element={<ExamDetailsPage />} />
-          <Route path="/test-result/:submissionId" element={<TestResultPage />} />
-
-          <Route path="/" element={<HomePages />} />    
+          <Route path="/test-result/:submissionId" element={<TestResultPage />} /> 
           <Route path="/materials" element={<MaterialsPage/>} />  
           <Route path="/materials/:id" element={<MaterialsDetailPage />} />
-
           <Route path="/community" element={<CommunityPage />} />
+        </Route>
 
+        {/* Student routes with StudentLayout */}
+        <Route path="/student" element={<StudentLayout />}>
+          <Route path="dashboard" element={<StudentDashboardPage />} />
         </Route>
 
       </Routes>
