@@ -62,7 +62,7 @@ const ExamTestPage: React.FC = () => {
                         {/* Left Side: Exams Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-6 w-full">
                             {filteredExams.map((exam) => (
-                                <ExamCard key={exam.id} {...exam} />
+                                <ExamCard exams={exam} key={exam.id} />
                             ))}
                         </div>
 

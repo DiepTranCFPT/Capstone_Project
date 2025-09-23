@@ -18,7 +18,13 @@ import MaterialsDetailPage from "./pages/generics/materials/MaterialsDetailPage"
 import CommunityPage from "./pages/community/CommunityPage";
 import StudentDashboardPage from "./pages/students/StudentDashboardPage";
 import StudentLayout from "./layout/students/StudentLayout";
+
+import TestReportsPage from "./pages/students/TestReportsPage";
+import TestReportDetailPage from "./pages/students/TestReportDetailPage";
+import GroupDetailPage from "./pages/community/GroupDetailPage";
+
 import ProfileDashboard from "./components/students/profile/ProfileDashboard";
+
 
 
 // Layout Wrapper for common UI elements
@@ -52,12 +58,18 @@ function App() {
           <Route path="/materials" element={<MaterialsPage/>} />  
           <Route path="/materials/:id" element={<MaterialsDetailPage />} />
           <Route path="/community" element={<CommunityPage />} />
+          <Route path="/community/groups/:groupId" element={<GroupDetailPage />} />
         </Route>
 
         {/* Student routes with StudentLayout */}
         <Route path="/student" element={<StudentLayout />}>
           <Route path="dashboard" element={<StudentDashboardPage />} />
+
+          <Route path="test-reports" element={<TestReportsPage />} />
+          <Route path="test-reports/:reportId" element={<TestReportDetailPage />} />
+
           <Route path="profile" element={<ProfileDashboard />} />
+
         </Route>
 
       </Routes>

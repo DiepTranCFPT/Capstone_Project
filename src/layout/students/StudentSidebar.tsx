@@ -3,7 +3,7 @@ import { Button, Avatar } from "antd";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { IoIosArrowBack } from "react-icons/io";
-import { FaBook, FaUserGraduate, FaCertificate, FaCog } from "react-icons/fa";
+import { FaBook, FaUserGraduate, FaCertificate, FaCog, FaChartBar } from "react-icons/fa";
 import users from "~/data/user";
 
 // Menu tạm thời cho Student
@@ -22,6 +22,11 @@ const studentMenu = [
     label: "Certificates",
     path: "/student/certificates",
     icon: <FaCertificate />,
+  },
+  {
+    label: "Test Reports",
+    path: "/student/test-reports",
+    icon: <FaChartBar />,
   },
   {
     label: "Settings",
@@ -122,8 +127,8 @@ export default function SidebarStudent() {
                 ${collapsed ? "justify-center w-12 h-12" : "px-6 py-2 w-11/12"}
                 ${
                   isActive
-                    ? "bg-blue-500 text-white rounded-2xl"
-                    : "text-black hover:bg-blue-500 hover:text-white rounded-2xl"
+                    ? "bg-backgroundColor text-white rounded-2xl"
+                    : "text-black hover:bg-backgroundColor hover:text-white rounded-2xl"
                 }
               `}
               style={{

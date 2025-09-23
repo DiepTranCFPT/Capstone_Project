@@ -10,11 +10,29 @@ const DoTestPage: React.FC = () => {
     const { examId, testType } = useParams<{ examId: string, testType: 'full' | 'mcq' | 'frq' }>();
     const navigate = useNavigate();
     const [activeSection, setActiveSection] = useState<'mcq' | 'frq'>(testType === 'frq' ? 'frq' : 'mcq');
-
+    const [showConFirmed, setShowConFirmed] = useState(false);
+    const [isSubmit, setIsSubmit] = useState(false);
+    const [isCancel, setIsCancel] = useState(false);
     const handleSubmit = () => {
         const submissionId = `mock-${examId}-${testType}`;
         navigate(`/test-result/${submissionId}`);
     };
+
+    const handleCancel = () => {
+        // setShowConFirmed(true);
+        navigate(`/exam-test/${examId}`);
+    };
+
+    const handleConfirmSubmit = () => {
+        setShowConFirmed(true);
+        setIsSubmit(true);
+    };
+
+    const handleConfirmCancel = () => {
+        setShowConFirmed(true);
+        setIsCancel(true);
+    };
+
 
     const totalQuestions = (testType === 'mcq' ? mockMCQ.length : testType === 'frq' ? mockFRQ.length : mockMCQ.length + mockFRQ.length);
 
@@ -47,9 +65,14 @@ const DoTestPage: React.FC = () => {
                         ))}
                     </div>
                 </div>
-                <button onClick={handleSubmit} className="w-full bg-backgroundColor text-white font-bold py-3 rounded-lg hover:bg-teal-600 mt-6">
-                    Submit
-                </button>
+                <div className='flex gap-3'>
+                    <button onClick={handleConfirmSubmit} className="w-full bg-backgroundColor text-white font-bold py-3 rounded-lg hover:bg-teal-600 mt-6">
+                        Submit
+                    </button>
+                    <button onClick={handleConfirmCancel} className="w-full bg-red-500 text-white font-bold py-3 rounded-lg hover:bg-red-600 mt-6">
+                        Cancel
+                    </button>
+                </div>
             </aside>
 
             {/* Main Content */}
@@ -71,6 +94,20 @@ const DoTestPage: React.FC = () => {
                     ) : null}
                 </div>
             </main>
+
+            {showConFirmed && (
+                <div className="fixed top-0 left-0 w-full h-full z-10">
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-100 op p-6 rounded-lg shadow-lg border border-gray-200">
+                        <p className="text-lg font-semibold mb-4">{isSubmit ? 'Are you sure you want to submit?' : 'Are you sure you want to cancel?'}</p>
+                        <div className="flex justify-center">
+                            <button onClick={() => setShowConFirmed(false)} className="mr-4 bg-gray-300 px-4 py-2 rounded-md hover:bg-gray-400 hover:cursor-pointer">Cancel</button>
+                            
+                            {isCancel && <button onClick={handleCancel} className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 hover:cursor-pointer">Confirm</button>}
+                            {isSubmit && <button onClick={handleSubmit} className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 hover:cursor-pointer">Confirm</button>}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -10,6 +10,7 @@ import {
   RightOutlined,
   GiftOutlined
 } from '@ant-design/icons';
+import CardAnalytics from './CardAnalytics';
 
 const StudentDashboard: React.FC = () => {
   // Sample data
@@ -75,7 +76,25 @@ const StudentDashboard: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, Alex! 👋</h1>
           <p className="text-gray-600">Here's your learning progress overview</p>
         </div>
-
+        {/* Quick Stats Row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl shadow-md p-4 text-center">
+            <div className="text-2xl font-bold text-blue-600">12</div>
+            <div className="text-sm text-gray-500">Courses Enrolled</div>
+          </div>
+          <div className="bg-white rounded-xl shadow-md p-4 text-center">
+            <div className="text-2xl font-bold text-green-600">8</div>
+            <div className="text-sm text-gray-500">Completed</div>
+          </div>
+          <div className="bg-white rounded-xl shadow-md p-4 text-center">
+            <div className="text-2xl font-bold text-orange-600">47h</div>
+            <div className="text-sm text-gray-500">Study Time</div>
+          </div>
+          <div className="bg-white rounded-xl shadow-md p-4 text-center">
+            <div className="text-2xl font-bold text-purple-600">4.8</div>
+            <div className="text-sm text-gray-500">Avg Score</div>
+          </div>
+        </div>
         {/* Main Dashboard Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           
@@ -246,26 +265,8 @@ const StudentDashboard: React.FC = () => {
             </div>
           </Card>
         </div>
-
-        {/* Quick Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl shadow-md p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">12</div>
-            <div className="text-sm text-gray-500">Courses Enrolled</div>
-          </div>
-          <div className="bg-white rounded-xl shadow-md p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">8</div>
-            <div className="text-sm text-gray-500">Completed</div>
-          </div>
-          <div className="bg-white rounded-xl shadow-md p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">47h</div>
-            <div className="text-sm text-gray-500">Study Time</div>
-          </div>
-          <div className="bg-white rounded-xl shadow-md p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">4.8</div>
-            <div className="text-sm text-gray-500">Avg Score</div>
-          </div>
-        </div>
+        {/* Test Analytics Section */}
+        <CardAnalytics />
       </div>
     </div>
   );

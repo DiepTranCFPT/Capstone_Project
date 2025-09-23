@@ -1,25 +1,10 @@
 import React, { useState } from "react";
 import { FiThumbsUp, FiMessageSquare, FiMoreHorizontal } from 'react-icons/fi';
 import { useAuth } from "~/hooks/useAuth";
-
-interface Comment {
-    id: number;
-    user: { name: string, avatar: string };
-    text: string;
-    replies: Comment[];
-};
+import type { Comment, Thread } from "~/types/community";
 
 interface ThreadCardProps {
-    thread: {
-        id: number;
-        user: { name: string; avatar: string };
-        content: string;
-        tags: string[];
-        likes: number;
-        comments: number;
-        image?: string | null;
-        commentsData: Comment[];
-    };
+    thread: Thread
 };
 
 const ThreadCard: React.FC<ThreadCardProps> = ({ thread }) => {
@@ -41,11 +26,13 @@ const ThreadCard: React.FC<ThreadCardProps> = ({ thread }) => {
     const CommentSection = ({ comments }: { comments: Comment[] }) => (
         <div className="mt-4 space-y-4">
             {comments.map(comment => (
-                <div key={comment.id} className="flex items-start space-x-3">
+                <div key={comment.id} className="flex items-start justify-center space-x-3">
                     <img src={comment.user.avatar} alt="avatar" className="w-10 h-10 rounded-full" />
                     <div className="flex-1">
-                        <p className="font-semibold text-sm text-gray-800">{comment.user.name}</p>
-                        <p className="text-sm text-gray-600 mt-1">{comment.text}</p>
+                        <div className="bg-gray-200 p-2 rounded-xl">
+                            <p className="font-semibold text-sm text-gray-800">{comment.user.name}</p>
+                            <p className="text-sm text-gray-600 mt-1">{comment.text}</p>
+                        </div>
                         <button className="text-xs text-gray-500 mt-1">Reply</button>
                         {comment.replies && comment.replies.length > 0 && (
                             <div className="ml-6 mt-2">
@@ -79,7 +66,7 @@ const ThreadCard: React.FC<ThreadCardProps> = ({ thread }) => {
             </div>
             <div className="flex items-center gap-6 text-gray-500 border-t pt-3">
                 <button className="flex items-center gap-2 hover:text-teal-600"><FiThumbsUp /> {thread.likes} Likes</button>
-                <button onClick={() => setShowComments(!showComments)} className="flex items-center gap-2 hover:text-teal-600"><FiMessageSquare /> {thread.comments} Comments</button>
+                <button onClick={() => setShowComments(!showComments)} className="flex items-center gap-2 hover:text-teal-600 hover:cursor-pointer"><FiMessageSquare /> {thread.comments} Comments</button>
             </div>
             {showComments && (
                 <div className="mt-4">
@@ -93,7 +80,7 @@ const ThreadCard: React.FC<ThreadCardProps> = ({ thread }) => {
                                 className="w-full p-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
                                 placeholder="Add a comment..."
                             ></textarea>
-                            <button onClick={handleAddComment} className="mt-2 bg-teal-500 text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-teal-600 transition">
+                            <button onClick={handleAddComment} className="mt-2 bg-teal-500 text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-teal-600 transition hover:cursor-pointer">
                                 Post Comment
                             </button>
                         </div>
