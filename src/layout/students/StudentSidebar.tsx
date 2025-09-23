@@ -6,7 +6,6 @@ import { IoIosArrowBack } from "react-icons/io";
 import { FaBook, FaUserGraduate, FaCertificate, FaCog, FaChartBar } from "react-icons/fa";
 import users from "~/data/user";
 
-
 // Menu tạm thời cho Student
 const studentMenu = [
   {
@@ -99,7 +98,13 @@ export default function SidebarStudent() {
               : "px-4 py-3 border-b flex items-center justify-center"
           }`}
         >
-          <Avatar size={collapsed ? 32 : 40} src={currentUser.avatar} />
+          <Link to="/student/profile">
+            <Avatar
+              size={collapsed ? 32 : 40}
+              src={currentUser.avatar}
+              className="cursor-pointer"
+            />
+          </Link>
           {!collapsed && (
             <div>
               <div className="text-sm font-semibold">{currentUser.name}</div>
