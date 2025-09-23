@@ -18,6 +18,7 @@ import MaterialsDetailPage from "./pages/generics/materials/MaterialsDetailPage"
 import CommunityPage from "./pages/community/CommunityPage";
 import StudentDashboardPage from "./pages/students/StudentDashboardPage";
 import StudentLayout from "./layout/students/StudentLayout";
+import ProfileDashboard from "./components/students/profile/ProfileDashboard";
 
 
 // Layout Wrapper for common UI elements
@@ -56,6 +57,7 @@ function App() {
         {/* Student routes with StudentLayout */}
         <Route path="/student" element={<StudentLayout />}>
           <Route path="dashboard" element={<StudentDashboardPage />} />
+          <Route path="profile" element={<ProfileDashboard />} />
         </Route>
 
       </Routes>
