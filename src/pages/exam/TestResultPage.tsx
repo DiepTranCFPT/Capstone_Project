@@ -66,10 +66,13 @@ const TestResultPage: React.FC = () => {
                     </div>
 
                     {/* Sidebar được truyền props */}
-                    <Sidebar
-                        isUnlockable={!isAdvancedUnlocked}
-                        onUnlock={handleUnlock}
-                    />
+                    {!isPracticeTest && (
+                        <Sidebar
+                            isUnlockable={!isAdvancedUnlocked}
+                            onUnlock={handleUnlock}
+                        />
+                    )}
+
                 </div>
             </main>
         </div>
