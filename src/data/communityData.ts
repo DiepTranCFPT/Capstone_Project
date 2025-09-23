@@ -27,7 +27,9 @@ export const threads = [
                 text: 'You can find many useful resources on the British Council website.',
                 replies: [],
             },
-        ]
+        ],
+        groupId: 1,
+        groupName: 'IELTS 7.0 Aimers'
     },
     {
         id: 2,
