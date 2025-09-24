@@ -30,7 +30,10 @@ import GroupDetailPage from "./pages/community/GroupDetailPage";
 
 import ProfileDashboard from "./components/students/profile/ProfileDashboard";
 
-
+// --- Teacher Imports ---
+import TeacherLayout from "./layout/teachers/TeacherLayout";
+import TeacherDashboardPage from "./pages/teachers/TeacherDashboardPage";
+import ProtectedRoute from "./context/ProtectedRoute";
 
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -56,18 +59,18 @@ function App() {
 
 
         <Route element={<Layout />}>
-          <Route path="/" element={<HomePages />} />         
-          <Route path="/exam-test" element={<ExamTestPage />} />    
+          <Route path="/" element={<HomePages />} />
+          <Route path="/exam-test" element={<ExamTestPage />} />
           <Route path="/exam-test/:examId" element={<ExamDetailsPage />} />
-          <Route path="/test-result/:submissionId" element={<TestResultPage />} /> 
-          <Route path="/materials" element={<MaterialsPage/>} />  
+          <Route path="/test-result/:submissionId" element={<TestResultPage />} />
+          <Route path="/materials" element={<MaterialsPage />} />
           <Route path="/materials/:id" element={<MaterialsDetailPage />} />
           <Route path="/community" element={<CommunityPage />} />
           <Route path="/community/groups/:groupId" element={<GroupDetailPage />} />
         </Route>
 
         {/* Student routes with StudentLayout */}
-        <Route path="/student" element={<StudentLayout />}>
+        <Route path="/student" element={<ProtectedRoute roles={['student']}><StudentLayout /></ProtectedRoute>}>
           <Route path="dashboard" element={<StudentDashboardPage />} />
 
           <Route path="test-reports" element={<TestReportsPage />} />
@@ -79,6 +82,18 @@ function App() {
           <Route path="tutor/:tutorId" element={<TutorDetailPage />} />
           <Route path="my-bookings" element={<MyBookingsPage />} />
           <Route path="quiz-battle" element={<QuizBattlePage />} />
+        </Route>
+
+        {/* Teacher routes with TeacherLayout */}
+        <Route path="/teacher" element={<TeacherLayout />} >
+          <Route path="dashboard" element={<ProtectedRoute roles={['teacher']}><TeacherDashboardPage /></ProtectedRoute>} />
+          {/* Các routes khác của Teacher sẽ được thêm vào đây */}
+          {/* <Route path="classes" element={<MyClassesPage />} />
+            <Route path="classes/:classId" element={<ClassroomDetailPage />} />
+            <Route path="content" element={<ManageContentPage />} />
+            <Route path="grading" element={<GradingPage />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
+            */}
         </Route>
 
       </Routes>
