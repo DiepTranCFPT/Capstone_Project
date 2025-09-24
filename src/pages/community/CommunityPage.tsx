@@ -5,7 +5,6 @@ import { useState } from "react";
 import { FiMessageCircle, FiPlus, FiUser, FiUsers } from "react-icons/fi";
 import CreateGroupModal from "~/components/community/CreateGroupModal";
 import CreateThreadModal from "~/components/community/CreateThreadModal";
-import LeaderBoard from "~/components/community/Leaderboard";
 import StudyGroupCard from "~/components/community/StudyGroupCard";
 import ThreadCard from "~/components/community/ThreadCard";
 import { threads as initialThreads } from '~/data/communityData';
@@ -138,7 +137,6 @@ const CommunityPage: React.FC = () => {
                                 <div><p className="font-bold text-lg">4</p><p className="text-xs text-gray-500">Following</p></div>
                             </div>
                         </div>
-                        <LeaderBoard />
                     </aside>
                 </div>
             </main>
