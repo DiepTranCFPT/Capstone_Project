@@ -12,7 +12,6 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     const [token, setToken] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [initialLoading, setInitialLoading] = useState<boolean>(true);
-
     // Restore auth state from localStorage when component mounts
     useEffect(() => {
         const initializeAuth = async () => {
