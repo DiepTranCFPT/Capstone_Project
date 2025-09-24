@@ -4,9 +4,12 @@ import Sidebar from '~/components/exam/SideBar';
 import ResultSummary from '~/components/test-result/ResultSummary';
 import AdvancedReport from '~/components/test-result/AdvancedReport';
 import { useParams } from 'react-router-dom';
+import AIFeedbackCard from '~/components/common/AIFeedbackCard';
 
 const TestResultPage: React.FC = () => {
     const [isAdvancedUnlocked, setIsAdvancedUnlocked] = useState(false);
+    // Mock state to simulate that an FRQ was analyzed
+    const [isAiAnalyzed] = useState(true); 
     const { submissionId } = useParams<{ submissionId: string }>();
 
     const testType = submissionId?.split('-')[2];
@@ -23,8 +26,21 @@ const TestResultPage: React.FC = () => {
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-4xl font-bold text-gray-800 mb-8">Result Exam Test</h1>
                 <div className="flex flex-col md:flex-row gap-8 items-start">
-                    <div className="w-full md:w-2/3 lg:w-3/4 space-y-8">
+                    <div className="w-full md:w-2/d lg:w-3/4 space-y-8">
                         <ResultSummary isPractice={isPracticeTest} />
+
+                        {isAiAnalyzed && (
+                            <AIFeedbackCard
+                                feedback={{
+                                    score: 7,
+                                    suggestions: [
+                                        "Consider elaborating on the historical context.",
+                                        "Your conclusion could be stronger.",
+                                        "Check for minor grammatical errors in the second paragraph.",
+                                    ],
+                                }}
+                            />
+                        )}
 
                         {/* Answer Review Section */}
                         {/* {!isPracticeTest && ( */}
