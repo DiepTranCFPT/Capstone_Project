@@ -3,8 +3,8 @@ import { Button, Avatar } from "antd";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { IoIosArrowBack } from "react-icons/io";
-import { FaBook, FaUserGraduate, FaCertificate, FaCog, FaChartBar } from "react-icons/fa";
-import users from "~/data/user";
+import { FaBook, FaUserGraduate, FaCertificate, FaCog, FaChartBar, FaCoins, FaRobot, FaUserFriends, FaCalendarCheck, FaTrophy } from "react-icons/fa";
+import { useAuth } from "~/hooks/useAuth";
 
 // Menu tạm thời cho Student
 const studentMenu = [
@@ -12,6 +12,26 @@ const studentMenu = [
     label: "Dashboard",
     path: "/student/dashboard",
     icon: <FaBook />,
+  },
+  {
+    label: "AI Tutor",
+    path: "/student/ai-tutor",
+    icon: <FaRobot />,
+  },
+  {
+    label: "Find a Tutor",
+    path: "/student/find-tutor",
+    icon: <FaUserFriends />,
+  },
+  {
+    label: "My Bookings",
+    path: "/student/my-bookings",
+    icon: <FaCalendarCheck />,
+  },
+  {
+    label: "Quiz Battle",
+    path: "/student/quiz-battle",
+    icon: <FaTrophy />,
   },
   {
     label: "My Courses",
@@ -44,8 +64,7 @@ export default function SidebarStudent() {
     return saved === "true";
   });
 
-  // Mock: lấy user có role student
-  const currentUser = users.find((u) => u.role === "student");
+  const { user: currentUser } = useAuth();
 
   // Lưu trạng thái khi collapse/expand
   const toggleCollapse = () => {
@@ -109,6 +128,10 @@ export default function SidebarStudent() {
             <div>
               <div className="text-sm font-semibold">{currentUser.name}</div>
               <div className="text-[10px] text-gray-400">{currentUser.email}</div>
+              <div className="flex items-center text-sm text-yellow-500">
+                <FaCoins className="mr-1" />
+                <span>{currentUser.tokenBalance} Tokens</span>
+              </div>
             </div>
           )}
         </div>

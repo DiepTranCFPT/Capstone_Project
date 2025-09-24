@@ -112,6 +112,20 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         setToken(null);
         setIsAuthenticated(false);
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
+    };
+
+    const spendTokens = (amount: number) => {
+        if (user) {
+            const newBalance = user.tokenBalance - amount;
+            if (newBalance >= 0) {
+                const updatedUser = { ...user, tokenBalance: newBalance };
+                setUser(updatedUser);
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+            } else {
+                console.error("Not enough tokens");
+            }
+        }
     };
 
     return (
@@ -128,6 +142,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
                 forgotPassword,
                 resetPassword,
                 initialLoading,
+                spendTokens,
             }}
         >
             {!initialLoading ? children : null}

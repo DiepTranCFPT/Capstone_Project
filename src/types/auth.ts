@@ -4,6 +4,7 @@ export interface User {
     email: string;
     avatar: string;
     role: 'student' | 'teacher';
+    tokenBalance: number;
 };
 
 export interface AuthResponse {
@@ -23,4 +24,5 @@ export interface AuthContextType {
     logout: () => void;
     forgotPassword: (email: string) => Promise<void>;
     resetPassword: (token: string, password: string) => Promise<void>;
+    spendTokens: (amount: number) => void;
 };

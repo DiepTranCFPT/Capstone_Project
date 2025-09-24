@@ -7,7 +7,8 @@ const users = [
         email: 'student@gmail.com',
         password: '123456',
         avatar: 'https://i.pravatar.cc/150?img=1',
-        role: 'student'
+        role: 'student',
+        tokenBalance: 100
     },
     {
         id: 2,

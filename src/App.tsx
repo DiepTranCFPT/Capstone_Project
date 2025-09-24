@@ -18,6 +18,11 @@ import MaterialsDetailPage from "./pages/generics/materials/MaterialsDetailPage"
 import CommunityPage from "./pages/community/CommunityPage";
 import StudentDashboardPage from "./pages/students/StudentDashboardPage";
 import StudentLayout from "./layout/students/StudentLayout";
+import AITutorPage from "./pages/students/AITutorPage";
+import FindTutorPage from "./pages/students/FindTutorPage";
+import TutorDetailPage from "./pages/students/TutorDetailPage";
+import MyBookingsPage from "./pages/students/MyBookingsPage";
+import QuizBattlePage from "./pages/students/QuizBattlePage";
 
 import TestReportsPage from "./pages/students/TestReportsPage";
 import TestReportDetailPage from "./pages/students/TestReportDetailPage";
@@ -69,7 +74,11 @@ function App() {
           <Route path="test-reports/:reportId" element={<TestReportDetailPage />} />
 
           <Route path="profile" element={<ProfileDashboard />} />
-
+          <Route path="ai-tutor" element={<AITutorPage />} />
+          <Route path="find-tutor" element={<FindTutorPage />} />
+          <Route path="tutor/:tutorId" element={<TutorDetailPage />} />
+          <Route path="my-bookings" element={<MyBookingsPage />} />
+          <Route path="quiz-battle" element={<QuizBattlePage />} />
         </Route>
 
       </Routes>
