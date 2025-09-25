@@ -33,6 +33,7 @@ import AdminLayout from "./layout/admin/AdminLayout";
 import ParentManagerPage from "./pages/admins/ParentManagerPage";
 import CourseManagerPage from "./pages/admins/CourseManagerPage";
 import StudentMangerPage from "./pages/admins/StudentMangerPage";
+import MockTestManagerPage from "./pages/admins/MockTestManagerPage";
 
 
 
@@ -63,6 +64,7 @@ function App() {
           <Route path="parents" element={<ParentManagerPage />} />
           <Route path="courses" element={<CourseManagerPage />} />
           <Route path="students" element={<StudentMangerPage />} />
+          <Route path="mock-tests" element={<MockTestManagerPage />} />
         </Route>
 
         {/* Main routes with Layout */}
