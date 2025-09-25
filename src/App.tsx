@@ -32,6 +32,7 @@ import ProfileDashboard from "./components/students/profile/ProfileDashboard";
 import AdminLayout from "./layout/admin/AdminLayout";
 import ParentManagerPage from "./pages/admins/ParentManagerPage";
 import CourseManagerPage from "./pages/admins/CourseManagerPage";
+import StudentMangerPage from "./pages/admins/StudentMangerPage";
 
 
 
@@ -61,6 +62,7 @@ function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="parents" element={<ParentManagerPage />} />
           <Route path="courses" element={<CourseManagerPage />} />
+          <Route path="students" element={<StudentMangerPage />} />
         </Route>
 
         {/* Main routes with Layout */}
