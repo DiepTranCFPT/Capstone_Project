@@ -29,6 +29,8 @@ import TestReportDetailPage from "./pages/students/TestReportDetailPage";
 import GroupDetailPage from "./pages/community/GroupDetailPage";
 
 import ProfileDashboard from "./components/students/profile/ProfileDashboard";
+import AdminLayout from "./layout/admin/AdminLayout";
+import ParentManagerPage from "./pages/admins/ParentManagerPage";
 
 
 
@@ -54,7 +56,12 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
+        {/*Admin routes with AdminLayout */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="parents" element={<ParentManagerPage />} />
+        </Route>
 
+        {/* Main routes with Layout */}
         <Route element={<Layout />}>
           <Route path="/" element={<HomePages />} />         
           <Route path="/exam-test" element={<ExamTestPage />} />    
