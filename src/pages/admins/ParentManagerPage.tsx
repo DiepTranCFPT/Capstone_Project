@@ -1,5 +1,5 @@
 import React from 'react'
-import ParentManager from '~/components/admins/ParentManager'
+import ParentManager from '~/components/admins/parents/ParentManager'
 
 const ParentManagerPage : React.FC = () => {
   return (

@@ -17,7 +17,7 @@ const AdminSidebar: React.FC = () => {
   // Danh sách menu để map
   const menuItems = [
     { key: "/dashboard", label: "Dashboard", icon: <HomeOutlined /> },
-    { key: "/courses", label: "Courses", icon: <BookOutlined /> },
+    { key: "/admin/courses", label: "Courses", icon: <BookOutlined /> },
     { key: "/admin/parents", label: "Parents", icon: <UserOutlined /> },
     { key: "/students", label: "Students", icon: <TeamOutlined /> },
     { key: "/mock-tests", label: "Mock Tests", icon: <SolutionOutlined /> },
