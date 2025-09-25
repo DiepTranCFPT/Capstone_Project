@@ -31,6 +31,7 @@ import GroupDetailPage from "./pages/community/GroupDetailPage";
 import ProfileDashboard from "./components/students/profile/ProfileDashboard";
 import AdminLayout from "./layout/admin/AdminLayout";
 import ParentManagerPage from "./pages/admins/ParentManagerPage";
+import CourseManagerPage from "./pages/admins/CourseManagerPage";
 
 
 
@@ -59,6 +60,7 @@ function App() {
         {/*Admin routes with AdminLayout */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="parents" element={<ParentManagerPage />} />
+          <Route path="courses" element={<CourseManagerPage />} />
         </Route>
 
         {/* Main routes with Layout */}
