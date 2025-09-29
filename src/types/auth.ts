@@ -3,7 +3,7 @@ export interface User {
     name: string;
     email: string;
     avatar: string;
-    role: 'student' | 'teacher';
+    role: 'student' | 'teacher' | 'admin' | 'tutor' | 'parent';
     tokenBalance: number;
 };
 
@@ -26,3 +26,4 @@ export interface AuthContextType {
     resetPassword: (token: string, password: string) => Promise<void>;
     spendTokens: (amount: number) => void;
 };
+

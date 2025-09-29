@@ -1,5 +1,5 @@
 import { ErrorMessage, Field, Form, Formik } from 'formik';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
@@ -17,14 +17,40 @@ interface LoginFormProps {
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ buttonClasses }) => {
-    const { login } = useAuth();
+    const { login, user } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
+
     const handleSubmit = async (values: { email: string; password: string }) => {
-        const response = await login(values.email, values.password);
-        console.log(response);
-        navigate('/');
-    }
+        await login(values.email, values.password);
+        // The user state will be updated by AuthProvider after successful login
+    };
+
+    // Redirect based on user role after successful login
+    useEffect(() => {
+        if (user) {
+            switch (user.role) {
+                case 'student':
+                    navigate('/');
+                    break;
+                case 'teacher':
+                    navigate('/teacher/dashboard');
+                    break;
+                case 'admin':
+                    navigate('/admin/dashboard'); // Assuming an admin dashboard exists
+                    break;
+                case 'tutor':
+                    navigate('/tutor/dashboard'); // Assuming a tutor dashboard exists
+                    break;
+                case 'parent':
+                    navigate('/parent/dashboard'); // Assuming a parent dashboard exists
+                    break;
+                default:
+                    navigate('/'); // Default redirect
+                    break;
+            }
+        }
+    }, [user, navigate]);
 
     return (
         <div className="w-full bg-white rounded-lg shadow-xl md:mt-0 sm:max-w-md xl:p-0 border border-gray-100">

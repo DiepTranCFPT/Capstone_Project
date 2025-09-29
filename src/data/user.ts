@@ -16,7 +16,8 @@ const users = [
         email: 'teacher@gmail.com',
         password: '123456',
         avatar: 'https://i.pravatar.cc/150?img=2',
-        role: 'teacher'
+        role: 'teacher',
+        tokenBalance: 100
     }
 ]
 export default users;
