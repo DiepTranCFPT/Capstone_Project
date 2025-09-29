@@ -34,6 +34,10 @@ import ProfileDashboard from "./components/students/profile/ProfileDashboard";
 import TeacherLayout from "./layout/teachers/TeacherLayout";
 import TeacherDashboardPage from "./pages/teachers/TeacherDashboardPage";
 import ProtectedRoute from "./context/ProtectedRoute";
+import MyClassesPage from "./pages/teachers/MyClassPage";
+import ClassroomDetailPage from "./pages/teachers/ClassroomDetailPage";
+import QuestionBankPage from "./pages/teachers/QuestionBankPage";
+import CreateExamPage from "./pages/teachers/CreateExamPage";
 
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -88,12 +92,14 @@ function App() {
         <Route path="/teacher" element={<TeacherLayout />} >
           <Route path="dashboard" element={<ProtectedRoute roles={['teacher']}><TeacherDashboardPage /></ProtectedRoute>} />
           {/* Các routes khác của Teacher sẽ được thêm vào đây */}
-          {/* <Route path="classes" element={<MyClassesPage />} />
-            <Route path="classes/:classId" element={<ClassroomDetailPage />} />
-            <Route path="content" element={<ManageContentPage />} />
-            <Route path="grading" element={<GradingPage />} />
-            <Route path="analytics" element={<AnalyticsPage />} />
-            */}
+          <Route path="classes" element={<MyClassesPage />} />
+          <Route path="classes/:classId" element={<ClassroomDetailPage />} />
+          <Route path="question-bank" element={<QuestionBankPage />} />
+          <Route path="create-exam" element={<CreateExamPage />} />
+            {/* <Route path="content" element={<ManageContentPage />} /> */}
+            {/* <Route path="grading" element={<GradingPage />} />
+            <Route path="analytics" element={<AnalyticsPage />} /> */}
+
         </Route>
 
       </Routes>

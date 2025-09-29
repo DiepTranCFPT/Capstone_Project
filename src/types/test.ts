@@ -34,3 +34,15 @@ export interface CompletedTest {
     apScore: number;
     progress: number;
 }
+
+export interface QuestionBankItem {
+    id: string;
+    text: string;
+    type: 'mcq' | 'frq';
+    subject: string;
+    topic: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+    createdBy: string;
+    createdAt: string;
+    options: { text: string, isCorrect: boolean }[];
+}

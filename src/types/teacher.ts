@@ -7,6 +7,7 @@ export interface Classroom {
     subject: string;
     studentCount: number;
     coverImage: string;
+    classCode:string;
 };
 
 export interface StudentSubmission {
@@ -26,4 +27,12 @@ export interface QuestionBankItem {
     topic: string;
     difficulty: 'easy' | 'medium' | 'hard';
     createdBy: string;
+}
+
+export interface StudentInClass {
+    id: string;
+    name: string;
+    avatar: string;
+    overallProgress: number;
+    lastActive: string;
 }
