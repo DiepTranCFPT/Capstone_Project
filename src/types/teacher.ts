@@ -13,10 +13,15 @@ export interface Classroom {
 export interface StudentSubmission {
     id: string;
     student: Pick<User, 'id' | 'name' | 'avatar'>;
-    exam: Pick<Exam, 'id' | 'title'>;
+    exam: Pick<Exam, 'id' | 'title' | "duration" | "level" | "parts" | "questions">;
     submittedAt: string;
-    status: 'pending_garading' | 'graded';
+    status: 'pending_grading' | 'graded';
     score?: number;
+    frqAnswers?: {
+        questionId: string;
+        questionText: string;
+        answerText: string;
+    }[];
 }
 
 export interface QuestionBankItem {

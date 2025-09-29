@@ -18,7 +18,7 @@ const teacherMenu = [
     { label: "My Classes", path: "/teacher/classes", icon: <FaUsers /> },
     { label: "Questions Bank", path: "/teacher/question-bank", icon: <FaUsers /> },
     { label: "Create Exam", path: "/teacher/create-exam", icon: <FaBook /> },
-    { label: "Content Management", path: "/teacher/content", icon: <FaBook /> },
+    // { label: "Content Management", path: "/teacher/content", icon: <FaBook /> },
     { label: "Grading", path: "/teacher/grading", icon: <FaClipboardList /> },
     { label: "Analytics", path: "/teacher/analytics", icon: <FaChartBar /> },
     { label: "Settings", path: "/teacher/settings", icon: <FaCog /> },

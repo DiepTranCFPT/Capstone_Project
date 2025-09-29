@@ -38,6 +38,9 @@ import MyClassesPage from "./pages/teachers/MyClassPage";
 import ClassroomDetailPage from "./pages/teachers/ClassroomDetailPage";
 import QuestionBankPage from "./pages/teachers/QuestionBankPage";
 import CreateExamPage from "./pages/teachers/CreateExamPage";
+import GradingPage from "./pages/teachers/GradingPage";
+import ClassAnalyticsPage from "./pages/teachers/ClassAnalyticsPage";
+import GradeSubmissionPage from "./pages/teachers/GradeSubmissionPage";
 
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -97,8 +100,9 @@ function App() {
           <Route path="question-bank" element={<QuestionBankPage />} />
           <Route path="create-exam" element={<CreateExamPage />} />
             {/* <Route path="content" element={<ManageContentPage />} /> */}
-            {/* <Route path="grading" element={<GradingPage />} />
-            <Route path="analytics" element={<AnalyticsPage />} /> */}
+            <Route path="grading" element={<GradingPage />} />
+          <Route path="grading/:submissionId" element={<GradeSubmissionPage />} />
+            <Route path="analytics" element={<ClassAnalyticsPage />} />
 
         </Route>
 

@@ -81,9 +81,9 @@ const CreateExamPage: React.FC = () => {
                 {/* Right: Exam Builder */}
                 <div>
                     <h2 className="text-xl font-semibold mb-4">Exam Builder</h2>
-                    <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <Input placeholder="Exam Title" className="mb-4" />
-                        <Input type="number" placeholder="Duration (in minutes)" className="mb-4" />
+                    <div className="bg-white p-4 rounded-lg shadow-sm flex flex-col gap-3">
+                        <Input placeholder="Exam Title"  />
+                        <Input type="number" placeholder="Duration (in minutes)"  />
                         <div className="border p-2 rounded-md min-h-[450px]">
                             {selectedQuestions.map((q, i) => (
                                 <DraggableQuestion key={q.id} index={i} question={q} moveQuestion={moveQuestion} />
