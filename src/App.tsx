@@ -47,6 +47,13 @@ import GradingPage from "./pages/teachers/GradingPage";
 import ClassAnalyticsPage from "./pages/teachers/ClassAnalyticsPage";
 import GradeSubmissionPage from "./pages/teachers/GradeSubmissionPage";
 
+// --- Parent Imports ---
+import ParentLayout from "./layout/parents/ParentLayout";
+import ParentDashboardPage from "./pages/parents/ParentDashboardPage";
+import LinkStudentPage from "./pages/parents/LinkStudentPage";
+import StudentDetailPage from "./pages/parents/StudentDetailPage";
+import ParentBillingPage from "./pages/parents/ParentBillingPage";
+
 // Layout Wrapper for common UI elements
 const Layout = () => (
   <div className="flex flex-col min-h-screen">
@@ -105,18 +112,26 @@ function App() {
         </Route>
 
         {/* Teacher routes with TeacherLayout */}
-        <Route path="/teacher" element={<TeacherLayout />} >
-          <Route path="dashboard" element={<ProtectedRoute roles={['teacher']}><TeacherDashboardPage /></ProtectedRoute>} />
+        <Route path="/teacher" element={<ProtectedRoute roles={['teacher']}><TeacherLayout /></ProtectedRoute>} >
+          <Route path="dashboard" element={<TeacherDashboardPage />} />
           {/* Các routes khác của Teacher sẽ được thêm vào đây */}
           <Route path="classes" element={<MyClassesPage />} />
           <Route path="classes/:classId" element={<ClassroomDetailPage />} />
           <Route path="question-bank" element={<QuestionBankPage />} />
           <Route path="create-exam" element={<CreateExamPage />} />
-            {/* <Route path="content" element={<ManageContentPage />} /> */}
-            <Route path="grading" element={<GradingPage />} />
+          {/* <Route path="content" element={<ManageContentPage />} /> */}
+          <Route path="grading" element={<GradingPage />} />
           <Route path="grading/:submissionId" element={<GradeSubmissionPage />} />
-            <Route path="analytics" element={<ClassAnalyticsPage />} />
+          <Route path="analytics" element={<ClassAnalyticsPage />} />
 
+        </Route>
+
+        {/* Parent routes with ParentLayout */}
+        <Route path="/parent" element={<ProtectedRoute roles={['parent']}><ParentLayout /></ProtectedRoute>} >
+          <Route path="dashboard" element={<ParentDashboardPage />} />
+          <Route path="link-student" element={<LinkStudentPage />} />
+          <Route path="student/:studentId" element={<StudentDetailPage />} />
+          <Route path="billing" element={<ParentBillingPage />} />
         </Route>
 
       </Routes>
