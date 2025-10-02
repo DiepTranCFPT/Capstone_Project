@@ -1,5 +1,5 @@
 import type { QuestionBankItem } from "~/types/test";
-import type { StudentSubmission } from "~/types/teacher";
+import type { StudentSubmission, Teacher } from "~/types/teacher";
 
 export const mockQuestionBank: QuestionBankItem[] = [
     {
@@ -110,3 +110,14 @@ export const mockSubmissions: StudentSubmission[] = [
     },
 ];
 
+export const teachers: Teacher[] = [
+  {
+    id: "T001",
+    fullName: "John Smith",
+    email: "john@ap.edu",
+    subject: "Math, Physics",
+    coursesAssigned: "3 Courses",
+    status: "Active",
+    createdAt: "2025-01-10",
+  },
+];

@@ -21,7 +21,7 @@ const AdminSidebar: React.FC = () => {
     { key: "/admin/parents", label: "Parents", icon: <UserOutlined /> },
     { key: "/admin/students", label: "Students", icon: <TeamOutlined /> },
     { key: "/admin/mock-tests", label: "Mock Tests", icon: <SolutionOutlined /> },
-    { key: "/teachers", label: "Teacher", icon: <UserOutlined /> },
+    { key: "/admin/teachers", label: "Teacher", icon: <UserOutlined /> },
     { key: "/certificates", label: "Certificates & Ranking", icon: <TrophyOutlined /> },
     { key: "/subscriptions", label: "Subscriptions & Payments", icon: <DollarOutlined /> },
     { key: "/settings", label: "Settings", icon: <SettingOutlined /> },
