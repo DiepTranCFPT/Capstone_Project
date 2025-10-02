@@ -53,6 +53,7 @@ import ParentDashboardPage from "./pages/parents/ParentDashboardPage";
 import LinkStudentPage from "./pages/parents/LinkStudentPage";
 import StudentDetailPage from "./pages/parents/StudentDetailPage";
 import ParentBillingPage from "./pages/parents/ParentBillingPage";
+import TeacherManagerPage from "./pages/admins/TeacherManagerPage";
 
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -82,6 +83,7 @@ function App() {
           <Route path="courses" element={<CourseManagerPage />} />
           <Route path="students" element={<StudentMangerPage />} />
           <Route path="mock-tests" element={<MockTestManagerPage />} />
+          <Route path="teachers" element={<TeacherManagerPage />} />
         </Route>
 
         {/* Main routes with Layout */}

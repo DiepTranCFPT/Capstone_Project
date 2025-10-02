@@ -41,3 +41,13 @@ export interface StudentInClass {
     overallProgress: number;
     lastActive: string;
 }
+
+export interface Teacher {
+  id: string;
+  fullName: string;
+  email: string;
+  subject: string;
+  coursesAssigned: string;
+  status: "Active" | "Inactive";
+  createdAt: string;
+}
