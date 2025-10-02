@@ -34,6 +34,7 @@ import ParentManagerPage from "./pages/admins/ParentManagerPage";
 import CourseManagerPage from "./pages/admins/CourseManagerPage";
 import StudentMangerPage from "./pages/admins/StudentMangerPage";
 import MockTestManagerPage from "./pages/admins/MockTestManagerPage";
+import TeacherManagerPage from "./pages/admins/TeacherManagerPage";
 
 // --- Teacher Imports ---
 import TeacherLayout from "./layout/teachers/TeacherLayout";
@@ -53,7 +54,7 @@ import ParentDashboardPage from "./pages/parents/ParentDashboardPage";
 import LinkStudentPage from "./pages/parents/LinkStudentPage";
 import StudentDetailPage from "./pages/parents/StudentDetailPage";
 import ParentBillingPage from "./pages/parents/ParentBillingPage";
-import TeacherManagerPage from "./pages/admins/TeacherManagerPage";
+import CertificatesRankingManagerPage from "./pages/admins/CertificatesRankingManagerPage";
 
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -84,6 +85,7 @@ function App() {
           <Route path="students" element={<StudentMangerPage />} />
           <Route path="mock-tests" element={<MockTestManagerPage />} />
           <Route path="teachers" element={<TeacherManagerPage />} />
+          <Route path="certificates" element={<CertificatesRankingManagerPage />} />
         </Route>
 
         {/* Main routes with Layout */}
