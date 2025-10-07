@@ -1,70 +1,26 @@
-name: Build & Deploy (Vite → FTP)
+name: Deploy Vite App
 
 on:
   push:
-    branches: [ main ]              # chạy khi push lên main
-  workflow_dispatch:                # cho phép chạy tay
-
-permissions:
-  contents: read
-
-concurrency:
-  group: deploy-prod
-  cancel-in-progress: true          # tránh 2 job đè nhau
+    branches: [ main ]
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'              # bật cache node_modules
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build Vite app
-        env:
-          # nếu có biến môi trường build, đặt ở repo variables: VITE_API_URL,...
-          # VITE_API_URL: ${{ vars.VITE_API_URL }}
-          NODE_OPTIONS: --max_old_space_size=4096
-        run: npm run build
-
-      - name: Upload artifact (dist)
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist
-          if-no-files-found: error
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist
+      - run: npm ci
+      - run: npm run build
 
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}        # ví dụ: sndkgtu7c8.tenten.vn
-          username: ${{ secrets.FTP_USERNAME }}    # ví dụ: deploy@sndkgtu7c8.tenten.vn
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}            # 21 cho FTP
+          port: ${{ secrets.FTP_PORT }}
           local-dir: dist/
-          server-dir: /public_html/                # hoặc /public_html/myapp/
-          # tuỳ chọn an toàn:
-          # exclude: |
-          #   **/.git*
-          #   **/.DS_Store
-          #   **/node_modules/**
-          #   **/README.md
-          # dangerous-clean-slate: true            # xóa sạch thư mục đích trước khi upload
+          server-dir: /public_html/   
