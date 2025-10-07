@@ -50,4 +50,5 @@ export interface Teacher {
   coursesAssigned: string;
   status: "Active" | "Inactive";
   createdAt: string;
+  avatarUrl?: string;
 }
