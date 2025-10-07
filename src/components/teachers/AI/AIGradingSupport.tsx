@@ -1,11 +1,12 @@
 import { Card, Tag } from "antd";
 import React from "react";
 import { BulbOutlined } from '@ant-design/icons';
-interface AIGradingSupportProps {
-    studentAnswer: string
-}
+// interface AIGradingSupportProps {
+//     studentAnswer: string
+// }
 
-const AIGradingSupport: React.FC<AIGradingSupportProps> = ({ studentAnswer }) => {
+// const AIGradingSupport: React.FC<AIGradingSupportProps> = ({ studentAnswer }) => {
+const AIGradingSupport: React.FC = () => {
     // In a real app, this would be a result of an API call analyzing studentAnswer
     const aiAnalysis = {
         suggestedScore: 85,

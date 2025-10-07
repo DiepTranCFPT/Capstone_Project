@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
+// import { useParams } from 'react-router-dom';
 import { Card, Descriptions, Tabs } from 'antd';
 import DetailedReport from '~/components/parents/DetailedReport';
 import { studentReportData } from '~/data/studentReportData';
@@ -7,7 +7,7 @@ import { studentReportData } from '~/data/studentReportData';
 const { TabPane } = Tabs;
 
 const StudentDetailPage: React.FC = () => {
-  const { studentId } = useParams<{ studentId: string }>();
+  // const { studentId } = useParams<{ studentId: string }>();
 
   // In a real application, you would fetch data based on studentId
   // For now, we use the mock data
