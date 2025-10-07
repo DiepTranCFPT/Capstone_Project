@@ -1,26 +1,54 @@
-name: Deploy Vite App
+name: Build & Deploy (Vite → SFTP rsync)
 
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: true
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm ci
-      - run: npm run build
+          cache: 'npm'
 
-      - name: Deploy via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
-          local-dir: dist/
-          server-dir: /public_html/   
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Vite app
+        run: npm run build
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
+
+      - name: Install rsync & ssh
+        run: sudo apt-get update && sudo apt-get install -y rsync openssh-client
+
+      - name: Setup SSH key with passphrase
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          eval "$(ssh-agent -s)"
+          echo "$SSH_PASSPHRASE" | ssh-add ~/.ssh/id_rsa
+          printf "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+
+      - name: Deploy dist → Hosting
+        run: |
+          rsync -avz --delete dist/ \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.REMOTE_PATH }}
