@@ -6,6 +6,7 @@ interface AIGradingSupportProps {
 }
 
 const AIGradingSupport: React.FC<AIGradingSupportProps> = ({ studentAnswer }) => {
+
     // In a real app, this would be a result of an API call analyzing studentAnswer
     const aiAnalysis = {
         suggestedScore: 85,
@@ -29,6 +30,7 @@ const AIGradingSupport: React.FC<AIGradingSupportProps> = ({ studentAnswer }) =>
             bordered={false}
             className="bg-blue-50"
         >
+            <p className="text-xs text-gray-500 mb-2">Student Answer: {studentAnswer}</p>
             <p className="font-semibold">Suggested Score: <Tag color="blue">{aiAnalysis.suggestedScore}</Tag></p>
             <div className="mt-4">
                 <p className="font-semibold text-green-700">Positive Points:</p>
