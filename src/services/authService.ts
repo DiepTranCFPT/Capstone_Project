@@ -1,81 +1,138 @@
 
-import type { AuthResponse } from "~/types/auth";
-import users from "~/data/user"; // Import the mock user data
+import type { AuthResponse, LoginApiResponse, JwtPayload } from "~/types/auth";
+import axios from "../configs/axios";
+
+// Helper function to decode JWT token
+const decodeJWT = (token: string): JwtPayload | null => {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+    } catch (error) {
+        console.error('Error decoding JWT token:', error);
+        return null;
+    }
+};
+
+// Helper function to map API roles to User role type
+const mapRolesToUserRole = (roles: string[]): 'STUDENT' | 'TEACHER' | 'ADMIN' | 'TUTOR' | 'PARENT' => {
+    if (roles.includes('ADMIN')) return 'ADMIN';
+    if (roles.includes('TEACHER')) return 'TEACHER';
+    if (roles.includes('TUTOR')) return 'TUTOR';
+    if (roles.includes('PARENT')) return 'PARENT';
+    return 'STUDENT'; // default to student
+};
 
 export const loginApi = async (email: string, password: string): Promise<AuthResponse> => {
-    console.log('Call login API with: ', { email, password });
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const foundUser = users.find(user => user.email === email && user.password === password);
+    try {
+        const response = await axios.post<LoginApiResponse>('/auth/token', { email, password });
 
-            if (foundUser) {
-                // Simulate a successful login
-                resolve({
-                    user: {
-                        id: foundUser.id,
-                        name: foundUser.name,
-                        email: foundUser.email,
-                        avatar: foundUser.avatar,
-                        role: foundUser.role as AuthResponse['user']['role'],
-                        tokenBalance: foundUser.tokenBalance
-                    },
-                    token: 'fake-jwt-token', // In a real app, this would be a generated JWT
-                });
-            } else {
-                // Simulate a failed login
-                reject(new Error('Invalid email or password'));
-            }
-        }, 1000);
-    });
+        if (response.data.code !== 1000 && response.data.code !== 0) {
+            throw new Error(response.data.message || 'Login failed');
+        }
+
+        const { token, authenticated, roles } = response.data.data;
+
+        if (!authenticated || !token) {
+            throw new Error('Authentication failed');
+        }
+
+        // Decode token to get user data
+        const decodedToken = decodeJWT(token);
+
+        if (!decodedToken) {
+            throw new Error('Invalid token format');
+        }
+
+        // Extract user data from token
+        const user = {
+            id: decodedToken.userId || decodedToken.id || 0,
+            firstName: decodedToken.firstName || '',
+            lastName: decodedToken.lastName || '',
+            email: decodedToken.email || email,
+            imgUrl: decodedToken.imgUrl || decodedToken.avatar || '',
+            dob: decodedToken.dob ? new Date(decodedToken.dob) : new Date(),
+            role: mapRolesToUserRole(roles),
+            tokenBalance: decodedToken.tokenBalance || 0,
+        };
+
+        return { user, token };
+    } catch {
+        // if (error instanceof Error) {
+        //     throw error;
+        // }
+        throw new Error('Email or password is incorrect');
+    }
 };
 
-export const registerApi = async (name: string, email: string, password: string): Promise<AuthResponse> => {
-    console.log('Call register API with: ', { name, email, password });
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            // In a real application, you would save the new user to a database.
-            // For this mock, we'll just simulate a successful registration
-            // and return a generic student user.
-            const newUser = {
-                id: users.length + 1, // Simple ID generation
-                name,
-                email,
-                password, // In a real app, password would be hashed
-                avatar: 'https://i.pravatar.cc/150?img=new',
-                role: 'student' as const, // Default role for new registrations
-                tokenBalance: 50,
-            };
-            users.push(newUser); // Add new user to mock data
-
-            resolve({
-                user: {
-                    id: newUser.id,
-                    name: newUser.name,
-                    email: newUser.email,
-                    avatar: newUser.avatar,
-                    role: newUser.role,
-                    tokenBalance: newUser.tokenBalance
-                },
-                token: 'fake-jwt-token-register',
-            });
-        }, 1000);
-    });
+/**
+ * Gửi authorization code nhận được từ Google về backend để xác thực.
+ * @param code The authorization code from Google.
+ * @returns AuthResponse containing the system's JWT and user info.
+ */
+export const googleLoginApi = async (code: string): Promise<AuthResponse> => {
+    try {
+        // Endpoint yêu cầu `code` là một query parameter
+        const response = await axios.post<AuthResponse>(`/auth/outbound/authentication?code=${code}`);
+        return response.data;
+    } catch {
+        throw new Error('Google authentication failed');
+    }
 };
 
-export const forgotPasswordApi = async (email: string): Promise<{ message: string }> => {
-    console.log('Call forgot password API with: ', { email });
-    return new Promise((resolve) => { // Added _ to indicate unused parameter
-        setTimeout(() => {
-            resolve({ message: 'Password reset link sent to your email' });
-        }, 1000);
-    });
+export const registerApi = async (email: string, password: string, firstName: string, lastName: string, dob: Date): Promise<AuthResponse> => {
+    try {
+        const response = await axios.post<AuthResponse>('/users', { email, password, firstName, lastName, dob });
+        return response.data;
+    } catch {
+        throw new Error('Registration failed');
+    }
 };
 
-export const resetPasswordApi = async (token: string, password: string): Promise<{ message: string }> => {
-    console.log('Call reset password API with: ', { token, password });
-    return new Promise((resolve) => { // Added _ to indicate unused parameter
-        setTimeout(() => {
-            resolve({ message: 'Password has been reset successfully' });
-        }, 1000);
-    });
+export const forgotPasswordApi = async (email: string): Promise<AuthResponse> => {
+    try {
+        const response = await axios.post<AuthResponse>('/auth/forgot-password', { email });
+        return response.data;
+    } catch {
+        throw new Error('Password reset failed');
+    }
+};
+
+export const changePasswordApi = async (currentPassword: string, newPassword: string, token: string): Promise<AuthResponse> => {
+    try {
+        const response = await axios.post<AuthResponse>('/auth/change-password', { currentPassword, newPassword, token });
+        return response.data;
+    } catch {
+        throw new Error('Password reset failed');
+    }
+};
+
+export const verifyEmailApi = async (email: string, token: string): Promise<AuthResponse> => {
+    try {
+        const response = await axios.post<AuthResponse>('auth/verify-email', { email, token });
+        return response.data;
+    } catch {
+        throw new Error('Email verification failed');
+    }
+};
+
+export const verifyOtpApi = async (email: string, otp: string, newPassword: string): Promise<AuthResponse> => {
+    try {
+        const response = await axios.post<AuthResponse>('auth/verify-otp', { email, otp, newPassword });
+        return response.data;
+    } catch {
+        throw new Error('OTP verification failed');
+    }
+};
+
+export const refreshTokenApi = async (token: string): Promise<AuthResponse> => {
+    try {
+        const response = await axios.post<AuthResponse>('auth/refresh-token', { token });
+        return response.data;
+    } catch {
+        throw new Error('Token refresh failed');
+    }
 };

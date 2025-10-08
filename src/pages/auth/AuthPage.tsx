@@ -1,17 +1,33 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import LoginForm from "~/components/auth/LoginForm";
 import RegisterForm from "~/components/auth/RegisterForm";
+import { FaEnvelope } from "react-icons/fa";
 
 // Import hình ảnh (bạn cần thay thế bằng hình ảnh thực tế trong project)
-import log from "/signin.svg"; 
+import log from "/signin.svg";
 import register from "/signup.svg";
 
 const AuthPage: React.FC = () => {
     const [isSignUpMode, setIsSignUpMode] = useState<boolean>(false);
+    const [showVerificationPending, setShowVerificationPending] = useState<boolean>(false);
+    const [searchParams] = useSearchParams();
+
+    useEffect(() => {
+        const verification = searchParams.get('verification');
+        if (verification === 'pending') {
+            setShowVerificationPending(true);
+        }
+    }, [searchParams]);
 
     const toggleSignUpMode = () => {
         setIsSignUpMode(!isSignUpMode);
+        setShowVerificationPending(false); // Hide verification message when switching modes
+    };
+
+    const closeVerificationMessage = () => {
+        setShowVerificationPending(false);
     };
 
     // Common button styles
@@ -106,15 +122,14 @@ const AuthPage: React.FC = () => {
                         </button>
                     </div>
                     <img
-            src={log}
-            className={`  max-md:hidden max-lg:translate-y-[-40px] w-[200px] h-[60%] lg:w-full transition-transform 
-              duration-[0.9s] lg:duration-[1.1s] ease-[ease-in-out] delay-[0.6s] lg:delay-[0.4s] ${
-              isSignUpMode
-                ? "lg:translate-x-[-800px]   max-lg:translate-y-[-300px]"
-                : ""
-            }`}
-            alt="login"
-          />
+                        src={log}
+                        className={`  max-md:hidden max-lg:translate-y-[-40px] w-[200px] h-[60%] lg:w-full transition-transform 
+              duration-[0.9s] lg:duration-[1.1s] ease-[ease-in-out] delay-[0.6s] lg:delay-[0.4s] ${isSignUpMode
+                                ? "lg:translate-x-[-800px]   max-lg:translate-y-[-300px]"
+                                : ""
+                            }`}
+                        alt="login"
+                    />
                 </div>
                 <div
                     className={`flex flex-row   max-lg:row-start-3 max-lg:row-end-4 lg:flex-col items-center lg:items-end 
@@ -146,17 +161,48 @@ const AuthPage: React.FC = () => {
                         </button>
                     </div>
                     <img
-            src={register}
-            className={`  max-md:hidden w-[200px] lg:w-full transition-transform duration-[0.9s] 
-              lg:duration-[1.1s] ease-[ease-in-out] delay-[0.6s] lg:delay-[0.4s] ${
-              isSignUpMode
-                ? ""
-                : "lg:translate-x-[800px]  max-lg:translate-y-[300px]"
-            }`}
-            alt="register"
-          />
+                        src={register}
+                        className={`  max-md:hidden w-[200px] lg:w-full transition-transform duration-[0.9s] 
+              lg:duration-[1.1s] ease-[ease-in-out] delay-[0.6s] lg:delay-[0.4s] ${isSignUpMode
+                                ? ""
+                                : "lg:translate-x-[800px]  max-lg:translate-y-[300px]"
+                            }`}
+                        alt="register"
+                    />
                 </div>
             </div>
+
+            {/* Email Verification Pending Modal */}
+            {showVerificationPending && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+                        <div className="flex flex-col items-center text-center">
+                            <FaEnvelope className="text-6xl text-blue-500 mb-4" />
+                            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                                Check Your Email
+                            </h2>
+                            <p className="text-gray-600 mb-6">
+                                We've sent a verification link to your email address.
+                                Please check your inbox and click the link to verify your account.
+                            </p>
+                            <div className="flex gap-3 w-full">
+                                <button
+                                    onClick={closeVerificationMessage}
+                                    className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                                >
+                                    Close
+                                </button>
+                                <button
+                                    onClick={() => window.location.href = '/auth'}
+                                    className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                                >
+                                    Go to Login
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

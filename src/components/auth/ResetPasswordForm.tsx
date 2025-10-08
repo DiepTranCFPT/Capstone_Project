@@ -6,27 +6,29 @@ import { useState } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const ResetPasswordSchema = Yup.object().shape({
-    password: Yup.string().min(6, 'Password must be at least 6 characters').required('Required'),
+    currentPassword: Yup.string().min(6, 'Password must be at least 6 characters').required('Required'),
+    newPassword: Yup.string().min(6, 'Password must be at least 6 characters').required('Required'),
     confirmPassword: Yup.string()
         .oneOf([Yup.ref('password')], 'Passwords must match')
         .required('Required'),
 });
 
 const ResetPasswordForm = () => {
-    const { resetPassword } = useAuth();
+    const { changePassword } = useAuth();
     const { token } = useParams();
-    const [showPassword, setShowPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100">
             <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
                 <h2 className="text-2xl font-bold text-center">Reset Password</h2>
                 <Formik
-                    initialValues={{ password: '', confirmPassword: '' }}
+                    initialValues={{ currentPassword: '', newPassword: '', confirmPassword: '' }}
                     validationSchema={ResetPasswordSchema}
                     onSubmit={(values, { setSubmitting }) => {
                         if (token) {
-                            resetPassword(token, values.password);
+                            changePassword(token, values.currentPassword, values.newPassword);
                         }
                         setSubmitting(false);
                     }}
@@ -34,26 +36,48 @@ const ResetPasswordForm = () => {
                     {({ isSubmitting }) => (
                         <Form className="space-y-6">
                             <div>
-                                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                                    New Password
+                                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
+                                    Current Password
                                 </label>
                                 <div className='relative'>
                                     <Field
-                                        name="password"
-                                        type={showPassword ? "text" : "password"}
+                                        name="currentPassword"
+                                        type={showCurrentPassword ? "text" : "currentPassword"}
                                         className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm hover:border-backgroundColor"
                                         placeholder="••••••••"
                                     />
                                     <button
                                         type="button"
                                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-xs"
-                                        onClick={() => setShowPassword((prev) => !prev)}
+                                        onClick={() => setShowCurrentPassword((prev) => !prev)}
                                         tabIndex={-1}
                                     >
-                                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                        {showCurrentPassword ? <FaEyeSlash /> : <FaEye />}
                                     </button>
                                 </div>
-                                <ErrorMessage name="password" component="div" className="mt-1 text-sm text-red-600 italic" />
+                                <ErrorMessage name="currentPassword" component="div" className="mt-1 text-sm text-red-600 italic" />
+                            </div>
+                            <div>
+                                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
+                                    New Password
+                                </label>
+                                <div className='relative'>
+                                    <Field
+                                        name="newPassword"
+                                        type={showNewPassword ? "text" : "password"}
+                                        className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm hover:border-backgroundColor"
+                                        placeholder="••••••••"
+                                    />
+                                    <button
+                                        type="button"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-xs"
+                                        onClick={() => setShowNewPassword((prev) => !prev)}
+                                        tabIndex={-1}
+                                    >
+                                        {showNewPassword ? <FaEyeSlash /> : <FaEye />}
+                                    </button>
+                                </div>
+                                <ErrorMessage name="newPassword" component="div" className="mt-1 text-sm text-red-600 italic" />
                             </div>
                             <div>
                                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
