@@ -42,9 +42,9 @@ const GradeSubmissionPage: React.FC = () => {
                 <div>
                     <Card>
                         <div className="flex items-center gap-3 mb-4">
-                            <Avatar src={submission.student.avatar} size="large" />
+                            <Avatar src={submission.student.imgUrl} size="large" />
                             <div>
-                                <p className="font-semibold">{submission.student.name}</p>
+                                <p className="font-semibold">{submission.student.firstName}</p>
                                 <p className="text-sm text-gray-500">{submission.exam.title}</p>
                             </div>
                         </div>

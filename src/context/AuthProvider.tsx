@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { forgotPasswordApi, loginApi, registerApi, resetPasswordApi } from "~/services/authService";
+import { forgotPasswordApi, loginApi, registerApi, changePasswordApi, verifyEmailApi, verifyOtpApi, refreshTokenApi, googleLoginApi } from "~/services/authService";
 import type { User } from "~/types/auth";
 import { AuthContext } from "./AuthContext";
 
@@ -16,11 +16,9 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     useEffect(() => {
         const initializeAuth = async () => {
             const storedToken = localStorage.getItem('token');
-            const storedUser = localStorage.getItem('user');
 
-            if (storedToken && storedUser) {
+            if (storedToken) {
                 setToken(storedToken);
-                setUser(JSON.parse(storedUser));
                 setIsAuthenticated(true);
             }
             setInitialLoading(false);
@@ -35,32 +33,66 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         setIsAuthenticated(true);
         setError(null);
         localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
     };
 
-    const login = async (email: string, password: string) => {
+    // Method to update auth state when tokens are refreshed by axios interceptors
+    const updateAuthFromStorage = () => {
+        const storedToken = localStorage.getItem('token');
+
+        if (storedToken) {
+            setToken(storedToken);
+            setIsAuthenticated(true);
+            setError(null);
+        }
+    };
+
+    const login = async (email: string, password: string): Promise<string | null> => {
         setLoading(true);
+        setError(null); // Clear previous errors
         try {
             const response = await loginApi(email, password);
             handleAuthResponse(response);
-            console.log(response)
+            console.log(response);
+            return null; // No error
         } catch (err: unknown) {
+            let errorMessage = 'Login failed';
             if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError('Login failed');
+                errorMessage = err.message;
             }
+            setError(errorMessage);
+            return errorMessage; // Return the error message
         } finally {
             setLoading(false);
         }
     };
 
-    const register = async (name: string, email: string, password: string) => {
+    const loginWithGoogle = async (code: string) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await registerApi(name, email, password);
+            const response = await googleLoginApi(code);
             handleAuthResponse(response);
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('Google login failed');
+            }
+            // Ném lỗi ra ngoài để component gọi nó có thể xử lý (ví dụ: điều hướng về trang lỗi)
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const register = async (email: string, password: string, firstName: string, lastName: string, dob: Date) => {
+        setLoading(true);
+        setError(null);
+        try {
+            await registerApi(email, password, firstName, lastName, dob);
+            // Don't automatically log in the user after registration
+            // They need to verify their email first
+            console.log('Registration successful. Please check your email for verification.');
         } catch (err: unknown) {
             if (err instanceof Error) {
                 setError(err.message);
@@ -89,11 +121,11 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         }
     };
 
-    const resetPassword = async (token: string, password: string) => {
+    const changePassword = async (currentPassword: string, newPassword: string, token: string) => {
         setLoading(true);
         setError(null);
         try {
-            await resetPasswordApi(token, password);
+            await changePasswordApi(currentPassword, newPassword, token);
             console.log('Password has been reset successfully');
         } catch (err: unknown) {
             if (err instanceof Error) {
@@ -106,12 +138,62 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         }
     };
 
+    const verifyEmail = async (email: string, token: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            await verifyEmailApi(email, token);
+            console.log('Email has been verified successfully');
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('Email verification failed');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const verifyOtp = async (email: string, otp: string, newPassword: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            await verifyOtpApi(email, otp, newPassword);
+            console.log('OTP has been verified successfully');
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('OTP verification failed');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const refreshToken = async (token: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await refreshTokenApi(token);
+            handleAuthResponse(response);
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('Token refresh failed');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const logout = () => {
         setUser(null);
         setToken(null);
         setIsAuthenticated(false);
         localStorage.removeItem('token');
-        localStorage.removeItem('user');
     };
 
     const spendTokens = (amount: number) => {
@@ -130,16 +212,22 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     return (
         <AuthContext.Provider
             value={{
+                handleAuthResponse,
+                updateAuthFromStorage,
                 user,
                 token,
                 isAuthenticated,
                 loading,
                 error,
                 login,
+                loginWithGoogle,
                 register,
                 logout,
                 forgotPassword,
-                resetPassword,
+                changePassword,
+                verifyEmail,
+                verifyOtp,
+                refreshToken,
                 initialLoading,
                 spendTokens,
             }}

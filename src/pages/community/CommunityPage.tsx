@@ -25,7 +25,7 @@ const CommunityPage: React.FC = () => {
     const [view, setView] = useState<'threads' | 'groups' | 'my-threads'>('threads'); // State để quản lý view
 
     const displayedThreads = view === 'my-threads'
-        ? threads.filter(thread => thread.user.name === user?.name)
+        ? threads.filter(thread => thread.user.name === user?.firstName + ' ' + user?.lastName)
         : threads;
 
 
@@ -33,7 +33,7 @@ const CommunityPage: React.FC = () => {
         if (user) {
             const newThread = {
                 id: threads.length + 1,
-                user: { name: user.name, avatar: user.avatar || 'https://i.pravatar.cc/150' },
+                user: { name: user.firstName + ' ' + user.lastName, avatar: user.imgUrl || 'https://i.pravatar.cc/150' },
                 content: values.content,
                 tags: values.tags.split(',').map(tag => tag.trim()).filter(Boolean),
                 likes: 0,
@@ -93,7 +93,7 @@ const CommunityPage: React.FC = () => {
                     <div className="col-span-1 lg:col-span-2 space-y-6">
                         {/* Create Post */}
                         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center gap-3">
-                            <img src={user?.avatar} alt="user" className="w-10 h-10 rounded-full" />
+                            <img src={user?.imgUrl} alt="user" className="w-10 h-10 rounded-full" />
                             {view === 'threads' ? (
                                 <>
                                     <div className="w-full bg-gray-100 rounded-full px-4 py-2 text-gray-500 cursor-pointer hover:bg-gray-200" onClick={() => setIsThreadModalVisible(true)}>
@@ -129,8 +129,8 @@ const CommunityPage: React.FC = () => {
                     {/* Col 3: Sidebar */}
                     <aside className="col-span-1 space-y-6 self-start sticky top-10">
                         <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200 text-center">
-                            <img src={user?.avatar} alt="user avatar" className="w-20 h-20 rounded-full mx-auto mb-3" />
-                            <h4 className="font-bold text-gray-800">{user?.name}</h4>
+                            <img src={user?.imgUrl} alt="user avatar" className="w-20 h-20 rounded-full mx-auto mb-3" />
+                            <h4 className="font-bold text-gray-800">{user?.firstName}</h4>
                             <div className="flex justify-around text-center my-4">
                                 <div><p className="font-bold text-lg">5,432</p><p className="text-xs text-gray-500">Posts</p></div>
                                 <div><p className="font-bold text-lg">39</p><p className="text-xs text-gray-500">Followers</p></div>

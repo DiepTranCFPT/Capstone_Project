@@ -16,7 +16,7 @@ const ThreadCard: React.FC<ThreadCardProps> = ({ thread }) => {
     const handleAddComment = () => {
         if (newComment.trim() && user) {
             console.log({
-                user: user.name,
+                user: user.firstName + " " + user.lastName,
                 text: newComment,
             });
             setNewComment("");
@@ -71,7 +71,7 @@ const ThreadCard: React.FC<ThreadCardProps> = ({ thread }) => {
             {showComments && (
                 <div className="mt-4">
                     <div className="flex items-start space-x-3">
-                        <img src={user?.avatar} alt="avatar" className="w-10 h-10 rounded-full" />
+                        <img src={user?.imgUrl} alt="avatar" className="w-10 h-10 rounded-full" />
                         <div className="flex-1">
                             <textarea
                                 value={newComment}

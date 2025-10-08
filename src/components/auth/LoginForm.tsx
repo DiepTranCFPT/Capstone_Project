@@ -4,11 +4,12 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
 import { useAuth } from '~/hooks/useAuth';
+import { toast, authMessages } from '~/components/common/Toast';
 import google from '/google-icon.svg';
 
 const LoginSchema = Yup.object().shape({
     email: Yup.string().email('Invalid email').required('Required'),
-    password: Yup.string().min(6, 'Password too short! - should be 6 chars minimum').required('Required'),
+    password: Yup.string().min(4, 'Password too short! - should be 6 chars minimum').required('Required'),
 });
 
 interface LoginFormProps {
@@ -17,32 +18,55 @@ interface LoginFormProps {
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ buttonClasses }) => {
-    const { login, user } = useAuth();
+    const { login, user, error: authError } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
+    const [serverError, setServerError] = useState<string | null>(null);
     const navigate = useNavigate();
 
     const handleSubmit = async (values: { email: string; password: string }) => {
-        await login(values.email, values.password);
+        setServerError(null);
+        const response = await login(values.email, values.password);
+        if (!response) {
+            
+            toast.success(authMessages.login.success);
+        } else {
+            setServerError(response);
+            toast.error(authMessages.login.error);
+        }
         // The user state will be updated by AuthProvider after successful login
+    };
+
+    const handleGoogleLogin = () => {
+        const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+        const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI;
+
+        // Các quyền bạn muốn yêu cầu từ người dùng
+        const scope = 'email profile openid';
+
+        // Tạo URL để chuyển hướng đến Google
+        const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+
+        // Chuyển hướng người dùng
+        window.location.href = googleAuthUrl;
     };
 
     // Redirect based on user role after successful login
     useEffect(() => {
         if (user) {
             switch (user.role) {
-                case 'student':
+                case 'STUDENT':
                     navigate('/');
                     break;
-                case 'teacher':
+                case 'TEACHER':
                     navigate('/teacher/dashboard');
                     break;
-                case 'admin':
-                    navigate('/admin/dashboard'); // Assuming an admin dashboard exists
+                case 'ADMIN':
+                    navigate('/admin'); // Assuming an admin dashboard exists
                     break;
-                case 'tutor':
+                case 'TUTOR':
                     navigate('/tutor/dashboard'); // Assuming a tutor dashboard exists
                     break;
-                case 'parent':
+                case 'PARENT':
                     navigate('/parent/dashboard'); // Assuming a parent dashboard exists
                     break;
                 default:
@@ -51,6 +75,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ buttonClasses }) => {
             }
         }
     }, [user, navigate]);
+
+    // Clear server error when authError changes (e.g., on successful login or new error)
+    useEffect(() => {
+        if (authError) {
+            setServerError(authError);
+        } else {
+            setServerError(null);
+        }
+    }, [authError]);
 
     return (
         <div className="w-full bg-white rounded-lg shadow-xl md:mt-0 sm:max-w-md xl:p-0 border border-gray-100">
@@ -65,13 +98,19 @@ const LoginForm: React.FC<LoginFormProps> = ({ buttonClasses }) => {
                 <Formik
                     initialValues={{ email: '', password: '' }}
                     validationSchema={LoginSchema}
-                    onSubmit={(values, { setSubmitting }) => {
-                        handleSubmit(values);
+                    onSubmit={async (values, { setSubmitting }) => {
                         setSubmitting(true);
+                        await handleSubmit(values);
+                        setSubmitting(false); // Set to false after handling the submission
                     }}
                 >
                     {({ isSubmitting }) => (
                         <Form className="space-y-5 md:space-y-6">
+                            {serverError && (
+                                <div className="text-red-500 text-sm text-center italic">
+                                    {serverError}
+                                </div>
+                            )}
                             <div className="relative">
                                 {/* Icon */}
                                 <Field
@@ -147,7 +186,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ buttonClasses }) => {
                     <div className="flex-grow h-px bg-gray-200" />
                 </div>
                 {/* Social buttons and other links */}
-                <div className='flex justify-center items-center gap-3 border border-gray-300 py-2.5 px-4 rounded-lg hover:cursor-pointer
+                <div
+                    onClick={handleGoogleLogin}
+                    className='flex justify-center items-center gap-3 border border-gray-300 py-2.5 px-4 rounded-lg hover:cursor-pointer
                  hover:scale-101 transform transition-all duration-200 hover:border-backgroundColor'>
                     <img src={google} alt="Google logo" width={30} />
                 </div>

@@ -2,12 +2,15 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { useState } from 'react';
 import * as Yup from 'yup';
 import { useAuth } from '~/hooks/useAuth';
+import { toast, authMessages } from '~/components/common/Toast';
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const RegisterSchema = Yup.object().shape({
-    name: Yup.string().min(2, 'Name too short! - should be 2 chars minimum').required('Required'),
+    firstName: Yup.string().min(2, 'Name too short! - should be 2 chars minimum').required('Required'),
+    lastName: Yup.string().min(2, 'Name too short! - should be 2 chars minimum').required('Required'),
     email: Yup.string().email('Invalid email').required('Required'),
     password: Yup.string().min(6, 'Password too short! - should be 6 chars minimum').required('Required'),
+    dob: Yup.date().required('Required'),
     confirmPassword: Yup.string().oneOf([Yup.ref('password')], 'Passwords must match').required('Required'),
 
 });
@@ -21,9 +24,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ buttonClasses }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    const handleSubmit = async (values: { name: string; email: string; password: string; confirmPassword: string }) => {
-        await register(values.name, values.email, values.password);
-        window.location.href = '/auth';
+    const handleSubmit = async (values: { firstName: string; lastName: string; email: string; password: string; dob: Date; confirmPassword: string }) => {
+        try {
+            await register(values.email, values.password, values.firstName, values.lastName, values.dob);
+            toast.success(authMessages.register.success);
+            // Redirect to email verification pending page instead of login
+            window.location.href = '/auth?verification=pending';
+        } catch {
+            toast.error(authMessages.register.error);
+        }
     };
 
     return (
@@ -36,7 +45,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ buttonClasses }) => {
                     </p>
                 </h1>
                 <Formik
-                    initialValues={{ name: '', email: '', password: '', confirmPassword: '' }}
+                    initialValues={{ firstName: '', lastName: '', dob: new Date(), email: '', password: '', confirmPassword: '' }}
                     validationSchema={RegisterSchema}
                     onSubmit={(values, { setSubmitting }) => {
                         handleSubmit(values);
@@ -46,16 +55,39 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ buttonClasses }) => {
                     {({ isSubmitting }) => (
                         <Form className="space-y-5 md:space-y-6">
                             <div>
-                                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                                    Name
+                                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                                    First Name
                                 </label>
                                 <Field
-                                    name="name"
+                                    name="firstName"
                                     type="text"
                                     className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="John Doe"
                                 />
-                                <ErrorMessage name="name" component="div" className="mt-1 text-sm text-red-600 italic" />
+                                <ErrorMessage name="firstName" component="div" className="mt-1 text-sm text-red-600 italic" />
+                            </div>
+                            <div>
+                                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                                    Lats Name
+                                </label>
+                                <Field
+                                    name="lastName"
+                                    type="text"
+                                    className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="John Doe"
+                                />
+                                <ErrorMessage name="lastName" component="div" className="mt-1 text-sm text-red-600 italic" />
+                            </div>
+                            <div>
+                                <label htmlFor="dob" className="block text-sm font-medium text-gray-700">
+                                    Day of Birth
+                                </label>
+                                <Field
+                                    name="dob"
+                                    type="date"
+                                    className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                />
+                                <ErrorMessage name="dob" component="div" className="mt-1 text-sm text-red-600 italic" />
                             </div>
                             <div>
                                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -119,7 +151,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ buttonClasses }) => {
                                         {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                                     </button>
                                 </div>
-                                <ErrorMessage name="confirmPassword"component="div" className="mt-1 text-sm text-red-600 italic"
+                                <ErrorMessage name="confirmPassword" component="div" className="mt-1 text-sm text-red-600 italic"
                                 />
                             </div>
 
@@ -144,7 +176,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ buttonClasses }) => {
                             </button>
                         </Form>
                     )}
-                </Formik>                
+                </Formik>
             </div>
         </div>
     );

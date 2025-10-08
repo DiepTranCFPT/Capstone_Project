@@ -7,12 +7,12 @@ export interface Classroom {
     subject: string;
     studentCount: number;
     coverImage: string;
-    classCode:string;
+    classCode: string;
 };
 
 export interface StudentSubmission {
     id: string;
-    student: Pick<User, 'id' | 'name' | 'avatar'>;
+    student: Pick<User, 'id' | 'firstName'| 'imgUrl' >;
     exam: Pick<Exam, 'id' | 'title' | "duration" | "level" | "parts" | "questions">;
     submittedAt: string;
     status: 'pending_grading' | 'graded';

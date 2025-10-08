@@ -67,8 +67,8 @@ const Navbar: React.FC = () => {
               <div className="flex items-center gap-2 cursor-pointer">
                 {user && (
                   <div className="flex items-center gap-2" onClick={toggleModal}>
-                    <span className="text-gray-800 text-sm font-semibold">{user.name}</span>
-                    <img src={user.avatar} className="w-10 h-10 rounded-full" />
+                    <span className="text-gray-800 text-sm font-semibold">{user.firstName} {user.lastName} </span>
+                    <img src={user.imgUrl} className="w-10 h-10 rounded-full" />
                   </div>
                 )}
               </div>
@@ -80,7 +80,7 @@ const Navbar: React.FC = () => {
           <div className="absolute top-20 right-18 bg-white border border-gray-300 rounded-md shadow-lg w-30 z-10">
             <ul className="flex flex-col">
               <li className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 rounded-md">
-                <Link to="/profile" className="flex items-center gap-2 w-full">
+                <Link to="/student/dashboard" className="flex items-center gap-2 w-full">
                   Profile <IoPersonCircleOutline />
                 </Link>
               </li>

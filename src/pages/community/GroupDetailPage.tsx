@@ -60,7 +60,7 @@ const GroupDetailPage: React.FC = () => {
                 <div className="space-y-6">
                     {/* Box tạo bài viết trong nhóm */}
                     <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center gap-3">
-                        <img src={user?.avatar} alt="user" className="w-10 h-10 rounded-full" />
+                        <img src={user?.imgUrl} alt="user" className="w-10 h-10 rounded-full" />
                         <div className="w-full bg-gray-100 rounded-full px-4 py-2 text-gray-500 cursor-pointer hover:bg-gray-200">
                             Bắt đầu một cuộc thảo luận trong {group.name}...
                         </div>

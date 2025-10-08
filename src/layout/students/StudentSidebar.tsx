@@ -120,13 +120,13 @@ export default function SidebarStudent() {
           <Link to="/student/profile">
             <Avatar
               size={collapsed ? 32 : 40}
-              src={currentUser.avatar}
+              src={currentUser.imgUrl}
               className="cursor-pointer"
             />
           </Link>
           {!collapsed && (
             <div>
-              <div className="text-sm font-semibold">{currentUser.name}</div>
+              <div className="text-sm font-semibold">{currentUser.firstName} {currentUser.lastName}</div> 
               <div className="text-[10px] text-gray-400">{currentUser.email}</div>
               <div className="flex items-center text-sm text-yellow-500">
                 <FaCoins className="mr-1" />

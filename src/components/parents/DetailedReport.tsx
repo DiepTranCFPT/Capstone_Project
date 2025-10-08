@@ -3,8 +3,21 @@ import { Card, Row, Col, Statistic, Button } from 'antd';
 // import { ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+interface ProgressDataPoint {
+  month: string;
+  score: number;
+}
+
 interface DetailedReportProps {
-  data: any; // Replace 'any' with a more specific type for student report data
+  data: {
+    overallPerformance: {
+      averageScore: number;
+      testsTaken: number;
+      quizzesTaken: number;
+      hoursStudied: number;
+    },
+    progressOverTime: ProgressDataPoint[];
+  };
 }
 
 const DetailedReport: React.FC<DetailedReportProps> = ({ data }) => {

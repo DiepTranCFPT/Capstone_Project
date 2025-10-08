@@ -48,10 +48,10 @@ const TeacherSidebar: React.FC = () => {
             {/* Profile */}
             {user && (
                 <div className={"p-4 border-b border-gray-200 flex flex-row items-center" + (collapsed ? " justify-center" : "")}>
-                    <Avatar size={collapsed ? 32 : 40} src={user.avatar} />
+                    <Avatar size={collapsed ? 32 : 40} src={user.imgUrl} />
                     {!collapsed && (
                         <div className='flex flex-col px-2'>
-                            <p className="font-semibold">{user.name}</p>
+                            <p className="font-semibold">{user.firstName}</p>
                             <p className="text-xs text-gray-500">{user.email}</p>
                         </div>
                     )}

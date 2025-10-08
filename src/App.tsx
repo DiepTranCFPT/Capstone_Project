@@ -55,6 +55,8 @@ import LinkStudentPage from "./pages/parents/LinkStudentPage";
 import StudentDetailPage from "./pages/parents/StudentDetailPage";
 import ParentBillingPage from "./pages/parents/ParentBillingPage";
 import CertificatesRankingManagerPage from "./pages/admins/CertificatesRankingManagerPage";
+import GoogleCallbackPage from "./components/auth/GoogleCallbackPage";
+import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
 
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -75,11 +77,13 @@ function App() {
         <Route path="/do-test/:examId/:testType" element={<DoTestPage />} />
         {/* Auth routes */}
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
         {/*Admin routes with AdminLayout */}
-        <Route path="/admin" element={<AdminLayout />}>
+        <Route path="/admin" element={<ProtectedRoute roles={['ADMIN']}><AdminLayout /></ProtectedRoute>}>
           <Route path="parents" element={<ParentManagerPage />} />
           <Route path="courses" element={<CourseManagerPage />} />
           <Route path="students" element={<StudentMangerPage />} />
@@ -89,7 +93,7 @@ function App() {
         </Route>
 
         {/* Main routes with Layout */}
-        <Route element={<Layout />}>
+        <Route element={<Layout />} >
           <Route path="/" element={<HomePages />} />
           <Route path="/exam-test" element={<ExamTestPage />} />
           <Route path="/exam-test/:examId" element={<ExamDetailsPage />} />
@@ -101,7 +105,7 @@ function App() {
         </Route>
 
         {/* Student routes with StudentLayout */}
-        <Route path="/student" element={<ProtectedRoute roles={['student']}><StudentLayout /></ProtectedRoute>}>
+        <Route path="/student" element={<ProtectedRoute roles={['STUDENT']}><StudentLayout /></ProtectedRoute>}>
           <Route path="dashboard" element={<StudentDashboardPage />} />
 
           <Route path="test-reports" element={<TestReportsPage />} />
@@ -116,7 +120,7 @@ function App() {
         </Route>
 
         {/* Teacher routes with TeacherLayout */}
-        <Route path="/teacher" element={<ProtectedRoute roles={['teacher']}><TeacherLayout /></ProtectedRoute>} >
+        <Route path="/teacher" element={<ProtectedRoute roles={['TEACHER']}><TeacherLayout /></ProtectedRoute>} >
           <Route path="dashboard" element={<TeacherDashboardPage />} />
           {/* Các routes khác của Teacher sẽ được thêm vào đây */}
           <Route path="classes" element={<MyClassesPage />} />
@@ -131,7 +135,7 @@ function App() {
         </Route>
 
         {/* Parent routes with ParentLayout */}
-        <Route path="/parent" element={<ProtectedRoute roles={['parent']}><ParentLayout /></ProtectedRoute>} >
+        <Route path="/parent" element={<ProtectedRoute roles={['PARENT']}><ParentLayout /></ProtectedRoute>} >
           <Route path="dashboard" element={<ParentDashboardPage />} />
           <Route path="link-student" element={<LinkStudentPage />} />
           <Route path="student/:studentId" element={<StudentDetailPage />} />
