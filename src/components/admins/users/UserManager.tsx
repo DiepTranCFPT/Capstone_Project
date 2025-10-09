@@ -10,7 +10,6 @@ import {
   Typography,
   Card,
   Popconfirm,
-  message,
 } from "antd";
 import { SearchOutlined, PlusOutlined } from "@ant-design/icons";
 import { RefreshCcw, Trash2 } from "lucide-react";
@@ -18,7 +17,6 @@ import { useUsers } from "~/hooks/useUsers";
 import type { User } from "~/types/user";
 import type { ColumnsType } from "antd/es/table";
 import UserFilter from "./UserFilter";
-
 
 const { Title } = Typography;
 
@@ -138,10 +136,7 @@ const UserManagement: React.FC = () => {
         <Popconfirm
           title="Xóa người dùng?"
           description={`Bạn có chắc muốn xóa ${record.firstName} ${record.lastName}?`}
-          onConfirm={async () => {
-            await handleDeleteUser(record.id);
-            message.success("Đã xóa người dùng");
-          }}
+          onConfirm={() => handleDeleteUser(record.id)} // chỉ cần gọi hàm
           okText="Xóa"
           cancelText="Hủy"
         >

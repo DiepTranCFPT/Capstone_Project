@@ -28,17 +28,21 @@ export const useUsers = () => {
       setLoading(false);
     }
   };
-
-  const handleDeleteUser = async (id: string) => {
-    try {
-      await UserService.deleteUser(id);
-      fetchUsers();
-    } catch (error) {
-      const err = error as unknown as { message?: string };
-      console.error("Failed to delete user:", err);
-      message.error("Xóa người dùng thất bại");
+const handleDeleteUser = async (id: string) => {
+  try {
+    const res = await UserService.deleteUser(id);
+    if (res?.code === 1000) {
+      message.success("Đã xóa người dùng");
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+      setTotal((prev) => prev - 1);
+    } else {
+      message.warning("Không thể xóa người dùng (mã phản hồi không hợp lệ)");
     }
-  };
+  } catch (error) {
+    console.error("Failed to delete user:", error);
+    message.error("Xóa người dùng thất bại");
+  }
+};
 
   useEffect(() => {
     fetchUsers();
