@@ -57,6 +57,7 @@ import ParentBillingPage from "./pages/parents/ParentBillingPage";
 import CertificatesRankingManagerPage from "./pages/admins/CertificatesRankingManagerPage";
 import GoogleCallbackPage from "./components/auth/GoogleCallbackPage";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
+import UserManager from "./components/admins/users/UserManager";
 
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -90,6 +91,7 @@ function App() {
           <Route path="mock-tests" element={<MockTestManagerPage />} />
           <Route path="teachers" element={<TeacherManagerPage />} />
           <Route path="certificates" element={<CertificatesRankingManagerPage />} />
+          <Route path="users" element={<UserManager />} />
         </Route>
 
         {/* Main routes with Layout */}

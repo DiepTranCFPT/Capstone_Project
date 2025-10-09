@@ -16,6 +16,7 @@ import {
 // Danh sách menu cho Admin
 const adminMenu = [
   { key: "/dashboard", label: "Dashboard", icon: <HomeOutlined /> },
+  { key: "/admin/users", label: "Users", icon: <UserOutlined /> },
   { key: "/admin/courses", label: "Courses", icon: <BookOutlined /> },
   { key: "/admin/parents", label: "Parents", icon: <UserOutlined /> },
   { key: "/admin/students", label: "Students", icon: <TeamOutlined /> },
