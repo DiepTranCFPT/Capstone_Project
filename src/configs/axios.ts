@@ -2,6 +2,10 @@ import axios from 'axios';
 import { refreshTokenApi } from '../services/authService';
 
 const API_URL = import.meta.env.VITE_API_URL;
+if (!API_URL) {
+    // eslint-disable-next-line no-console
+    console.warn('[Axios] VITE_API_URL is not defined. Requests will fail. Set it in your .env');
+}
 
 const axiosInstance = axios.create({
     baseURL: API_URL,
