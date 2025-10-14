@@ -1,5 +1,5 @@
 
-import type { AuthResponse, LoginApiResponse, JwtPayload } from "~/types/auth";
+import type { AuthResponse, LoginApiResponse, JwtPayload, User } from "~/types/auth";
 import axiosInstance, { publicAxios } from "../configs/axios";
 import axios from "axios";
 
@@ -357,5 +357,82 @@ export const refreshTokenApi = async (token: string): Promise<AuthResponse> => {
         }
 
         throw new Error('Token refresh failed');
+    }
+};
+
+/**
+ * Lấy thông tin profile của user hiện tại từ API /users/me
+ * @returns AuthResponse containing the user's profile information
+ */
+export const getCurrentUserApi = async (): Promise<AuthResponse> => {
+    try {
+
+        const response = await axiosInstance.get('/users/me');
+
+        // Check if response has the expected structure
+        if (response.data.code !== 1000) {
+            throw new Error(response.data.message || 'Failed to fetch user profile');
+        }
+
+        const userData = response.data.data;
+
+        if (!userData) {
+            throw new Error('Invalid user data received from API');
+        }
+
+        // Map API response to User object
+        const user: User = {
+            id: parseInt(userData.id) || 0,
+            firstName: userData.firstName || '',
+            lastName: userData.lastName || '',
+            email: userData.email || '',
+            imgUrl: userData.imgUrl || '',
+            dob: userData.dob ? new Date(userData.dob) : new Date(),
+            role: mapRolesToUserRole(userData.roles || []),
+            tokenBalance: userData.tokenBalance || 0,
+        };
+
+        return { user, token: '' }; // Token is already available from login
+    } catch (error: unknown) {
+        console.error('Get Current User API Error Details:', {
+            error,
+            response: axios.isAxiosError(error) ? error.response : undefined,
+            message: error instanceof Error ? error.message : 'Unknown error'
+        });
+
+        if (axios.isAxiosError(error) && error.response) {
+            const responseData = error.response.data;
+            console.error('Get Current User API: Backend error response', {
+                status: error.response.status,
+                data: responseData
+            });
+
+            if (responseData && responseData.message) {
+                throw new Error(responseData.message);
+            }
+            if (responseData && responseData.error) {
+                throw new Error(responseData.error);
+            }
+
+            // Handle specific errors for get current user
+            switch (error.response.status) {
+                case 401:
+                    throw new Error('Unauthorized access to user profile');
+                case 404:
+                    throw new Error('User profile not found');
+                case 429:
+                    throw new Error('Too many requests. Please try again later');
+                case 500:
+                    throw new Error('Server error. Please try again later');
+                default:
+                    throw new Error(`Failed to fetch user profile (${error.response.status})`);
+            }
+        }
+
+        if (error instanceof Error) {
+            throw error;
+        }
+
+        throw new Error('Network error. Please check your connection and try again');
     }
 };
