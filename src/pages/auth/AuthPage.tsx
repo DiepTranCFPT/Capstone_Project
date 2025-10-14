@@ -16,8 +16,17 @@ const AuthPage: React.FC = () => {
 
     useEffect(() => {
         const verification = searchParams.get('verification');
+        const error = searchParams.get('error');
+        const errorMessage = searchParams.get('message');
+
         if (verification === 'pending') {
             setShowVerificationPending(true);
+        }
+
+        // Handle Google login errors
+        if (error === 'google_auth_failed' && errorMessage) {
+            console.error('Google authentication failed:', decodeURIComponent(errorMessage));
+            // You can show error toast or modal here if needed
         }
     }, [searchParams]);
 

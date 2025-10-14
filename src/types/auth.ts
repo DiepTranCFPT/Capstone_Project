@@ -54,6 +54,7 @@ export interface AuthContextType {
     verifyEmail: (email: string, token: string) => Promise<void>;
     verifyOtp: (email: string, otp: string, newPassword: string) => Promise<void>;
     logout: () => void;
+    forceLogout: () => void;
     forgotPassword: (email: string) => Promise<void>;
     changePassword: (currentPassword: string, newPassword: string, token: string) => Promise<void>;
     refreshToken: (token: string) => Promise<void>;

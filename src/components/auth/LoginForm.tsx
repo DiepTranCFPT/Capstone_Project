@@ -18,33 +18,34 @@ interface LoginFormProps {
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ buttonClasses }) => {
-    const { login, user, error: authError } = useAuth();
+    const { login, user } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
-    const [serverError, setServerError] = useState<string | null>(null);
     const navigate = useNavigate();
 
     const handleSubmit = async (values: { email: string; password: string }) => {
-        setServerError(null);
         const response = await login(values.email, values.password);
         if (!response) {
-            
             toast.success(authMessages.login.success);
         } else {
-            setServerError(response);
+
             toast.error(authMessages.login.error);
         }
-        // The user state will be updated by AuthProvider after successful login
     };
 
     const handleGoogleLogin = () => {
-        const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-        const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI;
+        const OAuthConfig = {
+            redirectUri: import.meta.env.VITE_GOOGLE_REDIRECT_URI,
+            authUri: import.meta.env.VITE_AUTH_URI,
+            clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID
+        };
 
-        // Các quyền bạn muốn yêu cầu từ người dùng
-        const scope = 'email profile openid';
+        const callbackUrl = OAuthConfig.redirectUri;
+        const authUrl = OAuthConfig.authUri;
+        const googleClientId = OAuthConfig.clientId;
 
-        // Tạo URL để chuyển hướng đến Google
-        const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+        const googleAuthUrl = `${authUrl}?redirect_uri=${encodeURIComponent(
+            callbackUrl
+        )}&response_type=code&client_id=${googleClientId}&scope=openid%20email%20profile`;
 
         // Chuyển hướng người dùng
         window.location.href = googleAuthUrl;
@@ -76,14 +77,18 @@ const LoginForm: React.FC<LoginFormProps> = ({ buttonClasses }) => {
         }
     }, [user, navigate]);
 
-    // Clear server error when authError changes (e.g., on successful login or new error)
+    // Show Google login error if redirected from Google callback
     useEffect(() => {
-        if (authError) {
-            setServerError(authError);
-        } else {
-            setServerError(null);
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+        const errorMessage = urlParams.get('message');
+
+        if (error === 'google_auth_failed' && errorMessage) {
+            toast.error(decodeURIComponent(errorMessage));
+            // Clean URL after showing error
+            window.history.replaceState({}, document.title, window.location.pathname);
         }
-    }, [authError]);
+    }, []);
 
     return (
         <div className="w-full bg-white rounded-lg shadow-xl md:mt-0 sm:max-w-md xl:p-0 border border-gray-100">
@@ -106,11 +111,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ buttonClasses }) => {
                 >
                     {({ isSubmitting }) => (
                         <Form className="space-y-5 md:space-y-6">
-                            {serverError && (
-                                <div className="text-red-500 text-sm text-center italic">
-                                    {serverError}
-                                </div>
-                            )}
+
                             <div className="relative">
                                 {/* Icon */}
                                 <Field

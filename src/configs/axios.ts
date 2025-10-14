@@ -3,7 +3,19 @@ import { refreshTokenApi } from '../services/authService';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// Main axios instance with authentication interceptor
 const axiosInstance = axios.create({
+    baseURL: API_URL,
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    },
+    withCredentials: true,
+    timeout: 30000,
+});
+
+// Public axios instance without authentication (for public endpoints)
+export const publicAxios = axios.create({
     baseURL: API_URL,
     headers: {
         'Content-Type': 'application/json',
@@ -104,17 +116,28 @@ axiosInstance.interceptors.response.use(
                 // Clear stored auth data
                 localStorage.removeItem('token');
 
-                // Redirect to login page
-                window.location.href = '/auth';
+                // Log the refresh failure but don't redirect immediately
+                console.error('Token refresh failed:', refreshError);
+                console.log('Authentication failed - user needs to login again');
 
+                // Don't redirect immediately, let the application handle the error
+                // This prevents losing debug information and allows proper error handling
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
             }
         }
 
-        // For other errors, just log and reject
-        console.error('API Error:', error.response?.data || error.message);
+        // For other errors, log detailed error information and reject
+        console.error('API Error Details:', {
+            url: error.config?.url,
+            method: error.config?.method,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            message: error.message,
+            fullError: error
+        });
         return Promise.reject(error);
     }
 );
