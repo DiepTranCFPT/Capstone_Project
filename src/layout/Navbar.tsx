@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "~/hooks/useAuth";
 import { FaSignOutAlt } from "react-icons/fa";
@@ -7,6 +7,8 @@ import { IoPersonCircleOutline } from "react-icons/io5";
 const Navbar: React.FC = () => {
   const { isAuthenticated, logout, user, initialLoading } = useAuth();
   const [showModal, setShowModal] = useState<boolean>(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const toggleModal = () => {
     setShowModal(!showModal);
@@ -16,6 +18,29 @@ const Navbar: React.FC = () => {
     logout();
     setShowModal(false);
   };
+
+
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        dropdownRef.current && !dropdownRef.current.contains(target) &&
+        menuRef.current && !menuRef.current.contains(target)
+      ) {
+        setShowModal(false);
+      }
+    };
+
+    if (showModal) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showModal]);
 
   return (
     <header className="w-full h-28 bg-white flex items-center justify-between px-16 shadow">
@@ -63,33 +88,63 @@ const Navbar: React.FC = () => {
           </>
         ) : (
           <>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 cursor-pointer">
+            <div className="flex items-center gap-2" ref={dropdownRef}>
+              <div className="flex items-center gap-2 cursor-pointer relative group">
                 {user && (
-                  <div className="flex items-center gap-2" onClick={toggleModal}>
-                    <span className="text-gray-800 text-sm font-semibold">{user.firstName} {user.lastName} </span>
-                    <img src={user.imgUrl} className="w-10 h-10 rounded-full" />
+                  <div
+                    className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                    onClick={toggleModal}
+                  >
+                    <span className="text-gray-800 text-sm font-medium hidden sm:block">
+                      {user.firstName} {user.lastName}
+                    </span>
+                    <img
+                      src={user.imgUrl || 'https://placehold.co/50x50'}
+                      alt="User avatar"
+                      className="w-8 h-8 rounded-full object-cover border-2 border-gray-200"
+                    />
+
                   </div>
                 )}
               </div>
             </div>
           </>
         )}
-        {/* popup */}
+        {/* Enhanced Dropdown Menu */}
         {showModal && (
-          <div className="absolute top-20 right-18 bg-white border border-gray-300 rounded-md shadow-lg w-30 z-10">
-            <ul className="flex flex-col">
-              <li className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 rounded-md">
-                <Link to="/student/dashboard" className="flex items-center gap-2 w-full">
-                  Profile <IoPersonCircleOutline />
+          <div
+            ref={menuRef}
+            className="absolute top-20 right-4 bg-white border border-gray-200 rounded-lg shadow-xl w-48 z-[9999] animate-in fade-in-0 zoom-in-95 duration-200"
+          >
+            <div className="py-2">
+
+              {/* Menu Items */}
+              <div className="py-1">
+                <Link
+                  to="/student/dashboard"
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                  onClick={() => setShowModal(false)}
+                >
+                  <IoPersonCircleOutline className="w-4 h-4" />
+                  My Profile
                 </Link>
-              </li>
-              <li className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-red-500 hover:text-white">
-                <button onClick={handleLogout} className="flex items-center gap-2 w-full">
-                  Logout <FaSignOutAlt />
+
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-gray-100"></div>
+
+              {/* Logout */}
+              <div className="py-1">
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150 w-full text-left"
+                >
+                  <FaSignOutAlt className="w-4 h-4" />
+                  Sign Out
                 </button>
-              </li>
-            </ul>
+              </div>
+            </div>
           </div>
         )}
       </div>

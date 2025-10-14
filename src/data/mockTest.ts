@@ -1,8 +1,100 @@
 const mockMCQ = [
-    { id: 1, text: "The cat is sleeping ______ the table.", options: [{ id: 'a', text: 'on' }, { id: 'b', text: 'in' }, { id: 'c', text: 'at' }] },
-    { id: 2, text: "She _______ to the store every day.", options: [{ id: 'a', text: 'go' }, { id: 'b', text: 'goes' }, { id: 'c', text: 'is going' }] },
-    { id: 3, text: "I have been waiting for you _______ two hours.", options: [{ id: 'a', text: 'since' }, { id: 'b', text: 'for' }, { id: 'c', text: 'at' }] },
-    // Thêm nhiều câu hỏi ở đây
+    {
+        id: 1,
+        text: "The cat is sleeping ______ the table.",
+        options: [
+            { id: 'a', text: 'on' },
+            { id: 'b', text: 'in' },
+            { id: 'c', text: 'at' },
+            { id: 'd', text: 'under' }
+        ],
+        correctAnswer: 'a',
+        explanation: "The preposition 'on' is used to denote a position on a surface. The cat is on the surface of the table."
+    },
+    {
+        id: 2,
+        text: "She _______ to the store every day.",
+        options: [
+            { id: 'a', text: 'go' },
+            { id: 'b', text: 'goes' },
+            { id: 'c', text: 'is going' },
+            { id: 'd', text: 'went' }
+        ],
+        correctAnswer: 'b',
+        explanation: "For third-person singular subjects in the simple present tense, the verb ends with '-es'."
+    },
+    {
+        id: 3,
+        text: "I have been waiting for you _______ two hours.",
+        options: [
+            { id: 'a', text: 'since' },
+            { id: 'b', text: 'for' },
+            { id: 'c', text: 'at' },
+            { id: 'd', text: 'from' }
+        ],
+        correctAnswer: 'b',
+        explanation: "The preposition 'for' is used with periods of time, indicating duration."
+    },
+    {
+        id: 4,
+        text: "By the time we arrived, the movie _______ already started.",
+        options: [
+            { id: 'a', text: 'has' },
+            { id: 'b', text: 'had' },
+            { id: 'c', text: 'have' },
+            { id: 'd', text: 'was' }
+        ],
+        correctAnswer: 'b',
+        explanation: "This is an example of past perfect tense, used for an action completed before another action in the past."
+    },
+    {
+        id: 5,
+        text: "If I _______ you, I would apologize immediately.",
+        options: [
+            { id: 'a', text: 'am' },
+            { id: 'b', text: 'was' },
+            { id: 'c', text: 'were' },
+            { id: 'd', text: 'be' }
+        ],
+        correctAnswer: 'c',
+        explanation: "This is a hypothetical situation using the subjunctive mood 'were' instead of 'was'."
+    },
+    {
+        id: 6,
+        text: "The company _______ its best employees at the annual gala.",
+        options: [
+            { id: 'a', text: 'honor' },
+            { id: 'b', text: 'honors' },
+            { id: 'c', text: 'honoring' },
+            { id: 'd', text: 'honored' }
+        ],
+        correctAnswer: 'b',
+        explanation: "Third-person singular subjects take the '-s' form of the verb in simple present tense."
+    },
+    {
+        id: 7,
+        text: "Neither of the boys _______ admitted to breaking the window.",
+        options: [
+            { id: 'a', text: 'has' },
+            { id: 'b', text: 'have' },
+            { id: 'c', text: 'is' },
+            { id: 'd', text: 'are' }
+        ],
+        correctAnswer: 'a',
+        explanation: "'Neither' is singular and takes a singular verb. 'Neither of' requires 'has' not 'have'."
+    },
+    {
+        id: 8,
+        text: "The teacher asked if _______ understood the lesson.",
+        options: [
+            { id: 'a', text: 'someone' },
+            { id: 'b', text: 'anyone' },
+            { id: 'c', text: 'no one' },
+            { id: 'd', text: 'everyone' }
+        ],
+        correctAnswer: 'd',
+        explanation: "The sentence is in indirect speech and refers to all students, so 'everyone' is the correct choice."
+    }
 ];
 
 const mockFRQ = [

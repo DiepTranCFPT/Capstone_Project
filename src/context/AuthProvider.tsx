@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { forgotPasswordApi, loginApi, registerApi, changePasswordApi, verifyEmailApi, verifyOtpApi, refreshTokenApi, googleLoginApi } from "~/services/authService";
+import { forgotPasswordApi, loginApi, registerApi, changePasswordApi, verifyEmailApi, verifyOtpApi, refreshTokenApi, googleLoginApi, getCurrentUserApi } from "~/services/authService";
 import type { User } from "~/types/auth";
 import { AuthContext } from "./AuthContext";
 import { toast } from "~/components/common/Toast";
@@ -18,33 +18,95 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     useEffect(() => {
         const initializeAuth = async () => {
             const storedToken = localStorage.getItem('token');
+            const storedUser = localStorage.getItem('user');
 
             if (storedToken) {
                 setToken(storedToken);
                 setIsAuthenticated(true);
+
+                // Try to restore user data from localStorage first
+                if (storedUser) {
+                    try {
+                        const parsedUser = JSON.parse(storedUser);
+                        setUser(parsedUser);
+                        console.log('User data restored from localStorage');
+                    } catch (error) {
+                        console.error('Failed to parse stored user data:', error);
+                        // If parsing fails, try to fetch fresh data from API
+                        try {
+                            const userProfileResponse = await getCurrentUserApi();
+                            setUser(userProfileResponse.user);
+                            localStorage.setItem('user', JSON.stringify(userProfileResponse.user));
+                        } catch (apiError) {
+                            console.error('Failed to fetch user profile from API:', apiError);
+                        }
+                    }
+                } else {
+                    // No stored user data, fetch from API
+                    try {
+                        const userProfileResponse = await getCurrentUserApi();
+                        setUser(userProfileResponse.user);
+                        localStorage.setItem('user', JSON.stringify(userProfileResponse.user));
+                    } catch (error) {
+                        console.error('Failed to fetch user profile:', error);
+                    }
+                }
             }
             setInitialLoading(false);
         };
 
         initializeAuth();
-    }, []); const [loading, setLoading] = useState<boolean>(false);
+    }, []);
+
+    const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-    const handleAuthResponse = (response: { user: User, token: string }) => {
-        setUser(response.user);
+    const handleAuthResponse = async (response: { user: User, token: string }) => {
+        // Set initial auth state with token data
         setToken(response.token);
         setIsAuthenticated(true);
         setError(null);
         localStorage.setItem('token', response.token);
+
+        try {
+            // Fetch complete user profile from API /users/me
+            const userProfileResponse = await getCurrentUserApi();
+            // Update user state with complete profile data
+            setUser(userProfileResponse.user);
+            // Store user data in localStorage for persistence
+            localStorage.setItem('user', JSON.stringify(userProfileResponse.user));
+            console.log('User profile updated and stored in localStorage');
+        } catch (error) {
+            console.error('Failed to fetch user profile, using token data instead:', error);
+
+            // Fallback to token data if API call fails
+            setUser(response.user);
+            // Still store the fallback user data
+            localStorage.setItem('user', JSON.stringify(response.user));
+
+            // Show warning but don't block login
+            console.warn('Using user data from token due to API failure');
+        }
     };
 
     // Method to update auth state when tokens are refreshed by axios interceptors
     const updateAuthFromStorage = () => {
         const storedToken = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
 
         if (storedToken) {
             setToken(storedToken);
             setIsAuthenticated(true);
             setError(null);
+
+            // Restore user data if available
+            if (storedUser) {
+                try {
+                    const parsedUser = JSON.parse(storedUser);
+                    setUser(parsedUser);
+                } catch (error) {
+                    console.error('Failed to parse stored user data in updateAuthFromStorage:', error);
+                }
+            }
         }
     };
 
@@ -209,11 +271,14 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         setToken(null);
         setIsAuthenticated(false);
         localStorage.removeItem('token');
+        localStorage.removeItem('user'); // Also remove user data
     };
 
     // Enhanced logout for handling auth failures
     const forceLogout = () => {
         console.log('Forcing logout due to authentication failure');
+        // Clear localStorage manually before calling logout
+        localStorage.removeItem('user');
         logout();
         // Show a toast notification to inform user
         toast.error('Session expired. Please login again.');

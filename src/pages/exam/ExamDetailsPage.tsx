@@ -7,12 +7,13 @@ import { useParams } from 'react-router-dom';
 import PracticeTabContent from '~/components/exam/PracticeTabContent';
 import FullTestTabContent from '~/components/exam/FullTestTabContent';
 import Sidebar from '~/components/exam/SideBar';
+import { useAuth } from '~/hooks/useAuth';
 
 const ExamDetailsPage: React.FC = () => {
     // Lấy ID từ URL, ví dụ: /exam-test/1
     const { examId } = useParams();
     const [activeTab, setActiveTab] = useState<'practice' | 'fullTest'>('practice');
-
+    const { isAuthenticated } = useAuth();
 
     // Trong thực tế, bạn sẽ dùng examId để fetch dữ liệu từ API
     // Ở đây chúng ta dùng dữ liệu giả lập
@@ -74,7 +75,11 @@ const ExamDetailsPage: React.FC = () => {
                     </div>
 
                     {/* Right Sidebar */}
-                    <Sidebar />
+                    {isAuthenticated && (
+                        <Sidebar />
+                    )
+                    }
+
                 </div>
             </main>
         </div>
