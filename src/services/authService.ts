@@ -181,32 +181,74 @@ export const registerApi = async (email: string, password: string, firstName: st
 
 export const forgotPasswordApi = async (email: string): Promise<AuthResponse> => {
     try {
-        const response = await axiosInstance.post<AuthResponse>('/auth/forgot-password', { email });
+        console.log('Forgot Password API: Attempting request to /auth/forgot-password with email:', email);
+
+        const response = await publicAxios.post<AuthResponse>('/auth/forgot-password', { email }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            }
+        });
+
+        console.log('Forgot Password API: Success response', response.data);
         return response.data;
     } catch (error: unknown) {
         console.error('Forgot Password API Error Details:', {
             error,
             response: axios.isAxiosError(error) ? error.response : undefined,
-            message: error instanceof Error ? error.message : 'Unknown error'
+            message: error instanceof Error ? error.message : 'Unknown error',
+            email,
+            url: '/auth/forgot-password'
         });
 
         if (axios.isAxiosError(error) && error.response) {
             const responseData = error.response.data;
+            console.error('Forgot Password API: Server response details', {
+                status: error.response.status,
+                statusText: error.response.statusText,
+                data: responseData,
+                headers: error.response.headers
+            });
+
+            // Handle specific 401 error for forgot password
+            if (error.response.status === 401) {
+                if (responseData && responseData.message) {
+                    throw new Error(`Server error: ${responseData.message}`);
+                }
+                throw new Error('Unauthorized access to forgot password endpoint. Please contact support if this issue persists.');
+            }
+
             if (responseData && responseData.message) {
                 throw new Error(responseData.message);
             }
             if (responseData && responseData.error) {
                 throw new Error(responseData.error);
             }
+
+            // Handle other specific status codes
+            switch (error.response.status) {
+                case 404:
+                    throw new Error('Forgot password endpoint not found. Please contact support.');
+                case 429:
+                    throw new Error('Too many requests. Please wait a moment and try again.');
+                case 500:
+                    throw new Error('Server error. Please try again later.');
+                default:
+                    throw new Error(`Request failed (${error.response.status}): ${error.response.statusText}`);
+            }
         }
 
-        throw new Error('Password reset failed');
+        if (error instanceof Error) {
+            throw error;
+        }
+
+        throw new Error('Network error. Please check your connection and try again.');
     }
 };
 
 export const changePasswordApi = async (currentPassword: string, newPassword: string, token: string): Promise<AuthResponse> => {
     try {
-        const response = await axiosInstance.post<AuthResponse>('/auth/change-password', { currentPassword, newPassword, token });
+        const response = await publicAxios.post<AuthResponse>('/auth/change-password', { currentPassword, newPassword, token });
         return response.data;
     } catch (error: unknown) {
         console.error('Change Password API Error Details:', {
