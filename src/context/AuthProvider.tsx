@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { forgotPasswordApi, loginApi, registerApi, changePasswordApi, verifyEmailApi, verifyOtpApi, refreshTokenApi, googleLoginApi } from "~/services/authService";
 import type { User } from "~/types/auth";
 import { AuthContext } from "./AuthContext";
+import { toast } from "~/components/common/Toast";
+import axios from "axios";
 
 interface AuthProviderProps {
     children: React.ReactNode;
@@ -142,14 +144,27 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         setLoading(true);
         setError(null);
         try {
+            console.log('Attempting to verify email:', { email, hasToken: !!token });
             await verifyEmailApi(email, token);
             console.log('Email has been verified successfully');
         } catch (err: unknown) {
+            console.error('Email verification failed:', {
+                error: err,
+                email,
+                hasToken: !!token,
+                axiosError: axios.isAxiosError(err) ? {
+                    status: err.response?.status,
+                    data: err.response?.data,
+                    url: err.config?.url
+                } : undefined
+            });
+
             if (err instanceof Error) {
                 setError(err.message);
             } else {
                 setError('Email verification failed');
             }
+            throw err; // Re-throw to allow component to handle
         } finally {
             setLoading(false);
         }
@@ -196,6 +211,14 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         localStorage.removeItem('token');
     };
 
+    // Enhanced logout for handling auth failures
+    const forceLogout = () => {
+        console.log('Forcing logout due to authentication failure');
+        logout();
+        // Show a toast notification to inform user
+        toast.error('Session expired. Please login again.');
+    };
+
     const spendTokens = (amount: number) => {
         if (user) {
             const newBalance = user.tokenBalance - amount;
@@ -223,6 +246,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
                 loginWithGoogle,
                 register,
                 logout,
+                forceLogout,
                 forgotPassword,
                 changePassword,
                 verifyEmail,

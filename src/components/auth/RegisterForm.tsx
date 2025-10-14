@@ -29,7 +29,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ buttonClasses }) => {
             await register(values.email, values.password, values.firstName, values.lastName, values.dob);
             toast.success(authMessages.register.success);
             // Redirect to email verification pending page instead of login
-            window.location.href = '/auth?verification=pending';
+            // window.location.href = '/auth?verification=pending';
         } catch {
             toast.error(authMessages.register.error);
         }
