@@ -1,8 +1,8 @@
 import React from 'react';
 import { Progress, Card, Badge, Button } from 'antd';
-import { 
-  BookOutlined, 
-  ClockCircleOutlined, 
+import {
+  BookOutlined,
+  ClockCircleOutlined,
   TrophyOutlined,
   FireOutlined,
   CalendarOutlined,
@@ -11,8 +11,11 @@ import {
   GiftOutlined
 } from '@ant-design/icons';
 import CardAnalytics from './CardAnalytics';
+import { useAuth } from '~/hooks/useAuth';
 
 const StudentDashboard: React.FC = () => {
+
+  const { user } = useAuth();
   // Sample data
   const courseProgress = [
     { name: 'AP 2-D Art and Design', progress: 75, color: '#3b82f6' },
@@ -73,7 +76,7 @@ const StudentDashboard: React.FC = () => {
       <div className="max-w-7xl mx-auto md:ml-0 ml-0">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, Alex! 👋</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.firstName} {user?.lastName} 👋</h1>
           <p className="text-gray-600">Here's your learning progress overview</p>
         </div>
         {/* Quick Stats Row */}
@@ -97,7 +100,7 @@ const StudentDashboard: React.FC = () => {
         </div>
         {/* Main Dashboard Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          
+
           {/* Progress Card */}
           <Card className="bg-white rounded-2xl shadow-lg border-0 hover:shadow-xl transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
@@ -111,7 +114,7 @@ const StudentDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               {courseProgress.map((course, index) => (
                 <div key={index} className="space-y-2">
@@ -119,8 +122,8 @@ const StudentDashboard: React.FC = () => {
                     <span className="text-sm font-medium text-gray-700 truncate">{course.name}</span>
                     <span className="text-sm font-semibold text-gray-900">{course.progress}%</span>
                   </div>
-                  <Progress 
-                    percent={course.progress} 
+                  <Progress
+                    percent={course.progress}
                     showInfo={false}
                     strokeColor={course.color}
                     trailColor="#f1f5f9"
@@ -130,7 +133,7 @@ const StudentDashboard: React.FC = () => {
                 </div>
               ))}
             </div>
-            
+
             <div className="mt-6 pt-4 border-t border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
@@ -166,8 +169,8 @@ const StudentDashboard: React.FC = () => {
                   <div key={test.id} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="font-medium text-gray-900 text-sm">{test.title}</h4>
-                      <Badge 
-                        color={getDifficultyColor(test.difficulty)} 
+                      <Badge
+                        color={getDifficultyColor(test.difficulty)}
                         text={test.difficulty}
                         className="text-xs"
                       />

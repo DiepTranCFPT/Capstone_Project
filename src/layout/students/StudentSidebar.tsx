@@ -74,17 +74,15 @@ export default function SidebarStudent() {
 
   return (
     <div
-      className={`h-screen sticky top-0 ${
-        collapsed ? "w-20" : "w-64"
-      } bg-white flex flex-col shadow-lg transition-all duration-300`}
+      className={`h-screen sticky top-0 ${collapsed ? "w-20" : "w-64"
+        } bg-white flex flex-col shadow-lg transition-all duration-300`}
     >
       {/* Collapse button + title */}
       <div
-        className={`${
-          !collapsed
-            ? "flex justify-between items-center border-b"
+        className={`${!collapsed
+          ? "flex justify-between items-center border-b border-gray-200"
             : "flex items-center"
-        }`}
+          }`}
       >
         <div>
           <Button
@@ -111,11 +109,10 @@ export default function SidebarStudent() {
       {/* Profile */}
       {currentUser && (
         <div
-          className={`${
-            !collapsed
-              ? "px-4 py-3 border-b flex items-center gap-3"
-              : "px-4 py-3 border-b flex items-center justify-center"
-          }`}
+          className={`${!collapsed
+              ? "px-4 py-3 border-b border-gray-200 flex items-center gap-3"
+              : "px-4 py-3 border-b border-gray-200 not-[]:flex items-center justify-center"
+            }`}
         >
           <Link to="/student/profile">
             <Avatar
@@ -126,7 +123,7 @@ export default function SidebarStudent() {
           </Link>
           {!collapsed && (
             <div>
-              <div className="text-sm font-semibold">{currentUser.firstName} {currentUser.lastName}</div> 
+              <div className="text-sm font-semibold">{currentUser.firstName} {currentUser.lastName}</div>
               <div className="text-[10px] text-gray-400">{currentUser.email}</div>
               <div className="flex items-center text-sm text-yellow-500">
                 <FaCoins className="mr-1" />
@@ -148,10 +145,9 @@ export default function SidebarStudent() {
               className={`
                 flex items-center transition-all duration-200 active-menu mt-1
                 ${collapsed ? "justify-center w-12 h-12" : "px-6 py-2 w-11/12"}
-                ${
-                  isActive
-                    ? "bg-backgroundColor text-white rounded-2xl"
-                    : "text-black hover:bg-backgroundColor hover:text-white rounded-2xl"
+                ${isActive
+                  ? "bg-backgroundColor text-white rounded-2xl"
+                  : "text-black hover:bg-backgroundColor hover:text-white rounded-2xl"
                 }
               `}
               style={{
