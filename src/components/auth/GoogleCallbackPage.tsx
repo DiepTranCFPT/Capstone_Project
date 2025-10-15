@@ -14,13 +14,7 @@ const GoogleCallbackPage: React.FC = () => {
     useEffect(() => {
         const code = searchParams.get('code');
         const error = searchParams.get('error');
-
-        console.log('GoogleCallbackPage: Processing Google OAuth callback', {
-            hasCode: !!code,
-            hasError: !!error,
-            processing: processingRef.current
-        });
-
+      
         if (error) {
             console.error("Google OAuth error:", error);
             navigate('/auth?error=google_auth_failed');
@@ -32,7 +26,6 @@ const GoogleCallbackPage: React.FC = () => {
 
             const sendCodeToBackend = async (authorizationCode: string) => {
                 try {
-                    console.log('GoogleCallbackPage: Sending code to backend', { hasCode: !!authorizationCode });
 
                     // Sử dụng googleLoginApi từ authService (đã được fix để dùng publicAxios)
                     const response = await googleLoginApi(authorizationCode);

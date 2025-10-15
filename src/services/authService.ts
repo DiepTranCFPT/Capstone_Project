@@ -20,6 +20,7 @@ const decodeJWT = (token: string): JwtPayload | null => {
 
 // Helper function to map API roles to User role type
 const mapRolesToUserRole = (roles: string[]): 'STUDENT' | 'TEACHER' | 'ADMIN' | 'TUTOR' | 'PARENT' => {
+    if (roles === null || roles.length === 0) return 'STUDENT'; // default to student if roles is null or empty
     if (roles.includes('ADMIN')) return 'ADMIN';
     if (roles.includes('TEACHER')) return 'TEACHER';
     if (roles.includes('TUTOR')) return 'TUTOR';
@@ -110,10 +111,40 @@ export const googleLoginApi = async (code: string): Promise<AuthResponse> => {
     try {
         console.log('Google Login API: Sending request without auth header', { hasCode: !!code });
 
+        const response = await publicAxios.post<LoginApiResponse>(`/auth/outbound/authentication?code=${code}`);
 
-        const response = await publicAxios.post<AuthResponse>(`/auth/outbound/authentication?code=${code}`);
-        console.log('Google Login API: Success response', response.data);
-        return response.data;
+        // Check if response has the expected structure
+        if (response.data.code !== 1000 && response.data.code !== 0) {
+            throw new Error(response.data.message || 'Google authentication failed');
+        }
+
+        const { token, roles } = response.data.data;
+
+        if (!token) {
+            throw new Error('Authentication failed - no token received');
+        }
+
+       
+        // Decode token to get user data
+        const decodedToken = decodeJWT(token);
+
+        if (!decodedToken) {
+            throw new Error('Invalid token format');
+        }
+
+        // Extract user data from token
+        const user = {
+            id: decodedToken.userId || decodedToken.id || 0,
+            firstName: decodedToken.firstName || '',
+            lastName: decodedToken.lastName || '',
+            email: decodedToken.email || '',
+            imgUrl: decodedToken.imgUrl || decodedToken.avatar || '',
+            dob: decodedToken.dob ? new Date(decodedToken.dob) : new Date(),
+            role: mapRolesToUserRole(roles),
+            tokenBalance: decodedToken.tokenBalance || 0,
+        };
+
+        return { user, token };
 
     } catch (error: unknown) {
         console.error('Google Login API Error Details:', {
