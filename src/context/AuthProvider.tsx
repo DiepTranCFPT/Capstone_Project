@@ -1,54 +1,73 @@
-import { useState, useEffect } from "react";
-import { forgotPasswordApi, loginApi, registerApi, changePasswordApi, verifyEmailApi, verifyOtpApi, refreshTokenApi, googleLoginApi, getCurrentUserApi } from "~/services/authService";
-import type { User } from "~/types/auth";
+import { useState, useEffect, useCallback } from "react";
+import { forgotPasswordApi, loginApi, registerApi, changePasswordApi, verifyEmailApi, verifyOtpApi, refreshTokenApi, googleLoginApi, getCurrentUserApi } from "../services/authService";
+import type { User, AuthResponse } from "../types/auth";
 import { AuthContext } from "./AuthContext";
-import { toast } from "~/components/common/Toast";
+import { toast } from "../components/common/Toast";
 import axios from "axios";
 
 interface AuthProviderProps {
     children: React.ReactNode;
 }
 
+// Đặt khoảng thời gian làm mới token là 30 phút
+const REFRESH_INTERVAL = 30 * 60 * 1000;
+
 const AuthProvider = ({ children }: AuthProviderProps) => {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [initialLoading, setInitialLoading] = useState<boolean>(true);
-    // Restore auth state from localStorage when component mounts
+    const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+
+    // Hàm an toàn để lưu user vào localStorage
+    const safelyStoreUser = (userToStore: User | null) => {
+        if (userToStore) {
+            localStorage.setItem('user', JSON.stringify(userToStore));
+        } else {
+            localStorage.removeItem('user');
+        }
+    };
+
+    // Khôi phục trạng thái đăng nhập từ localStorage khi component được mount
     useEffect(() => {
         const initializeAuth = async () => {
             const storedToken = localStorage.getItem('token');
             const storedUser = localStorage.getItem('user');
 
-            if (storedToken) {
+            if (storedToken && storedToken !== 'undefined') {
                 setToken(storedToken);
                 setIsAuthenticated(true);
 
-                // Try to restore user data from localStorage first
-                if (storedUser) {
+                if (storedUser && storedUser !== 'undefined') {
                     try {
                         const parsedUser = JSON.parse(storedUser);
                         setUser(parsedUser);
-                        console.log('User data restored from localStorage');
                     } catch (error) {
                         console.error('Failed to parse stored user data:', error);
-                        // If parsing fails, try to fetch fresh data from API
                         try {
                             const userProfileResponse = await getCurrentUserApi();
                             setUser(userProfileResponse.user);
-                            localStorage.setItem('user', JSON.stringify(userProfileResponse.user));
+                            safelyStoreUser(userProfileResponse.user);
                         } catch (apiError) {
                             console.error('Failed to fetch user profile from API:', apiError);
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('user');
+                            setIsAuthenticated(false);
+                            setToken(null);
                         }
                     }
                 } else {
-                    // No stored user data, fetch from API
                     try {
                         const userProfileResponse = await getCurrentUserApi();
                         setUser(userProfileResponse.user);
-                        localStorage.setItem('user', JSON.stringify(userProfileResponse.user));
+                        safelyStoreUser(userProfileResponse.user);
                     } catch (error) {
                         console.error('Failed to fetch user profile:', error);
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        setIsAuthenticated(false);
+                        setToken(null);
                     }
                 }
             }
@@ -58,244 +77,227 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         initializeAuth();
     }, []);
 
-    const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
-    const handleAuthResponse = async (response: { user: User, token: string }) => {
-        // Set initial auth state with token data
-        setToken(response.token);
-        setIsAuthenticated(true);
-        setError(null);
-        localStorage.setItem('token', response.token);
+    const handleAuthResponse = useCallback(async (response: AuthResponse, isRefreshing = false) => {
+        if (response && response.token) {
+            setToken(response.token);
+            setIsAuthenticated(true);
+            setError(null);
+            localStorage.setItem('token', response.token);
 
-        try {
-            // Fetch complete user profile from API /users/me
-            const userProfileResponse = await getCurrentUserApi();
-            // Update user state with complete profile data
-            setUser(userProfileResponse.user);
-            // Store user data in localStorage for persistence
-            localStorage.setItem('user', JSON.stringify(userProfileResponse.user));
-            console.log('User profile updated and stored in localStorage');
-        } catch (error) {
-            console.error('Failed to fetch user profile, using token data instead:', error);
-
-            // Fallback to token data if API call fails
-            setUser(response.user);
-            // Still store the fallback user data
-            localStorage.setItem('user', JSON.stringify(response.user));
-
-            // Show warning but don't block login
-            console.warn('Using user data from token due to API failure');
+            if (isRefreshing) {
+                setUser(response.user);
+                safelyStoreUser(response.user);
+            } else {
+                try {
+                    const userProfileResponse = await getCurrentUserApi();
+                    setUser(userProfileResponse.user);
+                    safelyStoreUser(userProfileResponse.user);
+                } catch (error) {
+                    console.error('Failed to fetch user profile, using token data instead:', error);
+                    setUser(response.user);
+                    safelyStoreUser(response.user);
+                    console.warn('Using user data from token due to API failure');
+                }
+            }
         }
-    };
+    }, []);
 
-    // Method to update auth state when tokens are refreshed by axios interceptors
-    const updateAuthFromStorage = () => {
+    const updateAuthFromStorage = useCallback(() => {
         const storedToken = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
-
-        if (storedToken) {
+        if (storedToken && storedToken !== 'undefined') {
             setToken(storedToken);
             setIsAuthenticated(true);
             setError(null);
-
-            // Restore user data if available
-            if (storedUser) {
+            if (storedUser && storedUser !== 'undefined') {
                 try {
-                    const parsedUser = JSON.parse(storedUser);
-                    setUser(parsedUser);
+                    setUser(JSON.parse(storedUser));
                 } catch (error) {
                     console.error('Failed to parse stored user data in updateAuthFromStorage:', error);
                 }
             }
         }
-    };
+    }, []);
 
-    const login = async (email: string, password: string): Promise<string | null> => {
+    const logout = useCallback(() => {
+        setUser(null);
+        setToken(null);
+        setIsAuthenticated(false);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+    }, []);
+
+    const forceLogout = useCallback(() => {
+        console.log('Forcing logout due to authentication failure');
+        logout();
+        toast.error('Session expired. Please login again.');
+    }, [logout]);
+
+
+    const refreshToken = useCallback(async (currentToken: string) => {
+        console.log('Attempting to refresh token...');
+        try {
+            const response = await refreshTokenApi(currentToken);
+            await handleAuthResponse(response, true);
+            console.log('Token refreshed successfully.');
+        } catch (err) {
+            console.error('Token refresh failed:', err);
+            throw err;
+        }
+    }, [handleAuthResponse]);
+
+    // Hook useEffect để tự động làm mới token định kỳ
+    useEffect(() => {
+        let interval: NodeJS.Timeout | undefined;
+
+        const handlePeriodicRefresh = async () => {
+            const currentToken = localStorage.getItem('token');
+            if (currentToken && currentToken !== 'undefined') {
+                try {
+                    console.log(`[${new Date().toLocaleTimeString()}] Automatically refreshing token...`);
+                    await refreshToken(currentToken);
+                } catch (error) {
+                    console.error('Periodic token refresh failed. Logging out.', error);
+                    forceLogout();
+                }
+            }
+        };
+
+        if (isAuthenticated) {
+            console.log(`Setting up automatic token refresh every ${REFRESH_INTERVAL / 60000} minutes.`);
+            interval = setInterval(handlePeriodicRefresh, REFRESH_INTERVAL);
+        }
+
+        return () => {
+            if (interval) {
+                console.log('Clearing automatic token refresh interval.');
+                clearInterval(interval);
+            }
+        };
+    }, [isAuthenticated, refreshToken, forceLogout]);
+
+
+    const login = useCallback(async (email: string, password: string): Promise<string | null> => {
         setLoading(true);
-        setError(null); // Clear previous errors
+        setError(null);
         try {
             const response = await loginApi(email, password);
-            handleAuthResponse(response);
-            console.log(response);
-            return null; // No error
+            await handleAuthResponse(response, false);
+            return null;
         } catch (err: unknown) {
             let errorMessage = 'Login failed';
-            if (err instanceof Error) {
-                errorMessage = err.message;
-            }
+            if (err instanceof Error) { errorMessage = err.message; }
             setError(errorMessage);
-            return errorMessage; // Return the error message
+            return errorMessage;
         } finally {
             setLoading(false);
         }
-    };
+    }, [handleAuthResponse]);
 
-    const loginWithGoogle = async (code: string) => {
+    const loginWithGoogle = useCallback(async (code: string) => {
         setLoading(true);
         setError(null);
         try {
             const response = await googleLoginApi(code);
-            handleAuthResponse(response);
+            await handleAuthResponse(response, false);
         } catch (err: unknown) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError('Google login failed');
-            }
-            // Ném lỗi ra ngoài để component gọi nó có thể xử lý (ví dụ: điều hướng về trang lỗi)
+            if (err instanceof Error) { setError(err.message); }
+            else { setError('Google login failed'); }
             throw err;
         } finally {
             setLoading(false);
         }
-    };
+    }, [handleAuthResponse]);
 
-    const register = async (email: string, password: string, firstName: string, lastName: string, dob: Date) => {
+    const register = useCallback(async (email: string, password: string, firstName: string, lastName: string, dob: Date) => {
         setLoading(true);
         setError(null);
         try {
             await registerApi(email, password, firstName, lastName, dob);
-            // Don't automatically log in the user after registration
-            // They need to verify their email first
-            console.log('Registration successful. Please check your email for verification.');
         } catch (err: unknown) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError('Registration failed');
-            }
+            if (err instanceof Error) { setError(err.message); }
+            else { setError('Registration failed'); }
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const forgotPassword = async (email: string) => {
+    const forgotPassword = useCallback(async (email: string) => {
         setLoading(true);
         setError(null);
         try {
             await forgotPasswordApi(email);
-            console.log('Password reset link sent to your email');
         } catch (err: unknown) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError('Password reset failed');
-            }
+            if (err instanceof Error) { setError(err.message); }
+            else { setError('Password reset failed'); }
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const changePassword = async (currentPassword: string, newPassword: string, token: string) => {
+    const changePassword = useCallback(async (currentPassword: string, newPassword: string, token: string) => {
         setLoading(true);
         setError(null);
         try {
             await changePasswordApi(currentPassword, newPassword, token);
-            console.log('Password has been reset successfully');
         } catch (err: unknown) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError('Password reset failed');
-            }
+            if (err instanceof Error) { setError(err.message); }
+            else { setError('Password reset failed'); }
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const verifyEmail = async (email: string, token: string) => {
+    const verifyEmail = useCallback(async (email: string, token: string) => {
         setLoading(true);
         setError(null);
         try {
-            console.log('Attempting to verify email:', { email, hasToken: !!token });
             await verifyEmailApi(email, token);
-            console.log('Email has been verified successfully');
         } catch (err: unknown) {
             console.error('Email verification failed:', {
                 error: err,
                 email,
                 hasToken: !!token,
-                axiosError: axios.isAxiosError(err) ? {
-                    status: err.response?.status,
-                    data: err.response?.data,
-                    url: err.config?.url
-                } : undefined
+                axiosError: axios.isAxiosError(err) ? { status: err.response?.status, data: err.response?.data, url: err.config?.url } : undefined
             });
-
-            if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError('Email verification failed');
-            }
-            throw err; // Re-throw to allow component to handle
+            if (err instanceof Error) { setError(err.message); }
+            else { setError('Email verification failed'); }
+            throw err;
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const verifyOtp = async (email: string, otp: string, newPassword: string) => {
+    const verifyOtp = useCallback(async (email: string, otp: string, newPassword: string) => {
         setLoading(true);
         setError(null);
         try {
             await verifyOtpApi(email, otp, newPassword);
-            console.log('OTP has been verified successfully');
         } catch (err: unknown) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError('OTP verification failed');
-            }
+            if (err instanceof Error) { setError(err.message); }
+            else { setError('OTP verification failed'); }
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const refreshToken = async (token: string) => {
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await refreshTokenApi(token);
-            handleAuthResponse(response);
-        } catch (err: unknown) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError('Token refresh failed');
+    const spendTokens = useCallback((amount: number) => {
+        setUser(currentUser => {
+            if (currentUser) {
+                const newBalance = currentUser.tokenBalance - amount;
+                if (newBalance >= 0) {
+                    const updatedUser = { ...currentUser, tokenBalance: newBalance };
+                    safelyStoreUser(updatedUser);
+                    return updatedUser;
+                } else {
+                    console.error("Not enough tokens");
+                    return currentUser;
+                }
             }
-        } finally {
-            setLoading(false);
-        }
-    };
+            return null;
+        });
+    }, []);
 
-    const logout = () => {
-        setUser(null);
-        setToken(null);
-        setIsAuthenticated(false);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user'); // Also remove user data
-    };
-
-    // Enhanced logout for handling auth failures
-    const forceLogout = () => {
-        console.log('Forcing logout due to authentication failure');
-        // Clear localStorage manually before calling logout
-        localStorage.removeItem('user');
-        logout();
-        // Show a toast notification to inform user
-        toast.error('Session expired. Please login again.');
-    };
-
-    const spendTokens = (amount: number) => {
-        if (user) {
-            const newBalance = user.tokenBalance - amount;
-            if (newBalance >= 0) {
-                const updatedUser = { ...user, tokenBalance: newBalance };
-                setUser(updatedUser);
-                localStorage.setItem('user', JSON.stringify(updatedUser));
-            } else {
-                console.error("Not enough tokens");
-            }
-        }
-    };
 
     return (
         <AuthContext.Provider
@@ -327,3 +329,4 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
 };
 
 export default AuthProvider;
+
