@@ -1,6 +1,8 @@
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { useAuth } from '~/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { toast } from '~/components/common/Toast';
 
 const ForgotPasswordSchema = Yup.object().shape({
     email: Yup.string().email('Invalid email').required('Required'),
@@ -8,6 +10,7 @@ const ForgotPasswordSchema = Yup.object().shape({
 
 const ForgotPasswordForm = () => {
     const { forgotPassword } = useAuth();
+    const navigate = useNavigate();
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -16,9 +19,16 @@ const ForgotPasswordForm = () => {
                 <Formik
                     initialValues={{ email: '' }}
                     validationSchema={ForgotPasswordSchema}
-                    onSubmit={(values, { setSubmitting }) => {
-                        forgotPassword(values.email);
-                        setSubmitting(false);
+                    onSubmit={async (values, { setSubmitting }) => {
+                        try {
+                            await forgotPassword(values.email);
+                            toast.success('Password reset code sent to your email!');
+                            navigate(`/verify-otp?email=${encodeURIComponent(values.email)}`);
+                        } catch {
+                            toast.error('Failed to send reset email. Please try again.');
+                        } finally {
+                            setSubmitting(false);
+                        }
                     }}
                 >
                     {({ isSubmitting }) => (

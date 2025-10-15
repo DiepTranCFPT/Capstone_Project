@@ -7,6 +7,7 @@ import HomePages from "./pages/home/HomePages";
 import AuthPage from "./pages/auth/AuthPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPassword";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import OtpVerificationPage from "./pages/auth/OtpVerificationPage";
 
 import ExamTestPage from "./pages/exam/ExamTestPage";
 import ExamDetailsPage from "./pages/exam/ExamDetailsPage";
@@ -80,6 +81,7 @@ function App() {
         <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/verify-otp" element={<OtpVerificationPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
         {/*Admin routes with AdminLayout */}
