@@ -104,11 +104,7 @@ export const loginApi = async (email: string, password: string): Promise<AuthRes
     }
 };
 
-/**
- * Gửi authorization code nhận được từ Google về backend để xác thực.
- * @param code The authorization code from Google.
- * @returns AuthResponse containing the system's JWT and user info.
- */
+
 export const googleLoginApi = async (code: string): Promise<AuthResponse> => {
 
     try {
@@ -312,7 +308,7 @@ export const verifyEmailApi = async (email: string, token: string): Promise<Auth
 
 export const verifyOtpApi = async (email: string, otp: string, newPassword: string): Promise<AuthResponse> => {
     try {
-        const response = await axiosInstance.post<AuthResponse>('auth/verify-otp', { email, otp, newPassword });
+        const response = await publicAxios.post<AuthResponse>('/auth/verify-otp', { email, otp, newPassword });
         return response.data;
     } catch (error: unknown) {
         console.error('Verify OTP API Error Details:', {
