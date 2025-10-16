@@ -3,46 +3,46 @@ import { Button, Avatar } from "antd";
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import {
-  HomeOutlined,
-  BookOutlined,
-  TeamOutlined,
   UserOutlined,
   SettingOutlined,
-  SolutionOutlined,
   TrophyOutlined,
-  DollarOutlined,
+  DashboardOutlined,
+  ReadOutlined,
+  TagsOutlined,
+  AuditOutlined,
+  UsergroupAddOutlined,
+  FormOutlined,
+  IdcardOutlined,
+  CreditCardOutlined,
 } from "@ant-design/icons";
 
-// Danh sách menu cho Admin
 const adminMenu = [
-  { key: "/dashboard", label: "Dashboard", icon: <HomeOutlined /> },
+  { key: "/dashboard", label: "Dashboard", icon: <DashboardOutlined /> },
   { key: "/admin/users", label: "Users", icon: <UserOutlined /> },
-  { key: "/admin/courses", label: "Courses", icon: <BookOutlined /> },
-  { key: "/admin/parents", label: "Parents", icon: <UserOutlined /> },
-  { key: "/admin/students", label: "Students", icon: <TeamOutlined /> },
-  { key: "/admin/mock-tests", label: "Mock Tests", icon: <SolutionOutlined /> },
-  { key: "/admin/teachers", label: "Teacher", icon: <UserOutlined /> },
+  { key: "/admin/courses", label: "Courses", icon: <ReadOutlined /> },
+  { key: "/admin/materials", label: "Materials", icon: <TagsOutlined /> },
+  { key: "/admin/parents", label: "Parents", icon: <AuditOutlined /> },
+  { key: "/admin/students", label: "Students", icon: <UsergroupAddOutlined /> },
+  { key: "/admin/mock-tests", label: "Mock Tests", icon: <FormOutlined /> },
+  { key: "/admin/teachers", label: "Teacher", icon: <IdcardOutlined /> },
   { key: "/admin/certificates", label: "Certificates & Ranking", icon: <TrophyOutlined /> },
-  { key: "/subscriptions", label: "Subscriptions & Payments", icon: <DollarOutlined /> },
+  { key: "/subscriptions", label: "Subscriptions & Payments", icon: <CreditCardOutlined /> },
   { key: "/settings", label: "Settings", icon: <SettingOutlined /> },
 ];
 
 export default function AdminSidebar() {
   const location = useLocation();
-  
 
   const [collapsed, setCollapsed] = useState(() => {
     const saved = localStorage.getItem("sidebar-admin-collapsed");
     return saved === "true";
   });
 
-  // Toggle collapse
   const toggleCollapse = () => {
     setCollapsed(!collapsed);
     localStorage.setItem("sidebar-admin-collapsed", (!collapsed).toString());
   };
 
-  // Fake user admin info (bạn thay bằng useAuth hoặc API)
   const adminUser = {
     name: "Admin User",
     email: "admin@example.com",
@@ -55,7 +55,6 @@ export default function AdminSidebar() {
         collapsed ? "w-20" : "w-64"
       } bg-white flex flex-col shadow-lg transition-all duration-300`}
     >
-      {/* Collapse button + title */}
       <div
         className={`${
           !collapsed
@@ -78,7 +77,6 @@ export default function AdminSidebar() {
         </div>
       </div>
 
-      {/* Profile */}
       <div
         className={`${
           !collapsed
@@ -101,7 +99,6 @@ export default function AdminSidebar() {
         )}
       </div>
 
-      {/* Menu */}
       <nav className="flex-1 mt-4 flex flex-col items-center">
         {adminMenu.map((item) => {
           const isActive = location.pathname === item.key;
@@ -109,15 +106,13 @@ export default function AdminSidebar() {
             <Link
               key={item.key}
               to={item.key}
-              className={`
-                flex items-center transition-all duration-200 mt-1
-                ${collapsed ? "justify-center w-12 h-12" : "px-6 py-2 w-11/12"}
-                ${
-                  isActive
-                    ? "bg-blue-500 text-white rounded-2xl"
-                    : "text-black hover:bg-blue-500 hover:text-white rounded-2xl"
-                }
-              `}
+              className={`flex items-center transition-all duration-200 mt-1 ${
+                collapsed ? "justify-center w-12 h-12" : "px-6 py-2 w-11/12"
+              } ${
+                isActive
+                  ? "bg-blue-500 text-white rounded-2xl"
+                  : "text-black hover:bg-blue-500 hover:text-white rounded-2xl"
+              }`}
               style={{ minHeight: collapsed ? 48 : undefined }}
             >
               <span className={`text-lg ${isActive ? "text-white" : ""}`}>

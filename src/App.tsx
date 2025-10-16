@@ -60,6 +60,7 @@ import StudentDetailPage from "./pages/parents/StudentDetailPage";
 import ParentBillingPage from "./pages/parents/ParentBillingPage";
 import GoogleCallbackPage from "./components/auth/GoogleCallbackPage";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
+import MaterialManagerPage from "./pages/admins/MaterialManagerPage";
 
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -96,6 +97,7 @@ function App() {
           <Route path="teachers" element={<TeacherManagerPage />} />
           <Route path="certificates" element={<CertificatesRankingManagerPage />} />
           <Route path="users" element={<UserManagerPage />} />
+        <Route path="materials" element={<MaterialManagerPage />} /> 
         </Route>
 
         {/* Main routes with Layout */}
