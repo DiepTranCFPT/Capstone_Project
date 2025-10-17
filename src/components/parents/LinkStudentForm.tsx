@@ -1,12 +1,17 @@
 import React from 'react';
 import { Form, Input, Button } from 'antd';
+import type { FormProps } from 'antd';
+
+interface LinkStudentFormValues {
+  studentCode: string;
+}
 
 const LinkStudentForm: React.FC = () => {
-  const onFinish = (values: any) => {
+  const onFinish: FormProps<LinkStudentFormValues>['onFinish'] = (values) => {
     console.log('Success:', values);
   };
 
-  const onFinishFailed = (errorInfo: any) => {
+  const onFinishFailed: FormProps<LinkStudentFormValues>['onFinishFailed'] = (errorInfo) => {
     console.log('Failed:', errorInfo);
   };
 

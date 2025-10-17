@@ -1,8 +1,17 @@
 
-import type { AuthResponse, LoginApiResponse, JwtPayload, User } from "~/types/auth";
+import type {
+    AuthResponse,
+    LoginApiResponse,
+    JwtPayload,
+    User,
+    EditProfileRequest,
+    EditProfileResponse,
+    UploadAvatarResponse,
+    ChangePasswordRequest
+} from "~/types/auth";
 import axiosInstance, { publicAxios } from "../configs/axios";
 import axios from "axios";
-
+const API_URL = import.meta.env.VITE_API_URL;
 // Helper function to decode JWT token
 const decodeJWT = (token: string): JwtPayload | null => {
     try {
@@ -105,6 +114,184 @@ export const loginApi = async (email: string, password: string): Promise<AuthRes
     }
 };
 
+/**
+ * Cập nhật thông tin profile của user hiện tại
+ * @param profileData - Dữ liệu profile cần cập nhật
+ * @returns Promise với thông tin user đã được cập nhật
+ */
+export const updateProfileApi = async (profileData: EditProfileRequest): Promise<User> => {
+    try {
+        const response = await axiosInstance.put<EditProfileResponse>('/users/me', profileData);
+
+        if (response.data.code !== 1000) {
+            throw new Error(response.data.message || 'Failed to update profile');
+        }
+
+        const userData = response.data.data;
+
+        // Map API response to User object
+        const user: User = {
+            id: parseInt(userData.id.toString()) || 0,
+            firstName: userData.firstName || '',
+            lastName: userData.lastName || '',
+            email: userData.email || '',
+            imgUrl: userData.imgUrl || '',
+            dob: new Date(userData.dob),
+            role: mapRolesToUserRole(userData.roles || []),
+            tokenBalance: userData.tokenBalance || 0,
+        };
+
+        return user;
+    } catch (error: unknown) {
+        console.error('Update Profile API Error Details:', {
+            error,
+            response: axios.isAxiosError(error) ? error.response : undefined,
+            message: error instanceof Error ? error.message : 'Unknown error'
+        });
+
+        if (axios.isAxiosError(error) && error.response) {
+            const responseData = error.response.data;
+            if (responseData && responseData.message) {
+                throw new Error(responseData.message);
+            }
+            if (responseData && responseData.error) {
+                throw new Error(responseData.error);
+            }
+
+            // Handle specific errors for update profile
+            switch (error.response.status) {
+                case 400:
+                    throw new Error('Invalid profile data provided');
+                case 401:
+                    throw new Error('Unauthorized access to update profile');
+                case 404:
+                    throw new Error('User profile not found');
+                case 429:
+                    throw new Error('Too many requests. Please try again later');
+                case 500:
+                    throw new Error('Server error. Please try again later');
+                default:
+                    throw new Error(`Failed to update profile (${error.response.status})`);
+            }
+        }
+
+        if (error instanceof Error) {
+            throw error;
+        }
+
+        throw new Error('Network error. Please check your connection and try again');
+    }
+};
+
+/**
+ * Upload avatar cho user hiện tại
+ * @param file - File ảnh cần upload
+ * @returns Promise với URL của ảnh đã upload
+ */
+export const uploadAvatarApi = async (file: File): Promise<string> => {
+    try {
+        const formData = new FormData();
+        // Ensure filename is included for better backend compatibility
+        formData.append('file', file, file.name);
+
+        // Lấy token từ localStorage để gửi kèm request
+        const token = localStorage.getItem('token');
+
+        console.log('Upload Avatar Debug Info:', {
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            hasToken: !!token,
+            endpoint: '/users/me/avatar'
+        });
+
+        const response = await axios.post<UploadAvatarResponse>(
+            `${API_URL}/users/me/avatar`,
+            formData,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    // DO NOT set 'Content-Type'. Axios handles it for FormData.
+                }
+            }
+        );
+
+        console.log('Upload Avatar Success Response:', response.data);
+
+        // Some endpoints may return code 0 or 1000 as success
+        const isSuccessCode = response.data.code === 1000 || response.data.code === 0;
+        if (!isSuccessCode) {
+            throw new Error(response.data.message || 'Failed to upload avatar');
+        }
+
+        const newImgUrl = response.data.data.imgUrl;
+
+        // Update cached user immediately for UI freshness
+        try {
+            const storedUser = localStorage.getItem('user');
+            if (storedUser && storedUser !== 'undefined') {
+                const parsed = JSON.parse(storedUser);
+                const updated = { ...parsed, imgUrl: newImgUrl };
+                localStorage.setItem('user', JSON.stringify(updated));
+            }
+        } catch (e) {
+            console.warn('Failed to update cached user after avatar upload:', e);
+        }
+
+        return newImgUrl;
+    } catch (error: unknown) {
+        console.error('Upload Avatar API Error Details:', {
+            error,
+            response: axios.isAxiosError(error) ? error.response : undefined,
+            message: error instanceof Error ? error.message : 'Unknown error',
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type
+        });
+
+        if (axios.isAxiosError(error) && error.response) {
+            const responseData = error.response.data;
+            console.error('Upload Avatar API Response:', {
+                status: error.response.status,
+                data: responseData,
+                headers: error.response.headers,
+                config: error.response.config
+            });
+
+            if (responseData && (responseData.message || responseData.error)) {
+                const serverMsg = responseData.message || responseData.error;
+                throw new Error(typeof serverMsg === 'string' ? serverMsg : 'Upload failed with server validation error');
+            }
+
+            // Handle specific errors for upload avatar
+            switch (error.response.status) {
+                case 400:
+                    throw new Error('Invalid file format or size');
+                case 401:
+                    throw new Error('Unauthorized access to upload avatar');
+                case 404:
+                    throw new Error('Upload endpoint not found');
+                case 413:
+                    throw new Error('File size too large');
+                case 415:
+                    throw new Error('Unsupported file type');
+                case 429:
+                    throw new Error('Too many requests. Please try again later');
+                case 500:
+                    throw new Error('Server error. Please try again later');
+                default:
+                    throw new Error(`Failed to upload avatar (${error.response.status}): ${responseData?.message || 'Unknown error'}`);
+            }
+        }
+
+        if (error instanceof Error) {
+            throw error;
+        }
+
+        throw new Error('Network error. Please check your connection and try again');
+    }
+};
+
 
 export const googleLoginApi = async (code: string): Promise<AuthResponse> => {
 
@@ -124,7 +311,7 @@ export const googleLoginApi = async (code: string): Promise<AuthResponse> => {
             throw new Error('Authentication failed - no token received');
         }
 
-       
+
         // Decode token to get user data
         const decodedToken = decodeJWT(token);
 
@@ -273,9 +460,9 @@ export const forgotPasswordApi = async (email: string): Promise<AuthResponse> =>
     }
 };
 
-export const changePasswordApi = async (currentPassword: string, newPassword: string, token: string): Promise<AuthResponse> => {
+export const changePasswordApi = async (changePassword: ChangePasswordRequest): Promise<AuthResponse> => {
     try {
-        const response = await publicAxios.post<AuthResponse>('/auth/change-password', { currentPassword, newPassword, token });
+        const response = await publicAxios.post<AuthResponse>('/auth/change-password', changePassword);
         return response.data;
     } catch (error: unknown) {
         console.error('Change Password API Error Details:', {

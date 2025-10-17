@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { forgotPasswordApi, loginApi, registerApi, changePasswordApi, verifyEmailApi, verifyOtpApi, refreshTokenApi, googleLoginApi, getCurrentUserApi } from "../services/authService";
-import type { User, AuthResponse } from "../types/auth";
+import type { User, AuthResponse, ChangePasswordRequest } from "../types/auth";
 import { AuthContext } from "./AuthContext";
 import { toast } from "../components/common/Toast";
 import axios from "axios";
@@ -235,11 +235,11 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         }
     }, []);
 
-    const changePassword = useCallback(async (currentPassword: string, newPassword: string, token: string) => {
+    const changePassword = useCallback(async (changePassword: ChangePasswordRequest) => {
         setLoading(true);
         setError(null);
         try {
-            await changePasswordApi(currentPassword, newPassword, token);
+            await changePasswordApi(changePassword);
         } catch (err: unknown) {
             if (err instanceof Error) { setError(err.message); }
             else { setError('Password reset failed'); }
