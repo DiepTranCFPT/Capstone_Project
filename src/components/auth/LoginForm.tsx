@@ -64,8 +64,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ buttonClasses }) => {
                 case 'ADMIN':
                     navigate('/admin'); // Assuming an admin dashboard exists
                     break;
-                case 'TUTOR':
-                    navigate('/tutor/dashboard'); // Assuming a tutor dashboard exists
+                case 'ACADEMIC_ADVISOR':
+                    navigate('/academic-advisor/dashboard'); // Assuming an academic advisor dashboard exists
                     break;
                 case 'PARENT':
                     navigate('/parent/dashboard'); // Assuming a parent dashboard exists

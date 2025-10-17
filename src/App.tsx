@@ -62,6 +62,13 @@ import GoogleCallbackPage from "./components/auth/GoogleCallbackPage";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
 import MaterialManagerPage from "./pages/admins/MaterialManagerPage";
 
+// --- Advisor Imports ---
+import AdvisorLayout from "./layout/advisor/AdvisorLayout";
+import AdvisorDashboardPage from "./pages/advisor/AdvisorDashboardPage";
+import StudentTrackingPage from "./pages/advisor/StudentTrackingPage";
+import ReportingPage from "./pages/advisor/ReportingPage";
+import ConsultationPage from "./pages/advisor/ConsultationPage";
+import APPathwaysPage from "./pages/advisor/APPathwaysPage";
 // Layout Wrapper for common UI elements
 const Layout = () => (
   <div className="flex flex-col min-h-screen">
@@ -148,6 +155,15 @@ function App() {
           <Route path="link-student" element={<LinkStudentPage />} />
           <Route path="student/:studentId" element={<StudentDetailPage />} />
           <Route path="billing" element={<ParentBillingPage />} />
+        </Route>
+
+        {/* Advisor routes with AdvisorLayout */}
+        <Route path="/advisor" element={<AdvisorLayout />} >
+          <Route path="dashboard" element={<AdvisorDashboardPage />} />
+          <Route path="student-tracking" element={<StudentTrackingPage />} />
+          <Route path="reporting" element={<ReportingPage />} />
+          <Route path="consultations" element={<ConsultationPage />} />
+          <Route path="ap-pathway-planner" element={<APPathwaysPage />} />
         </Route>
 
       </Routes>

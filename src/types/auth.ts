@@ -5,7 +5,7 @@ export interface User {
     email: string;
     imgUrl: string;
     dob: Date;
-    role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'TUTOR' | 'PARENT';
+    role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'ACADEMIC_ADVISOR' | 'PARENT';
     tokenBalance: number;
 };
 
