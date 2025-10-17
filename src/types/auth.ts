@@ -56,7 +56,42 @@ export interface AuthContextType {
     logout: () => void;
     forceLogout: () => void;
     forgotPassword: (email: string) => Promise<void>;
-    changePassword: (currentPassword: string, newPassword: string, token: string) => Promise<void>;
+    changePassword: (changePassword: ChangePasswordRequest) => Promise<void>;
     refreshToken: (token: string) => Promise<void>;
     spendTokens: (amount: number) => void;
 };
+
+export interface EditProfileRequest {
+    firstName: string;
+    lastName: string;
+    dob: string; // ISO date string
+}
+
+export interface EditProfileResponse {
+    code: number;
+    message: string;
+    data: {
+        id: number;
+        firstName: string;
+        lastName: string;
+        email: string;
+        imgUrl: string;
+        dob: string;
+        roles: string[];
+        tokenBalance: number;
+    };
+}
+
+export interface UploadAvatarResponse {
+    code: number;
+    message: string;
+    data: {
+        imgUrl: string;
+    };
+}
+
+export interface ChangePasswordRequest {
+    currentPassword: string;
+    newPassword: string;
+    token: string;
+}

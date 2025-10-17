@@ -2,8 +2,7 @@ import axios from 'axios';
 import { refreshTokenApi } from '../services/authService';
 
 const API_URL = import.meta.env.VITE_API_URL;
-if (!API_URL) {
-    // eslint-disable-next-line no-console
+if (!API_URL) {   
     console.warn('[Axios] VITE_API_URL is not defined. Requests will fail. Set it in your .env');
 }
 

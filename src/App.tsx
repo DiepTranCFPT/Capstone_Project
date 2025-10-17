@@ -143,7 +143,7 @@ function App() {
         </Route>
 
         {/* Parent routes with ParentLayout */}
-        <Route path="/parent" element={<ProtectedRoute roles={['PARENT']}><ParentLayout /></ProtectedRoute>} >
+        <Route path="/parent" element={<ParentLayout />} >
           <Route path="dashboard" element={<ParentDashboardPage />} />
           <Route path="link-student" element={<LinkStudentPage />} />
           <Route path="student/:studentId" element={<StudentDetailPage />} />
