@@ -28,7 +28,13 @@ const ResetPasswordForm = () => {
                     validationSchema={ResetPasswordSchema}
                     onSubmit={(values, { setSubmitting }) => {
                         if (token) {
-                            changePassword(token, values.currentPassword, values.newPassword);
+                            const passwordData = {
+                                token,
+                                currentPassword: values.currentPassword,
+                                newPassword: values.newPassword,
+                            }
+
+                            changePassword(passwordData);
                         }
                         setSubmitting(false);
                     }}
