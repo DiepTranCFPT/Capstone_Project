@@ -1,3 +1,5 @@
+import type { LeaderboardUser } from '~/types/community';
+
 export const threads = [
     {
         id: 1,
@@ -52,9 +54,32 @@ export const threads = [
         commentsData: []
     }
 ];
-export const leaderboardUsers = [
-    { id: 1, name: 'Sontang MTP', avatar: 'https://i.pravatar.cc/150?img=3', points: 5432 },
-    { id: 2, name: 'John Doe', avatar: 'https://i.pravatar.cc/150?img=1', points: 4870 },
-    { id: 3, name: 'Jane Smith', avatar: 'https://i.pravatar.cc/150?img=2', points: 4560 },
-    { id: 4, name: 'phamalphats', avatar: 'https://i.pravatar.cc/150?img=4', points: 4210 },
+
+export const leaderboardUsers: LeaderboardUser[] = [
+    { id: 1, name: 'Sontang MTP', avatar: 'https://i.pravatar.cc/150?img=3', points: 5432, rankChange: 2, subject: 'IELTS' },
+    { id: 2, name: 'John Doe', avatar: 'https://i.pravatar.cc/150?img=1', points: 4870, rankChange: -1, subject: 'React' },
+    { id: 3, name: 'Jane Smith', avatar: 'https://i.pravatar.cc/150?img=2', points: 4560, rankChange: 0, subject: 'UI/UX' },
+    { id: 4, name: 'phamalphats', avatar: 'https://i.pravatar.cc/150?img=4', points: 4210, rankChange: 1, subject: 'General' },
+];
+
+// Additional data for different time periods (mock)
+export const dailyLeaderboardUsers: LeaderboardUser[] = [
+    { id: 1, name: 'John Doe', avatar: 'https://i.pravatar.cc/150?img=1', points: 1200, rankChange: 3 },
+    { id: 2, name: 'Sontang MTP', avatar: 'https://i.pravatar.cc/150?img=3', points: 1100, rankChange: -2 },
+    { id: 3, name: 'Jane Smith', avatar: 'https://i.pravatar.cc/150?img=2', points: 1000, rankChange: 1 },
+    { id: 4, name: 'phamalphats', avatar: 'https://i.pravatar.cc/150?img=4', points: 900, rankChange: 0 },
+];
+
+export const monthlyLeaderboardUsers: LeaderboardUser[] = [
+    { id: 1, name: 'Sontang MTP', avatar: 'https://i.pravatar.cc/150?img=3', points: 15432, rankChange: 1 },
+    { id: 2, name: 'Jane Smith', avatar: 'https://i.pravatar.cc/150?img=2', points: 14870, rankChange: 2 },
+    { id: 3, name: 'John Doe', avatar: 'https://i.pravatar.cc/150?img=1', points: 14560, rankChange: -1 },
+    { id: 4, name: 'phamalphats', avatar: 'https://i.pravatar.cc/150?img=4', points: 14210, rankChange: 0 },
+];
+
+export const allTimeLeaderboardUsers: LeaderboardUser[] = [
+    { id: 1, name: 'Sontang MTP', avatar: 'https://i.pravatar.cc/150?img=3', points: 54320, rankChange: 0 },
+    { id: 2, name: 'John Doe', avatar: 'https://i.pravatar.cc/150?img=1', points: 48700, rankChange: 1 },
+    { id: 3, name: 'Jane Smith', avatar: 'https://i.pravatar.cc/150?img=2', points: 45600, rankChange: -1 },
+    { id: 4, name: 'phamalphats', avatar: 'https://i.pravatar.cc/150?img=4', points: 42100, rankChange: 2 },
 ];

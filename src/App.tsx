@@ -69,6 +69,7 @@ import StudentTrackingPage from "./pages/advisor/StudentTrackingPage";
 import ReportingPage from "./pages/advisor/ReportingPage";
 import ConsultationPage from "./pages/advisor/ConsultationPage";
 import APPathwaysPage from "./pages/advisor/APPathwaysPage";
+import RankingPage from "./pages/ranking/RankingPage";
 // Layout Wrapper for common UI elements
 const Layout = () => (
   <div className="flex flex-col min-h-screen">
@@ -117,6 +118,7 @@ function App() {
           <Route path="/materials/:id" element={<MaterialsDetailPage />} />
           <Route path="/community" element={<CommunityPage />} />
           <Route path="/community/groups/:groupId" element={<GroupDetailPage />} />
+          <Route path="/ranking" element={<RankingPage />} />
         </Route>
 
         {/* Student routes with StudentLayout */}

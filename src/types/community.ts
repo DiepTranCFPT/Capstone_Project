@@ -32,3 +32,13 @@ export interface StudyGroup {
     privacy: 'public' | 'private';
     members: UserInfo[];
 };
+
+export interface LeaderboardUser {
+    id: number;
+    name: string;
+    avatar: string;
+    points: number;
+    rankChange?: number; // Positive for up, negative for down, 0 for no change
+    subject?: string; // Optional for subject filter
+    groupId?: number; // Optional for study group filter
+};

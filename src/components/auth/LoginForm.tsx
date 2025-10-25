@@ -192,6 +192,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ buttonClasses }) => {
                     className='flex justify-center items-center gap-3 border border-gray-300 py-2.5 px-4 rounded-lg hover:cursor-pointer
                  hover:scale-101 transform transition-all duration-200 hover:border-backgroundColor'>
                     <img src={google} alt="Google logo" width={30} />
+                    <span className='text-gray-600'>Sign in with Google</span>
                 </div>
             </div>
         </div>
