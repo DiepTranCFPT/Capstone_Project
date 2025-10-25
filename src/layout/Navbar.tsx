@@ -64,7 +64,7 @@ const Navbar: React.FC = () => {
         <Link to="/contact" className="text-black text-base font-semibold">
           Contact
         </Link> */}
-        <Link to="/student/dashboard" className="text-black text-base font-semibold">
+        <Link to="/ranking" className="text-black text-base font-semibold">
           Ranking
         </Link>
         <Link to="/community" className="text-black text-base font-semibold">
@@ -76,12 +76,15 @@ const Navbar: React.FC = () => {
       <div className="flex items-center gap-4">
         {!initialLoading && !isAuthenticated ? (
           <>
-            <Link to="/auth" className="text-black text-base font-semibold">
+            <Link
+              to="/auth"
+              className="text-gray-700 text-base font-semibold px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-300 hover:scale-105 hover:shadow-md"
+            >
               Sign In
             </Link>
             <Link
               to="/auth"
-              className="bg-teal-400 text-white text-base font-semibold px-4 py-2 rounded-md"
+              className="bg-gradient-to-r from-teal-400 to-teal-500 text-white text-base font-semibold px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:from-teal-500 hover:to-teal-600 transform"
             >
               Sign Up
             </Link>
@@ -92,7 +95,7 @@ const Navbar: React.FC = () => {
               <div className="flex items-center gap-2 cursor-pointer relative group">
                 {user && (
                   <div
-                    className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-all duration-300 hover:scale-105 hover:shadow-md"
                     onClick={toggleModal}
                   >
                     <span className="text-gray-800 text-sm font-medium hidden sm:block">
@@ -101,9 +104,8 @@ const Navbar: React.FC = () => {
                     <img
                       src={user.imgUrl || 'https://placehold.co/50x50'}
                       alt="User avatar"
-                      className="w-8 h-8 rounded-full object-cover border-2 border-gray-200"
+                      className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 transition-all duration-300 hover:border-teal-300 hover:scale-110"
                     />
-
                   </div>
                 )}
               </div>
@@ -114,31 +116,29 @@ const Navbar: React.FC = () => {
         {showModal && (
           <div
             ref={menuRef}
-            className="absolute top-20 right-4 bg-white border border-gray-200 rounded-lg shadow-xl w-48 z-[9999] animate-in fade-in-0 zoom-in-95 duration-200"
+            className="absolute top-20 right-4 bg-white border border-gray-200 rounded-lg shadow-xl w-48 z-[9999] animate-fade-in"
           >
             <div className="py-2">
-
               {/* Menu Items */}
               <div className="py-1">
                 <Link
                   to="/student/dashboard"
-                  className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-all duration-300 hover:scale-105 rounded-md mx-2"
                   onClick={() => setShowModal(false)}
                 >
                   <IoPersonCircleOutline className="w-4 h-4" />
                   My Profile
                 </Link>
-
               </div>
 
               {/* Divider */}
-              <div className="border-t border-gray-100"></div>
+              <div className="border-t border-gray-100 my-1"></div>
 
               {/* Logout */}
               <div className="py-1">
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150 w-full text-left"
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-all duration-300 hover:scale-105 rounded-md mx-2 w-full text-left"
                 >
                   <FaSignOutAlt className="w-4 h-4" />
                   Sign Out

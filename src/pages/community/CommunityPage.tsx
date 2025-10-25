@@ -5,12 +5,13 @@ import { useState } from "react";
 import { FiMessageCircle, FiPlus, FiUser, FiUsers } from "react-icons/fi";
 import CreateGroupModal from "~/components/community/CreateGroupModal";
 import CreateThreadModal from "~/components/community/CreateThreadModal";
+import LeaderBoard from "~/components/community/Leaderboard";
 import StudyGroupCard from "~/components/community/StudyGroupCard";
 import ThreadCard from "~/components/community/ThreadCard";
 import { threads as initialThreads } from '~/data/communityData';
 import { useAuth } from "~/hooks/useAuth";
 import type { StudyGroup, Thread } from "~/types/community";
-
+import { PiRankingLight } from "react-icons/pi";
 const mockGroups: StudyGroup[] = [
     { id: 1, name: 'IELTS 7.0 Aimers', description: 'Cùng nhau chia sẻ tài liệu và kinh nghiệm để đạt mục tiêu IELTS 7.0+', avatar: 'https://placehold.co/100x100/3CBCB2/FFFFFF?text=IELTS', bannerImage: '', memberCount: 120, tags: ['ielts', 'english'], privacy: 'public', members: [] },
     { id: 2, name: 'ReactJS Developers VN', description: 'Nơi thảo luận về React, Next.js và hệ sinh thái Javascript.', avatar: 'https://placehold.co/100x100/F5A623/FFFFFF?text=React', bannerImage: '', memberCount: 450, tags: ['react', 'frontend'], privacy: 'public', members: [] },
@@ -22,7 +23,7 @@ const CommunityPage: React.FC = () => {
     const [threads, setThreads] = useState<Thread[]>(initialThreads);
     const [isThreadModalVisible, setIsThreadModalVisible] = useState(false);
     const [isGroupModalVisible, setIsGroupModalVisible] = useState(false);
-    const [view, setView] = useState<'threads' | 'groups' | 'my-threads'>('threads'); // State để quản lý view
+    const [view, setView] = useState<'threads' | 'groups' | 'my-threads' | 'ranking'>('threads'); // State để quản lý view
 
     const displayedThreads = view === 'my-threads'
         ? threads.filter(thread => thread.user.name === user?.firstName + ' ' + user?.lastName)
@@ -86,40 +87,48 @@ const CommunityPage: React.FC = () => {
                                 <button onClick={() => setView('my-threads')} className={`w-full flex items-center gap-3 px-3 py-2 hover:cursor-pointer rounded-md font-bold ${view === 'my-threads' ? 'text-teal-600 bg-teal-50' : 'text-gray-600 hover:bg-gray-100'}`}>
                                     <FiUser /> My Thread
                                 </button>
+                                <button onClick={() => setView('ranking')} className={`w-full flex items-center gap-3 px-3 py-2 hover:cursor-pointer rounded-md font-bold ${view === 'ranking' ? 'text-teal-600 bg-teal-50' : 'text-gray-600 hover:bg-gray-100'}`}>
+                                    <PiRankingLight /> Ranking
+                                </button>
                             </nav>
                         </div>
                     </aside>
                     {/* col 2 main feed */}
                     <div className="col-span-1 lg:col-span-2 space-y-6">
-                        {/* Create Post */}
-                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center gap-3">
-                            <img src={user?.imgUrl} alt="user" className="w-10 h-10 rounded-full" />
-                            {view === 'threads' ? (
-                                <>
-                                    <div className="w-full bg-gray-100 rounded-full px-4 py-2 text-gray-500 cursor-pointer hover:bg-gray-200" onClick={() => setIsThreadModalVisible(true)}>
-                                        Add new thread...
-                                    </div>
-                                    <button onClick={() => setIsThreadModalVisible(true)} className="bg-teal-500 text-white p-2.5 rounded-full hover:bg-teal-600 hover:cursor-pointer"><FiPlus size={20} /></button>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="w-full bg-gray-100 rounded-full px-4 py-2 text-gray-500 cursor-pointer hover:bg-gray-200" onClick={() => setIsGroupModalVisible(true)}>
-                                        Create a new study group...
-                                    </div>
-                                    <button onClick={() => setIsGroupModalVisible(true)} className="bg-teal-500 text-white p-2.5 rounded-full hover:bg-teal-600 hover:cursor-pointer"><FiPlus size={20} /></button>
-                                </>
-                            )}
-                        </div>
+                        {/* Create Post - only for threads and groups */}
+                        {view !== 'ranking' && (
+                            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center gap-3">
+                                <img src={user?.imgUrl} alt="user" className="w-10 h-10 rounded-full" />
+                                {view === 'threads' ? (
+                                    <>
+                                        <div className="w-full bg-gray-100 rounded-full px-4 py-2 text-gray-500 cursor-pointer hover:bg-gray-200" onClick={() => setIsThreadModalVisible(true)}>
+                                            Add new thread...
+                                        </div>
+                                        <button onClick={() => setIsThreadModalVisible(true)} className="bg-teal-500 text-white p-2.5 rounded-full hover:bg-teal-600 hover:cursor-pointer"><FiPlus size={20} /></button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="w-full bg-gray-100 rounded-full px-4 py-2 text-gray-500 cursor-pointer hover:bg-gray-200" onClick={() => setIsGroupModalVisible(true)}>
+                                            Create a new study group...
+                                        </div>
+                                        <button onClick={() => setIsGroupModalVisible(true)} className="bg-teal-500 text-white p-2.5 rounded-full hover:bg-teal-600 hover:cursor-pointer"><FiPlus size={20} /></button>
+                                    </>
+                                )}
+                            </div>
+                        )}
 
-                        {/* Thread List */}
+                        {/* Content based on view */}
                         {view === 'threads' ? (
                             threads.map(thread => <ThreadCard key={thread.id} thread={thread} />)
                         ) : view === 'my-threads' ? (
                             displayedThreads.map(thread => <ThreadCard key={thread.id} thread={thread} />)
-
-                        ) : (
+                        ) : view === 'groups' ? (
                             mockGroups.map(group => <StudyGroupCard key={group.id} group={group} />)
-                        )}
+                        ) : view === 'ranking' ? (
+                            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 animate-fade-in">
+                                <LeaderBoard />
+                            </div>
+                        ) : null}
                         {displayedThreads.length === 0 && (
                             <div className="text-center py-10">
                                 <p className="text-gray-500">No threads to display.</p>
