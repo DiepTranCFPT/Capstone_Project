@@ -5,7 +5,7 @@ export interface User {
   firstName: string;
   lastName: string;
   imgUrl?: string;
-  dob?: string; 
+  dob?: string | Date;  
   roles: string[];
   active: boolean;
 }

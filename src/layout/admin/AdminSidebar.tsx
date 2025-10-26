@@ -1,7 +1,7 @@
 import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
-import { Button, Avatar } from "antd";
+import { Button, Avatar, Spin, message } from "antd";
 import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   UserOutlined,
   SettingOutlined,
@@ -15,6 +15,8 @@ import {
   IdcardOutlined,
   CreditCardOutlined,
 } from "@ant-design/icons";
+import { getCurrentUserApi } from "~/services/authService"; 
+import type { User } from "~/types/user";
 
 const adminMenu = [
   { key: "/dashboard", label: "Dashboard", icon: <DashboardOutlined /> },
@@ -32,22 +34,51 @@ const adminMenu = [
 
 export default function AdminSidebar() {
   const location = useLocation();
-
-  const [collapsed, setCollapsed] = useState(() => {
-    const saved = localStorage.getItem("sidebar-admin-collapsed");
-    return saved === "true";
-  });
+  const [collapsed, setCollapsed] = useState(
+    localStorage.getItem("sidebar-admin-collapsed") === "true"
+  );
+ 
+const [adminUser, setAdminUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const toggleCollapse = () => {
     setCollapsed(!collapsed);
     localStorage.setItem("sidebar-admin-collapsed", (!collapsed).toString());
   };
 
-  const adminUser = {
-    name: "Admin User",
-    email: "admin@example.com",
-    avatar: "https://i.pravatar.cc/150?img=12",
+useEffect(() => {
+  const fetchAdminData = async () => {
+    try {
+      const response = await getCurrentUserApi();
+
+      setAdminUser({
+        id: String(response.user.id),
+        email: response.user.email,
+        firstName: response.user.firstName,
+        lastName: response.user.lastName,
+        imgUrl: response.user.imgUrl,
+        dob: response.user.dob,
+        roles: [response.user.role], 
+        active: true, 
+      });
+    } catch (err) {
+      console.error("Failed to fetch admin profile:", err);
+      message.error("Không thể tải thông tin Admin!");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  fetchAdminData();
+}, []);
+
+  if (loading) {
+    return (
+      <div className="h-screen flex justify-center items-center bg-white">
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -87,14 +118,18 @@ export default function AdminSidebar() {
         <Link to="/admin/profile">
           <Avatar
             size={collapsed ? 32 : 40}
-            src={adminUser.avatar}
+            src={adminUser?.imgUrl || "https://i.pravatar.cc/150?u=admin"}
             className="cursor-pointer"
           />
         </Link>
         {!collapsed && (
           <div>
-            <div className="text-sm font-semibold">{adminUser.name}</div>
-            <div className="text-[10px] text-gray-400">{adminUser.email}</div>
+            <div className="text-sm font-semibold">
+              {adminUser
+                ? `${adminUser.firstName} ${adminUser.lastName}`
+                : "Admin"}
+            </div>
+            <div className="text-[10px] text-gray-400">{adminUser?.email}</div>
           </div>
         )}
       </div>
