@@ -30,3 +30,15 @@ export interface NewQuestion {
   correctIndex?: number | null;
   expectedAnswer?: string;
 }
+
+// Form field types cho AddQuestionModal
+export type QuestionFormFields = {
+  text: string;
+  subject: string;
+  difficulty: "easy" | "medium" | "hard";
+  type: "multiple_choice" | "essay";
+  choices?: string[];
+  correctIndex?: number | null;
+  expectedAnswer?: string;
+  tags: string[];
+};
