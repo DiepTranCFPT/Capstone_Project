@@ -1,10 +1,10 @@
-import type { Question } from './test';
+import type { QuestionBankItem } from './test';
 
 export interface QuizBattle {
     id: string;
     playerOneId: string;
     playerTwoId: string;
-    questions: Question[];
+    questions: QuestionBankItem[];
     scores: {
         playerOne: number;
         playerTwo: number;
