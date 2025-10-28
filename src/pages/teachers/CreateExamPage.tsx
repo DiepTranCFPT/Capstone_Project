@@ -1,27 +1,28 @@
 import React, { useState } from "react";
+import { Button, Checkbox, Input, Card, Tag, message } from "antd";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Button, Checkbox, Input, Card, Tag, message } from "antd";
 import AddQuestionModal from "~/components/teachers/exam/AddQuestionModal";
 import type { QuestionBankItem, NewQuestion } from "~/types/question";
-import { mockQuestionBank } from "~/data/teacher";
+import { mockQuestionBank } from "../../data/teacher";
 
 const ItemType = "QUESTION";
 
-
-const DraggableQuestion = ({
-  question,
-  index,
-  moveQuestion,
-}: {
+interface DraggableQuestionProps {
   question: QuestionBankItem;
   index: number;
   moveQuestion: (dragIndex: number, hoverIndex: number) => void;
+}
+
+const DraggableQuestion: React.FC<DraggableQuestionProps> = ({
+  question,
+  index,
+  moveQuestion,
 }) => {
   const ref = React.useRef<HTMLDivElement>(null);
-  const [, drop] = useDrop({
+  const [, drop] = useDrop<{ index: number }>({
     accept: ItemType,
-    hover(item: { index: number }) {
+    hover(item) {
       if (!ref.current) return;
       const dragIndex = item.index;
       const hoverIndex = index;
@@ -30,6 +31,7 @@ const DraggableQuestion = ({
       item.index = hoverIndex;
     },
   });
+
   const [{ isDragging }, drag] = useDrag({
     type: ItemType,
     item: { index },
@@ -37,27 +39,21 @@ const DraggableQuestion = ({
       isDragging: monitor.isDragging(),
     }),
   });
+
   drag(drop(ref));
 
   return (
     <div ref={ref} style={{ opacity: isDragging ? 0.5 : 1 }}>
-      <Card className="mb-2 cursor-move">
-        <p className="font-medium">{question.text}</p>
-        <div className="flex gap-2 mt-1">
-          <Tag color="blue">{question.subject}</Tag>
-          <Tag color="purple">{question.difficulty}</Tag>
-        </div>
-      </Card>
+      <Card className="mb-2 cursor-move">{question.text}</Card>
     </div>
   );
 };
 
-// ✅ Trang chính
 const CreateExamPage: React.FC = () => {
+  const [questionBank, setQuestionBank] = useState<QuestionBankItem[]>(mockQuestionBank);
   const [selectedQuestions, setSelectedQuestions] = useState<QuestionBankItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // chọn/bỏ chọn câu hỏi
   const handleSelectQuestion = (question: QuestionBankItem, checked: boolean) => {
     if (checked) {
       setSelectedQuestions((prev) => [...prev, question]);
@@ -66,20 +62,17 @@ const CreateExamPage: React.FC = () => {
     }
   };
 
-  // sắp xếp câu hỏi
   const moveQuestion = (dragIndex: number, hoverIndex: number) => {
     const dragged = selectedQuestions[dragIndex];
-    const updated = [...selectedQuestions];
-    updated.splice(dragIndex, 1);
-    updated.splice(hoverIndex, 0, dragged);
-    setSelectedQuestions(updated);
+    const newSelected = [...selectedQuestions];
+    newSelected.splice(dragIndex, 1);
+    newSelected.splice(hoverIndex, 0, dragged);
+    setSelectedQuestions(newSelected);
   };
 
-  // xử lý modal
   const handleAddQuestion = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
-  // lưu câu hỏi mới từ modal
   const handleSaveNewQuestion = (newQuestion: NewQuestion) => {
     const questionToAdd: QuestionBankItem = {
       id: crypto.randomUUID(),
@@ -102,8 +95,8 @@ const CreateExamPage: React.FC = () => {
       tags: newQuestion.tags,
     };
 
-    setSelectedQuestions((prev) => [...prev, questionToAdd]);
-    message.success("Thêm câu hỏi thành công!");
+    setQuestionBank((prev) => [questionToAdd, ...prev]);
+    message.success("Thêm câu hỏi mới vào Question Bank!");
     setIsModalOpen(false);
   };
 
@@ -121,7 +114,7 @@ const CreateExamPage: React.FC = () => {
             }}
             onClick={handleAddQuestion}
           >
-            + Add Question
+            Add Question
           </Button>
           <Button type="primary" size="large">
             Save Exam
@@ -129,18 +122,13 @@ const CreateExamPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2 cột */}
       <div className="grid grid-cols-2 gap-8">
-        {/* Cột trái: Question Bank */}
         <div>
           <h2 className="text-xl font-semibold mb-4">Question Bank</h2>
           <div className="bg-white p-4 rounded-lg shadow-sm h-[600px] overflow-y-auto">
-            {mockQuestionBank.map((q) => (
+            {questionBank.map((q) => (
               <div key={q.id} className="flex items-start gap-3 p-2 border-b">
-                <Checkbox
-                  checked={selectedQuestions.some((s) => s.id === q.id)}
-                  onChange={(e) => handleSelectQuestion(q, e.target.checked)}
-                />
+                <Checkbox onChange={(e) => handleSelectQuestion(q, e.target.checked)} />
                 <div>
                   <p>{q.text}</p>
                   <div className="flex gap-2 mt-1">
@@ -153,7 +141,6 @@ const CreateExamPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Cột phải: Exam Builder */}
         <div>
           <h2 className="text-xl font-semibold mb-4">Exam Builder</h2>
           <div className="bg-white p-4 rounded-lg shadow-sm flex flex-col gap-3">
@@ -161,11 +148,16 @@ const CreateExamPage: React.FC = () => {
             <Input type="number" placeholder="Duration (in minutes)" />
             <div className="border p-2 rounded-md min-h-[450px]">
               {selectedQuestions.map((q, i) => (
-                <DraggableQuestion key={q.id} index={i} question={q} moveQuestion={moveQuestion} />
+                <DraggableQuestion
+                  key={q.id}
+                  index={i}
+                  question={q}
+                  moveQuestion={moveQuestion}
+                />
               ))}
               {selectedQuestions.length === 0 && (
                 <p className="text-gray-400 text-center p-10">
-                  Select questions from the left or add manually.
+                  Select questions from the left to add them here.
                 </p>
               )}
             </div>
@@ -173,7 +165,6 @@ const CreateExamPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal thêm câu hỏi */}
       <AddQuestionModal
         open={isModalOpen}
         onCancel={handleCloseModal}

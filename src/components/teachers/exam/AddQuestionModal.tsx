@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Modal, Form, Input, Select, Radio, Button, Space } from "antd";
+import { Modal, Input, Select, Radio, Button, Space } from "antd";
 import type { NewQuestion } from "~/types/question";
 
+const { TextArea } = Input;
 const { Option } = Select;
 
 interface AddQuestionModalProps {
@@ -15,36 +16,49 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
   onCancel,
   onSubmit,
 }) => {
-  const [form] = Form.useForm<NewQuestion>();
-  const [questionType, setQuestionType] = useState<"multiple_choice" | "essay">(
-    "multiple_choice"
-  );
-  const [choices, setChoices] = useState<string[]>(["", "", "", ""]);
-  const [correctIndex, setCorrectIndex] = useState<number | null>(null);
+  const [formData, setFormData] = useState<NewQuestion>({
+    text: "",
+    subject: "",
+    difficulty: "medium",
+    type: "multiple_choice",
+    choices: ["", "", "", ""],
+    correctIndex: 0,
+    tags: [],
+  });
 
-  const handleAddChoice = () => setChoices([...choices, ""]);
-
-  const handleChoiceChange = (value: string, index: number) => {
-    const updated = [...choices];
-    updated[index] = value;
-    setChoices(updated);
+  const handleChange = <K extends keyof NewQuestion>(
+    key: K,
+    value: NewQuestion[K]
+  ) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleFinish = (values: Omit<NewQuestion, "type" | "choices" | "correctIndex">) => {
-    const questionData: NewQuestion = {
-      ...values,
-      type: questionType,
-      choices: questionType === "multiple_choice" ? choices : undefined,
-      correctIndex:
-        questionType === "multiple_choice" ? correctIndex : undefined,
-      expectedAnswer:
-        questionType === "essay" ? values.expectedAnswer || "" : undefined,
-    };
+  const handleChoiceChange = (index: number, value: string) => {
+    const newChoices = [...(formData.choices ?? [])];
+    newChoices[index] = value;
+    setFormData((prev) => ({ ...prev, choices: newChoices }));
+  };
 
-    onSubmit(questionData);
-    form.resetFields();
-    setChoices(["", "", "", ""]);
-    setCorrectIndex(null);
+  const addChoice = () => {
+    setFormData((prev) => ({
+      ...prev,
+      choices: [...(prev.choices ?? []), ""],
+    }));
+  };
+
+  const handleSubmit = () => {
+    if (!formData.text.trim()) return;
+    onSubmit(formData);
+    // Reset form
+    setFormData({
+      text: "",
+      subject: "",
+      difficulty: "medium",
+      type: "multiple_choice",
+      choices: ["", "", "", ""],
+      correctIndex: 0,
+      tags: [],
+    });
   };
 
   return (
@@ -55,92 +69,114 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
       footer={null}
       width={700}
     >
-      <Form layout="vertical" form={form} onFinish={handleFinish}>
-        <Form.Item
-          label="Question Text"
-          name="text"
-          rules={[{ required: true, message: "Please enter question text" }]}
-        >
-          <Input.TextArea rows={3} />
-        </Form.Item>
+      <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+        {/* Question Text */}
+        <div>
+          <label className="font-medium">Question Text</label>
+          <TextArea
+            rows={3}
+            placeholder="Enter question text"
+            value={formData.text}
+            onChange={(e) => handleChange("text", e.target.value)}
+          />
+        </div>
 
-        <Form.Item
-          label="Subject"
-          name="subject"
-          rules={[{ required: true, message: "Please enter subject" }]}
-        >
-          <Input placeholder="e.g. Math, Physics" />
-        </Form.Item>
+        {/* Subject */}
+        <div>
+          <label className="font-medium">Subject</label>
+          <Input
+            placeholder="e.g. Math, History"
+            value={formData.subject}
+            onChange={(e) => handleChange("subject", e.target.value)}
+          />
+        </div>
 
-        <Form.Item
-          label="Difficulty"
-          name="difficulty"
-          rules={[{ required: true, message: "Please select difficulty" }]}
-        >
-          <Select placeholder="Select difficulty">
+        {/* Difficulty */}
+        <div>
+          <label className="font-medium">Difficulty</label>
+          <Select
+            value={formData.difficulty}
+            onChange={(v) => handleChange("difficulty", v)}
+            style={{ width: "100%" }}
+          >
             <Option value="easy">Easy</Option>
             <Option value="medium">Medium</Option>
             <Option value="hard">Hard</Option>
           </Select>
-        </Form.Item>
+        </div>
 
-        <Form.Item label="Tags" name="tags">
-          <Select mode="tags" placeholder="Add tags (optional)" />
-        </Form.Item>
+        {/* Tags */}
+        <div>
+          <label className="font-medium">Tags</label>
+          <Select
+            mode="tags"
+            placeholder="Add tags (optional)"
+            value={formData.tags}
+            onChange={(v) => handleChange("tags", v)}
+            style={{ width: "100%" }}
+          />
+        </div>
 
-        <Form.Item label="Question Type">
+        {/* Question Type */}
+        <div>
+          <label className="font-medium">Question Type</label>
           <Radio.Group
-            value={questionType}
-            onChange={(e) => setQuestionType(e.target.value)}
+            value={formData.type}
+            onChange={(e) => handleChange("type", e.target.value)}
           >
             <Radio value="multiple_choice">Multiple Choice</Radio>
             <Radio value="essay">Essay</Radio>
           </Radio.Group>
-        </Form.Item>
+        </div>
 
-        {questionType === "multiple_choice" ? (
-          <div className="space-y-3">
+        {/* Choices (for MCQ) */}
+        {formData.type === "multiple_choice" ? (
+          <div className="space-y-2">
             <p className="font-medium">Choices</p>
-            {choices.map((choice, index) => (
+            {(formData.choices ?? []).map((choice, index) => (
               <div key={index} className="flex items-center gap-2">
                 <Radio
-                  checked={correctIndex === index}
-                  onChange={() => setCorrectIndex(index)}
+                  checked={formData.correctIndex === index}
+                  onChange={() => handleChange("correctIndex", index)}
                 />
                 <Input
                   placeholder={`Choice ${index + 1}`}
                   value={choice}
-                  onChange={(e) => handleChoiceChange(e.target.value, index)}
+                  onChange={(e) => handleChoiceChange(index, e.target.value)}
                 />
               </div>
             ))}
-            <Button type="dashed" onClick={handleAddChoice} block>
+            <Button type="dashed" block onClick={addChoice}>
               + Add Choice
             </Button>
           </div>
         ) : (
-          <Form.Item
-            label="Expected Answer"
-            name="expectedAnswer"
-            rules={[{ required: true, message: "Please enter answer" }]}
-          >
-            <Input.TextArea rows={3} />
-          </Form.Item>
+          // Expected Answer for essay
+          <div>
+            <label className="font-medium">Expected Answer</label>
+            <TextArea
+              rows={3}
+              placeholder="Write expected answer here..."
+              value={formData.expectedAnswer}
+              onChange={(e) => handleChange("expectedAnswer", e.target.value)}
+            />
+          </div>
         )}
 
+        {/* Actions */}
         <div className="flex justify-end mt-5">
           <Space>
             <Button onClick={onCancel}>Cancel</Button>
             <Button
               type="primary"
-              htmlType="submit"
+              onClick={handleSubmit}
               style={{ backgroundColor: "#3CBCB2", border: "none" }}
             >
               Save Question
             </Button>
           </Space>
         </div>
-      </Form>
+      </Space>
     </Modal>
   );
 };
