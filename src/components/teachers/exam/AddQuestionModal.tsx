@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Input, Select, Radio, Button, Space } from "antd";
-import type { NewQuestion } from "~/types/question";
+import type { NewQuestion, QuestionBankItem } from "~/types/question";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -9,22 +9,51 @@ interface AddQuestionModalProps {
   open: boolean;
   onCancel: () => void;
   onSubmit: (data: NewQuestion) => void;
+  editingQuestion?: QuestionBankItem | null;
 }
 
 const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
   open,
   onCancel,
   onSubmit,
+  editingQuestion,
 }) => {
   const [formData, setFormData] = useState<NewQuestion>({
     text: "",
     subject: "",
     difficulty: "medium",
-    type: "multiple_choice",
+    type: "mcq",
     choices: ["", "", "", ""],
     correctIndex: 0,
     tags: [],
   });
+
+  useEffect(() => {
+    if (editingQuestion) {
+      const choices = editingQuestion.type === "mcq" ? editingQuestion.options?.map(opt => opt.text) || ["", "", "", ""] : [];
+      const correctIndex = editingQuestion.type === "mcq" ? editingQuestion.options?.findIndex(opt => opt.isCorrect) || 0 : 0;
+      setFormData({
+        text: editingQuestion.text,
+        subject: editingQuestion.subject,
+        difficulty: editingQuestion.difficulty,
+        type: editingQuestion.type,
+        choices: choices.length ? choices : ["", "", "", ""],
+        correctIndex: correctIndex,
+        expectedAnswer: editingQuestion.expectedAnswer,
+        tags: editingQuestion.tags || [],
+      });
+    } else {
+      setFormData({
+        text: "",
+        subject: "",
+        difficulty: "medium",
+        type: "mcq",
+        choices: ["", "", "", ""],
+        correctIndex: 0,
+        tags: [],
+      });
+    }
+  }, [editingQuestion]);
 
   const handleChange = <K extends keyof NewQuestion>(
     key: K,
@@ -54,7 +83,7 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
       text: "",
       subject: "",
       difficulty: "medium",
-      type: "multiple_choice",
+      type: "mcq",
       choices: ["", "", "", ""],
       correctIndex: 0,
       tags: [],
@@ -65,7 +94,7 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
     <Modal
       open={open}
       onCancel={onCancel}
-      title="Add New Question"
+      title={editingQuestion ? "Edit Question" : "Add New Question"}
       footer={null}
       width={700}
     >
@@ -124,13 +153,13 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
             value={formData.type}
             onChange={(e) => handleChange("type", e.target.value)}
           >
-            <Radio value="multiple_choice">Multiple Choice</Radio>
-            <Radio value="essay">Essay</Radio>
+            <Radio value="mcq">Multiple Choice</Radio>
+            <Radio value="frq">Essay</Radio>
           </Radio.Group>
         </div>
 
         {/* Choices (for MCQ) */}
-        {formData.type === "multiple_choice" ? (
+        {formData.type === "mcq" ? (
           <div className="space-y-2">
             <p className="font-medium">Choices</p>
             {(formData.choices ?? []).map((choice, index) => (

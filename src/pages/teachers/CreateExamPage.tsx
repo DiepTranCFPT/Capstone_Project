@@ -1,10 +1,9 @@
-import React, { useState } from "react";
-import { Button, Checkbox, Input, Card, Tag, message } from "antd";
+import React, { useState, useContext } from "react";
+import { Button, Checkbox, Input, Card, Tag } from "antd";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import AddQuestionModal from "~/components/teachers/exam/AddQuestionModal";
-import type { QuestionBankItem, NewQuestion } from "~/types/question";
-import { mockQuestionBank } from "../../data/teacher";
+import type { QuestionBankItem } from "~/types/question";
+import { QuestionBankContext } from "~/context/QuestionBankContext";
 
 const ItemType = "QUESTION";
 
@@ -50,9 +49,8 @@ const DraggableQuestion: React.FC<DraggableQuestionProps> = ({
 };
 
 const CreateExamPage: React.FC = () => {
-  const [questionBank, setQuestionBank] = useState<QuestionBankItem[]>(mockQuestionBank);
+  const { questionBank } = useContext(QuestionBankContext)!;
   const [selectedQuestions, setSelectedQuestions] = useState<QuestionBankItem[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleSelectQuestion = (question: QuestionBankItem, checked: boolean) => {
     if (checked) {
@@ -70,52 +68,15 @@ const CreateExamPage: React.FC = () => {
     setSelectedQuestions(newSelected);
   };
 
-  const handleAddQuestion = () => setIsModalOpen(true);
-  const handleCloseModal = () => setIsModalOpen(false);
-
-  const handleSaveNewQuestion = (newQuestion: NewQuestion) => {
-    const questionToAdd: QuestionBankItem = {
-      id: crypto.randomUUID(),
-      text: newQuestion.text,
-      subject: newQuestion.subject,
-      difficulty: newQuestion.difficulty,
-      type: newQuestion.type,
-      topic: "Custom Question",
-      createdBy: "teacher",
-      createdAt: new Date().toISOString(),
-      options:
-        newQuestion.type === "multiple_choice"
-          ? newQuestion.choices?.map((c, i) => ({
-              text: c,
-              isCorrect: i === newQuestion.correctIndex,
-            })) ?? []
-          : [],
-      expectedAnswer:
-        newQuestion.type === "essay" ? newQuestion.expectedAnswer || "" : undefined,
-      tags: newQuestion.tags,
-    };
-
-    setQuestionBank((prev) => [questionToAdd, ...prev]);
-    message.success("Thêm câu hỏi mới vào Question Bank!");
-    setIsModalOpen(false);
-  };
+  
+  
 
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Create New Exam</h1>
         <div className="flex gap-3">
-          <Button
-            size="large"
-            style={{
-              backgroundColor: "#3CBCB2",
-              color: "white",
-              border: "none",
-            }}
-            onClick={handleAddQuestion}
-          >
-            Add Question
-          </Button>
+          
           <Button type="primary" size="large">
             Save Exam
           </Button>
@@ -164,12 +125,7 @@ const CreateExamPage: React.FC = () => {
           </div>
         </div>
       </div>
-
-      <AddQuestionModal
-        open={isModalOpen}
-        onCancel={handleCloseModal}
-        onSubmit={handleSaveNewQuestion}
-      />
+    
     </DndProvider>
   );
 };

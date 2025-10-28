@@ -10,7 +10,7 @@ export interface QuestionBankItem {
   text: string;
   subject: string;
   difficulty: "easy" | "medium" | "hard";
-  type: "multiple_choice" | "essay";
+  type: "mcq" | "frq";
   topic: string;
   createdBy: string;
   createdAt: string;
@@ -24,7 +24,7 @@ export interface NewQuestion {
   text: string;
   subject: string;
   difficulty: "easy" | "medium" | "hard";
-  type: "multiple_choice" | "essay";
+  type: "mcq" | "frq";
   tags?: string[];
   choices?: string[];
   correctIndex?: number | null;
