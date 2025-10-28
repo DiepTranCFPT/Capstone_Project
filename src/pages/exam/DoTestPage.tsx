@@ -128,7 +128,17 @@ const DoTestPage: React.FC = () => {
                                 </h2>
                                 <div className="space-y-6">
                                     {mockMCQ.map((q, index) => (
-                                        <QuestionCard key={q.id} question={q} questionNumber={index + 1} />
+                                        <QuestionCard key={q.id} question={{
+                                            id: String(q.id),
+                                            text: q.text,
+                                            subject: "English",
+                                            difficulty: "medium",
+                                            type: "mcq",
+                                            topic: "Grammar",
+                                            createdBy: "system",
+                                            createdAt: new Date().toISOString(),
+                                            options: q.options.map(o => ({ id: o.id, text: o.text }))
+                                        }} questionNumber={index + 1} />
                                     ))}
                                 </div>
                             </div>
@@ -144,7 +154,17 @@ const DoTestPage: React.FC = () => {
                                 </h2>
                                 <div className="space-y-6">
                                     {mockFRQ.map((q, index) => (
-                                        <FRQCard key={q.id} question={q} questionNumber={mockMCQ.length + index + 1} />
+                                        <FRQCard key={q.id} question={{
+                                            id: String(q.id),
+                                            text: q.text,
+                                            subject: "English",
+                                            difficulty: "hard",
+                                            type: "frq",
+                                            topic: "Literature",
+                                            createdBy: "system",
+                                            createdAt: new Date().toISOString(),
+                                            expectedAnswer: "Sample answer"
+                                        }} questionNumber={mockMCQ.length + index + 1} />
                                     ))}
                                 </div>
                             </div>

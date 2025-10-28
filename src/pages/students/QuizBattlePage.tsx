@@ -58,7 +58,7 @@ const QuizBattlePage: React.FC = () => {
                                     key={index}
                                     value={option.text}
                                     className="w-full text-left h-auto py-2"
-                                    onClick={() => handleAnswer(question.id === 1 && option.id === 'a' || question.id === 2 && option.id === 'b' || question.id === 3 && option.id === 'b')}
+                                    onClick={() => handleAnswer(option.id === question.correctAnswer)}
                                 >
                                     {option.text}
                                 </Radio.Button>

@@ -2,7 +2,7 @@ import type { Material } from "~/types/material";
 
 export const materials: Material[] = [
   {
-    id: 1,
+    id: "1",
     title: "AP 2-D Art and Design",
     topic: "Arts",
     subject: "Design",
@@ -14,9 +14,19 @@ export const materials: Material[] = [
     image: "https://placehold.co/247x176",
     description:
       "Khóa học này giúp học sinh phát triển kỹ năng thiết kế đồ họa 2D, từ vẽ tay cơ bản đến kỹ thuật số, với nhiều dự án sáng tạo để xây dựng portfolio cá nhân.",
+    contentUrl: "https://example.com/course/1",
+    typeId: "course",
+    typeName: "Course",
+    subjectId: "design",
+    subjectName: "Design",
+    authorId: "author-1",
+    authorName: "Art Teacher",
+    isPublic: true,
+    createdAt: "2023-01-01T00:00:00Z",
+    updatedAt: "2023-01-01T00:00:00Z",
   },
   {
-    id: 2,
+    id: "2",
     title: "AP English Language and Composition",
     topic: "English",
     subject: "Language",
@@ -28,9 +38,19 @@ export const materials: Material[] = [
     image: "https://placehold.co/247x176",
     description:
       "Khóa học tập trung vào phân tích văn bản, cải thiện kỹ năng viết luận và rèn luyện khả năng đọc hiểu, chuẩn bị cho kỳ thi AP English.",
+    contentUrl: "https://example.com/course/2",
+    typeId: "course",
+    typeName: "Course",
+    subjectId: "english",
+    subjectName: "English",
+    authorId: "author-2",
+    authorName: "English Teacher",
+    isPublic: true,
+    createdAt: "2023-01-01T00:00:00Z",
+    updatedAt: "2023-01-01T00:00:00Z",
   },
   {
-    id: 3,
+    id: "3",
     title: "AP Computer Science A",
     topic: "Computer Science",
     subject: "Programming",
@@ -42,5 +62,15 @@ export const materials: Material[] = [
     image: "https://placehold.co/247x176",
     description:
       "Khóa học giới thiệu lập trình Java và các khái niệm khoa học máy tính cốt lõi, bao gồm cấu trúc dữ liệu, thuật toán và giải quyết vấn đề.",
+    contentUrl: "https://example.com/course/3",
+    typeId: "course",
+    typeName: "Course",
+    subjectId: "cs",
+    subjectName: "Computer Science",
+    authorId: "author-3",
+    authorName: "CS Teacher",
+    isPublic: true,
+    createdAt: "2023-01-01T00:00:00Z",
+    updatedAt: "2023-01-01T00:00:00Z",
   },
 ];

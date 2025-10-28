@@ -98,8 +98,8 @@ const mockMCQ = [
 ];
 
 const mockFRQ = [
-    { id: 101, text: "Explain the main theme of 'To Kill a Mockingbird'." },
-    { id: 102, text: "Describe the process of photosynthesis." },
+    { id: "101", text: "Explain the main theme of 'To Kill a Mockingbird'." },
+    { id: "102", text: "Describe the process of photosynthesis." },
 ];
 
 const exams = [

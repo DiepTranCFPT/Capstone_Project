@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { FRQ } from '~/types/test';
+import type { FRQ } from '~/types/question';
 import { useAuth } from '~/hooks/useAuth';
 import { Button } from 'antd';
 import { FaRobot } from 'react-icons/fa';

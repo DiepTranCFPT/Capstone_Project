@@ -1,7 +1,8 @@
 // Cấu trúc của mỗi lựa chọn (choice)
 export interface QuestionOption {
+  id?: string;
   text: string;
-  isCorrect: boolean;
+  isCorrect?: boolean;
 }
 
 // Đại diện cho 1 câu hỏi trong ngân hàng (API trả về)
@@ -10,7 +11,7 @@ export interface QuestionBankItem {
   text: string;
   subject: string;
   difficulty: "easy" | "medium" | "hard";
-  type: "multiple_choice" | "essay";
+  type: "mcq" | "frq";
   topic: string;
   createdBy: string;
   createdAt: string;
@@ -24,7 +25,7 @@ export interface NewQuestion {
   text: string;
   subject: string;
   difficulty: "easy" | "medium" | "hard";
-  type: "multiple_choice" | "essay";
+  type: "mcq" | "frq";
   tags?: string[];
   choices?: string[];
   correctIndex?: number | null;
@@ -42,3 +43,15 @@ export type QuestionFormFields = {
   expectedAnswer?: string;
   tags: string[];
 };
+
+// Cấu trúc của câu hỏi trắc nghiệm (MCQ)
+export interface MCQ extends QuestionBankItem {
+  type: "mcq";
+  options: QuestionOption[];
+}
+
+// Cấu trúc của câu hỏi tự luận (FRQ)
+export interface FRQ extends QuestionBankItem {
+  type: "frq";
+  expectedAnswer: string;
+}

@@ -88,7 +88,7 @@ const MaterialsDetailPage: React.FC = () => {
                       ) : (
                         <div className="flex items-center justify-center gap-2 mb-2">
                           <span className="text-4xl font-bold text-gray-900">${material.price}</span>
-                          <span className="text-lg text-gray-500 line-through">${(material.price * 1.5).toFixed(0)}</span>
+                          <span className="text-lg text-gray-500 line-through">${(material.price! * 1.5).toFixed(0)}</span>
                         </div>
                       )}
                       <p className="text-sm text-gray-500">
