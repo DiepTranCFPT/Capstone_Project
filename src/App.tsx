@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Route, Routes, Outlet } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Outlet,
+} from "react-router-dom";
 import Footer from "./layout/Footer";
 import Navbar from "./layout/Navbar";
 import HomePages from "./pages/home/HomePages";
@@ -87,7 +92,10 @@ function App() {
       <Routes>
         {/* Routes không có Layout (Navbar/Footer) */}
         <Route path="/do-test/:examId/:testType" element={<DoTestPage />} />
-        <Route path="/do-test/:examId/:practiceType/:mode" element={<PracticePage />} />
+        <Route
+          path="/do-test/:examId/:practiceType/:mode"
+          element={<PracticePage />}
+        />
         {/* Auth routes */}
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
@@ -97,36 +105,62 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
         {/*Admin routes with AdminLayout */}
-        <Route path="/admin" element={<ProtectedRoute roles={['ADMIN']}><AdminLayout /></ProtectedRoute>}>
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute roles={["ADMIN"]}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route path="parents" element={<ParentManagerPage />} />
           <Route path="courses" element={<CourseManagerPage />} />
           <Route path="students" element={<StudentMangerPage />} />
           <Route path="mock-tests" element={<MockTestManagerPage />} />
           <Route path="teachers" element={<TeacherManagerPage />} />
-          <Route path="certificates" element={<CertificatesRankingManagerPage />} />
+          <Route
+            path="certificates"
+            element={<CertificatesRankingManagerPage />}
+          />
           <Route path="users" element={<UserManagerPage />} />
-        <Route path="materials" element={<MaterialManagerPage />} /> 
+          <Route path="materials" element={<MaterialManagerPage />} />
         </Route>
 
         {/* Main routes with Layout */}
-        <Route element={<Layout />} >
+        <Route element={<Layout />}>
           <Route path="/" element={<HomePages />} />
           <Route path="/exam-test" element={<ExamTestPage />} />
           <Route path="/exam-test/:examId" element={<ExamDetailsPage />} />
-          <Route path="/test-result/:submissionId" element={<TestResultPage />} />
+          <Route
+            path="/test-result/:submissionId"
+            element={<TestResultPage />}
+          />
           <Route path="/materials" element={<MaterialsPage />} />
           <Route path="/materials/:id" element={<MaterialsDetailPage />} />
           <Route path="/community" element={<CommunityPage />} />
-          <Route path="/community/groups/:groupId" element={<GroupDetailPage />} />
+          <Route
+            path="/community/groups/:groupId"
+            element={<GroupDetailPage />}
+          />
           <Route path="/ranking" element={<RankingPage />} />
         </Route>
 
         {/* Student routes with StudentLayout */}
-        <Route path="/student" element={<ProtectedRoute roles={['STUDENT']}><StudentLayout /></ProtectedRoute>}>
+        <Route
+          path="/student"
+          element={
+            <ProtectedRoute roles={["STUDENT"]}>
+              <StudentLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route path="dashboard" element={<StudentDashboardPage />} />
 
           <Route path="test-reports" element={<TestReportsPage />} />
-          <Route path="test-reports/:reportId" element={<TestReportDetailPage />} />
+          <Route
+            path="test-reports/:reportId"
+            element={<TestReportDetailPage />}
+          />
 
           <Route path="profile" element={<ProfileDashboard />} />
           <Route path="ai-tutor" element={<AITutorPage />} />
@@ -137,22 +171,22 @@ function App() {
         </Route>
 
         {/* Teacher routes with TeacherLayout */}
-        <Route path="/teacher" element={<ProtectedRoute roles={['TEACHER']}><TeacherLayout /></ProtectedRoute>} >
+        <Route path="/teacher" element={<TeacherLayout />}>
           <Route path="dashboard" element={<TeacherDashboardPage />} />
-          {/* Các routes khác của Teacher sẽ được thêm vào đây */}
           <Route path="classes" element={<MyClassesPage />} />
           <Route path="classes/:classId" element={<ClassroomDetailPage />} />
           <Route path="question-bank" element={<QuestionBankPage />} />
           <Route path="create-exam" element={<CreateExamPage />} />
-          {/* <Route path="content" element={<ManageContentPage />} /> */}
           <Route path="grading" element={<GradingPage />} />
-          <Route path="grading/:submissionId" element={<GradeSubmissionPage />} />
+          <Route
+            path="grading/:submissionId"
+            element={<GradeSubmissionPage />}
+          />
           <Route path="analytics" element={<ClassAnalyticsPage />} />
-
         </Route>
 
         {/* Parent routes with ParentLayout */}
-        <Route path="/parent" element={<ParentLayout />} >
+        <Route path="/parent" element={<ParentLayout />}>
           <Route path="dashboard" element={<ParentDashboardPage />} />
           <Route path="link-student" element={<LinkStudentPage />} />
           <Route path="student/:studentId" element={<StudentDetailPage />} />
@@ -160,14 +194,13 @@ function App() {
         </Route>
 
         {/* Advisor routes with AdvisorLayout */}
-        <Route path="/advisor" element={<AdvisorLayout />} >
+        <Route path="/advisor" element={<AdvisorLayout />}>
           <Route path="dashboard" element={<AdvisorDashboardPage />} />
           <Route path="student-tracking" element={<StudentTrackingPage />} />
           <Route path="reporting" element={<ReportingPage />} />
           <Route path="consultations" element={<ConsultationPage />} />
           <Route path="ap-pathway-planner" element={<APPathwaysPage />} />
         </Route>
-
       </Routes>
     </Router>
   );
