@@ -1,6 +1,6 @@
 import React, { useState, useContext, useMemo } from 'react';
 import { Button, Table, Tag, Input, Select, Space, Modal, DatePicker } from 'antd';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import type { Dayjs } from 'dayjs';
 import type { QuestionBankItem, NewQuestion } from '~/types/question';
 import type { ColumnsType } from 'antd/es/table';
@@ -142,8 +142,8 @@ const QuestionBankPage: React.FC = () => {
             key: 'action',
             render: (_, record) => (
                 <Space size="small">
-                    <Button type="link" onClick={() => handleEdit(record)}>Edit</Button>
-                    <Button type="link" danger onClick={() => handleDelete(record.id)}>Delete</Button>
+                    <Button type="link" onClick={() => handleEdit(record)}><EditOutlined /></Button>
+                    <Button type="link" danger onClick={() => handleDelete(record.id)}><DeleteOutlined /></Button>
                 </Space>
             ),
         },
@@ -154,7 +154,7 @@ const QuestionBankPage: React.FC = () => {
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-gray-800">Question Bank</h1>
                 <Button type="primary" icon={<PlusOutlined />} size="large" onClick={() => setIsModalOpen(true)}>
-                    Contribute Question
+                    Add Question
                 </Button>
             </div>
 
