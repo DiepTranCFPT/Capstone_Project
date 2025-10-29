@@ -130,7 +130,7 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<HomePages />} />
           <Route path="/exam-test" element={<ExamTestPage />} />
-          <Route path="/exam-test/:examId" element={<ExamDetailsPage />} />
+          <Route path="/exam-details/:examId" element={<ExamDetailsPage />} />
           <Route
             path="/test-result/:submissionId"
             element={<TestResultPage />}
