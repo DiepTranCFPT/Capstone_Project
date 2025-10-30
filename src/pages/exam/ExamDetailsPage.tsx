@@ -26,8 +26,8 @@ const ExamDetailsPage: React.FC = () => {
     };
 
     const tabs = [
-        { key: 'practice', label: 'Practice' },
-        { key: 'fullTest', label: 'Full Test' },
+        { key: 'practice', label: 'Luyện Tập' },
+        { key: 'fullTest', label: 'Thi Thử' },
         // { key: 'comment', label: 'Comment' },
     ];
 

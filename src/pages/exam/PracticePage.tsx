@@ -50,7 +50,7 @@ const PracticePage: React.FC = () => {
     };
 
     const handleBackToExam = () => {
-        navigate(`/exam-test/${examId}`);
+        navigate(`/exam-details/${examId}`);
     };
 
     const handleBackToHome = () => {

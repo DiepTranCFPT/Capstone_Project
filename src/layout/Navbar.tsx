@@ -45,7 +45,9 @@ const Navbar: React.FC = () => {
   return (
     <header className="w-full h-28 bg-white flex items-center justify-between px-16 shadow">
       {/* Logo */}
-      <div className="text-black text-xl font-bold">LOGO</div>
+      <Link to="/" className="w-48 h-24">
+        <img src="/logo-ap.png" alt="Logo" className="w-full h-full object-contain" />
+      </Link>
 
       {/* Navigation */}
       <nav className="flex items-center gap-11">

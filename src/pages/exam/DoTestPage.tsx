@@ -19,8 +19,8 @@ const DoTestPage: React.FC = () => {
     };
 
     const handleCancel = () => {
-        // setShowConFirmed(true);
-        navigate(`/exam-test/${examId}`);
+        // setShowConFirmed(true);      
+        navigate(`/exam-details/${examId}`);
     };
 
     const handleConfirmSubmit = () => {

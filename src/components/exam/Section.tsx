@@ -16,7 +16,9 @@ const Section: React.FC = () => {
 
             if (pathSegments[i] === 'exam-test') {
                 breadcrumbs.push({ label: 'Exam Test', path: currentPath });
-            } else if (pathSegments[i-1] === 'exam-test' && i > 0) {
+            } else if (pathSegments[i] === 'exam-details') {
+                breadcrumbs.push({ label: 'Exam Test', path: currentPath });
+            } else if (pathSegments[i-1] === 'exam-details' && i > 0) {
                 // This is an exam ID
                 breadcrumbs.push({ label: 'Exam Detail', path: currentPath });
             } else if (pathSegments[i] === 'materials') {
@@ -37,7 +39,7 @@ const Section: React.FC = () => {
 
     // Get the page title based on current path
     const getPageTitle = () => {
-        if (location.pathname.includes('/exam-test/')) {
+        if (location.pathname.includes('/exam-details/')) {
             return 'Exam Detail';
         }
         if (location.pathname === '/exam-test') {
