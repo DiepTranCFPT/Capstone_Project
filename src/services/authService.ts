@@ -28,13 +28,13 @@ const decodeJWT = (token: string): JwtPayload | null => {
 };
 
 // Helper function to map API roles to User role type
-const mapRolesToUserRole = (roles: string[]): 'STUDENT' | 'TEACHER' | 'ADMIN' | 'ACADEMIC_ADVISOR' | 'PARENT' => {
-    if (roles === null || roles.length === 0) return 'STUDENT'; // default to student if roles is null or empty
+const mapRolesToUserRole = (roles: string[]): 'USER' | 'TEACHER' | 'ADMIN' | 'ACADEMIC_ADVISOR' | 'PARENT' => {
+    if (roles === null || roles.length === 0) return 'USER'; // default to student if roles is null or empty
     if (roles.includes('ADMIN')) return 'ADMIN';
     if (roles.includes('TEACHER')) return 'TEACHER';
     if (roles.includes('ACADEMIC_ADVISOR')) return 'ACADEMIC_ADVISOR';
     if (roles.includes('PARENT')) return 'PARENT';
-    return 'STUDENT'; // default to student
+    return 'USER'; // default to user
 };
 
 export const loginApi = async (email: string, password: string): Promise<AuthResponse> => {
@@ -129,6 +129,23 @@ export const updateProfileApi = async (profileData: EditProfileRequest): Promise
 
         const userData = response.data.data;
 
+        // Get roles from response or fallback to token
+        let roles: string[] = userData.roles || [];
+        if (roles.length === 0) {
+            const currentToken = localStorage.getItem('token');
+            if (currentToken) {
+                try {
+                    const decodedToken = decodeJWT(currentToken);
+                    const tokenRoles = decodedToken?.scp || decodedToken?.scopes;
+                    if (Array.isArray(tokenRoles)) {
+                        roles = tokenRoles;
+                    }
+                } catch (decodeError) {
+                    console.warn('Failed to decode token for roles in update profile:', decodeError);
+                }
+            }
+        }
+
         // Map API response to User object
         const user: User = {
             id: parseInt(userData.id.toString()) || 0,
@@ -137,7 +154,7 @@ export const updateProfileApi = async (profileData: EditProfileRequest): Promise
             email: userData.email || '',
             imgUrl: userData.imgUrl || '',
             dob: new Date(userData.dob),
-            role: mapRolesToUserRole(userData.roles || []),
+            role: mapRolesToUserRole(roles),
             tokenBalance: userData.tokenBalance || 0,
         };
 
@@ -580,7 +597,6 @@ export const refreshTokenApi = async (token: string): Promise<AuthResponse> => {
  */
 export const getCurrentUserApi = async (): Promise<AuthResponse> => {
     try {
-
         const response = await axiosInstance.get('/users/me');
 
         // Check if response has the expected structure
@@ -594,6 +610,33 @@ export const getCurrentUserApi = async (): Promise<AuthResponse> => {
             throw new Error('Invalid user data received from API');
         }
 
+        // Get current token to decode roles from JWT
+        const currentToken = localStorage.getItem('token');
+        let roles: string[] = [];
+        if (currentToken) {
+            try {
+                const decodedToken = decodeJWT(currentToken);
+                // In JWT, roles are in "scp" claim as array
+                const tokenRoles = decodedToken?.scp || decodedToken?.scopes;
+                if (Array.isArray(tokenRoles)) {
+                    roles = tokenRoles;
+                } else {
+                    console.warn('Token roles not in expected array format:', tokenRoles);
+                }
+            } catch (decodeError) {
+                console.warn('Failed to decode token for roles, using profile data fallback:', decodeError);
+            }
+        }
+
+        // If no roles from token, fallback to profile data
+        if (roles.length === 0) {
+            if (userData.roles && Array.isArray(userData.roles)) {
+                roles = userData.roles;
+            } else if (userData.role && typeof userData.role === 'string') {
+                roles = [userData.role.toUpperCase()];
+            }
+        }
+
         // Map API response to User object
         const user: User = {
             id: parseInt(userData.id) || 0,
@@ -602,7 +645,7 @@ export const getCurrentUserApi = async (): Promise<AuthResponse> => {
             email: userData.email || '',
             imgUrl: userData.imgUrl || '',
             dob: userData.dob ? new Date(userData.dob) : new Date(),
-            role: mapRolesToUserRole(userData.roles || []),
+            role: mapRolesToUserRole(roles),
             tokenBalance: userData.tokenBalance || 0,
         };
 
