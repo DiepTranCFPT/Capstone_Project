@@ -265,7 +265,7 @@ const ExamTestPage: React.FC = () => {
                                         {selectedSubjectsForCombined.length > 0 && (
                                             <div className="space-y-4">
                                                 {selectedSubjectsForCombined.map(subject => (
-                                                    <div key={subject} className="border p-4 rounded-lg">
+                                                    <div key={subject} className="border border-gray-300 p-4 rounded-lg">
                                                         <h4 className="text-xl font-semibold mb-3">{subject} Exams</h4>
                                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                                             {exams.filter(exam => exam.subject === subject).map(exam => (
@@ -286,7 +286,7 @@ const ExamTestPage: React.FC = () => {
                                             </div>
                                         )}
 
-                                        <div className="mt-6 p-4 bg-teal-50 rounded-lg flex justify-between items-center">
+                                        <div className="mt-6 p-4 bg-teal-50 border border-teal-200 rounded-lg flex justify-between items-center">
                                             <p className="text-lg font-bold text-teal-800">Total Token Cost: {totalCombinedTokenCost} Tokens</p>
                                             <button
                                                 onClick={() => handleStartCombinedExamClick(selectedExamsForCombined, totalCombinedTokenCost)}
