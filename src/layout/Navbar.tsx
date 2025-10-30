@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "~/hooks/useAuth";
 import { FaSignOutAlt } from "react-icons/fa";
 import { IoPersonCircleOutline } from "react-icons/io5";
@@ -9,6 +9,7 @@ const Navbar: React.FC = () => {
   const [showModal, setShowModal] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
 
   const toggleModal = () => {
     setShowModal(!showModal);
@@ -43,7 +44,7 @@ const Navbar: React.FC = () => {
   }, [showModal]);
 
   return (
-    <header className="w-full h-28 bg-white flex items-center justify-between px-16 shadow">
+    <header className="w-full h-28 bg-white flex items-center justify-between px-16 shadow fixed z-50 ">
       {/* Logo */}
       <Link to="/" className="w-48 h-24">
         <img src="/logo-ap.png" alt="Logo" className="w-full h-full object-contain" />
@@ -51,13 +52,13 @@ const Navbar: React.FC = () => {
 
       {/* Navigation */}
       <nav className="flex items-center gap-11">
-        <Link to="/" className="text-black text-base font-semibold">
+        <Link to="/" className={`transition-colors duration-300 ${location.pathname === '/' ? 'text-teal-500 border-b-2 border-teal-500' : 'text-black'} hover:text-teal-500 hover:border-b-2 hover:border-teal-500 text-base font-semibold`}>
           Home
         </Link>
-        <Link to="/materials" className="text-black text-base font-semibold">
+        <Link to="/materials" className={`transition-colors duration-300 ${location.pathname === '/materials' ? 'text-teal-500 border-b-2 border-teal-500' : 'text-black'} hover:text-teal-500 hover:border-b-2 hover:border-teal-500 text-base font-semibold`}>
           Materials
         </Link>
-        <Link to="/exam-test" className="text-black text-base font-semibold">
+        <Link to="/exam-test" className={`transition-colors duration-300 ${location.pathname === '/exam-test' ? 'text-teal-500 border-b-2 border-teal-500' : 'text-black'} hover:text-teal-500 hover:border-b-2 hover:border-teal-500 text-base font-semibold`}>
           Exam Test
         </Link>
         {/* <Link to="/about" className="text-black text-base font-semibold">
@@ -66,10 +67,10 @@ const Navbar: React.FC = () => {
         <Link to="/contact" className="text-black text-base font-semibold">
           Contact
         </Link> */}
-        <Link to="/ranking" className="text-black text-base font-semibold">
+        <Link to="/ranking" className={`transition-colors duration-300 ${location.pathname === '/ranking' ? 'text-teal-500 border-b-2 border-teal-500' : 'text-black'} hover:text-teal-500 hover:border-b-2 hover:border-teal-500 text-base font-semibold`}>
           Ranking
         </Link>
-        <Link to="/community" className="text-black text-base font-semibold">
+        <Link to="/community" className={`transition-colors duration-300 ${location.pathname === '/community' ? 'text-teal-500 border-b-2 border-teal-500' : 'text-black'} hover:text-teal-500 hover:border-b-2 hover:border-teal-500 text-base font-semibold`}>
           Community
         </Link>
       </nav>
