@@ -55,3 +55,7 @@ export interface FRQ extends QuestionBankItem {
   type: "frq";
   expectedAnswer: string;
 }
+export interface QuestionPaginationResponse {
+  items: QuestionBankItem[];
+  totalElement: number;
+}

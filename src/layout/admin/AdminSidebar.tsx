@@ -1,4 +1,4 @@
-import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
+import { MenuFoldOutlined, MenuUnfoldOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { Button, Avatar, Spin, message } from "antd";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -27,6 +27,7 @@ const adminMenu = [
   { key: "/admin/students", label: "Students", icon: <UsergroupAddOutlined /> },
   { key: "/admin/mock-tests", label: "Mock Tests", icon: <FormOutlined /> },
   { key: "/admin/teachers", label: "Teacher", icon: <IdcardOutlined /> },
+  { key: "/admin/questions", label: "Questions", icon: <QuestionCircleOutlined /> },
   { key: "/admin/certificates", label: "Certificates & Ranking", icon: <TrophyOutlined /> },
   { key: "/subscriptions", label: "Subscriptions & Payments", icon: <CreditCardOutlined /> },
   { key: "/settings", label: "Settings", icon: <SettingOutlined /> },
