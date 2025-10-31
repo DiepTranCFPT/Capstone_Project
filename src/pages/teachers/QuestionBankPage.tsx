@@ -1,4 +1,4 @@
-import React, { useState, useContext, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button, Table, Tag, Input, Select, Space, Modal, DatePicker } from 'antd';
 import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import type { Dayjs } from 'dayjs';
@@ -6,12 +6,25 @@ import type { QuestionBankItem, NewQuestion } from '~/types/question';
 import type { ColumnsType } from 'antd/es/table';
 import AddQuestionModal from '~/components/teachers/exam/AddQuestionModal';
 import { toast } from '~/components/common/Toast';
-import { QuestionBankContext } from '~/context/QuestionBankContext';
+
+import { useQuestionBank } from '~/hooks/useQuestionBank';
 
 const { Option } = Select;
 
 const QuestionBankPage: React.FC = () => {
-    const { questionBank, addQuestion, updateQuestion, deleteQuestion } = useContext(QuestionBankContext)!;
+    // Lấy teacherId 
+    const teacherId = localStorage.getItem('teacherId') || undefined;
+
+    // Dùng hook để quản lý dữ liệu 
+    const {
+        questions: questionBank,
+        loading,
+        createQuestion,
+        updateQuestion,
+        deleteQuestion,
+        fetchQuestions,
+    } = useQuestionBank(teacherId);
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState<QuestionBankItem | null>(null);
 
@@ -44,55 +57,40 @@ const QuestionBankPage: React.FC = () => {
         });
     };
 
-    const handleSaveNewQuestion = (newQuestion: NewQuestion) => {
-        if (editingQuestion) {
-            // Update existing question
-            const updatedQuestion: QuestionBankItem = {
-                ...editingQuestion,
-                text: newQuestion.text,
-                subject: newQuestion.subject,
-                difficulty: newQuestion.difficulty,
-                type: newQuestion.type,
-                options:
-                    newQuestion.type === "mcq"
-                        ? newQuestion.choices?.map((c, i) => ({
-                            text: c,
-                            isCorrect: i === newQuestion.correctIndex,
-                        })) ?? []
-                        : editingQuestion.options,
-                expectedAnswer:
-                    newQuestion.type === "frq" ? newQuestion.expectedAnswer || "" : editingQuestion.expectedAnswer,
-                tags: newQuestion.tags,
-            };
-            updateQuestion(editingQuestion.id, updatedQuestion);
-            toast.success("Question updated successfully!");
-            setEditingQuestion(null);
-        } else {
-            // Add new question
-            const questionToAdd: QuestionBankItem = {
-                id: crypto.randomUUID(),
-                text: newQuestion.text,
-                subject: newQuestion.subject,
-                difficulty: newQuestion.difficulty,
-                type: newQuestion.type,
-                topic: "Custom Question",
-                createdBy: "teacher",
-                createdAt: new Date().toISOString(),
-                options:
-                    newQuestion.type === "mcq"
-                        ? newQuestion.choices?.map((c, i) => ({
-                            text: c,
-                            isCorrect: i === newQuestion.correctIndex,
-                        })) ?? []
-                        : [],
-                expectedAnswer:
-                    newQuestion.type === "frq" ? newQuestion.expectedAnswer || "" : undefined,
-                tags: newQuestion.tags,
-            };
-            addQuestion(questionToAdd);
-            toast.success("Question added successfully!");
+    const handleSaveNewQuestion = async (newQuestion: NewQuestion) => {
+        try {
+            if (editingQuestion) {
+                const updatedPayload: Partial<QuestionBankItem> = {
+                    text: newQuestion.text,
+                    subject: newQuestion.subject,
+                    difficulty: newQuestion.difficulty,
+                    type: newQuestion.type,
+                    tags: newQuestion.tags,
+                    options:
+                        newQuestion.type === 'mcq'
+                            ? (newQuestion.choices?.map((c, i) => ({
+                                  text: c,
+                                  isCorrect: i === newQuestion.correctIndex,
+                              })) ?? [])
+                            : editingQuestion.options,
+                    expectedAnswer:
+                        newQuestion.type === 'frq' ? newQuestion.expectedAnswer || '' : editingQuestion.expectedAnswer,
+                };
+
+                await updateQuestion(editingQuestion.id, updatedPayload);
+                toast.success('Question updated successfully!');
+                setEditingQuestion(null);
+            } else {
+                await createQuestion(newQuestion);
+                toast.success('Question added successfully!');
+            }
+            fetchQuestions();
+        } catch (err) {
+            console.error('Save question error', err);
+            toast.error('Save question failed');
+        } finally {
+            setIsModalOpen(false);
         }
-        setIsModalOpen(false);
     };
 
     const clearFilters = () => {
@@ -105,7 +103,7 @@ const QuestionBankPage: React.FC = () => {
     };
 
     const filteredData = useMemo(() => {
-        return questionBank
+        return (questionBank || [])
             .filter(q => {
                 if (searchText && !q.text.toLowerCase().includes(searchText.toLowerCase())) return false;
                 if (selectedSubject !== 'All Subjects' && q.subject !== selectedSubject) return false;
@@ -122,10 +120,10 @@ const QuestionBankPage: React.FC = () => {
     }, [questionBank, searchText, selectedSubject, selectedTopic, selectedDifficulty, selectedType, dateRange]);
 
     const columns: ColumnsType<QuestionBankItem> = [
-        { title: 'Question', dataIndex: 'text', key: 'text', render: text => text.substring(0, 50) + '...' },
+        { title: 'Question', dataIndex: 'text', key: 'text', render: text => (text ? text.substring(0, 50) + '...' : '') },
         {
             title: 'Type', dataIndex: 'type', key: 'type',
-            render: (type: string) => <Tag color={type === 'mcq' ? 'blue' : 'green'}>{type.toUpperCase()}</Tag>
+            render: (type: string) => <Tag color={type === 'mcq' ? 'blue' : 'green'}>{type?.toUpperCase()}</Tag>
         },
         { title: 'Subject', dataIndex: 'subject', key: 'subject' },
         { title: 'Topic', dataIndex: 'topic', key: 'topic' },
@@ -195,7 +193,7 @@ const QuestionBankPage: React.FC = () => {
                 <Button onClick={clearFilters}>Clear Filters</Button>
             </div>
 
-            <Table columns={columns} dataSource={filteredData} rowKey="id" />
+            <Table columns={columns} dataSource={filteredData} rowKey="id" loading={loading} />
 
             <AddQuestionModal
                 open={isModalOpen}
