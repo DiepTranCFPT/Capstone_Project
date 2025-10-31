@@ -26,6 +26,7 @@ export const useQuestionBank = (teacherId?: string) => {
     topic?: string | { name?: string };
     topicName?: string;
     difficulty?: string;
+    difficultyName?: string;
     level?: string;
     type?: string;
     questionType?: string;
@@ -33,38 +34,51 @@ export const useQuestionBank = (teacherId?: string) => {
     author?: string;
     createdAt?: string;
     created_at?: string;
-    options?: unknown[];
-    choices?: unknown[];
+    options?: { text?: string; isCorrect?: boolean }[] | string[];
+    choices?: string[];
+    correctAnswer?: number;
     expectedAnswer?: string;
     answer?: string;
     tags?: string[];
   }
 
-  const getName = (value: MaybeName): string => {
-    if (typeof value === "string") return value;
-    return value?.name ?? "";
-  };
-
-  const normalizeQuestion = (raw: RawQuestion): QuestionBankItem => {
+  const normalizeQuestion = useCallback((raw: RawQuestion): QuestionBankItem => {
     const backendType = raw?.type ?? raw?.questionType;
     const mappedType =
       backendType === "multiple_choice" ? "mcq" : backendType === "essay" ? "frq" : backendType;
 
+    const lowerDifficulty = (raw?.difficultyName || raw?.difficulty || raw?.level || "medium")
+      .toString()
+      .toLowerCase() as QuestionBankItem["difficulty"];
+
+    // Normalize options from either options[] or choices[] + correctAnswer
+    let normalizedOptions: QuestionBankItem["options"] = undefined;
+    if (Array.isArray(raw?.options)) {
+      const asObjects = (raw.options as Array<{ text?: string; isCorrect?: boolean }>)
+        .map((opt) => ({ text: opt?.text ?? "", isCorrect: Boolean(opt?.isCorrect) }));
+      normalizedOptions = asObjects;
+    } else if (Array.isArray(raw?.choices)) {
+      const correctIndex = typeof raw?.correctAnswer === "number" ? raw.correctAnswer : 0;
+      normalizedOptions = raw.choices.map((c, idx) => ({ text: c ?? "", isCorrect: idx === correctIndex }));
+    }
+
     return {
       id: raw?.id ?? raw?.questionId ?? raw?.uuid ?? String(raw?.id ?? ""),
       text: raw?.text ?? raw?.questionText ?? raw?.content ?? "",
-      subject: (raw?.subjectName ?? getName(raw?.subject)) || "",
+      subject:
+        (raw?.subjectName ?? (typeof raw?.subject === "string" ? raw.subject : raw?.subject?.name)) ||
+        "",
       topic:
         (typeof raw?.topic === "string" ? raw?.topic : raw?.topic?.name) ?? raw?.topicName ?? "",
-      difficulty: raw?.difficulty ?? raw?.level ?? "medium",
+      difficulty: lowerDifficulty,
       type: mappedType ?? "mcq",
       createdBy: raw?.createdBy ?? raw?.author ?? "",
       createdAt: raw?.createdAt ?? raw?.created_at ?? new Date().toISOString(),
-      options: (raw?.options ?? raw?.choices ?? []) as QuestionBankItem["options"],
+      options: normalizedOptions,
       expectedAnswer: raw?.expectedAnswer ?? raw?.answer ?? undefined,
       tags: raw?.tags ?? [],
     } as QuestionBankItem;
-  };
+  }, []);
 
   const fetchQuestions = useCallback(async () => {
     setLoading(true);
@@ -99,7 +113,7 @@ export const useQuestionBank = (teacherId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [teacherId, pageNo, pageSize, search]);
+  }, [teacherId, pageNo, pageSize, search, normalizeQuestion]);
 
   const deleteQuestion = useCallback(
     async (id: string) => {
