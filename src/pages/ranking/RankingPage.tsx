@@ -23,7 +23,7 @@ const getRankChangeIcon = (change: number) => {
 };
 
 // Reusable component to display the list with enhanced features
-const LeaderboardListWithChallenge = ({ users, currentUserId }: { users: typeof leaderboardUsers; currentUserId?: number }) => {
+const LeaderboardListWithChallenge = ({ users, currentUserId }: { users: typeof leaderboardUsers; currentUserId?: string | number }) => {
     const navigate = useNavigate();
 
     const handleChallenge = (userId: number, userName: string) => {
@@ -38,7 +38,7 @@ const LeaderboardListWithChallenge = ({ users, currentUserId }: { users: typeof 
     return (
         <ul className="space-y-4">
             {users.map((user, index) => {
-                const isCurrentUser = user.id === currentUserId;
+                const isCurrentUser = currentUserId !== undefined && String(user.id) === String(currentUserId);
                 return (
                     <li key={user.id} className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300 hover:scale-105 ${isCurrentUser ? 'bg-teal-50 border-2 border-teal-200 animate-pulse' : 'bg-gray-50 hover:bg-gray-100'}`}>
                         <div className="flex items-center gap-4">

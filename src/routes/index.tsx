@@ -1,10 +1,7 @@
-import Test from "~/services/Test"
-
-
 function index() {
   return (
     <div>
-      aa <Test/>
+      Routes index
     </div>
   )
 }
