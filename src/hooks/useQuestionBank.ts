@@ -173,7 +173,9 @@ export const useQuestionBank = (teacherId?: string) => {
         // Gọi API theo giáo viên
         const res = await QuestionService.getByTeacherId(teacherId);
         if (res.data.code === 1000 || res.data.code === 0) {
-          const rawList = (res.data.data as RawQuestion[]) || [];
+          type PageLike<T> = PageInfo<T> & { content?: T[]; items?: T[]; totalElements?: number; totalElement?: number };
+          const page = res.data.data as PageLike<RawQuestion>;
+          const rawList: RawQuestion[] = page?.items ?? page?.content ?? ([] as RawQuestion[]);
           // Extract difficultyId UUIDs from questions to build mapping
           const newDifficultyMap: Record<string, string> = {};
           rawList.forEach((q) => {
@@ -207,7 +209,7 @@ export const useQuestionBank = (teacherId?: string) => {
             })));
           }
           items = rawList.map(normalizeQuestion);
-          totalCount = rawList.length;
+          totalCount = page?.totalElement ?? page?.totalElements ?? rawList.length;
         }
       } else {
         const params = { pageNo, pageSize, keyword: search || undefined };
