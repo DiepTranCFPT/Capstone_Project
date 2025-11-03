@@ -18,6 +18,7 @@ const MaterialManagerPage: React.FC = () => {
     setPageNo,
     pageSize,
     setPageSize,
+    applyServerSearch,
     fetchMaterials,
     deleteMaterial,
   } = useLearningMaterialsAdmin();
@@ -62,7 +63,11 @@ const MaterialManagerPage: React.FC = () => {
           </Button>
         </div>
 
-        <MaterialFilter materials={materials} setFilteredData={setFilteredData} />
+        <MaterialFilter 
+          materials={materials} 
+          setFilteredData={setFilteredData} 
+          onSearchKeyword={applyServerSearch}
+        />
 
         <MaterialTable
           loading={loading}
