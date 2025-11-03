@@ -21,7 +21,7 @@ const QuestionService = {
 
   //  Tạo câu hỏi mới
   async create(
-    data: NewQuestion
+    data: NewQuestion | Record<string, unknown>
   ): Promise<AxiosResponse<ApiResponse<QuestionBankItem>>> {
     return axiosInstance.post("/questions", data);
   },
@@ -29,7 +29,7 @@ const QuestionService = {
   //  Cập nhật câu hỏi
   async update(
     id: string,
-    data: Partial<QuestionBankItem>
+    data: Partial<QuestionBankItem> | Record<string, unknown>
   ): Promise<AxiosResponse<ApiResponse<QuestionBankItem>>> {
     return axiosInstance.put(`/questions/${id}`, data);
   },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Input, Select, Radio, Button, Space } from "antd";
+import { Modal, Input, Select, Radio, Button, Space, message } from "antd";
 import type { NewQuestion, QuestionBankItem } from "~/types/question";
 
 const { TextArea } = Input;
@@ -29,6 +29,20 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
   });
 
   useEffect(() => {
+    if (!open) {
+      // Reset form when modal closes
+      setFormData({
+        text: "",
+        subject: "",
+        difficulty: "medium",
+        type: "mcq",
+        choices: ["", "", "", ""],
+        correctIndex: 0,
+        tags: [],
+      });
+      return;
+    }
+
     if (editingQuestion) {
       const choices = editingQuestion.type === "mcq" ? editingQuestion.options?.map(opt => opt.text) || ["", "", "", ""] : [];
       const correctIndex = editingQuestion.type === "mcq" ? editingQuestion.options?.findIndex(opt => opt.isCorrect) || 0 : 0;
@@ -53,7 +67,7 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
         tags: [],
       });
     }
-  }, [editingQuestion]);
+  }, [editingQuestion, open]);
 
   const handleChange = <K extends keyof NewQuestion>(
     key: K,
@@ -76,18 +90,31 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
   };
 
   const handleSubmit = () => {
-    if (!formData.text.trim()) return;
+
+    if (!formData.text.trim()) {
+      message.warning("Vui lòng nhập nội dung câu hỏi");
+      return;
+    }
+    
+    if (!formData.subject.trim()) {
+      message.warning("Vui lòng nhập môn học");
+      return;
+    }
+
+    if (formData.type === "mcq") {
+      const nonEmptyChoices = (formData.choices || []).filter((c) => c && c.trim() !== "");
+      if (nonEmptyChoices.length < 2) {
+        message.warning("Vui lòng nhập ít nhất 2 lựa chọn cho câu hỏi trắc nghiệm");
+        return;
+      }
+    }
+
+    if (formData.type === "frq" && !formData.expectedAnswer?.trim()) {
+      message.warning("Vui lòng nhập đáp án mong đợi cho câu hỏi tự luận");
+      return;
+    }
+
     onSubmit(formData);
-    // Reset form
-    setFormData({
-      text: "",
-      subject: "",
-      difficulty: "medium",
-      type: "mcq",
-      choices: ["", "", "", ""],
-      correctIndex: 0,
-      tags: [],
-    });
   };
 
   return (
@@ -134,17 +161,6 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
           </Select>
         </div>
 
-        {/* Tags */}
-        <div>
-          <label className="font-medium">Tags</label>
-          <Select
-            mode="tags"
-            placeholder="Add tags (optional)"
-            value={formData.tags}
-            onChange={(v) => handleChange("tags", v)}
-            style={{ width: "100%" }}
-          />
-        </div>
 
         {/* Question Type */}
         <div>
