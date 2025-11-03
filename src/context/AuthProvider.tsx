@@ -33,44 +33,38 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     useEffect(() => {
         const initializeAuth = async () => {
             const storedToken = localStorage.getItem('token');
-            const storedUser = localStorage.getItem('user');
 
             if (storedToken && storedToken !== 'undefined') {
-                setToken(storedToken);
-                setIsAuthenticated(true);
+                // Validate token trước khi set authenticated
+                try {
+                    const userProfileResponse = await getCurrentUserApi();
 
-                if (storedUser && storedUser !== 'undefined') {
-                    try {
-                        const parsedUser = JSON.parse(storedUser);
-                        setUser(parsedUser);
-                    } catch (error) {
-                        console.error('Failed to parse stored user data:', error);
-                        try {
-                            const userProfileResponse = await getCurrentUserApi();
-                            setUser(userProfileResponse.user);
-                            safelyStoreUser(userProfileResponse.user);
-                        } catch (apiError) {
-                            console.error('Failed to fetch user profile from API:', apiError);
-                            localStorage.removeItem('token');
-                            localStorage.removeItem('user');
-                            setIsAuthenticated(false);
-                            setToken(null);
-                        }
-                    }
-                } else {
-                    try {
-                        const userProfileResponse = await getCurrentUserApi();
-                        setUser(userProfileResponse.user);
-                        safelyStoreUser(userProfileResponse.user);
-                    } catch (error) {
-                        console.error('Failed to fetch user profile:', error);
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('user');
-                        setIsAuthenticated(false);
-                        setToken(null);
-                    }
+                    // Token hợp lệ, set trạng thái authenticated
+                    setToken(storedToken);
+                    setIsAuthenticated(true);
+                    setUser(userProfileResponse.user);
+                    safelyStoreUser(userProfileResponse.user);
+
+                } catch (error) {
+                    console.error('Token validation failed on app initialization:', error);
+                    // Token không hợp lệ, clear localStorage và redirect về login
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    setIsAuthenticated(false);
+                    setToken(null);
+                    setUser(null);
+
+                    // Redirect về trang login ngay lập tức
+                    window.location.href = '/auth';
+                    return; // Dừng thực hiện tiếp
                 }
+            } else {
+                // Không có token, set trạng thái chưa authenticated
+                setIsAuthenticated(false);
+                setToken(null);
+                setUser(null);
             }
+
             setInitialLoading(false);
         };
 
@@ -329,4 +323,3 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
 };
 
 export default AuthProvider;
-
