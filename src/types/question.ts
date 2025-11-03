@@ -12,7 +12,6 @@ export interface QuestionBankItem {
   subject: string;
   difficulty: "easy" | "medium" | "hard";
   type: "mcq" | "frq";
-  topic: string;
   createdBy: string;
   createdAt: string;
   options?: QuestionOption[];
