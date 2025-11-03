@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
-import { Button, Card, Tag, Descriptions, List, Typography, Space, Divider, Spin } from "antd";
-import { EditOutlined, ArrowLeftOutlined, ClockCircleOutlined } from "@ant-design/icons";
+import React, { useEffect, useState } from "react";
+import { Button, Card, Tag, Descriptions, List, Typography, Space, Divider, Spin, Modal } from "antd";
+import { EditOutlined, ArrowLeftOutlined, ClockCircleOutlined, DeleteOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import { useNavigate, useParams } from "react-router-dom";
 import { useExams } from "~/hooks/useExams";
 
@@ -9,7 +9,8 @@ const { Title, Text, Paragraph } = Typography;
 const ExamDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const { examId } = useParams<{ examId: string }>();
-  const { currentExam, loading, fetchExamById } = useExams();
+  const { currentExam, loading, fetchExamById, removeExam } = useExams();
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
   useEffect(() => {
     if (examId) {
@@ -23,6 +24,33 @@ const ExamDetailsPage: React.FC = () => {
 
   const handleBack = () => {
     navigate('/teacher/exams');
+  };
+
+  const handleDelete = () => {
+    console.log('Delete button clicked', currentExam);
+    if (!currentExam) {
+      console.log('No current exam');
+      return;
+    }
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    console.log('Confirming delete for exam:', currentExam?.id);
+    try {
+      await removeExam(currentExam!.id);
+      console.log('Exam deleted successfully');
+      setDeleteModalVisible(false);
+      navigate('/teacher/exams');
+    } catch (error) {
+      console.error('Delete exam error:', error);
+      setDeleteModalVisible(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    console.log('Delete cancelled');
+    setDeleteModalVisible(false);
   };
 
   if (loading) {
@@ -49,13 +77,6 @@ const ExamDetailsPage: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={handleBack}
-            type="text"
-          >
-            Back
-          </Button>
           <div>
             <Title level={2} className="mb-0">{currentExam.title}</Title>
             <Text type="secondary">
@@ -63,20 +84,11 @@ const ExamDetailsPage: React.FC = () => {
             </Text>
           </div>
         </div>
-        <Space>
-          <Button
-            icon={<EditOutlined />}
-            onClick={handleEdit}
-            size="large"
-          >
-            Edit Exam
-          </Button>
-        </Space>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="col-span-2 flex flex-col gap-2">
           {/* Exam Overview */}
           <Card title="Exam Overview">
             <Descriptions column={2}>
@@ -147,7 +159,7 @@ const ExamDetailsPage: React.FC = () => {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="flex flex-col gap-2">
           {/* Quick Stats */}
           <Card title="Quick Stats">
             <div className="space-y-4">
@@ -183,6 +195,14 @@ const ExamDetailsPage: React.FC = () => {
               >
                 Edit Exam
               </Button>
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                block
+                onClick={handleDelete}
+              >
+                Delete Exam
+              </Button>
               <Button block onClick={handleBack}>
                 Back to Exam List
               </Button>
@@ -206,6 +226,25 @@ const ExamDetailsPage: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />
+            <span>Delete Exam</span>
+          </div>
+        }
+        open={deleteModalVisible}
+        onOk={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        okText="Delete"
+        okType="danger"
+        cancelText="Cancel"
+      >
+        <p>Are you sure you want to delete <strong>"{currentExam?.title}"</strong>?</p>
+        <p className="text-red-600 text-sm mt-2">This action cannot be undone.</p>
+      </Modal>
     </div>
   );
 };
