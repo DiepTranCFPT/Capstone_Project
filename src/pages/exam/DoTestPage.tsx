@@ -134,7 +134,6 @@ const DoTestPage: React.FC = () => {
                                             subject: "English",
                                             difficulty: "medium",
                                             type: "mcq",
-                                            topic: "Grammar",
                                             createdBy: "system",
                                             createdAt: new Date().toISOString(),
                                             options: q.options.map(o => ({ id: o.id, text: o.text }))
@@ -160,7 +159,6 @@ const DoTestPage: React.FC = () => {
                                             subject: "English",
                                             difficulty: "hard",
                                             type: "frq",
-                                            topic: "Literature",
                                             createdBy: "system",
                                             createdAt: new Date().toISOString(),
                                             expectedAnswer: "Sample answer"

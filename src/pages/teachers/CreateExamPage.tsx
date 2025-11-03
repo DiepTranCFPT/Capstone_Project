@@ -7,6 +7,7 @@ import type { CreateExamPayload } from "~/types/test";
 import { useQuestionBank } from "~/hooks/useQuestionBank";
 import { useAuth } from "~/hooks/useAuth";
 import { useExams } from "~/hooks/useExams";
+import { useSubjects } from "~/hooks/useSubjects";
 
 const ItemType = "QUESTION";
 
@@ -55,6 +56,7 @@ const CreateExamPage: React.FC = () => {
   const { user } = useAuth();
   const { questions: questionBank, loading } = useQuestionBank(user?.id);
   const { createNewExam, loading: savingExam } = useExams();
+  const { subjects } = useSubjects();
   const [selectedQuestions, setSelectedQuestions] = useState<QuestionBankItem[]>([]);
 
   // Exam form states
@@ -217,10 +219,11 @@ const CreateExamPage: React.FC = () => {
           <div className="bg-white p-4 rounded-lg shadow-sm mb-4 flex flex-wrap gap-4">
             <Select value={selectedSubjectFilter} onChange={setSelectedSubjectFilter} style={{ width: 120 }}>
               <Select.Option value="all">All Subjects</Select.Option>
-              <Select.Option value="Biology">Biology</Select.Option>
-              <Select.Option value="Mathematics">Mathematics</Select.Option>
-              <Select.Option value="Physics">Physics</Select.Option>
-              <Select.Option value="History">History</Select.Option>
+              {subjects.map((subject) => (
+                <Select.Option key={subject.id} value={subject.name}>
+                  {subject.name}
+                </Select.Option>
+              ))}
             </Select>
 
             <Select value={selectedDifficultyFilter} onChange={setSelectedDifficultyFilter} style={{ width: 120 }}>
@@ -253,9 +256,22 @@ const CreateExamPage: React.FC = () => {
                 paginatedQuestions.map((q) => (
                   <div key={q.id} className="flex items-start gap-3 p-2 border-b border-gray-200">
                     <Checkbox onChange={(e) => handleSelectQuestion(q, e.target.checked)} />
-                    <div>
-                      <p>{q.text}</p>
-                      <div className="flex gap-2 mt-1">
+                    <div className="flex-1">
+                      <p className="font-medium">{q.text}</p>
+                      {q.type === 'mcq' && q.options && q.options.length > 0 && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          <div className="flex flex-wrap gap-1">
+                            {q.options.map((option, idx) => (
+                              <span key={idx} className={`px-2 py-1 rounded text-xs ${
+                                option.isCorrect ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {idx + 1}. {option.text}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex gap-2 mt-2">
                         <Tag color="blue">{q.subject}</Tag>
                         <Tag color="purple">{q.difficulty}</Tag>
                         <Tag color={q.type === 'mcq' ? 'cyan' : 'green'}>{q.type.toUpperCase()}</Tag>
@@ -353,10 +369,11 @@ const CreateExamPage: React.FC = () => {
                 style={{ width: '100%' }}
                 status={subjectsError ? 'error' : ''}
               >
-                <Select.Option value="Biology">Biology</Select.Option>
-                <Select.Option value="Mathematics">Mathematics</Select.Option>
-                <Select.Option value="Physics">Physics</Select.Option>
-                <Select.Option value="History">History</Select.Option>
+                {subjects.map((subject) => (
+                  <Select.Option key={subject.id} value={subject.id}>
+                    {subject.name}
+                  </Select.Option>
+                ))}
               </Select>
               {subjectsError && <div className="text-red-500 text-sm mt-1">{subjectsError}</div>}
             </div>
