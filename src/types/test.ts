@@ -14,14 +14,14 @@ export interface Test {
 }
 
 export interface Exam {
-  id: number;
+  id: string;
   title: string;
   description?: string;
   duration: number; // thời lượng (min)
-  examTypeId: number; // corresponds to exam_type_id
-  subjectId: number; // corresponds to subject_id
-  teacherId: number; // corresponds to teacher_id
- 
+  examTypeId: string; // corresponds to exam_type_id
+  subjectId: string; // corresponds to subject_id
+  teacherId: string; // corresponds to teacher_id
+
   totalQuestions: number; // corresponds to total_questions
   maxAttempts: number; // corresponds to max_attempts
   status: string;
@@ -39,7 +39,7 @@ export interface Exam {
 }
 
 export interface CompletedTest {
-  id: number;
+  id: string;
   title: string;
   date: string;
   score: number;
@@ -67,7 +67,8 @@ export interface CreateExamPayload {
   description: string;
   duration: number;
   passingScore: number;
-  subjectIds: string[]; // Lưu ý: API request dùng subjectIds
-  questionIds: string[];
+  subjectNames: string[]; // Send subject IDs
+  questionContents: string[]; // API expects questionContents
+  createdByName: string; // Include createdByName
   isActive: boolean;
 }

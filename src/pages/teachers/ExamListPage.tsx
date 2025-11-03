@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Button, Table, Tag, Input, Select, Space, Modal } from "antd";
-import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
+import { Button, Table, Tag, Input, Select, Space } from "antd";
+import { EyeOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import { useNavigate } from "react-router-dom";
 import { useExams } from "~/hooks/useExams";
@@ -12,7 +12,7 @@ const { Option } = Select;
 const ExamListPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { exams, loading, fetchExamsByUserId, removeExam } = useExams();
+  const { exams, loading, fetchExamsByUserId } = useExams();
 
   const [searchText, setSearchText] = useState('');
   const [selectedSubject, setSelectedSubject] = useState<string>('All Subjects');
@@ -35,19 +35,6 @@ const ExamListPage: React.FC = () => {
     navigate(`/teacher/exam-details/${examId}`);
   };
 
-  const handleEdit = (examId: string) => {
-    navigate(`/teacher/edit-exam/${examId}`);
-  };
-
-  const handleDelete = (examId: string, examTitle: string) => {
-    Modal.confirm({
-      title: 'Delete Exam',
-      content: `Are you sure you want to delete "${examTitle}"? This action cannot be undone.`,
-      onOk() {
-        removeExam(examId);
-      },
-    });
-  };
 
   const handleCreateNew = () => {
     navigate('/teacher/create-exam');
@@ -133,24 +120,7 @@ const ExamListPage: React.FC = () => {
             size="small"
           >
             View
-          </Button>
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record.id)}
-            size="small"
-          >
-            Edit
-          </Button>
-          <Button
-            type="link"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.id, record.title)}
-            size="small"
-          >
-            Delete
-          </Button>
+          </Button>         
         </Space>
       ),
     },

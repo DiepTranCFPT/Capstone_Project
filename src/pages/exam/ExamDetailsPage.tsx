@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // import { useParams, Link } from 'react-router-dom';
-import { FiBookOpen, FiClipboard, FiUsers } from 'react-icons/fi';
+import { FiBookOpen, FiClipboard, FiUsers, FiLoader } from 'react-icons/fi';
 import CommentSection from '~/components/exam/CommentSection';
 import Section from '~/components/exam/Section';
 import { useParams } from 'react-router-dom';
@@ -8,28 +8,85 @@ import PracticeTabContent from '~/components/exam/PracticeTabContent';
 import FullTestTabContent from '~/components/exam/FullTestTabContent';
 import Sidebar from '~/components/exam/SideBar';
 import { useAuth } from '~/hooks/useAuth';
+import { useExams } from '~/hooks/useExams';
 
 const ExamDetailsPage: React.FC = () => {
     // Lấy ID từ URL, ví dụ: /exam-test/1
     const { examId } = useParams();
     const [activeTab, setActiveTab] = useState<'practice' | 'fullTest'>('practice');
     const { isAuthenticated } = useAuth();
+    const { currentExam, loading, error, fetchExamById } = useExams();
 
-    // Trong thực tế, bạn sẽ dùng examId để fetch dữ liệu từ API
-    // Ở đây chúng ta dùng dữ liệu giả lập
-    const examDetails = {
-        title: "English Language Test",
-        level: "Level B1",
-        subject: "English",
-        sentences: 40,
-        attempts: 200,
-    };
+    // Fetch exam details when component mounts or examId changes
+    useEffect(() => {
+        if (examId) {
+            fetchExamById(examId);
+        }
+    }, [examId, fetchExamById]);
+
+    // Convert API exam data to display format
+    const examDetails = currentExam ? {
+        title: currentExam.title,
+        level: `Level ${currentExam.passingScore || 'B1'}`, // Default level mapping
+        subject: currentExam.subjectNames?.[0] || 'General',
+        sentences: currentExam.questionContents?.length || 0,
+        attempts: 200, // This would need to be fetched separately if available
+        duration: currentExam.duration,
+        description: currentExam.description,
+        teacherName: currentExam.createdByName
+    } : null;
 
     const tabs = [
         { key: 'practice', label: 'Luyện Tập' },
         { key: 'fullTest', label: 'Thi Thử' },
         // { key: 'comment', label: 'Comment' },
     ];
+
+    if (loading) {
+        return (
+            <div className="bg-slate-50">
+                <Section />
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                    <div className="flex justify-center items-center py-12">
+                        <FiLoader className="animate-spin text-teal-500" size={32} />
+                        <span className="ml-2 text-gray-600">Loading exam details...</span>
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-slate-50">
+                <Section />
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                    <div className="text-center py-12">
+                        <p className="text-red-500 mb-4">{error}</p>
+                        <button
+                            onClick={() => examId && fetchExamById(examId)}
+                            className="bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600"
+                        >
+                            Try Again
+                        </button>
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
+    if (!examDetails) {
+        return (
+            <div className="bg-slate-50">
+                <Section />
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                    <div className="text-center py-12">
+                        <p className="text-gray-500">Exam not found</p>
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-slate-50">
@@ -47,8 +104,8 @@ const ExamDetailsPage: React.FC = () => {
                             <h1 className="text-3xl font-bold text-gray-800 mt-3">{examDetails.title} – {examDetails.level}</h1>
                             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-gray-600 mt-4">
                                 <div className="flex items-center"><FiBookOpen className="mr-2 text-teal-500" /> {examDetails.subject}</div>
-                                <div className="flex items-center"><FiClipboard className="mr-2 text-teal-500" /> {examDetails.sentences} Sentences</div>
-                                <div className="flex items-center"><FiUsers className="mr-2 text-teal-500" /> {examDetails.attempts} people attempt in previous 14 days</div>
+                                <div className="flex items-center"><FiClipboard className="mr-2 text-teal-500" /> {examDetails.sentences} Questions</div>
+                                <div className="flex items-center"><FiUsers className="mr-2 text-teal-500" /> {examDetails.attempts} people attempted</div>
                             </div>
                             <div className="border-b mt-6 mb-4 border-gray-200">
                                 <nav className="flex space-x-4">

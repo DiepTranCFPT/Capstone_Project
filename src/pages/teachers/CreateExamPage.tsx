@@ -162,8 +162,9 @@ const CreateExamPage: React.FC = () => {
         description: examDescription.trim(),
         duration: examDuration,
         passingScore: passingScore,
-        subjectIds: selectedSubjects,
-        questionIds: selectedQuestions.map(q => q.id),
+        subjectNames: selectedSubjects,
+        questionContents: selectedQuestions.map(q => q.id),
+        createdByName: user ? `${user.firstName} ${user.lastName}`.trim() : 'Unknown Teacher',
         isActive: isActive,
       };
 

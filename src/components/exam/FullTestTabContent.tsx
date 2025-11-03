@@ -9,7 +9,7 @@ import { exams } from "~/data/mockTest";
 
 const FullTestTabContent: React.FC<{ examId: string | undefined }> = ({ examId }) => {
     // const navigate = useNavigate();
-    const exam = exams.find(e => e.id === parseInt(examId || '0')) || null;
+    const exam = exams.find(e => e.id === examId || '0') || null;
     const [showTokenConfirmation, setShowTokenConfirmation] = useState(false);
     const [examToStart, setExamToStart] = useState<Exam | null>(null);
     const [combinedExamToStart, setCombinedExamToStart] = useState<{ exams: Exam[]; totalCost: number } | null>(null);

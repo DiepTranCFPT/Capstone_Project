@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ExamCard from '~/components/exam/ExamCard';
 import StatCard from '~/components/exam/StatCard';
 import TokenConfirmationModal from '~/components/common/TokenConfirmationModal';
-import { FiSearch, FiAward, FiUsers, FiClipboard, FiFileText } from 'react-icons/fi';
+import { FiSearch, FiAward, FiUsers, FiClipboard, FiFileText, FiLoader } from 'react-icons/fi';
 import Section from '~/components/exam/Section';
-import { exams } from '~/data/mockTest';
-import type { Exam } from '~/types/test';
+import { useExams } from '~/hooks/useExams';
+import { useSubjects } from '~/hooks/useSubjects';
+import type { Exam, ApiExam } from '~/types/test';
 
-const categories = ["All", "Math", "History", "Art", "Biology", "Chemistry", "Physics", "English", "Music"];
-
+// Dynamic subjects from API will replace hardcoded categories
 const subjectBlocks: Record<string, string[]> = {
     'Math': ['Math'],
     'Natural Science': ['Biology', 'Chemistry', 'Physics'],
@@ -16,6 +16,35 @@ const subjectBlocks: Record<string, string[]> = {
 };
 
 const ExamTestPage: React.FC = () => {
+    const { exams: apiExams, loading: examsLoading, error: examsError, fetchAllExams } = useExams();
+    const { subjects, loading: subjectsLoading } = useSubjects();
+
+    // Convert ApiExam to Exam format for compatibility
+    const convertApiExamToExam = (apiExam: ApiExam): Exam => ({
+        id: apiExam.id,
+        title: apiExam.title,
+        description: apiExam.description,
+        duration: apiExam.duration,
+        examTypeId: '1', // Default value
+        subjectId: '1', // Default value
+        teacherId: '1', // Default value
+        totalQuestions: apiExam.questionContents?.length || 0,
+        maxAttempts: 3, // Default value
+        status: apiExam.isActive ? 'published' : 'draft',
+        createdAt: apiExam.createdAt,
+        updatedAt: apiExam.createdAt,
+        tokenCost: 10, // Default value
+        questions: [],
+        teacherName: apiExam.createdByName,
+        rating: 4.5, // Default value
+        subject: apiExam.subjectNames?.[0] || 'General',
+        attempts: 100, // Default value
+        parts: 1, // Default value
+        category: apiExam.subjectNames?.[0] || 'General'
+    });
+
+    const exams = apiExams.map(convertApiExamToExam);
+
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [activeMainTab, setActiveMainTab] = useState<'individual' | 'combined'>('individual');
     const [activeSubTab, setActiveSubTab] = useState<'selfSelected' | 'platformSelected'>('selfSelected');
@@ -59,6 +88,11 @@ const ExamTestPage: React.FC = () => {
     const [showTokenConfirmation, setShowTokenConfirmation] = useState(false);
     const [examToStart, setExamToStart] = useState<Exam | null>(null);
     const [combinedExamToStart, setCombinedExamToStart] = useState<{ exams: Exam[]; totalCost: number } | null>(null);
+
+    // Fetch data on component mount
+    useEffect(() => {
+        fetchAllExams();
+    }, [fetchAllExams]);
 
     const handleStartExamClick = (exam: Exam) => {
         setExamToStart(exam);
@@ -135,20 +169,36 @@ const ExamTestPage: React.FC = () => {
                             <>
                                 <h2 className="text-3xl font-bold text-gray-800 mb-4">Exams Library</h2>
 
-                                {/* Filter Buttons */}
+                                {/* Subject Filter Buttons */}
                                 <div className="flex flex-wrap gap-2 mb-6">
-                                    {categories.map((cat) => (
-                                        <button
-                                            key={cat}
-                                            onClick={() => setSelectedCategory(cat)}
-                                            className={`px-5 py-2 text-sm font-medium rounded-full transition-colors duration-300 ${selectedCategory === cat
-                                                ? 'bg-teal-500 text-white'
-                                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
-                                                }`}
-                                        >
-                                            {cat}
-                                        </button>
-                                    ))}
+                                    <button
+                                        onClick={() => setSelectedCategory("All")}
+                                        className={`px-5 py-2 text-sm font-medium rounded-full transition-colors duration-300 ${selectedCategory === "All"
+                                            ? 'bg-teal-500 text-white'
+                                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                                            }`}
+                                    >
+                                        All
+                                    </button>
+                                    {subjectsLoading ? (
+                                        <div className="flex justify-center items-center py-4">
+                                            <FiLoader className="animate-spin text-teal-500" size={20} />
+                                            <span className="ml-2 text-gray-600">Loading subjects...</span>
+                                        </div>
+                                    ) : (
+                                        subjects.map((subject) => (
+                                            <button
+                                                key={subject.id}
+                                                onClick={() => setSelectedCategory(subject.name)}
+                                                className={`px-5 py-2 text-sm font-medium rounded-full transition-colors duration-300 ${selectedCategory === subject.name
+                                                    ? 'bg-teal-500 text-white'
+                                                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                                                    }`}
+                                            >
+                                                {subject.name}
+                                            </button>
+                                        ))
+                                    )}
                                 </div>
 
 
@@ -363,10 +413,29 @@ const ExamTestPage: React.FC = () => {
                     {activeMainTab === 'individual' && (
                         <div className='flex sm:flex-row flex-col gap-8'>
                             {/* Left Side: Exams Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-6 w-full">
-                                {filteredExams.map((exam) => (
-                                    <ExamCard exams={exam} key={exam.id} onStartExam={handleStartExamClick} />
-                                ))}
+                            <div className="w-full">
+                                {examsLoading ? (
+                                    <div className="flex justify-center items-center py-12">
+                                        <FiLoader className="animate-spin text-teal-500" size={32} />
+                                        <span className="ml-2 text-gray-600">Loading exams...</span>
+                                    </div>
+                                ) : examsError ? (
+                                    <div className="text-center py-12">
+                                        <p className="text-red-500 mb-4">{examsError}</p>
+                                        <button
+                                            onClick={fetchAllExams}
+                                            className="bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600"
+                                        >
+                                            Try Again
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {filteredExams.map((exam) => (
+                                            <ExamCard exams={exam} key={exam.id} onStartExam={handleStartExamClick} />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Right Side: Stats */}
