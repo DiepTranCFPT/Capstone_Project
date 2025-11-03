@@ -39,6 +39,12 @@ export const useLearningMaterialsAdmin = () => {
     }
   }, [pageNo, pageSize, search]);
 
+  // Helper để search server-side từ UI khác (ví dụ MaterialFilter)
+  const applyServerSearch = useCallback((keyword: string) => {
+    setPageNo(0);
+    setSearch(keyword);
+  }, []);
+
   const deleteMaterial = useCallback(
     async (id: string) => {
       try {
@@ -90,6 +96,7 @@ export const useLearningMaterialsAdmin = () => {
     setPageSize,
     search,
     setSearch,
+    applyServerSearch,
     fetchMaterials,
     deleteMaterial,
     updateMaterial,

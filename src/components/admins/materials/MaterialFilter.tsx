@@ -6,9 +6,10 @@ import type { LearningMaterial } from "~/types/learningMaterial";
 interface Props {
   materials: LearningMaterial[];
   setFilteredData: (data: LearningMaterial[]) => void;
+  onSearchKeyword?: (keyword: string) => void;
 }
 
-const MaterialFilter: React.FC<Props> = ({ materials, setFilteredData }) => {
+const MaterialFilter: React.FC<Props> = ({ materials, setFilteredData, onSearchKeyword }) => {
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -63,6 +64,13 @@ const MaterialFilter: React.FC<Props> = ({ materials, setFilteredData }) => {
     applyFilters();
   }, [applyFilters]);
 
+  // Gọi server search nếu prop được truyền vào (debounce 300ms)
+  useEffect(() => {
+    if (!onSearchKeyword) return;
+    const handle = setTimeout(() => onSearchKeyword(searchText.trim()), 300);
+    return () => clearTimeout(handle);
+  }, [searchText, onSearchKeyword]);
+
   const resetFilters = () => {
     setSearchText("");
     setStatusFilter("all");
@@ -70,76 +78,105 @@ const MaterialFilter: React.FC<Props> = ({ materials, setFilteredData }) => {
     setSubjectFilter("all");
     setAuthorFilter("all");
     setFilteredData(materials);
+    onSearchKeyword?.("");
   };
 
   return (
-    <div className="flex flex-wrap gap-3 mb-4 items-center">
-      <Input
-        placeholder="Search materials..."
-        value={searchText}
-        onChange={(e) => setSearchText(e.target.value)}
-        allowClear
-        className="max-w-md"
-        prefix={<SearchOutlined className="text-gray-400" />}
-      />
+<div className="flex flex-wrap gap-3 mb-4 items-center">
+  {/* Ô tìm kiếm */}
+  <Input
+    placeholder="Tìm kiếm tài liệu..."
+    value={searchText}
+    onChange={(e) => setSearchText(e.target.value)}
+    onPressEnter={() => onSearchKeyword?.(searchText.trim())}
+    allowClear
+    className="max-w-md"
+    prefix={<SearchOutlined className="text-gray-400" />}
+  />
 
-      <FilterOutlined className="text-gray-400" />
-      <Select
-        value={statusFilter}
-        onChange={setStatusFilter}
-        className="min-w-32"
-        options={[
-          { label: "All statuses", value: "all" },
-          { label: "Public", value: "public" },
-          { label: "Private", value: "private" },
-        ]}
-      />
+  {/* Biểu tượng lọc */}
+  <div className="flex items-center gap-2">
+    <FilterOutlined className="text-gray-400" />
+    <span className="text-sm text-gray-600">Lọc theo:</span>
+  </div>
 
-      <Select
-        value={typeFilter}
-        onChange={setTypeFilter}
-        className="min-w-32"
-        options={[
-          { label: "All types", value: "all" },
-          ...uniqueTypes.map((type) => ({ label: type, value: type })),
-        ]}
-      />
+  {/* Lọc theo trạng thái */}
+  <Select
+    placeholder="Trạng thái"
+    value={statusFilter}
+    onChange={setStatusFilter}
+    className="min-w-32"
+    options={[
+      { label: "Tất cả trạng thái", value: "all" },
+      { label: "Công khai", value: "public" },
+      { label: "Riêng tư", value: "private" },
+    ]}
+  />
 
-      <Select
-        value={subjectFilter}
-        onChange={setSubjectFilter}
-        className="min-w-32"
-        options={[
-          { label: "All subjects", value: "all" },
-          ...uniqueSubjects.map((subject) => ({
-            label: subject,
-            value: subject,
-          })),
-        ]}
-      />
+  {/* Lọc theo loại tài liệu */}
+  <Select
+    placeholder="Loại tài liệu"
+    value={typeFilter}
+    onChange={setTypeFilter}
+    className="min-w-32"
+    options={[
+      { label: "Tất cả loại", value: "all" },
+      ...uniqueTypes.map((type) => ({ label: type, value: type })),
+    ]}
+  />
 
-      <Select
-        value={authorFilter}
-        onChange={setAuthorFilter}
-        className="min-w-32"
-        options={[
-          { label: "All authors", value: "all" },
-          ...uniqueAuthors.map((author) => ({
-            label: author,
-            value: author,
-          })),
-        ]}
-      />
+  {/* Lọc theo môn học */}
+  <Select
+    placeholder="Môn học"
+    value={subjectFilter}
+    onChange={setSubjectFilter}
+    className="min-w-32"
+    options={[
+      { label: "Tất cả môn học", value: "all" },
+      ...uniqueSubjects.map((subject) => ({
+        label: subject,
+        value: subject,
+      })),
+    ]}
+  />
 
-      <Button
-        type="text"
-        size="small"
-        onClick={resetFilters}
-        className="text-red-600 hover:bg-red-50 hover:text-red-700"
-      >
-        Clear filters
-      </Button>
-    </div>
+  {/* Lọc theo tác giả */}
+  <Select
+    placeholder="Tác giả"
+    value={authorFilter}
+    onChange={setAuthorFilter}
+    className="min-w-32"
+    options={[
+      { label: "Tất cả tác giả", value: "all" },
+      ...uniqueAuthors.map((author) => ({
+        label: author,
+        value: author,
+      })),
+    ]}
+  />
+
+  {/* Nút xóa bộ lọc */}
+  {(statusFilter !== "all" ||
+    typeFilter !== "all" ||
+    subjectFilter !== "all" ||
+    authorFilter !== "all" ||
+    searchText) && (
+    <Button
+      type="text"
+      size="small"
+      onClick={resetFilters}
+      className="text-red-600 hover:bg-red-50 hover:text-red-700"
+    >
+      Xóa bộ lọc
+    </Button>
+  )}
+
+  {/* Thông tin số lượng hiển thị
+  <div className="ml-auto text-sm text-gray-500">
+    Hiển thị {materials.length} / {total} tài liệu
+  </div> */}
+</div>
+
   );
 };
 
