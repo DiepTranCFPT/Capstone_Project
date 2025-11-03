@@ -60,7 +60,7 @@ export const loginApi = async (email: string, password: string): Promise<AuthRes
 
         // Extract user data from token
         const user = {
-            id: decodedToken.userId || decodedToken.id || 0,
+            id: (decodedToken.userId || decodedToken.id || '').toString(),
             firstName: decodedToken.firstName || '',
             lastName: decodedToken.lastName || '',
             email: decodedToken.email || email,
@@ -148,7 +148,7 @@ export const updateProfileApi = async (profileData: EditProfileRequest): Promise
 
         // Map API response to User object
         const user: User = {
-            id: parseInt(userData.id.toString()) || 0,
+            id: (userData.id || '').toString(),
             firstName: userData.firstName || '',
             lastName: userData.lastName || '',
             email: userData.email || '',
@@ -338,7 +338,7 @@ export const googleLoginApi = async (code: string): Promise<AuthResponse> => {
 
         // Extract user data from token
         const user = {
-            id: decodedToken.userId || decodedToken.id || 0,
+            id: (decodedToken.id || '').toString(),
             firstName: decodedToken.firstName || '',
             lastName: decodedToken.lastName || '',
             email: decodedToken.email || '',
@@ -639,7 +639,7 @@ export const getCurrentUserApi = async (): Promise<AuthResponse> => {
 
         // Map API response to User object
         const user: User = {
-            id: parseInt(userData.id) || 0,
+            id: (userData.id || '').toString(),
             firstName: userData.firstName || '',
             lastName: userData.lastName || '',
             email: userData.email || '',
