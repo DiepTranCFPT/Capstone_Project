@@ -29,7 +29,6 @@ const QuestionBankPage: React.FC = () => {
   // Lấy teacherId (giáo viên hiện tại) từ auth
   const { user } = useAuth();
   const teacherId = user?.id;
-  console.log("👨‍🏫 Current teacherId:", teacherId ? teacherId : "No teacher found");
   //  Hook quản lý dữ liệu câu hỏi
   const {
     questions: questionBank,
