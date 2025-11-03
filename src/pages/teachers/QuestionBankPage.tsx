@@ -21,13 +21,15 @@ import type { ColumnsType } from "antd/es/table";
 import AddQuestionModal from "~/components/teachers/exam/AddQuestionModal";
 import { toast } from "~/components/common/Toast";
 import { useQuestionBank } from "~/hooks/useQuestionBank";
+import { useAuth } from "~/hooks/useAuth";
 
 const { Option } = Select;
 
 const QuestionBankPage: React.FC = () => {
-  // Lấy teacherId (giáo viên hiện tại)
-  const teacherId = localStorage.getItem("teacherId") || undefined;
-
+  // Lấy teacherId (giáo viên hiện tại) từ auth
+  const { user } = useAuth();
+  const teacherId = user?.id;
+  console.log("👨‍🏫 Current teacherId:", teacherId ? teacherId : "No teacher found");
   //  Hook quản lý dữ liệu câu hỏi
   const {
     questions: questionBank,
