@@ -54,6 +54,8 @@ import MyClassesPage from "./pages/teachers/MyClassPage";
 import ClassroomDetailPage from "./pages/teachers/ClassroomDetailPage";
 import QuestionBankPage from "./pages/teachers/QuestionBankPage";
 import CreateExamPage from "./pages/teachers/CreateExamPage";
+import ExamListPage from "./pages/teachers/ExamListPage";
+import TeacherExamDetailsPage from "./pages/teachers/ExamDetailsPage";
 import GradingPage from "./pages/teachers/GradingPage";
 import ClassAnalyticsPage from "./pages/teachers/ClassAnalyticsPage";
 import GradeSubmissionPage from "./pages/teachers/GradeSubmissionPage";
@@ -151,7 +153,7 @@ function App() {
         <Route
           path="/student"
           element={
-            <ProtectedRoute roles={["STUDENT"]}>
+            <ProtectedRoute roles={["USER"]}>
               <StudentLayout />
             </ProtectedRoute>
           }
@@ -173,12 +175,17 @@ function App() {
         </Route>
 
         {/* Teacher routes with TeacherLayout */}
-        <Route path="/teacher" element={<TeacherLayout />}>
+        <Route path="/teacher" element={
+          <ProtectedRoute roles={["TEACHER"]}>
+            <TeacherLayout />
+          </ProtectedRoute>}>
           <Route path="dashboard" element={<TeacherDashboardPage />} />
           <Route path="classes" element={<MyClassesPage />} />
           <Route path="classes/:classId" element={<ClassroomDetailPage />} />
           <Route path="question-bank" element={<QuestionBankPage />} />
           <Route path="create-exam" element={<CreateExamPage />} />
+          <Route path="exams" element={<ExamListPage />} />
+          <Route path="exam-details/:examId" element={<TeacherExamDetailsPage />} />
           <Route path="grading" element={<GradingPage />} />
           <Route
             path="grading/:submissionId"

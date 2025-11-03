@@ -27,7 +27,7 @@ const HomePages: React.FC = () => {
       <LanguageNewsletter />
       <button
         onClick={() => setIsChatBotOpen(!isChatBotOpen)}
-        className="fixed bottom-4 right-4 w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-full shadow-xl flex items-center justify-center transform transition-all duration-300 hover:scale-110 animate-pulse"
+        className="fixed z-50 bottom-4 right-4 w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white rounded-full shadow-xl flex items-center justify-center transform transition-all duration-300 hover:scale-110 animate-pulse"
         title="Chat with EduBot"
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">

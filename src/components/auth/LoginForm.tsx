@@ -145,9 +145,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ buttonClasses }) => {
                             </div>
 
 
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-end">
                                 {/* Remember me & Forgot password */}
-                                <div className='flex items-center justify-center gap-2'>
+                                {/* <div className='flex items-center justify-center gap-2'>
                                     <div>
                                         <Field
                                             id="remember-me"
@@ -157,7 +157,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ buttonClasses }) => {
                                         />
                                     </div>
                                     <label htmlFor="remember-me" className="block text-sm font-medium text-gray-600">Remember me</label>
-                                </div>
+                                </div> */}
                                 <div>
                                     <a href="forgot-password" className="text-sm font-medium text-brightColor hover:underline">Forgot password?</a>
                                 </div>

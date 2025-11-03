@@ -119,7 +119,7 @@ const Navbar: React.FC = () => {
         {showModal && (
           <div
             ref={menuRef}
-            className="absolute top-20 right-4 bg-white border border-gray-200 rounded-lg shadow-xl w-48 z-[9999] animate-fade-in"
+            className="absolute top-20 right-4 bg-white border border-gray-200 rounded-lg shadow-xl w-auto z-[9999] animate-fade-in"
           >
             <div className="py-2">
               {/* Menu Items */}
@@ -141,7 +141,7 @@ const Navbar: React.FC = () => {
               <div className="py-1">
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-all duration-300 hover:scale-105 rounded-md mx-2 w-full text-left"
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-all duration-300 hover:scale-105 rounded-md mx-2 w-max"
                 >
                   <FaSignOutAlt className="w-4 h-4" />
                   Sign Out

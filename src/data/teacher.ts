@@ -7,7 +7,6 @@ export const mockQuestionBank: QuestionBankItem[] = [
         text: 'What is the powerhouse of the cell?',
         type: 'mcq',
         subject: 'Biology',
-        topic: 'Cell Structure',
         difficulty: 'easy',
         createdBy: 'Jane Smith',
         createdAt: '2025-09-20',
@@ -23,7 +22,6 @@ export const mockQuestionBank: QuestionBankItem[] = [
         text: 'Explain Newton\'s First Law of Motion.',
         type: 'frq',
         subject: 'Physics',
-        topic: 'Mechanics',
         difficulty: 'medium',
         createdBy: 'Jane Smith',
         createdAt: '2025-09-21',
@@ -39,7 +37,6 @@ export const mockQuestionBank: QuestionBankItem[] = [
         text: 'What is the value of x in the equation 2x + 3 = 11?',
         type: 'mcq',
         subject: 'Mathematics',
-        topic: 'Algebra',
         difficulty: 'easy',
         createdBy: 'John Doe',
         createdAt: '2025-09-22',
@@ -55,7 +52,6 @@ export const mockQuestionBank: QuestionBankItem[] = [
         text: 'Describe the main causes of World War II.',
         type: 'frq',
         subject: 'History',
-        topic: '20th Century History',
         difficulty: 'hard',
         createdBy: 'Jane Smith',
         createdAt: '2025-09-23',
@@ -74,7 +70,7 @@ export const mockQuestionBank: QuestionBankItem[] = [
 export const mockSubmissions: StudentSubmission[] = [
     {
         id: 'sub1',
-        student: { id: 1, firstName: 'Nguyen Van A', imgUrl: 'https://i.pravatar.cc/150?img=1' },
+        student: { id: '1', firstName: 'Nguyen Van A', imgUrl: 'https://i.pravatar.cc/150?img=1' },
         exam: { id: 1, title: 'Mid-term Physics Exam', duration: 0, parts: 0, totalQuestions: 0 },
         submittedAt: '2025-09-28',
         status: 'pending_grading',
@@ -88,7 +84,7 @@ export const mockSubmissions: StudentSubmission[] = [
     },
     {
         id: 'sub2',
-        student: { id: 2, firstName: 'Tran Thi B', imgUrl: 'https://i.pravatar.cc/150?img=2' },
+        student: { id: '2', firstName: 'Tran Thi B', imgUrl: 'https://i.pravatar.cc/150?img=2' },
         exam: { id: 2, title: 'History Essay', duration: 0, parts: 0, totalQuestions: 0 },
         submittedAt: '2025-09-27',
         status: 'pending_grading',
@@ -102,7 +98,7 @@ export const mockSubmissions: StudentSubmission[] = [
     },
     {
         id: 'sub3',
-        student: { id: 3, firstName: 'Le Van C', imgUrl: 'https://i.pravatar.cc/150?img=3' },
+        student: { id: '3', firstName: 'Le Van C', imgUrl: 'https://i.pravatar.cc/150?img=3' },
         exam: { id: 1, title: 'Mid-term Physics Exam', duration: 0, parts: 0, totalQuestions: 0 },
         submittedAt: '2025-09-26',
         status: 'graded',

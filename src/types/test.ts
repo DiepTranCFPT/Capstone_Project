@@ -48,3 +48,26 @@ export interface CompletedTest {
   apScore: number;
   progress: number;
 }
+
+export interface ApiExam {
+  id: string;
+  title: string;
+  description: string;
+  duration: number;
+  passingScore: number;
+  subjectNames: string[];
+  createdByName: string;
+  questionContents: string[];
+  isActive: boolean;
+  createdAt: string; // "2025-11-01"
+}
+
+export interface CreateExamPayload {
+  title: string;
+  description: string;
+  duration: number;
+  passingScore: number;
+  subjectIds: string[]; // Lưu ý: API request dùng subjectIds
+  questionIds: string[];
+  isActive: boolean;
+}
