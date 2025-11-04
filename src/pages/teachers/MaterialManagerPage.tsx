@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Card, Typography, Button, message } from "antd";
-import { ReloadOutlined } from "@ant-design/icons";
+import { Card, Typography, Button, message, Modal, Form, Input, Switch } from "antd";
+import { ReloadOutlined, PlusOutlined } from "@ant-design/icons";
 import { useLearningMaterialsAdmin } from "~/hooks/useLearningMaterialsAdmin";
 import type { LearningMaterial } from "~/types/learningMaterial";
 import MaterialFilter from "~/components/admins/materials/MaterialFilter";
@@ -21,9 +21,13 @@ const MaterialManagerPage: React.FC = () => {
     applyServerSearch,
     fetchMaterials,
     deleteMaterial,
+    createMaterial,
   } = useLearningMaterialsAdmin();
 
   const [filteredData, setFilteredData] = useState<LearningMaterial[]>([]);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [form] = Form.useForm();
 
   useEffect(() => {
     fetchMaterials();
@@ -42,6 +46,25 @@ const MaterialManagerPage: React.FC = () => {
     }
   };
 
+  const openAddModal = () => {
+    form.resetFields();
+    form.setFieldsValue({ isPublic: true });
+    setIsAddOpen(true);
+  };
+
+  const handleCreate = async () => {
+    try {
+      const values = await form.validateFields();
+      setCreating(true);
+      await createMaterial(values);
+      setIsAddOpen(false);
+    } catch {
+      // validation or create error already handled
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <Card className="shadow-sm border-0">
@@ -54,13 +77,24 @@ const MaterialManagerPage: React.FC = () => {
               Manage and filter all learning materials in the system.
             </p>
           </div>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={fetchMaterials}
-            className="bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-sm"
-          >
-            Reload
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={fetchMaterials}
+              className="bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-sm"
+            >
+              Reload
+            </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={openAddModal}
+              className="bg-green-600 hover:bg-green-700 border-0 shadow-sm"
+              style={{ backgroundColor: "#3CBCB2", border: "none" }}
+            >
+              Add Material
+            </Button>
+          </div>
         </div>
 
         <MaterialFilter 
@@ -79,6 +113,69 @@ const MaterialManagerPage: React.FC = () => {
           setPageSize={setPageSize}
           onDelete={handleDelete}
         />
+
+        <Modal
+          title="Add Material"
+          open={isAddOpen}
+          onOk={handleCreate}
+          confirmLoading={creating}
+          onCancel={() => setIsAddOpen(false)}
+          okText="Create"
+          cancelText="Cancel"
+        >
+          <Form
+            form={form}
+            layout="vertical"
+            initialValues={{ isPublic: true }}
+          >
+            <Form.Item
+              label="Title"
+              name="title"
+              rules={[{ required: true, message: "Please enter title" }]}
+            >
+              <Input placeholder="Enter title" />
+            </Form.Item>
+
+            <Form.Item
+              label="Description"
+              name="description"
+              rules={[{ required: true, message: "Please enter description" }]}
+            >
+              <Input.TextArea placeholder="Enter description" rows={3} />
+            </Form.Item>
+
+            <Form.Item
+              label="Content URL"
+              name="contentUrl"
+              rules={[
+                { required: true, message: "Please enter content URL" },
+                { type: "url", message: "Please enter a valid URL" },
+              ]}
+            >
+              <Input placeholder="https://..." />
+            </Form.Item>
+
+            <Form.Item
+              label="Type ID"
+              name="typeId"
+              rules={[{ required: true, message: "Please enter typeId" }]}
+            >
+              <Input placeholder="UUID of type" />
+            </Form.Item>
+
+            <Form.Item
+              label="Subject ID"
+              name="subjectId"
+              rules={[{ required: true, message: "Please enter subjectId" }]}
+            >
+              <Input placeholder="UUID of subject" />
+            </Form.Item>
+
+            <Form.Item label="Public" name="isPublic" valuePropName="checked">
+              <Switch />
+            </Form.Item>
+          </Form>
+        </Modal>
       </Card>
     </div>
   );

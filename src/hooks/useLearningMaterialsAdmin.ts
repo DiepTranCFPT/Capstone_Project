@@ -82,6 +82,24 @@ export const useLearningMaterialsAdmin = () => {
     [fetchMaterials]
   );
 
+  const createMaterial = useCallback(
+    async (data: Partial<LearningMaterial>) => {
+      try {
+        const res = await LearningMaterialService.create(data);
+        if (res.data.code === 1000 || res.data.code === 0) {
+          message.success("Tạo tài liệu thành công");
+          fetchMaterials();
+        } else {
+          message.error(res.data.message || "Tạo tài liệu thất bại");
+        }
+      } catch (error) {
+        console.error(" Failed to create material:", error);
+        message.error("Không thể tạo tài liệu");
+      }
+    },
+    [fetchMaterials]
+  );
+
   useEffect(() => {
     fetchMaterials();
   }, [fetchMaterials]);
@@ -100,5 +118,6 @@ export const useLearningMaterialsAdmin = () => {
     fetchMaterials,
     deleteMaterial,
     updateMaterial,
+    createMaterial,
   };
 };
