@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import { materials } from "~/data/materials";
 import { Button } from "antd";
 import { ShoppingCartOutlined, PlayCircleOutlined } from "@ant-design/icons";
-import MaterialDetailTab from "~/components/materials/MaterialDetailTab";
+import MaterialDetailTab from "~/components/teachers/materials/MaterialDetailTab";
 
 const MaterialsDetailPage: React.FC = () => {
   const { id } = useParams();

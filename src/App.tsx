@@ -68,7 +68,7 @@ import StudentDetailPage from "./pages/parents/StudentDetailPage";
 import ParentBillingPage from "./pages/parents/ParentBillingPage";
 import GoogleCallbackPage from "./components/auth/GoogleCallbackPage";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
-import MaterialManagerPage from "./pages/admins/MaterialManagerPage";
+import MaterialManagerPage from "./pages/teachers/MaterialManagerPage";
 
 // --- Advisor Imports ---
 import AdvisorLayout from "./layout/advisor/AdvisorLayout";
@@ -127,7 +127,6 @@ function App() {
             element={<CertificatesRankingManagerPage />}
           />
           <Route path="users" element={<UserManagerPage />} />
-          <Route path="materials" element={<MaterialManagerPage />} />
         </Route>
 
         {/* Main routes with Layout */}
@@ -182,6 +181,7 @@ function App() {
           <Route path="dashboard" element={<TeacherDashboardPage />} />
           <Route path="classes" element={<MyClassesPage />} />
           <Route path="classes/:classId" element={<ClassroomDetailPage />} />
+          <Route path="materials" element={<MaterialManagerPage />} />
           <Route path="question-bank" element={<QuestionBankPage />} />
           <Route path="create-exam" element={<CreateExamPage />} />
           <Route path="exams" element={<ExamListPage />} />

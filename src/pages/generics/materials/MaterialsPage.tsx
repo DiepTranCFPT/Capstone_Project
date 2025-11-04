@@ -1,7 +1,7 @@
 import { useState } from "react";
-import Filters from "~/components/materials/Filters";
-import MaterialCard from "~/components/materials/MaterialCard";
-import MaterialsPageHeader from "~/components/materials/MaterialsPageHeader";
+import Filters from "~/components/teachers/materials/Filters";
+import MaterialCard from "~/components/teachers/materials/MaterialCard";
+import MaterialsPageHeader from "~/components/teachers/materials/MaterialsPageHeader";
 import LanguageNewsletter from "~/components/home/LanguageNewsletter";
 import { usePublicMaterials } from "~/hooks/usePublicMaterials"; // 👈 Thêm dòng này
 

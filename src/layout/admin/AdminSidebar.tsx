@@ -8,7 +8,7 @@ import {
   TrophyOutlined,
   DashboardOutlined,
   ReadOutlined,
-  TagsOutlined,
+
   AuditOutlined,
   UsergroupAddOutlined,
   FormOutlined,
@@ -22,7 +22,6 @@ const adminMenu = [
   { key: "/dashboard", label: "Dashboard", icon: <DashboardOutlined /> },
   { key: "/admin/users", label: "Users", icon: <UserOutlined /> },
   { key: "/admin/courses", label: "Courses", icon: <ReadOutlined /> },
-  { key: "/admin/materials", label: "Materials", icon: <TagsOutlined /> },
   { key: "/admin/parents", label: "Parents", icon: <AuditOutlined /> },
   { key: "/admin/students", label: "Students", icon: <UsergroupAddOutlined /> },
   { key: "/admin/mock-tests", label: "Mock Tests", icon: <FormOutlined /> },
