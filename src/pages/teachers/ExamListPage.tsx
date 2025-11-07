@@ -1,60 +1,68 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Button, Table, Tag, Input, Select, Space } from "antd";
-import { EyeOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
+import { EyeOutlined, PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import { useNavigate } from "react-router-dom";
-import { useExams } from "~/hooks/useExams";
-import { useAuth } from "~/hooks/useAuth";
-import type { ApiExam } from "~/types/test";
+import { useExamTemplates } from "~/hooks/useExams";
+// import { useAuth } from "~/hooks/useAuth";
+import type { ExamTemplate, ExamRule } from "~/types/test";
 
 const { Option } = Select;
 
 const ExamListPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { exams, loading, fetchExamsByUserId } = useExams();
+  // const { user } = useAuth();
+  const { templates, loading, fetchAllTemplates, removeTemplate } = useExamTemplates();
 
   const [searchText, setSearchText] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState<string>('All Subjects');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
-  // Fetch exams when component mounts
+  // Fetch templates when component mounts
   useEffect(() => {
-    if (user?.id) {
-      fetchExamsByUserId(user.id);
-    }
-  }, [user?.id, fetchExamsByUserId]);
+    fetchAllTemplates();
+  }, [fetchAllTemplates]);
 
   const clearFilters = () => {
     setSearchText('');
-    setSelectedSubject('All Subjects');
     setSelectedStatus('all');
   };
 
-  const handleViewDetails = (examId: string) => {
-    navigate(`/teacher/exam-details/${examId}`);
+  const handleViewDetails = (templateId: string) => {
+    navigate(`/teacher/template-details/${templateId}`);
   };
 
+  const handleEdit = (templateId: string) => {
+    navigate(`/teacher/edit-template/${templateId}`);
+  };
+
+  const handleDelete = async (templateId: string) => {
+    if (window.confirm('Are you sure you want to delete this template?')) {
+      await removeTemplate(templateId);
+    }
+  };
 
   const handleCreateNew = () => {
-    navigate('/teacher/create-exam');
+    navigate('/teacher/create-template');
   };
 
   const filteredData = useMemo(() => {
-    return (exams || [])
-      .filter(exam => {
-        if (searchText && !exam.title.toLowerCase().includes(searchText.toLowerCase())) return false;
-        if (selectedSubject !== 'All Subjects' && !exam.subjectNames?.includes(selectedSubject)) return false;
+    return (templates || [])
+      .filter(template => {
+        if (searchText && !template.title.toLowerCase().includes(searchText.toLowerCase())) return false;
         if (selectedStatus !== 'all') {
           const isActive = selectedStatus === 'active';
-          if (exam.isActive !== isActive) return false;
+          if (template.isActive !== isActive) return false;
         }
         return true;
       })
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [exams, searchText, selectedSubject, selectedStatus]);
+      .sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+  }, [templates, searchText, selectedStatus]);
 
-  const columns: ColumnsType<ApiExam> = [
+  const columns: ColumnsType<ExamTemplate> = [
     {
       title: 'Title',
       dataIndex: 'title',
@@ -64,20 +72,11 @@ const ExamListPage: React.FC = () => {
       ),
     },
     {
-      title: 'Subjects',
-      dataIndex: 'subjectNames',
-      key: 'subjectNames',
-      render: (subjects: string[]) => (
-        <div className="flex flex-wrap gap-1">
-          {subjects?.slice(0, 2).map((subject, index) => (
-            <Tag key={index} color="blue">
-              {subject}
-            </Tag>
-          ))}
-          {subjects && subjects.length > 2 && (
-            <Tag>+{subjects.length - 2} more</Tag>
-          )}
-        </div>
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+      render: (description: string) => (
+        <div className="text-gray-600 text-sm max-w-xs truncate">{description || 'No description'}</div>
       ),
     },
     {
@@ -87,10 +86,16 @@ const ExamListPage: React.FC = () => {
       render: (duration: number) => `${duration} min`,
     },
     {
-      title: 'Questions',
-      dataIndex: 'questionContents',
-      key: 'questionContents',
-      render: (questions: string[]) => questions?.length || 0,
+      title: 'Passing Score',
+      dataIndex: 'passingScore',
+      key: 'passingScore',
+      render: (score: number) => `${score}%`,
+    },
+    {
+      title: 'Rules',
+      dataIndex: 'rules',
+      key: 'rules',
+      render: (rules: ExamRule[]) => rules?.length || 0,
     },
     {
       title: 'Status',
@@ -104,9 +109,9 @@ const ExamListPage: React.FC = () => {
     },
     {
       title: 'Created',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      dataIndex: 'createdBy',
+      key: 'createdBy',
+      render: (createdBy: string) => createdBy,
     },
     {
       title: 'Actions',
@@ -120,7 +125,24 @@ const ExamListPage: React.FC = () => {
             size="small"
           >
             View
-          </Button>         
+          </Button>
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record.id)}
+            size="small"
+          >
+            Edit
+          </Button>
+          <Button
+            type="link"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record.id)}
+            size="small"
+          >
+            Delete
+          </Button>
         </Space>
       ),
     },
@@ -129,38 +151,26 @@ const ExamListPage: React.FC = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">My Exams</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Exam Templates</h1>
         <Button
           type="primary"
           icon={<PlusOutlined />}
           size="large"
           onClick={handleCreateNew}
         >
-          Create New Exam
+          Create New Template
         </Button>
       </div>
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow-sm mb-6 flex gap-4 flex-wrap">
         <Input
-          placeholder="Search exams"
+          placeholder="Search templates"
           prefix={<SearchOutlined />}
           value={searchText}
           onChange={e => setSearchText(e.target.value)}
           style={{ width: 250 }}
         />
-
-        <Select
-          value={selectedSubject}
-          onChange={setSelectedSubject}
-          style={{ width: 150 }}
-        >
-          <Option value="All Subjects">All Subjects</Option>
-          <Option value="Biology">Biology</Option>
-          <Option value="Mathematics">Mathematics</Option>
-          <Option value="Physics">Physics</Option>
-          <Option value="History">History</Option>
-        </Select>
 
         <Select
           value={selectedStatus}
@@ -175,33 +185,33 @@ const ExamListPage: React.FC = () => {
         <Button onClick={clearFilters}>Clear Filters</Button>
       </div>
 
-      {/* Exam Statistics */}
+      {/* Template Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-4 rounded-lg shadow-sm">
-          <div className="text-2xl font-bold text-blue-600">{exams?.length || 0}</div>
-          <div className="text-sm text-gray-600">Total Exams</div>
+          <div className="text-2xl font-bold text-blue-600">{templates?.length || 0}</div>
+          <div className="text-sm text-gray-600">Total Templates</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-sm">
           <div className="text-2xl font-bold text-green-600">
-            {exams?.filter(e => e.isActive).length || 0}
+            {templates?.filter(t => t.isActive).length || 0}
           </div>
-          <div className="text-sm text-gray-600">Active Exams</div>
+          <div className="text-sm text-gray-600">Active Templates</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-sm">
           <div className="text-2xl font-bold text-orange-600">
-            {exams?.filter(e => !e.isActive).length || 0}
+            {templates?.filter(t => !t.isActive).length || 0}
           </div>
-          <div className="text-sm text-gray-600">Inactive Exams</div>
+          <div className="text-sm text-gray-600">Inactive Templates</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-sm">
           <div className="text-2xl font-bold text-purple-600">
-            {exams?.reduce((sum, exam) => sum + (exam.questionContents?.length || 0), 0) || 0}
+            {templates?.reduce((sum, template) => sum + (template.rules?.length || 0), 0) || 0}
           </div>
-          <div className="text-sm text-gray-600">Total Questions</div>
+          <div className="text-sm text-gray-600">Total Rules</div>
         </div>
       </div>
 
-      {/* Exam Table */}
+      {/* Template Table */}
       <div className="bg-white rounded-lg shadow-sm">
         <Table
           columns={columns}
@@ -213,7 +223,7 @@ const ExamListPage: React.FC = () => {
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) =>
-              `${range[0]}-${range[1]} of ${total} exams`,
+              `${range[0]}-${range[1]} of ${total} templates`,
           }}
         />
       </div>

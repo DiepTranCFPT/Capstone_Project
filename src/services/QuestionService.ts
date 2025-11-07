@@ -2,7 +2,7 @@ import axiosInstance from "~/configs/axios";
 import type { AxiosResponse } from "axios";
 import type { ApiResponse } from "~/types/api";
 import type { PageInfo } from "~/types/pagination";
-import type { QuestionBankItem, NewQuestion } from "~/types/question";
+import type { QuestionBankItem, NewQuestion, QuestionV2PaginationResponse } from "~/types/question";
 
 const QuestionService = {
   //  Lấy tất cả câu hỏi (có phân trang)
@@ -46,6 +46,13 @@ const QuestionService = {
     teacherId: string
   ): Promise<AxiosResponse<ApiResponse<QuestionBankItem[]>>> {
     return axiosInstance.get(`/questions/by-teacher/${teacherId}`);
+  },
+
+  // Lấy tất cả câu hỏi v2 (có phân trang)
+  async getAllV2(
+    params?: { pageNo?: number; pageSize?: number }
+  ): Promise<AxiosResponse<ApiResponse<QuestionV2PaginationResponse>>> {
+    return axiosInstance.get("/questions-v2", { params });
   },
 };
 

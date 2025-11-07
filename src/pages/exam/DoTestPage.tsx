@@ -1,25 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Timer from '~/components/do-test/Timer';
 import QuestionCard from '~/components/do-test/QuestionCard';
 import FRQCard from '~/components/do-test/FRQCard';
-import { mockFRQ, mockMCQ } from '~/data/mockTest';
+import { useTestTaking } from '~/hooks/useTestTaking';
+import type { ExamSubmissionAnswer } from '~/types/test';
 
 
 const DoTestPage: React.FC = () => {
     const { examId, testType } = useParams<{ examId: string, testType: 'full' | 'mcq' | 'frq' }>();
     const navigate = useNavigate();
+    const { activeExam, loading, error, startExam, submitExam } = useTestTaking();
+
     const [activeSection, setActiveSection] = useState<'mcq' | 'frq'>(testType === 'frq' ? 'frq' : 'mcq');
     const [showConFirmed, setShowConFirmed] = useState(false);
     const [isSubmit, setIsSubmit] = useState(false);
     const [isCancel, setIsCancel] = useState(false);
-    const handleSubmit = () => {
-        const submissionId = `mock-${examId}-${testType}`;
-        navigate(`/test-result/${submissionId}`);
+
+    // Separate MCQ and FRQ questions
+    const mcqQuestions = activeExam?.questions.filter(q => q.question.type === 'mcq') || [];
+    const frqQuestions = activeExam?.questions.filter(q => q.question.type === 'frq') || [];
+
+    console.log('Exam id ', examId);
+    console.log('Active exam:', activeExam);
+    if (activeExam) {
+        console.log('Questions count:', activeExam.questions?.length);
+        console.log('MCQ questions:', mcqQuestions.length);
+        console.log('FRQ questions:', frqQuestions.length);
+    }
+
+    // Start exam when component mounts
+    useEffect(() => {
+        if (examId) {
+            console.log('Starting exam with ID:', examId);
+            startExam(examId);
+        }
+    }, [examId, startExam]);
+
+    const handleSubmit = async () => {
+        if (!activeExam) return;
+
+        // Prepare answers (empty for now, user would fill them during the test)
+        const answers: ExamSubmissionAnswer[] = activeExam.questions.map(q => ({
+            examQuestionId: q.examQuestionId,
+            selectedAnswerId: undefined, // Would be filled by user selections
+            frqAnswerText: undefined // Would be filled by user input
+        }));
+
+        try {
+            const result = await submitExam(activeExam.examAttemptId, answers);
+            if (result) {
+                navigate(`/test-result/${result.id}`);
+            }
+        } catch (err) {
+            console.error('Submit failed:', err);
+            // Handle error - maybe show toast
+        }
     };
 
     const handleCancel = () => {
-        // setShowConFirmed(true);      
+        // setShowConFirmed(true);
         navigate(`/exam-details/${examId}`);
     };
 
@@ -33,8 +73,9 @@ const DoTestPage: React.FC = () => {
         setIsCancel(true);
     };
 
-
-    const totalQuestions = (testType === 'mcq' ? mockMCQ.length : testType === 'frq' ? mockFRQ.length : mockMCQ.length + mockFRQ.length);
+    const totalQuestions = testType === 'mcq' ? mcqQuestions.length :
+                          testType === 'frq' ? frqQuestions.length :
+                          mcqQuestions.length + frqQuestions.length;
 
 
     return (
@@ -118,54 +159,84 @@ const DoTestPage: React.FC = () => {
             {/* Main Content */}
             <main className="flex-1 p-8 overflow-y-auto bg-white/40">
                 <div className="max-w-4xl mx-auto space-y-8">
-                    {/* Conditional Rendering based on testType and activeSection */}
-                    {(testType === 'full' && activeSection === 'mcq') || testType === 'mcq' ? (
+                    {loading ? (
+                        <div className="text-center py-20">
+                            <div className="text-6xl mb-6">⏳</div>
+                            <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                                Đang tải bài thi...
+                            </h3>
+                            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                                Vui lòng đợi trong giây lát để chúng tôi tải bài thi.
+                            </p>
+                        </div>
+                    ) : error ? (
+                        <div className="text-center py-20">
+                            <div className="text-6xl mb-6">❌</div>
+                            <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                                Lỗi tải bài thi
+                            </h3>
+                            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                                {error}
+                            </p>
+                            <button
+                                onClick={() => examId && startExam(examId)}
+                                className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+                            >
+                                Thử lại
+                            </button>
+                        </div>
+                    ) : activeExam ? (
                         <>
-                            <div className="bg-white/80 rounded-2xl p-6 border border-teal-200/50 shadow-lg">
-                                <h2 className="text-3xl font-bold text-gray-800 mb-6 flex items-center">
-                                    <span className="mr-3">📝</span>
-                                    Phần 1: Trắc nghiệm
-                                </h2>
-                                <div className="space-y-6">
-                                    {mockMCQ.map((q, index) => (
-                                        <QuestionCard key={q.id} question={{
-                                            id: String(q.id),
-                                            text: q.text,
-                                            subject: "English",
-                                            difficulty: "medium",
-                                            type: "mcq",
-                                            createdBy: "system",
-                                            createdAt: new Date().toISOString(),
-                                            options: q.options.map(o => ({ id: o.id, text: o.text }))
-                                        }} questionNumber={index + 1} />
-                                    ))}
-                                </div>
-                            </div>
-                        </>
-                    ) : null}
+                            {/* Conditional Rendering based on testType and activeSection */}
+                            {(testType === 'full' && activeSection === 'mcq') || testType === 'mcq' ? (
+                                <>
+                                    <div className="bg-white/80 rounded-2xl p-6 border border-teal-200/50 shadow-lg">
+                                        <h2 className="text-3xl font-bold text-gray-800 mb-6 flex items-center">
+                                            <span className="mr-3">📝</span>
+                                            Phần 1: Trắc nghiệm
+                                        </h2>
+                                        <div className="space-y-6">
+                                            {mcqQuestions.map((q, index) => (
+                                                <QuestionCard key={q.examQuestionId} question={{
+                                                    id: q.question.id,
+                                                    text: q.question.content,
+                                                    subject: q.question.subject.name,
+                                                    difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
+                                                    type: q.question.type as "mcq",
+                                                    createdBy: q.question.createdBy,
+                                                    createdAt: new Date().toISOString(),
+                                                    options: q.question.answers.map(a => ({ id: a.id, text: a.content }))
+                                                }} questionNumber={index + 1} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
+                            ) : null}
 
-                    {(testType === 'full' && activeSection === 'frq') || testType === 'frq' ? (
-                        <>
-                            <div className="bg-white/80 rounded-2xl p-6 border border-indigo-200/50 shadow-lg">
-                                <h2 className="text-3xl font-bold text-gray-800 mb-6 flex items-center">
-                                    <span className="mr-3">✍️</span>
-                                    Phần 2: Tự luận
-                                </h2>
-                                <div className="space-y-6">
-                                    {mockFRQ.map((q, index) => (
-                                        <FRQCard key={q.id} question={{
-                                            id: String(q.id),
-                                            text: q.text,
-                                            subject: "English",
-                                            difficulty: "hard",
-                                            type: "frq",
-                                            createdBy: "system",
-                                            createdAt: new Date().toISOString(),
-                                            expectedAnswer: "Sample answer"
-                                        }} questionNumber={mockMCQ.length + index + 1} />
-                                    ))}
-                                </div>
-                            </div>
+                            {(testType === 'full' && activeSection === 'frq') || testType === 'frq' ? (
+                                <>
+                                    <div className="bg-white/80 rounded-2xl p-6 border border-indigo-200/50 shadow-lg">
+                                        <h2 className="text-3xl font-bold text-gray-800 mb-6 flex items-center">
+                                            <span className="mr-3">✍️</span>
+                                            Phần 2: Tự luận
+                                        </h2>
+                                        <div className="space-y-6">
+                                            {frqQuestions.map((q, index) => (
+                                                <FRQCard key={q.examQuestionId} question={{
+                                                    id: q.question.id,
+                                                    text: q.question.content,
+                                                    subject: q.question.subject.name,
+                                                    difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
+                                                    type: q.question.type as "frq",
+                                                    createdBy: q.question.createdBy,
+                                                    createdAt: new Date().toISOString(),
+                                                    expectedAnswer: "Sample answer" // This would come from API if available
+                                                }} questionNumber={mcqQuestions.length + index + 1} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
+                            ) : null}
                         </>
                     ) : null}
                 </div>

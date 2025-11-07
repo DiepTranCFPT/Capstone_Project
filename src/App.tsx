@@ -183,9 +183,10 @@ function App() {
           <Route path="classes/:classId" element={<ClassroomDetailPage />} />
           <Route path="materials" element={<MaterialManagerPage />} />
           <Route path="question-bank" element={<QuestionBankPage />} />
-          <Route path="create-exam" element={<CreateExamPage />} />
-          <Route path="exams" element={<ExamListPage />} />
-          <Route path="exam-details/:examId" element={<TeacherExamDetailsPage />} />
+          <Route path="create-template" element={<CreateExamPage />} />
+          <Route path="templates" element={<ExamListPage />} />
+          <Route path="template-details/:examId" element={<TeacherExamDetailsPage />} />
+          <Route path="edit-template/:examId" element={<CreateExamPage />} />
           <Route path="grading" element={<GradingPage />} />
           <Route
             path="grading/:submissionId"

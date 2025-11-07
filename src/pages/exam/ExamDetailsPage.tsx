@@ -28,12 +28,12 @@ const ExamDetailsPage: React.FC = () => {
     const examDetails = currentExam ? {
         title: currentExam.title,
         level: `Level ${currentExam.passingScore || 'B1'}`, // Default level mapping
-        subject: currentExam.subjectNames?.[0] || 'General',
-        sentences: currentExam.questionContents?.length || 0,
+        subject: currentExam.subject.name,
+        sentences: currentExam.rules?.reduce((sum: number, rule: { id: string; topic: string; difficulty: string; questionType: string; numberOfQuestions: number; points: number }) => sum + rule.numberOfQuestions, 0) || 0,
         attempts: 200, // This would need to be fetched separately if available
         duration: currentExam.duration,
         description: currentExam.description,
-        teacherName: currentExam.createdByName
+        teacherName: currentExam.createdBy
     } : null;
 
     const tabs = [
