@@ -3,6 +3,7 @@ import type { AxiosResponse } from "axios";
 import type { ApiResponse } from "~/types/api";
 import type { PageInfo } from "~/types/pagination";
 import type { QuestionBankItem, NewQuestion } from "~/types/question";
+import type { QuestionTopic } from "~/types/questionTopic";
 
 const QuestionService = {
   //  Lấy tất cả câu hỏi (có phân trang)
@@ -41,12 +42,6 @@ const QuestionService = {
     return axiosInstance.delete(`/questions-v2/${id}`);
   },
 
-  //  Lấy danh sách câu hỏi theo topicId
-  async getByTopicId(
-    topicId: string
-  ): Promise<AxiosResponse<ApiResponse<QuestionBankItem[]>>> {
-    return axiosInstance.get(`/questions-v2/topic/${topicId}`);
-  },
 
   //  Lấy danh sách câu hỏi theo subjectId
   async getBySubjectId(
@@ -67,6 +62,19 @@ const QuestionService = {
     userId: string
   ): Promise<AxiosResponse<ApiResponse<QuestionBankItem[]>>> {
     return axiosInstance.get(`/questions-v2/created-by/${userId}`);
+  },
+
+  //  Lấy tất cả Topic câu hỏi
+  async getAllTopics(
+    params?: { pageNo?: number; pageSize?: number; keyword?: string }
+  ): Promise<
+    AxiosResponse<
+      | ApiResponse<QuestionTopic[]>
+      | ApiResponse<import("~/types/pagination").PageInfo<QuestionTopic>>
+    >
+  > {
+    // Note: endpoint provided by backend spec
+    return axiosInstance.get(`/api/question-topics`, { params });
   },
 };
 
