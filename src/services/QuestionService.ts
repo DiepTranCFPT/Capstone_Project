@@ -9,21 +9,21 @@ const QuestionService = {
   async getAll(
     params?: { pageNo?: number; pageSize?: number; keyword?: string }
   ): Promise<AxiosResponse<ApiResponse<PageInfo<QuestionBankItem>>>> {
-    return axiosInstance.get("/questions", { params });
+    return axiosInstance.get("/questions-v2", { params });
   },
 
   // Lấy chi tiết câu hỏi theo ID
   async getById(
     id: string
   ): Promise<AxiosResponse<ApiResponse<QuestionBankItem>>> {
-    return axiosInstance.get(`/questions/${id}`);
+    return axiosInstance.get(`/questions-v2/${id}`);
   },
 
   //  Tạo câu hỏi mới
   async create(
     data: NewQuestion | Record<string, unknown>
   ): Promise<AxiosResponse<ApiResponse<QuestionBankItem>>> {
-    return axiosInstance.post("/questions", data);
+    return axiosInstance.post("/questions-v2", data);
   },
 
   //  Cập nhật câu hỏi
@@ -31,21 +31,42 @@ const QuestionService = {
     id: string,
     data: Partial<QuestionBankItem> | Record<string, unknown>
   ): Promise<AxiosResponse<ApiResponse<QuestionBankItem>>> {
-    return axiosInstance.put(`/questions/${id}`, data);
+    return axiosInstance.put(`/questions-v2/${id}`, data);
   },
 
   //  Xóa câu hỏi
   async delete(
     id: string
   ): Promise<AxiosResponse<ApiResponse<{ message: string }>>> {
-    return axiosInstance.delete(`/questions/${id}`);
+    return axiosInstance.delete(`/questions-v2/${id}`);
   },
 
-  // Lấy danh sách câu hỏi theo giáo viên
-  async getByTeacherId(
-    teacherId: string
+  //  Lấy danh sách câu hỏi theo topicId
+  async getByTopicId(
+    topicId: string
   ): Promise<AxiosResponse<ApiResponse<QuestionBankItem[]>>> {
-    return axiosInstance.get(`/questions/by-teacher/${teacherId}`);
+    return axiosInstance.get(`/questions-v2/topic/${topicId}`);
+  },
+
+  //  Lấy danh sách câu hỏi theo subjectId
+  async getBySubjectId(
+    subjectId: string
+  ): Promise<AxiosResponse<ApiResponse<QuestionBankItem[]>>> {
+    return axiosInstance.get(`/questions-v2/subject/${subjectId}`);
+  },
+
+  //  Tìm kiếm câu hỏi (search)
+  async search(
+    params: Record<string, unknown>
+  ): Promise<AxiosResponse<ApiResponse<QuestionBankItem[]>>> {
+    return axiosInstance.get("/questions-v2/search", { params });
+  },
+
+  //  Lấy danh sách câu hỏi được tạo bởi user
+  async getByUserId(
+    userId: string
+  ): Promise<AxiosResponse<ApiResponse<QuestionBankItem[]>>> {
+    return axiosInstance.get(`/questions-v2/created-by/${userId}`);
   },
 };
 
