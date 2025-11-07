@@ -3,24 +3,22 @@ import { Link, useLocation } from 'react-router-dom';
 import {
     FaTachometerAlt,
     FaUsers,
-    FaBook,
     FaClipboardList,
     FaChartBar,
     FaCog,
     FaSignOutAlt,
-    FaRegListAlt
 } from 'react-icons/fa';
 import { useAuth } from '~/hooks/useAuth';
 import { Avatar, Button } from 'antd';
-import { MenuFoldOutlined, MenuUnfoldOutlined, TagsOutlined } from '@ant-design/icons';
+import { FileAddOutlined, MenuFoldOutlined, MenuUnfoldOutlined, TagsOutlined } from '@ant-design/icons';
 
 const teacherMenu = [
     { label: "Dashboard", path: "/teacher/dashboard", icon: <FaTachometerAlt /> },
     { label: "My Classes", path: "/teacher/classes", icon: <FaUsers /> },
     { label: "materials", path: "Materials", icon: <TagsOutlined /> },
     { label: "Questions Bank", path: "/teacher/question-bank", icon: <FaUsers /> },
-    { label: "Create Exam", path: "/teacher/create-exam", icon: <FaBook /> },
-    { label: "Exam List", path: "/teacher/exams", icon: <FaRegListAlt /> },
+    { label: "Templates", path: "/teacher/templates", icon: <FaClipboardList /> }, // Trang danh sách mới
+        { label: "Create Template", path: "/teacher/create-template", icon: <FileAddOutlined /> }, // Trang tạo mới
     { label: "Grading", path: "/teacher/grading", icon: <FaClipboardList /> },
     { label: "Analytics", path: "/teacher/analytics", icon: <FaChartBar /> },
     { label: "Settings", path: "/teacher/settings", icon: <FaCog /> },

@@ -26,21 +26,21 @@ const ExamTestPage: React.FC = () => {
         description: apiExam.description,
         duration: apiExam.duration,
         examTypeId: '1', // Default value
-        subjectId: '1', // Default value
+        subjectId: apiExam.subject.id,
         teacherId: '1', // Default value
-        totalQuestions: apiExam.questionContents?.length || 0,
+        totalQuestions: apiExam.rules?.reduce((sum, rule) => sum + rule.numberOfQuestions, 0) || 0,
         maxAttempts: 3, // Default value
         status: apiExam.isActive ? 'published' : 'draft',
-        createdAt: apiExam.createdAt,
-        updatedAt: apiExam.createdAt,
+        createdAt: apiExam.createdAt || new Date().toISOString(),
+        updatedAt: apiExam.createdAt || new Date().toISOString(),
         tokenCost: 10, // Default value
         questions: [],
-        teacherName: apiExam.createdByName,
+        teacherName: apiExam.createdBy,
         rating: 4.5, // Default value
-        subject: apiExam.subjectNames?.[0] || 'General',
+        subject: apiExam.subject.name,
         attempts: 100, // Default value
         parts: 1, // Default value
-        category: apiExam.subjectNames?.[0] || 'General'
+        category: apiExam.subject.name
     });
 
     const exams = apiExams.map(convertApiExamToExam);
@@ -95,9 +95,11 @@ const ExamTestPage: React.FC = () => {
     }, [fetchAllExams]);
 
     const handleStartExamClick = (exam: Exam) => {
-        setExamToStart(exam);
-        setCombinedExamToStart(null); // Clear combined exam state
-        setShowTokenConfirmation(true);
+        // Comment out token confirmation - directly navigate to test
+        // setExamToStart(exam);
+        // setCombinedExamToStart(null); // Clear combined exam state
+        // setShowTokenConfirmation(true);
+        window.location.href = `/do-test/${exam.id}/full`;
     };
 
     const handleStartCombinedExamClick = (exams: Exam[], totalCost: number) => {
@@ -423,7 +425,7 @@ const ExamTestPage: React.FC = () => {
                                     <div className="text-center py-12">
                                         <p className="text-red-500 mb-4">{examsError}</p>
                                         <button
-                                            onClick={fetchAllExams}
+                                            onClick={() => fetchAllExams()}
                                             className="bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600"
                                         >
                                             Try Again

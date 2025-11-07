@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft, FiHome } from 'react-icons/fi';
 import FlashCard from '~/components/practice/FlashCard';
 import PracticeQuizCard from '~/components/practice/PracticeQuizCard';
-import { mockMCQ } from '~/data/mockTest';
+import FRQCard from '~/components/practice/FRQCard';
+import { usePracticeQuestions } from '~/hooks/usePracticeQuestions';
 
 const PracticePage: React.FC = () => {
     const { examId, practiceType, mode } = useParams<{
@@ -13,15 +14,27 @@ const PracticePage: React.FC = () => {
     }>();
 
     const navigate = useNavigate();
+    const { questions: apiQuestions, loading, shuffleQuestions } = usePracticeQuestions(practiceType);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [shuffledQuestions, setShuffledQuestions] = useState(mockMCQ);
+    const [shuffledQuestions, setShuffledQuestions] = useState<typeof apiQuestions>([]);
     const [correctAnswers, setCorrectAnswers] = useState<boolean[]>([]);
 
     useEffect(() => {
-        // Shuffle questions when component mounts or mode changes
-        const shuffled = [...mockMCQ].sort(() => Math.random() - 0.5);
-        setShuffledQuestions(shuffled);
-    }, [mode]);
+        // Update shuffled questions when API questions change
+        if (apiQuestions.length > 0) {
+            const shuffled = [...apiQuestions].sort(() => Math.random() - 0.5);
+            console.log('PracticePage - Setting shuffled questions:', shuffled);
+            setShuffledQuestions(shuffled);
+        } else {
+            console.log('PracticePage - No API questions to shuffle');
+        }
+    }, [apiQuestions]);
+
+    useEffect(() => {
+        // Reset current index when questions change
+        setCurrentIndex(0);
+        setCorrectAnswers([]);
+    }, [shuffledQuestions]);
 
     const handleNext = () => {
         if (mode === 'quiz') {
@@ -44,9 +57,9 @@ const PracticePage: React.FC = () => {
     };
 
     const handleShuffle = () => {
-        const shuffled = [...shuffledQuestions].sort(() => Math.random() - 0.5);
-        setShuffledQuestions(shuffled);
+        shuffleQuestions();
         setCurrentIndex(0);
+        setCorrectAnswers([]);
     };
 
     const handleBackToExam = () => {
@@ -128,7 +141,37 @@ const PracticePage: React.FC = () => {
             {/* Main Content */}
             <div className="p-6">
                 <div className="max-w-6xl mx-auto">
-                    {mode === 'flashcard' && (
+                    {loading && (
+                        <div className="text-center py-20">
+                            <div className="text-6xl mb-6">⏳</div>
+                            <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                                Đang tải câu hỏi...
+                            </h3>
+                            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                                Vui lòng đợi trong giây lát để chúng tôi tải câu hỏi luyện tập.
+                            </p>
+                        </div>
+                    )}
+
+                    {!loading && shuffledQuestions.length === 0 && (
+                        <div className="text-center py-20">
+                            <div className="text-6xl mb-6">📝</div>
+                            <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                                Không có câu hỏi nào
+                            </h3>
+                            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                                Hiện tại chưa có câu hỏi nào để luyện tập. Vui lòng quay lại sau.
+                            </p>
+                            <button
+                                onClick={handleBackToExam}
+                                className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+                            >
+                                Quay lại
+                            </button>
+                        </div>
+                    )}
+
+                    {!loading && shuffledQuestions.length > 0 && mode === 'flashcard' && practiceType === 'mcq' && (
                         <FlashCard
                             questions={shuffledQuestions}
                             currentIndex={currentIndex}
@@ -138,7 +181,17 @@ const PracticePage: React.FC = () => {
                         />
                     )}
 
-                    {mode === 'quiz' && (
+                    {!loading && shuffledQuestions.length > 0 && mode === 'flashcard' && practiceType === 'frq' && (
+                        <FRQCard
+                            questions={shuffledQuestions}
+                            currentIndex={currentIndex}
+                            onNext={handleNext}
+                            onPrevious={handlePrevious}
+                            onShuffle={handleShuffle}
+                        />
+                    )}
+
+                    {mode === 'quiz' && practiceType === 'mcq' && (
                         <PracticeQuizCard
                             questions={shuffledQuestions}
                             currentIndex={currentIndex}
@@ -147,6 +200,24 @@ const PracticePage: React.FC = () => {
                             correctCount={correctCount}
                             totalCount={totalAnswered}
                         />
+                    )}
+
+                    {mode === 'quiz' && practiceType === 'frq' && (
+                        <div className="text-center py-20">
+                            <div className="text-6xl mb-6">📝</div>
+                            <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                                Chế độ Quiz không khả dụng cho câu hỏi tự luận
+                            </h3>
+                            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                                Vui lòng chọn chế độ Flash Card để xem đáp án mẫu cho câu hỏi tự luận.
+                            </p>
+                            <button
+                                onClick={() => navigate(`/exam-details/${examId}`)}
+                                className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+                            >
+                                Quay lại
+                            </button>
+                        </div>
                     )}
 
                     {!mode && (

@@ -1,29 +1,94 @@
 import axiosInstance from "~/configs/axios";
-import type { AxiosResponse } from "axios";
-import type { ApiResponse } from "~/types/api";
-import type { ApiExam, CreateExamPayload } from "~/types/test";
+    import type { AxiosResponse } from "axios";
+    import type { ApiResponse } from "~/types/api";
+import type {
+  ExamTemplate,
+  CreateExamTemplatePayload,
+  UpdateExamTemplatePayload,
+  CreateExamRulePayload,
+  ExamRule,
+  QuestionTopic,
+  // ApiExam
+} from "~/types/test"; // Đảm bảo bạn đã cập nhật file test.ts
+    import type { PageInfo } from "~/types/pagination";
 
-const ExamService = {
+    // API trả về danh sách có phân trang
+    type TemplateListResponse = ApiResponse<PageInfo<ExamTemplate>>;
+    // API trả về chi tiết 1 template
+    type TemplateDetailResponse = ApiResponse<ExamTemplate>;
+    // API trả về chi tiết 1 rule
+    type RuleDetailResponse = ApiResponse<ExamRule>;
+    // API trả về danh sách question topics
+    type QuestionTopicListResponse = ApiResponse<QuestionTopic[]>;
+    // API trả về danh sách exams
+    // type ExamListResponse = ApiResponse<PageInfo<ApiExam>>;
+    // // API trả về chi tiết 1 exam
+    // type ExamDetailResponse = ApiResponse<ApiExam>;
 
-    getAllExams(): Promise<AxiosResponse<ApiResponse<ApiExam[]>>> {
-        return axiosInstance.get("/api/exams");
-    },
+    const ExamTemplateService = {
+      // === Template CRUD ===
 
-    getExamById(id: string): Promise<AxiosResponse<ApiResponse<ApiExam>>> {
-        return axiosInstance.get("/api/exam", { params: { id } });
-    },
+      // GET /exam-templates
+      getAllTemplates(
+        params?: { pageNo?: number; pageSize?: number; keyword?: string }
+      ): Promise<AxiosResponse<TemplateListResponse>> {
+        return axiosInstance.get("/exam-templates", { params });
+      },
 
-    getExamsByUserId(userId: string): Promise<AxiosResponse<ApiResponse<ApiExam[]>>> {
-        return axiosInstance.get(`/api/user/${userId}`);
-    },
+      // GET /exam-templates/{id}
+      getTemplateById(id: string): Promise<AxiosResponse<TemplateDetailResponse>> {
+        return axiosInstance.get(`/exam-templates/${id}`);
+      },
 
-    createExam(data: CreateExamPayload): Promise<AxiosResponse<ApiResponse<ApiExam>>> {
-        return axiosInstance.post("/api/exam", data);
-    },
+      // POST /exam-templates
+      createTemplate(
+        data: CreateExamTemplatePayload
+      ): Promise<AxiosResponse<TemplateDetailResponse>> {
+        return axiosInstance.post("/exam-templates", data);
+      },
 
-    deleteExam(id: string): Promise<AxiosResponse<ApiResponse<object>>> {
-        return axiosInstance.delete(`/api/exam/${id}`);
-    },
-};
+      // PUT /exam-templates/{id}
+      updateTemplate(
+        id: string,
+        data: UpdateExamTemplatePayload
+      ): Promise<AxiosResponse<TemplateDetailResponse>> {
+        return axiosInstance.put(`/exam-templates/${id}`, data);
+      },
 
-export default ExamService;
+      // DELETE /exam-templates/{id}
+      deleteTemplate(id: string): Promise<AxiosResponse<ApiResponse<object>>> {
+        return axiosInstance.delete(`/exam-templates/${id}`);
+      },
+
+      // === Rule CRUD ===
+
+      // POST /exam-templates/{templateId}/rules
+      addRuleToTemplate(
+        templateId: string,
+        data: CreateExamRulePayload
+      ): Promise<AxiosResponse<RuleDetailResponse>> {
+        return axiosInstance.post(`/exam-templates/${templateId}/rules`, data);
+      },
+
+      // PUT /exam-templates/rules/{ruleId}
+      updateRule(
+        ruleId: string,
+        data: CreateExamRulePayload
+      ): Promise<AxiosResponse<RuleDetailResponse>> {
+        return axiosInstance.put(`/exam-templates/rules/${ruleId}`, data);
+      },
+
+      // DELETE /exam-templates/rules/{ruleId}
+      deleteRule(ruleId: string): Promise<AxiosResponse<ApiResponse<object>>> {
+        return axiosInstance.delete(`/exam-templates/rules/${ruleId}`);
+      },
+
+      // === Question Topics ===
+
+      // GET /api/questions-topic
+      getQuestionTopics(): Promise<AxiosResponse<QuestionTopicListResponse>> {
+        return axiosInstance.get("/api/question-topics");
+      },
+    };
+
+    export default ExamTemplateService;

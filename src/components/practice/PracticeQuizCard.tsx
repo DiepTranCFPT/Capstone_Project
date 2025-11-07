@@ -31,6 +31,28 @@ const PracticeQuizCard: React.FC<PracticeQuizCardProps> = ({
     const [isCorrect, setIsCorrect] = useState(false);
     const currentQuestion = questions[currentIndex];
 
+    console.log('PracticeQuizCard - Questions:', questions);
+    console.log('PracticeQuizCard - Current Index:', currentIndex);
+    console.log('PracticeQuizCard - Current Question:', currentQuestion);
+
+    // Safety check - if no questions or invalid index, show loading/error state
+    if (!questions || questions.length === 0 || !currentQuestion) {
+        return (
+            <div className="w-full max-w-3xl mx-auto text-center py-20">
+                <div className="text-6xl mb-6">📝</div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                    {questions && questions.length === 0 ? 'Không có câu hỏi nào' : 'Đang tải câu hỏi...'}
+                </h3>
+                <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                    {questions && questions.length === 0
+                        ? 'Hiện tại chưa có câu hỏi nào để luyện tập.'
+                        : 'Vui lòng đợi trong giây lát để chúng tôi tải câu hỏi luyện tập.'
+                    }
+                </p>
+            </div>
+        );
+    }
+
     const handleAnswerSelect = (answerId: string) => {
         if (showResult) return;
 

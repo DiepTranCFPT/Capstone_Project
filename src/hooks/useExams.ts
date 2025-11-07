@@ -1,138 +1,345 @@
 import { useState, useCallback } from "react";
 import { message } from "antd";
-import type { ApiExam, CreateExamPayload } from "~/types/test";
-import ExamService from "~/services/examService";
+import ExamTemplateService from "~/services/examService";
+import type {
+  ExamTemplate,
+  CreateExamTemplatePayload,
+  UpdateExamTemplatePayload,
+  CreateExamRulePayload,
+  ApiExam,
+  QuestionTopic
+} from "~/types/test";
+import type { PageInfo } from "~/types/pagination";
+import type { ApiResponse } from "~/types/api";
+import { toast } from "~/components/common/Toast";
 
-export const useExams = () => {
-    const [exams, setExams] = useState<ApiExam[]>([]);
-    const [currentExam, setCurrentExam] = useState<ApiExam | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
-    /**
-     * Lấy tất cả các bài thi
-     */
-    const fetchAllExams = useCallback(async () => {
+    export const useExamTemplates = () => {
+      const [templates, setTemplates] = useState<ExamTemplate[]>([]);
+      const [currentTemplate, setCurrentTemplate] = useState<ExamTemplate | null>(null);
+      const [pageInfo, setPageInfo] = useState<PageInfo<ExamTemplate> | null>(null);
+      const [questionTopics, setQuestionTopics] = useState<QuestionTopic[]>([]);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState<string | null>(null);
+
+      const handleError = (err: unknown, defaultMessage: string) => {
+        setLoading(false);
+        const e = err as { response?: { data?: ApiResponse<unknown> } } & Error;
+        const apiMessage = e.response?.data?.message;
+        setError(apiMessage || e.message || defaultMessage);
+        toast.error(apiMessage || defaultMessage);
+      };
+
+      // --- Template Functions ---
+
+      const fetchAllTemplates = useCallback(async (params?: { pageNo?: number; pageSize?: number; keyword?: string }) => {
         setLoading(true);
         setError(null);
         try {
-            const res = await ExamService.getAllExams();
-            if (res.data.code === 0 || res.data.code === 1000) {
-                setExams(res.data.data);
-            } else {
-                throw new Error(res.data.message || "Failed to fetch exams");
-            }
+          const res = await ExamTemplateService.getAllTemplates(params);
+          if (res.data.code === 0 || res.data.code === 1000) {
+            setTemplates(res.data.data.items || []);
+            setPageInfo(res.data.data);
+          } else {
+            throw new Error(res.data.message || "Failed to fetch templates");
+          }
         } catch (err) {
-            const e = err as Error;
-            setError(e.message);
-            message.error(e.message);
+          handleError(err, "Không thể tải danh sách khuôn mẫu");
         } finally {
-            setLoading(false);
+          setLoading(false);
         }
-    }, []);
+      }, []);
 
-    /**
-     * Lấy chi tiết một bài thi
-     */
-    const fetchExamById = useCallback(async (id: string) => {
+      const fetchTemplateById = useCallback(async (id: string) => {
         setLoading(true);
         setError(null);
         try {
-            const res = await ExamService.getExamById(id);
-            if (res.data.code === 0 || res.data.code === 1000) {
-                setCurrentExam(res.data.data);
-            } else {
-                throw new Error(res.data.message || "Failed to fetch exam details");
-            }
+          const res = await ExamTemplateService.getTemplateById(id);
+          if (res.data.code === 0 || res.data.code === 1000) {
+            setCurrentTemplate(res.data.data);
+          } else {
+            throw new Error(res.data.message || "Failed to fetch template details");
+          }
         } catch (err) {
-            const e = err as Error;
-            setError(e.message);
-            message.error(e.message);
+          handleError(err, "Không thể tải chi tiết khuôn mẫu");
         } finally {
-            setLoading(false);
+          setLoading(false);
         }
-    }, []);
+      }, []);
 
-    /**
-     * Lấy các bài thi theo User ID
-     */
-    const fetchExamsByUserId = useCallback(async (userId: string) => {
+      const createNewTemplate = useCallback(
+        async (data: CreateExamTemplatePayload) => {
+          setLoading(true);
+          setError(null);
+          try {
+            const res = await ExamTemplateService.createTemplate(data);
+            if (res.data.code === 0 || res.data.code === 1000) {
+              toast.success("Tạo khuôn mẫu thành công!");
+              // Cập nhật lại danh sách (hoặc có thể điều hướng)
+              fetchAllTemplates(); 
+              return res.data.data; // Trả về template đã tạo
+            } else {
+              throw new Error(res.data.message || "Failed to create template");
+            }
+          } catch (err) {
+            handleError(err, "Tạo khuôn mẫu thất bại");
+            throw err;
+          } finally {
+            setLoading(false);
+          }
+        },
+        [fetchAllTemplates]
+      );
+
+      const updateTemplateDetails = useCallback(
+        async (id: string, data: UpdateExamTemplatePayload) => {
+          setLoading(true);
+          setError(null);
+          try {
+            const res = await ExamTemplateService.updateTemplate(id, data);
+            if (res.data.code === 0 || res.data.code === 1000) {
+              toast.success("Cập nhật thông tin thành công!");
+              setCurrentTemplate(res.data.data); // Cập nhật template hiện tại
+            } else {
+              throw new Error(res.data.message || "Failed to update template");
+            }
+          } catch (err) {
+            handleError(err, "Cập nhật thất bại");
+            throw err;
+          } finally {
+            setLoading(false);
+          }
+        },
+        []
+      );
+
+      const removeTemplate = useCallback(
+        async (id: string) => {
+          setLoading(true);
+          setError(null);
+          try {
+            const res = await ExamTemplateService.deleteTemplate(id);
+            if (res.data.code === 0 || res.data.code === 1000) {
+              toast.success("Xóa khuôn mẫu thành công!");
+              setTemplates((prev) => prev.filter((t) => t.id !== id));
+            } else {
+              throw new Error(res.data.message || "Failed to delete template");
+            }
+          } catch (err) {
+            handleError(err, "Xóa thất bại");
+          } finally {
+            setLoading(false);
+          }
+        },
+        []
+      );
+
+      // --- Rule Functions ---
+
+      const addRule = useCallback(
+        async (templateId: string, data: CreateExamRulePayload) => {
+          setLoading(true);
+          try {
+            const res = await ExamTemplateService.addRuleToTemplate(templateId, data);
+            if (res.data.code === 0 || res.data.code === 1000) {
+              toast.success("Thêm quy tắc thành công!");
+              // Tải lại chi tiết template để cập nhật danh sách rules
+              fetchTemplateById(templateId);
+            } else {
+              throw new Error(res.data.message || "Failed to add rule");
+            }
+          } catch (err) {
+            handleError(err, "Thêm quy tắc thất bại");
+          } finally {
+            setLoading(false);
+          }
+        },
+        [fetchTemplateById]
+      );
+
+      const updateRule = useCallback(
+        async (templateId: string, ruleId: string, data: CreateExamRulePayload) => {
+           setLoading(true);
+          try {
+            const res = await ExamTemplateService.updateRule(ruleId, data);
+            if (res.data.code === 0 || res.data.code === 1000) {
+              toast.success("Cập nhật quy tắc thành công!");
+              fetchTemplateById(templateId); // Tải lại template cha
+            } else {
+              throw new Error(res.data.message || "Failed to update rule");
+            }
+          } catch (err) {
+            handleError(err, "Cập nhật quy tắc thất bại");
+          } finally {
+            setLoading(false);
+          }
+        },
+        [fetchTemplateById]
+      );
+
+      const removeRule = useCallback(
+        async (templateId: string, ruleId: string) => {
+          setLoading(true);
+          try {
+            const res = await ExamTemplateService.deleteRule(ruleId);
+            if (res.data.code === 0 || res.data.code === 1000) {
+              toast.success("Xóa quy tắc thành công!");
+              fetchTemplateById(templateId); // Tải lại template cha
+            } else {
+              throw new Error(res.data.message || "Failed to delete rule");
+            }
+          } catch (err) {
+            handleError(err, "Xóa quy tắc thất bại");
+          } finally {
+            setLoading(false);
+          }
+        },
+        [fetchTemplateById]
+      );
+
+      // --- Question Topics Functions ---
+
+      const fetchQuestionTopics = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const res = await ExamService.getExamsByUserId(userId);
-            if (res.data.code === 0 || res.data.code === 1000) {
-                setExams(res.data.data);
-            } else {
-                throw new Error(res.data.message || "Failed to fetch user's exams");
-            }
-        } catch (err) {
-            const e = err as Error;
-            setError(e.message);
-            message.error(e.message);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+          const res = await ExamTemplateService.getQuestionTopics();
+          console.log('Question topics API response:', res);
 
-    /**
-     * Tạo một bài thi mới
-     */
-    const createNewExam = useCallback(async (data: CreateExamPayload) => {
+          // Handle different response structures
+          if (res.status === 200) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const responseData = res.data as any; // Cast to any to handle different structures
+
+            if (responseData.code === 0 || responseData.code === 1000) {
+              // Standard API response with code and data
+              setQuestionTopics(responseData.data || []);
+            } else if (Array.isArray(responseData)) {
+              // Direct array response
+              setQuestionTopics(responseData);
+            } else if (responseData.data && Array.isArray(responseData.data)) {
+              // Nested data array
+              setQuestionTopics(responseData.data);
+            } else if (responseData && typeof responseData === 'object' && responseData.id) {
+              // Single object response (wrap in array)
+              setQuestionTopics([responseData as QuestionTopic]);
+            } else {
+              // Empty or unexpected response
+              setQuestionTopics([]);
+            }
+          } else {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            throw new Error((res.data as any)?.message || "Failed to fetch question topics");
+          }
+        } catch (err) {
+          console.error('Question topics fetch error:', err);
+          handleError(err, "Không thể tải danh sách chủ đề câu hỏi");
+        } finally {
+          setLoading(false);
+        }
+      }, []);
+
+      
+
+      return {
+        templates,
+        currentTemplate,
+        pageInfo,
+        questionTopics,
+        loading,
+        error,
+        fetchAllTemplates,
+        fetchTemplateById,
+        createNewTemplate,
+        updateTemplateDetails,
+        removeTemplate,
+        addRule,
+        updateRule,
+        removeRule,
+        fetchQuestionTopics,
+      };
+    };
+
+    // Hook for student exam functionality (uses active templates as exams)
+    export const useExams = () => {
+      const [exams, setExams] = useState<ApiExam[]>([]);
+      const [currentExam, setCurrentExam] = useState<ApiExam | null>(null);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState<string | null>(null);
+
+      const handleError = (err: unknown, defaultMessage: string) => {
+        setLoading(false);
+        const e = err as { response?: { data?: ApiResponse<unknown> } } & Error;
+        const apiMessage = e.response?.data?.message;
+        setError(apiMessage || e.message || defaultMessage);
+        message.error(apiMessage || defaultMessage);
+      };
+
+      // Convert ExamTemplate to ApiExam format
+      const convertTemplateToExam = (template: ExamTemplate): ApiExam => ({
+        id: template.id,
+        title: template.title,
+        description: template.description,
+        subject: template.subject,
+        duration: template.duration,
+        passingScore: template.passingScore,
+        isActive: template.isActive,
+        createdBy: template.createdBy,
+        createdAt: template.createdAt,
+        rules: template.rules.map(rule => ({
+          id: rule.id,
+          topic: rule.topicName,
+          difficulty: rule.difficultyName,
+          questionType: rule.questionType,
+          numberOfQuestions: rule.numberOfQuestions,
+          points: rule.points
+        }))
+      });
+
+      const fetchAllExams = useCallback(async (params?: { pageNo?: number; pageSize?: number; keyword?: string }) => {
         setLoading(true);
         setError(null);
         try {
-            const res = await ExamService.createExam(data);
-            if (res.data.code === 0 || res.data.code === 1000) {
-                message.success("Exam created successfully!");
-                // Cập nhật lại danh sách exams (hoặc có thể chỉ cần thêm exam mới vào state)
-                setExams((prev) => [...prev, res.data.data]);
-            } else {
-                throw new Error(res.data.message || "Failed to create exam");
-            }
+          const res = await ExamTemplateService.getAllTemplates(params);
+          if (res.data.code === 0 || res.data.code === 1000) {
+            // Filter only active templates and convert to ApiExam format
+            const activeTemplates = (res.data.data.items || []).filter((template: ExamTemplate) => template.isActive);
+            const examData = activeTemplates.map(convertTemplateToExam);
+            setExams(examData);
+          } else {
+            throw new Error(res.data.message || "Failed to fetch exams");
+          }
         } catch (err) {
-            const e = err as Error;
-            setError(e.message);
-            message.error(e.message);
-            throw e; // Ném lỗi ra để form có thể xử lý
+          handleError(err, "Không thể tải danh sách bài thi");
         } finally {
-            setLoading(false);
+          setLoading(false);
         }
-    }, []);
+      }, []);
 
-    /**
-     * Xóa một bài thi
-     */
-    const removeExam = useCallback(async (id: string) => {
+      const fetchExamById = useCallback(async (id: string) => {
         setLoading(true);
         setError(null);
         try {
-            const res = await ExamService.deleteExam(id);
-            if (res.data.code === 0 || res.data.code === 1000) {
-                message.success("Exam deleted successfully!");
-                // Xóa exam khỏi state
-                setExams((prev) => prev.filter((exam) => exam.id !== id));
-            } else {
-                throw new Error(res.data.message || "Failed to delete exam");
-            }
+          const res = await ExamTemplateService.getTemplateById(id);
+          if (res.data.code === 0 || res.data.code === 1000) {
+            const examData = convertTemplateToExam(res.data.data);
+            setCurrentExam(examData);
+          } else {
+            throw new Error(res.data.message || "Failed to fetch exam details");
+          }
         } catch (err) {
-            const e = err as Error;
-            setError(e.message);
-            message.error(e.message);
+          handleError(err, "Không thể tải chi tiết bài thi");
         } finally {
-            setLoading(false);
+          setLoading(false);
         }
-    }, []);
+      }, []);
 
-    return {
+      return {
         exams,
         currentExam,
         loading,
         error,
         fetchAllExams,
         fetchExamById,
-        fetchExamsByUserId,
-        createNewExam,
-        removeExam,
+      };
     };
-};
