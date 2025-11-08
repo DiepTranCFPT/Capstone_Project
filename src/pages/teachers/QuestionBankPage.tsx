@@ -39,6 +39,7 @@ const QuestionBankPage: React.FC = () => {
     deleteQuestion,
     fetchQuestions,
     fetchByUserId,
+    getQuestionById,
   } = useQuestionBank(teacherId);
 
   const difficultyOptions = useMemo(
@@ -83,9 +84,41 @@ const QuestionBankPage: React.FC = () => {
   };
 
   //  Mở modal edit
-  const handleEdit = (question: QuestionBankItem) => {
-    setEditingQuestion(question);
-    setIsModalOpen(true);
+  // Note: Fetches full question details to ensure we have all data including expectedAnswer and options
+  // Once backend returns full answer data, this will work automatically
+  const handleEdit = async (question: QuestionBankItem) => {
+    try {
+      // Fetch full question details to ensure we have all data including expectedAnswer and options
+      const fullQuestion = await getQuestionById(question.id);
+      
+      if (fullQuestion) {
+        // Merge data, prioritizing fullQuestion but keeping question data as fallback
+        const normalizedQuestion: QuestionBankItem = {
+          id: fullQuestion.id || question.id,
+          text: fullQuestion.text || question.text,
+          subject: fullQuestion.subject || question.subject,
+          topic: fullQuestion.topic || question.topic,
+          difficulty: fullQuestion.difficulty || question.difficulty,
+          type: fullQuestion.type || question.type,
+          createdBy: fullQuestion.createdBy || question.createdBy,
+          createdAt: fullQuestion.createdAt || question.createdAt,
+          options: fullQuestion.options || question.options,
+          expectedAnswer: fullQuestion.expectedAnswer || question.expectedAnswer || "",
+          tags: fullQuestion.tags || question.tags,
+        };
+        setEditingQuestion(normalizedQuestion);
+        setIsModalOpen(true);
+      } else {
+        // Fallback to question from list if getById fails
+        setEditingQuestion(question);
+        setIsModalOpen(true);
+      }
+    } catch (error) {
+      console.error("Error fetching question details:", error);
+      // Fallback to question from list
+      setEditingQuestion(question);
+      setIsModalOpen(true);
+    }
   };
 
   //  Xóa câu hỏi
@@ -111,12 +144,17 @@ const QuestionBankPage: React.FC = () => {
   //  Lưu hoặc cập nhật câu hỏi
   const handleSaveNewQuestion = async (newQuestion: NewQuestion) => {
     try {
+      console.log("[QuestionBankPage] Saving question:", newQuestion);
+      console.log("[QuestionBankPage] Editing question:", editingQuestion);
+      
       if (editingQuestion) {
         // Pass NewQuestion directly - useQuestionBank will transform it to API format
+        console.log("[QuestionBankPage] Updating question with ID:", editingQuestion.id);
         await updateQuestion(editingQuestion.id, newQuestion);
         toast.success("Question updated successfully!");
         setEditingQuestion(null);
       } else {
+        console.log("[QuestionBankPage] Creating new question");
         await createQuestion(newQuestion);
         toast.success("Question added successfully!");
       }
@@ -129,7 +167,7 @@ const QuestionBankPage: React.FC = () => {
       }
       setIsModalOpen(false);
     } catch (err) {
-      console.error("Save question error", err);
+      console.error("[QuestionBankPage] Save question error:", err);
       // Don't close modal on error so user can fix and retry
       // Error message is already shown by useQuestionBank hook
     }
