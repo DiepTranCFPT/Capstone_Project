@@ -259,13 +259,13 @@ export const useQuestionBank = (teacherId?: string) => {
     try {
       // Try with expand parameter first
       let res = await QuestionService.getById(id);
-      let rawData = res.data?.data;
+      let rawData = res.data?.data as unknown as Record<string, unknown> | undefined;
       
       // If answers still don't have content, try fetching answer details separately
       // TODO: Remove this workaround once backend returns full answer data
       if (rawData && rawData.answers && Array.isArray(rawData.answers)) {
         const answersWithContent = await Promise.all(
-          rawData.answers.map(async (answer: { id: string; content: unknown }) => {
+          (rawData.answers as Array<{ id: string; content: unknown }>).map(async (answer: { id: string; content: unknown }) => {
             // If answer has id but no content, try to fetch answer details
             if (answer.id && !answer.content) {
               try {

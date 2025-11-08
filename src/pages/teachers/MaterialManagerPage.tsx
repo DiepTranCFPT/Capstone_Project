@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Card, Typography, Button, message, Modal, Form, Input, Switch } from "antd";
+import { Card, Typography, Button, message, Modal, Form, Input, Switch, Select } from "antd";
 import { ReloadOutlined, PlusOutlined } from "@ant-design/icons";
 import { useLearningMaterialsAdmin } from "~/hooks/useLearningMaterialsAdmin";
 import type { LearningMaterial } from "~/types/learningMaterial";
 import MaterialFilter from "~/components/admins/materials/MaterialFilter";
 import MaterialTable from "~/components/admins/materials/MaterialTable";
+import MaterialTypeService, { type MaterialType } from "~/services/materialTypeService";
+import SubjectService from "~/services/subjectService";
+import type { Subject } from "~/types/subject";
 
 
 const { Title } = Typography;
@@ -28,6 +31,10 @@ const MaterialManagerPage: React.FC = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form] = Form.useForm();
+  const [materialTypes, setMaterialTypes] = useState<MaterialType[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [loadingTypes, setLoadingTypes] = useState(false);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
 
   useEffect(() => {
     fetchMaterials();
@@ -36,6 +43,41 @@ const MaterialManagerPage: React.FC = () => {
   useEffect(() => {
     setFilteredData(materials);
   }, [materials]);
+
+  const fetchMaterialTypes = async () => {
+    try {
+      setLoadingTypes(true);
+      const response = await MaterialTypeService.getAll();
+      if (response.data.data) {
+        setMaterialTypes(response.data.data || []);
+      }
+    } catch {
+      message.error("Failed to load material types");
+    } finally {
+      setLoadingTypes(false);
+    }
+  };
+
+  const fetchSubjects = async () => {
+    try {
+      setLoadingSubjects(true);
+      const response = await SubjectService.getAll({ pageSize: 1000 });
+      if (response.data.data) {
+        setSubjects(response.data.data?.items || []);
+      }
+    } catch {
+      message.error("Failed to load subjects");
+    } finally {
+      setLoadingSubjects(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAddOpen) {
+      fetchMaterialTypes();
+      fetchSubjects();
+    }
+  }, [isAddOpen]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -156,19 +198,47 @@ const MaterialManagerPage: React.FC = () => {
             </Form.Item>
 
             <Form.Item
-              label="Type ID"
+              label="Material Type"
               name="typeId"
-              rules={[{ required: true, message: "Please enter typeId" }]}
+              rules={[{ required: true, message: "Please select material type" }]}
             >
-              <Input placeholder="UUID of type" />
+              <Select
+                placeholder="Select material type"
+                loading={loadingTypes}
+                showSearch
+                optionFilterProp="label"
+                filterOption={(input, option) =>
+                  String(option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                }
+              >
+                {materialTypes.map((type) => (
+                  <Select.Option key={type.id} value={type.id} label={type.name}>
+                    {type.name}
+                  </Select.Option>
+                ))}
+              </Select>
             </Form.Item>
 
             <Form.Item
-              label="Subject ID"
+              label="Subject"
               name="subjectId"
-              rules={[{ required: true, message: "Please enter subjectId" }]}
+              rules={[{ required: true, message: "Please select subject" }]}
             >
-              <Input placeholder="UUID of subject" />
+              <Select
+                placeholder="Select subject"
+                loading={loadingSubjects}
+                showSearch
+                optionFilterProp="label"
+                filterOption={(input, option) =>
+                  String(option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                }
+              >
+                {subjects.map((subject) => (
+                  <Select.Option key={subject.id} value={subject.id} label={subject.name}>
+                    {subject.name}
+                  </Select.Option>
+                ))}
+              </Select>
             </Form.Item>
 
             <Form.Item label="Public" name="isPublic" valuePropName="checked">
