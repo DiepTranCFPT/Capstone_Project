@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Timer from '~/components/do-test/Timer';
 import QuestionCard from '~/components/do-test/QuestionCard';
@@ -8,14 +8,46 @@ import type { ExamSubmissionAnswer, ActiveExamQuestion, ExamAnswer } from '~/typ
 
 
 const DoTestPage: React.FC = () => {
-    const { examId, testType } = useParams<{ examId: string, testType: 'full' | 'mcq' | 'frq' }>();
+    const { examId, testType, attemptId } = useParams<{ examId?: string, testType?: 'full' | 'mcq' | 'frq', attemptId?: string }>();
     const navigate = useNavigate();
     const { submitAttempt, loading, error } = useExamAttempt();
+
+    // Determine if this is a combo test
+    const isComboTest = examId === 'combo' || !!attemptId;
 
     const [activeSection, setActiveSection] = useState<'mcq' | 'frq'>(testType === 'frq' ? 'frq' : 'mcq');
     const [showConFirmed, setShowConFirmed] = useState(false);
     const [isSubmit, setIsSubmit] = useState(false);
     const [isCancel, setIsCancel] = useState(false);
+    const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set());
+    const [answers, setAnswers] = useState<Record<string, { selectedAnswerId?: string; frqAnswerText?: string }>>({});
+
+    // Load saved state from localStorage
+    useEffect(() => {
+        const savedAnswers = localStorage.getItem('examAnswers');
+        const savedAnsweredQuestions = localStorage.getItem('answeredQuestions');
+
+        if (savedAnswers) {
+            setAnswers(JSON.parse(savedAnswers));
+        }
+
+        if (savedAnsweredQuestions) {
+            setAnsweredQuestions(new Set(JSON.parse(savedAnsweredQuestions)));
+        }
+    }, []);
+
+    // Save state to localStorage whenever answers or answeredQuestions change
+    useEffect(() => {
+        if (Object.keys(answers).length > 0) {
+            localStorage.setItem('examAnswers', JSON.stringify(answers));
+        }
+    }, [answers]);
+
+    useEffect(() => {
+        if (answeredQuestions.size > 0) {
+            localStorage.setItem('answeredQuestions', JSON.stringify(Array.from(answeredQuestions)));
+        }
+    }, [answeredQuestions]);
 
     // Check for stored attempt data from useExamAttempt
     const storedAttempt = localStorage.getItem('activeExamAttempt');
@@ -24,33 +56,39 @@ const DoTestPage: React.FC = () => {
     // Use stored attempt data
     const currentActiveExam = parsedAttempt;
 
-    // Separate MCQ and FRQ questions
-    const mcqQuestions = currentActiveExam?.questions.filter((q: ActiveExamQuestion) => q.question.type === 'mcq') || [];
-    const frqQuestions = currentActiveExam?.questions.filter((q: ActiveExamQuestion) => q.question.type === 'frq') || [];
+    // Separate MCQ and FRQ questions - memoized to prevent unnecessary re-renders
+    const mcqQuestions = useMemo(() =>
+        currentActiveExam?.questions.filter((q: ActiveExamQuestion) => q.question.type === 'mcq') || [],
+        [currentActiveExam?.questions]
+    );
 
-    console.log('Exam id ', examId);
-    console.log('Active exam:', currentActiveExam);
-    console.log('Stored attempt:', parsedAttempt);
-    if (currentActiveExam) {
-        console.log('Questions count:', currentActiveExam.questions?.length);
-        console.log('MCQ questions:', mcqQuestions.length);
-        console.log('FRQ questions:', frqQuestions.length);
-    }
+    const frqQuestions = useMemo(() =>
+        currentActiveExam?.questions.filter((q: ActiveExamQuestion) => q.question.type === 'frq') || [],
+        [currentActiveExam?.questions]
+    );
 
     const handleSubmit = async () => {
         if (!currentActiveExam) return;
 
-        // Prepare answers (empty for now, user would fill them during the test)
-        const answers: ExamSubmissionAnswer[] = currentActiveExam.questions.map((q: ActiveExamQuestion) => ({
-            examQuestionId: q.examQuestionId,
-            selectedAnswerId: undefined, // Would be filled by user selections
-            frqAnswerText: undefined // Would be filled by user input
-        }));
+        // Prepare answers using stored answer data
+        const submissionAnswers: ExamSubmissionAnswer[] = currentActiveExam.questions.map((q: ActiveExamQuestion, index: number) => {
+            const answerData = answers[index];
+            return {
+                examQuestionId: q.examQuestionId,
+                selectedAnswerId: answerData?.selectedAnswerId || null,
+                frqAnswerText: answerData?.frqAnswerText || null
+            };
+        });
 
         try {
-            const result = await submitAttempt(currentActiveExam.examAttemptId, { answers });
+            const result = await submitAttempt(currentActiveExam.examAttemptId, { answers: submissionAnswers });
             if (result) {
-                navigate(`/test-result/${result.id}`);
+                // Clear localStorage after successful submission
+                localStorage.removeItem('examAnswers');
+                localStorage.removeItem('answeredQuestions');
+                localStorage.removeItem('examRemainingTime');
+                // Navigate to home page since grading takes time
+                navigate('/');
             }
         } catch (err) {
             console.error('Submit failed:', err);
@@ -59,8 +97,19 @@ const DoTestPage: React.FC = () => {
     };
 
     const handleCancel = () => {
-        // setShowConFirmed(true);
-        navigate(`/exam-details/${examId}`);
+        // Clear localStorage when cancelling
+        localStorage.removeItem('examAnswers');
+        localStorage.removeItem('answeredQuestions');
+        localStorage.removeItem('examRemainingTime');
+
+        // Check if this is a combo test (has attemptId param)
+        if (attemptId) {
+            // For combo tests, redirect to exam test page
+            navigate('/exam-test');
+        } else {
+            // For individual exams, redirect to exam details
+            navigate(`/exam-details/${examId}`);
+        }
     };
 
     const handleConfirmSubmit = () => {
@@ -77,6 +126,25 @@ const DoTestPage: React.FC = () => {
                           testType === 'frq' ? frqQuestions.length :
                           mcqQuestions.length + frqQuestions.length;
 
+    const handleAnswerChange = useCallback((questionIndex: number, hasAnswer: boolean, answerData?: { selectedAnswerId?: string; frqAnswerText?: string }) => {
+        setAnsweredQuestions(prev => {
+            const newSet = new Set(prev);
+            if (hasAnswer) {
+                newSet.add(questionIndex);
+            } else {
+                newSet.delete(questionIndex);
+            }
+            return newSet;
+        });
+
+        if (answerData) {
+            setAnswers(prev => ({
+                ...prev,
+                [questionIndex]: answerData
+            }));
+        }
+    }, []);
+
 
     return (
         <div className="flex h-screen bg-teal-50/80">
@@ -90,12 +158,12 @@ const DoTestPage: React.FC = () => {
                 <div className="bg-teal-50/60 rounded-xl p-4 mb-6 border border-teal-200/50">
                     <div className="flex items-center justify-between">
                         <span className="font-semibold text-gray-700">⏱️ Thời gian còn lại:</span>
-                        <Timer initialMinutes={60} onTimeUp={handleSubmit} />
+                        <Timer initialMinutes={currentActiveExam?.durationInMinute || 60} onTimeUp={handleSubmit} />
                     </div>
                 </div>
 
                 {/* Navigation Sections */}
-                {testType === 'full' && (
+                {(testType === 'full' || isComboTest) && (
                     <div className="bg-teal-50/60 rounded-xl p-2 mb-6 border border-teal-200/50">
                         <div className="flex rounded-lg bg-white/80 p-1 shadow-sm">
                             <button
@@ -132,7 +200,11 @@ const DoTestPage: React.FC = () => {
                             {[...Array(totalQuestions)].map((_, index) => (
                                 <button
                                     key={index}
-                                    className="w-10 h-10 rounded-lg border-2 text-sm font-medium hover:bg-teal-100 hover:border-teal-300 focus:bg-teal-600 focus:text-white focus:border-teal-600 transition-all duration-200 bg-white/80 border-gray-200 text-gray-700"
+                                    className={`w-10 h-10 rounded-lg border-2 text-sm font-bold transition-all duration-200 ${
+                                        answeredQuestions.has(index)
+                                            ? 'bg-teal-600 text-white border-teal-600 shadow-md'
+                                            : 'bg-white/80 border-gray-200 text-gray-700 hover:bg-teal-100 hover:border-teal-300'
+                                    }`}
                                 >
                                     {index + 1}
                                 </button>
@@ -188,7 +260,7 @@ const DoTestPage: React.FC = () => {
                     ) : currentActiveExam ? (
                         <>
                             {/* Conditional Rendering based on testType and activeSection */}
-                            {(testType === 'full' && activeSection === 'mcq') || testType === 'mcq' ? (
+                            {(testType === 'full' && activeSection === 'mcq') || testType === 'mcq' || (isComboTest && activeSection === 'mcq') ? (
                                 <>
                                     <div className="bg-white/80 rounded-2xl p-6 border border-teal-200/50 shadow-lg">
                                         <h2 className="text-3xl font-bold text-gray-800 mb-6 flex items-center">
@@ -205,15 +277,17 @@ const DoTestPage: React.FC = () => {
                                                     type: q.question.type as "mcq",
                                                     createdBy: q.question.createdBy,
                                                     createdAt: new Date().toISOString(),
-                                                    options: q.question.answers.map((a: ExamAnswer) => ({ id: a.id, text: a.content }))
-                                                }} questionNumber={index + 1} />
+                                                    options: q.question.answers
+                                                        .filter((a: ExamAnswer) => a.content !== null)
+                                                        .map((a: ExamAnswer) => ({ id: a.id, text: a.content || '' }))
+                                                }} questionNumber={index + 1} onAnswerChange={handleAnswerChange} />
                                             ))}
                                         </div>
                                     </div>
                                 </>
                             ) : null}
 
-                            {(testType === 'full' && activeSection === 'frq') || testType === 'frq' ? (
+                            {(testType === 'full' && activeSection === 'frq') || testType === 'frq' || (isComboTest && activeSection === 'frq') ? (
                                 <>
                                     <div className="bg-white/80 rounded-2xl p-6 border border-indigo-200/50 shadow-lg">
                                         <h2 className="text-3xl font-bold text-gray-800 mb-6 flex items-center">
@@ -231,7 +305,7 @@ const DoTestPage: React.FC = () => {
                                                     createdBy: q.question.createdBy,
                                                     createdAt: new Date().toISOString(),
                                                     expectedAnswer: "Sample answer" // This would come from API if available
-                                                }} questionNumber={mcqQuestions.length + index + 1} />
+                                                }} questionNumber={mcqQuestions.length + index + 1} onAnswerChange={handleAnswerChange} />
                                             ))}
                                         </div>
                                     </div>

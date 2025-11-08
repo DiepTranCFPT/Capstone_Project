@@ -16,6 +16,16 @@ import type {
 import type { ApiResponse } from "~/types/api";
 import type { PageInfo } from "~/types/pagination";
 
+interface HistoryRecord {
+  attemptId: string;
+  examId: string;
+  doneBy: string;
+  score: number;
+  startTime: string;
+  endTime: string | null;
+  rating: number | null;
+}
+
 /**
  * 🔹 Hook quản lý logic khi BẮT ĐẦU và NỘP BÀI thi.
  */
@@ -188,6 +198,28 @@ export const useExamAttempt = () => {
     }
   }, []);
 
+  /**
+   * Lấy kết quả chi tiết của một lần thi (subscribe).
+   */
+  const subscribeAttemptResult = useCallback(async (attemptId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await ExamAttemptService.subscribe(attemptId);
+      if (res.data.code === 0 || res.data.code === 1000) {
+        setAttemptResultDetail(res.data.data);
+        return res.data.data;
+      } else {
+        throw new Error(res.data.message || "Không thể tải kết quả chi tiết");
+      }
+    } catch (err) {
+      handleError(err, "Không thể tải kết quả chi tiết");
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     loading,
     error,
@@ -200,6 +232,7 @@ export const useExamAttempt = () => {
     submitAttempt,
     rateAttempt,
     fetchAttemptResult,
+    subscribeAttemptResult,
   };
 };
 
@@ -207,8 +240,8 @@ export const useExamAttempt = () => {
  * 🔹 Hook quản lý LỊCH SỬ THI (my-history).
  */
 export const useExamAttemptHistory = () => {
-  const [history, setHistory] = useState<ExamResult[]>([]);
-  const [pageInfo, setPageInfo] = useState<PageInfo<ExamResult> | null>(null);
+  const [history, setHistory] = useState<HistoryRecord[]>([]);
+  const [pageInfo, setPageInfo] = useState<PageInfo<HistoryRecord> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -232,8 +265,18 @@ export const useExamAttemptHistory = () => {
           sorts,
         });
         if (res.data.code === 0 || res.data.code === 1000) {
-          setHistory(res.data.data.items || []);
-          setPageInfo(res.data.data);
+          const data = res.data.data;
+          // Handle different response structures
+          if (data.items) {
+            setHistory(data.items as unknown as HistoryRecord[]);
+            setPageInfo(data as unknown as PageInfo<HistoryRecord>);
+          } else if (Array.isArray(data)) {
+            setHistory(data as unknown as HistoryRecord[]);
+            setPageInfo({ pageNo: 0, pageSize: data.length, totalElements: data.length, totalElement: data.length } as PageInfo<HistoryRecord>);
+          } else {
+            setHistory([]);
+            setPageInfo(null);
+          }
         } else {
           throw new Error(res.data.message || "Không thể tải lịch sử thi");
         }

@@ -93,6 +93,16 @@ const ExamAttemptService = {
   }): Promise<AxiosResponse<ApiResponse<PageInfo<ExamResult>>>> {
     return axiosInstance.get("/exam-attempts/my-history", { params });
   },
+
+  /**
+   * 🔹 Lấy kết quả chi tiết của một lần thi (subscribe).
+   * GET /exam-attempts/{attemptId}/subscribe
+   */
+  subscribe(
+    attemptId: string
+  ): Promise<AxiosResponse<ApiResponse<AttemptResultDetail>>> {
+    return axiosInstance.get(`/exam-attempts/${attemptId}/subscribe`);
+  },
 };
 
 export default ExamAttemptService;

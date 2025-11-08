@@ -6,19 +6,19 @@ import { FiSearch, FiAward, FiUsers, FiClipboard, FiFileText, FiLoader } from 'r
 import Section from '~/components/exam/Section';
 import { useBrowseExamTemplates } from '~/hooks/useExamBrowser';
 import { useSubjects } from '~/hooks/useSubjects';
+import { useExamAttempt } from '~/hooks/useExamAttempt';
+import { useAuth } from '~/hooks/useAuth';
 import type { Exam, ExamTemplate } from '~/types/test';
+import { useNavigate } from 'react-router-dom';
 
-// Dynamic subjects from API will replace hardcoded categories
-const subjectBlocks: Record<string, string[]> = {
-    'Math': ['Math'],
-    'Natural Science': ['Biology', 'Chemistry', 'Physics'],
-    'Social Sciences': ['English', 'History', 'Art', 'Music']
-};
+// Subjects will be fetched from API
 
 const ExamTestPage: React.FC = () => {
     const { templates, loading: examsLoading, error: examsError, applyFilters } = useBrowseExamTemplates();
     const { subjects, loading: subjectsLoading } = useSubjects();
-
+    const { startComboAttempt, startComboRandomAttempt } = useExamAttempt();
+    const { isAuthenticated } = useAuth();
+    const navigation = useNavigate();
     // Convert ExamTemplate to Exam format for compatibility
     const convertExamTemplateToExam = (template: ExamTemplate): Exam => ({
         id: template.id,
@@ -83,11 +83,10 @@ const ExamTestPage: React.FC = () => {
         );
     };
 
-    const [selectedBlock, setSelectedBlock] = useState<string>('');
+
+// Removed selectedBlock - now selecting subjects directly
 
     const [showTokenConfirmation, setShowTokenConfirmation] = useState(false);
-    const [examToStart, setExamToStart] = useState<Exam | null>(null);
-    const [combinedExamToStart, setCombinedExamToStart] = useState<{ exams: Exam[]; totalCost: number } | null>(null);
 
     // Create stable filter object
     const currentFilters = useMemo(() => {
@@ -122,30 +121,83 @@ const ExamTestPage: React.FC = () => {
         window.location.href = `/do-test/${exam.id}/full`;
     };
 
-    const handleStartCombinedExamClick = (exams: Exam[], totalCost: number) => {
-        setCombinedExamToStart({ exams, totalCost });
-        setExamToStart(null); // Clear individual exam state
-        setShowTokenConfirmation(true);
+    const handleStartCombinedExamClick = async (exams: Exam[]) => {
+        // Extract templateIds from selected exams
+        const templateIds = exams.map(exam => exam.id);
+
+        try {
+            // Start the combined attempt
+            const attempt = await startComboAttempt({ templateIds });
+
+            if (attempt) {
+                // Store attempt data in localStorage for DoTestPage to use
+                localStorage.setItem('activeExamAttempt', JSON.stringify(attempt));
+                // Navigate to the combined test page
+                navigation( `/do-test/combo/${attempt.examAttemptId}`);
+            }
+        } catch (error) {
+            console.error('Failed to start combined test:', error);
+            // Handle error - could show toast notification
+        }
+    };
+
+    const handleStartPlatformCombinedExamClick = async (selectedSubjects: string[]) => {
+        // Extract subjectIds from selected subjects
+        const subjectIds = subjects
+            .filter(subject => selectedSubjects.includes(subject.name))
+            .map(subject => subject.id);
+
+        try {
+            // Start the platform-selected combined attempt
+            const attempt = await startComboRandomAttempt({ subjectIds });
+
+            if (attempt) {
+                // Store attempt data in localStorage for DoTestPage to use
+                localStorage.setItem('activeExamAttempt', JSON.stringify(attempt));
+                // Navigate to the combined test page
+                navigation( `/do-test/combo/${attempt.examAttemptId}`);
+            }
+        } catch (error) {
+            console.error('Failed to start platform combined test:', error);
+            // Handle error - could show toast notification
+        }
     };
 
 
 
     const handleConfirm = () => {
-        if (examToStart) {
-            console.log(`Deducting ${examToStart.tokenCost} tokens for individual exam ${examToStart.title}`);
-            // Simulate token deduction API call here
-            // If successful, navigate to the test page
-            window.location.href = `/do-test/${examToStart.id}/full`;
-        } else if (combinedExamToStart) {
-            console.log(`Deducting ${combinedExamToStart.totalCost} tokens for combined test`);
-            // Simulate token deduction API call here
-            // For now, just log and close modal
-            // Combined exams navigation could be added later
-        }
         setShowTokenConfirmation(false);
     };
 
     const handleCancel = () => setShowTokenConfirmation(false);
+
+    if (!isAuthenticated) {
+        return (
+            <div className="bg-slate-50">
+                {/* Page Title Section */}
+                <Section />
+
+                {/* Login Required Message */}
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <div className="text-center py-20">
+                        <div className="text-6xl mb-6">🔒</div>
+                        <h3 className="text-3xl font-bold text-gray-800 mb-4">
+                            Vui lòng đăng nhập để xem
+                        </h3>
+                        <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                            Bạn cần đăng nhập để truy cập vào các bài thi và tính năng của hệ thống.
+                        </p>
+                        <button
+                            onClick={() => window.location.href = '/auth'}
+                            className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+                        >
+                            Đăng nhập
+                        </button>
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-slate-50">
@@ -285,21 +337,27 @@ const ExamTestPage: React.FC = () => {
                                     <div className="space-y-6">
                                         <h3 className="text-2xl font-semibold text-gray-700">Tự Chọn (Self-Selected)</h3>
                                         <div className="mb-4">
-                                            <h4 className="text-lg font-semibold mb-2">Chọn tổ hợp môn (Select subject combination)</h4>
-                                            <select
-                                                value={selectedBlock}
-                                                onChange={(e) => {
-                                                    setSelectedBlock(e.target.value);
-                                                    setSelectedSubjectsForCombined([]);
-                                                    setSelectedExamsForCombined([]);
-                                                }}
-                                                className="px-5 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 focus:ring-teal-500 focus:border-teal-500"
-                                            >
-                                                <option value="">Chọn một tổ hợp (Select a combination)</option>
-                                                {Object.keys(subjectBlocks).map((block) => (
-                                                    <option key={block} value={block}>{block}</option>
-                                                ))}
-                                            </select>
+                                            <h4 className="text-lg font-semibold mb-2">Chọn môn học (Select subjects)</h4>
+                                            {subjectsLoading ? (
+                                                <div className="flex justify-center items-center py-4">
+                                                    <FiLoader className="animate-spin text-teal-500" size={20} />
+                                                    <span className="ml-2 text-gray-600">Loading subjects...</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-wrap gap-2">
+                                                    {subjects.map((subject) => (
+                                                        <label key={subject.id} className="flex items-center space-x-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedSubjectsForCombined.includes(subject.name)}
+                                                                onChange={() => handleSubjectToggle(subject.name)}
+                                                                className="form-checkbox h-4 w-4 text-teal-600 transition duration-150 ease-in-out"
+                                                            />
+                                                            <span>{subject.name}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            )}
                                             {/* Search Bar */}
                                             <div className="relative my-4">
                                                 <input
@@ -313,21 +371,6 @@ const ExamTestPage: React.FC = () => {
                                                 </button>
                                             </div>
                                         </div>
-                                        {selectedBlock && (
-                                            <div className="flex flex-wrap gap-2">
-                                                {subjectBlocks[selectedBlock].map((cat) => (
-                                                    <label key={cat} className="flex items-center space-x-2">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedSubjectsForCombined.includes(cat)}
-                                                            onChange={() => handleSubjectToggle(cat)}
-                                                            className="form-checkbox h-4 w-4 text-teal-600 transition duration-150 ease-in-out"
-                                                        />
-                                                        <span>{cat}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        )}
 
                                         {selectedSubjectsForCombined.length > 0 && (
                                             <div className="space-y-4">
@@ -356,7 +399,7 @@ const ExamTestPage: React.FC = () => {
                                         <div className="mt-6 p-4 bg-teal-50 border border-teal-200 rounded-lg flex justify-between items-center">
                                             <p className="text-lg font-bold text-teal-800">Total Token Cost: {totalCombinedTokenCost} Tokens</p>
                                             <button
-                                                onClick={() => handleStartCombinedExamClick(selectedExamsForCombined, totalCombinedTokenCost)}
+                                                onClick={() => handleStartCombinedExamClick(selectedExamsForCombined)}
                                                 className="bg-teal-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-600"
                                             >
                                                 Start Combined Test
@@ -369,50 +412,31 @@ const ExamTestPage: React.FC = () => {
                                     <div className="space-y-6">
                                         <h3 className="text-2xl font-semibold text-gray-700">Nền Tảng Chọn (Platform Selected)</h3>
                                         <div className="mb-4">
-                                            <h4 className="text-lg font-semibold mb-2">Chọn tổ hợp môn (Select subject combination)</h4>
-                                            <select
-                                                value={selectedBlock}
-                                                onChange={(e) => {
-                                                    setSelectedBlock(e.target.value);
-                                                    setSelectedSubjectsForPlatform([]);
-                                                }}
-                                                className="px-5 py-2 text-sm font-medium rounded-full border border-gray-300 bg-white text-gray-700 focus:ring-teal-500 focus:border-teal-500"
-                                            >
-                                                <option value="">Chọn một tổ hợp (Select a combination)</option>
-                                                {Object.keys(subjectBlocks).map((block) => (
-                                                    <option key={block} value={block}>{block}</option>
-                                                ))}
-                                            </select>
+                                            <h4 className="text-lg font-semibold mb-2">Chọn môn học (Select subjects)</h4>
+                                            {subjectsLoading ? (
+                                                <div className="flex justify-center items-center py-4">
+                                                    <FiLoader className="animate-spin text-teal-500" size={20} />
+                                                    <span className="ml-2 text-gray-600">Loading subjects...</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-wrap gap-2">
+                                                    {subjects.map((subject) => (
+                                                        <label key={subject.id} className="flex items-center space-x-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedSubjectsForPlatform.includes(subject.name)}
+                                                                onChange={() => handlePlatformSubjectToggle(subject.name)}
+                                                                className="form-checkbox h-4 w-4 text-teal-600 transition duration-150 ease-in-out"
+                                                            />
+                                                            <span>{subject.name}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
-                                        {selectedBlock && (
-                                            <div className="flex flex-wrap gap-2">
-                                                {subjectBlocks[selectedBlock].map((cat) => (
-                                                    <label key={cat} className="flex items-center space-x-2">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedSubjectsForPlatform.includes(cat)}
-                                                            onChange={() => handlePlatformSubjectToggle(cat)}
-                                                            className="form-checkbox h-4 w-4 text-teal-600 transition duration-150 ease-in-out"
-                                                        />
-                                                        <span>{cat}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        )}
                                         <div className="mt-6 p-4 bg-teal-50 rounded-lg flex justify-between items-center">
                                             <button
-                                                onClick={() => {
-                                                    const selected: Exam[] = [];
-                                                    selectedSubjectsForPlatform.forEach(subject => {
-                                                        const availableExams = exams.filter(exam => exam.subject === subject);
-                                                        if (availableExams.length > 0) {
-                                                            const randomIndex = Math.floor(Math.random() * availableExams.length);
-                                                            selected.push(availableExams[randomIndex]);
-                                                        }
-                                                    });
-                                                    const totalCost = selected.reduce((sum, exam) => sum + exam.tokenCost, 0);
-                                                    handleStartCombinedExamClick(selected, totalCost);
-                                                }}
+                                                onClick={() => handleStartPlatformCombinedExamClick(selectedSubjectsForPlatform)}
                                                 className="bg-teal-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-600 ml-auto"
                                             >
                                                 Bắt đầu Thi Tổ hợp
@@ -469,8 +493,8 @@ const ExamTestPage: React.FC = () => {
 
             <TokenConfirmationModal
                 isOpen={showTokenConfirmation}
-                exam={examToStart}
-                combinedExam={combinedExamToStart}
+                exam={null}
+                combinedExam={null}
                 onConfirm={handleConfirm}
                 onCancel={handleCancel}
             />

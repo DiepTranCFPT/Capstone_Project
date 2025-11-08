@@ -97,6 +97,7 @@ function App() {
       <Routes>
         {/* Routes không có Layout (Navbar/Footer) */}
         <Route path="/do-test/:examId/:testType" element={<DoTestPage />} />
+        <Route path="/do-test/combo/:attemptId" element={<DoTestPage />} />
         <Route
           path="/do-test/:examId/:practiceType/:mode"
           element={<PracticePage />}

@@ -210,13 +210,13 @@ const CreateExamPage: React.FC = () => {
   const ruleColumns = [
     {
       title: 'Topic',
-      dataIndex: 'topic',
-      key: 'topic',
+      dataIndex: 'topicName',
+      key: 'topicName',
     },
     {
       title: 'Difficulty',
-      dataIndex: 'difficulty',
-      key: 'difficulty',
+      dataIndex: 'difficultyName',
+      key: 'difficultyName',
       render: (difficulty: string) => (
         <span className={`px-2 py-1 rounded text-xs font-medium ${
           difficulty === 'Easy' ? 'bg-green-100 text-green-800' :
@@ -477,10 +477,10 @@ const CreateExamPage: React.FC = () => {
               </Card>
             )}
 
-            {currentTemplate?.rules && (
+            {rules && (
               <Table
                 columns={ruleColumns}
-                dataSource={currentTemplate?.rules?.map((rule, index) => ({ ...rule, key: index }))}
+                dataSource={rules?.map((rule, index) => ({ ...rule, key: index }))}
                 pagination={false}
                 size="small"
               />
