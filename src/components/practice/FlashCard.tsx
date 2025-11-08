@@ -6,7 +6,6 @@ interface Question {
     text: string;
     options: { id: string; text: string }[];
     correctAnswer: string;
-    explanation: string;
 }
 
 interface FlashCardProps {
@@ -120,14 +119,7 @@ const FlashCard: React.FC<FlashCardProps> = ({
                                     <p className="text-cyan-100 text-lg font-medium">
                                         {getCorrectAnswerText()}
                                     </p>
-                                </div>
-
-                                <div className="bg-white/10 rounded-lg p-4 border border-white/20 backdrop-blur-sm">
-                                    <h4 className="text-white font-semibold mb-2">Giải thích:</h4>
-                                    <p className="text-cyan-100 text-sm leading-relaxed">
-                                        {currentQuestion.explanation}
-                                    </p>
-                                </div>
+                                </div>                              
                             </div>
 
                             <div className="mt-6 text-cyan-200/80 text-sm">

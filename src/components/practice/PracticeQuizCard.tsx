@@ -6,7 +6,7 @@ interface Question {
     text: string;
     options: { id: string; text: string }[];
     correctAnswer: string;
-    explanation: string;
+    // explanation: string;
 }
 
 interface PracticeQuizCardProps {
@@ -195,12 +195,12 @@ const PracticeQuizCard: React.FC<PracticeQuizCardProps> = ({
                                 </div>
                             )}
 
-                            <div className="bg-white/60 rounded-lg p-3 border border-gray-200">
+                            {/* <div className="bg-white/60 rounded-lg p-3 border border-gray-200">
                                 <h4 className="text-gray-800 font-semibold mb-2">Giải thích:</h4>
                                 <p className="text-gray-700 text-sm leading-relaxed">
                                     {currentQuestion.explanation}
                                 </p>
-                            </div>
+                            </div> */}
                         </div>
 
                         {/* Action Buttons */}

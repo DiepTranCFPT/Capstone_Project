@@ -1,23 +1,30 @@
 import React, { useState, useEffect } from "react";
-import { Button, Input, Card, Select, Switch, Table, Space, message, InputNumber } from "antd";
+import { Button, Input, Card, Select, Switch, Table, Space, InputNumber } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
-import type { CreateExamRulePayload, CreateExamTemplatePayload } from "~/types/test";
+import { useParams, useNavigate } from "react-router-dom";
+import type { CreateExamRulePayload, CreateExamTemplatePayload, ExamRule } from "~/types/test";
 // import { useAuth } from "~/hooks/useAuth";
 import { useExamTemplates } from "~/hooks/useExams";
 import { useSubjects } from "~/hooks/useSubjects";
+import { toast } from "~/components/common/Toast";
+import useQuestionTopics from "~/hooks/useQuestionTopics";
 
 const CreateExamPage: React.FC = () => {
-  // const { user } = useAuth();
-  const { createNewTemplate, loading: savingTemplate, questionTopics, fetchQuestionTopics } = useExamTemplates();
-  const { subjects } = useSubjects();
+  const { examId } = useParams<{ examId: string }>();
+  const navigate = useNavigate();
+  const isEditMode = Boolean(examId);
 
+  // const { user } = useAuth();
+  const { createNewTemplate, updateTemplateDetails, fetchTemplateById, currentTemplate, loading: savingTemplate } = useExamTemplates();
+  const { subjects } = useSubjects();
+  const { topics } = useQuestionTopics();
   // Template form states
   const [templateTitle, setTemplateTitle] = useState<string>('');
   const [templateDescription, setTemplateDescription] = useState<string>('');
   const [templateDuration, setTemplateDuration] = useState<number>(60);
   const [passingScore, setPassingScore] = useState<number>(70);
   const [isActive, setIsActive] = useState<boolean>(true);
-  const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>([]);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
   const [rules, setRules] = useState<CreateExamRulePayload[]>([]);
 
   // Rule form states
@@ -37,9 +44,34 @@ const CreateExamPage: React.FC = () => {
   const [passingScoreError, setPassingScoreError] = useState<string>('');
   const [rulesError, setRulesError] = useState<string>('');
 
+  // Load template data when in edit mode
   useEffect(() => {
-    fetchQuestionTopics();
-  }, [fetchQuestionTopics]);
+    if (isEditMode && examId) {
+      fetchTemplateById(examId);
+    }
+  }, [isEditMode, examId, fetchTemplateById]);
+
+  // Update form when currentTemplate changes
+  useEffect(() => {
+    if (isEditMode && currentTemplate) {
+      setTemplateTitle(currentTemplate.title);
+      setTemplateDescription(currentTemplate.description || '');
+      setTemplateDuration(currentTemplate.duration);
+      setPassingScore(currentTemplate.passingScore);
+      setIsActive(currentTemplate.isActive);
+      setSelectedSubjectId(currentTemplate.subject.id);
+      // Convert ExamRule[] to CreateExamRulePayload[]
+      // API returns ExamRule with topicName/difficultyName for the form
+      const convertedRules: CreateExamRulePayload[] = currentTemplate.rules.map((rule: ExamRule) => ({
+        topicName: rule.topicName,
+        difficultyName: rule.difficultyName,
+        questionType: rule.questionType,
+        numberOfQuestions: rule.numberOfQuestions,
+        points: rule.points,
+      }));
+      setRules(convertedRules);
+    }
+  }, [isEditMode, currentTemplate]);
 
   const resetRuleForm = () => {
     setRuleForm({
@@ -54,7 +86,7 @@ const CreateExamPage: React.FC = () => {
 
   const handleAddRule = () => {
     if (!ruleForm.topicName.trim()) {
-      message.error('Topic name is required');
+      toast.error('Topic name is required');
       return;
     }
 
@@ -63,11 +95,11 @@ const CreateExamPage: React.FC = () => {
       const newRules = [...rules];
       newRules[editingRuleIndex] = { ...ruleForm };
       setRules(newRules);
-      message.success('Rule updated successfully');
+      toast.success('Rule updated successfully');
     } else {
       // Add new rule
       setRules([...rules, { ...ruleForm }]);
-      message.success('Rule added successfully');
+      toast.success('Rule added successfully');
     }
 
     resetRuleForm();
@@ -83,7 +115,7 @@ const CreateExamPage: React.FC = () => {
   const handleDeleteRule = (index: number) => {
     const newRules = rules.filter((_, i) => i !== index);
     setRules(newRules);
-    message.success('Rule deleted successfully');
+    toast.success('Rule deleted successfully');
   };
 
   const handleSaveTemplate = async () => {
@@ -108,8 +140,8 @@ const CreateExamPage: React.FC = () => {
       setPassingScoreError('Passing score must be between 0 and 100');
       hasErrors = true;
     }
-    if (selectedSubjectIds.length === 0) {
-      message.error('At least one subject must be selected');
+    if (!selectedSubjectId) {
+      toast.error('Subject must be selected');
       hasErrors = true;
     }
     if (rules.length === 0) {
@@ -122,39 +154,51 @@ const CreateExamPage: React.FC = () => {
     }
 
     try {
-      // Get selected subject ids
-      const selectedSubjectNames = selectedSubjectIds.map(id =>
-        subjects.find(s => s.id === id)?.name
-      )
+      if (isEditMode && examId) {
+        // Update existing template
+        const updateData = {
+          title: templateTitle.trim(),
+          description: templateDescription.trim(),
+          duration: templateDuration,
+          passingScore: passingScore,
+          isActive: isActive,
+          subjectId: selectedSubjectId,
+        };
 
-      const templateData: CreateExamTemplatePayload = {
-        title: templateTitle.trim(),
-        description: templateDescription.trim(),
-        duration: templateDuration,
-        passingScore: passingScore,
-        isActive: isActive,
-        subject: selectedSubjectNames.join(', '),
-        rules: rules,
-      };
+        await updateTemplateDetails(examId, updateData);
+        toast.success('Template updated successfully!');
+        navigate('/teacher/templates');
+      } else {
+        // Create new template
+        const templateData: CreateExamTemplatePayload = {
+          title: templateTitle.trim(),
+          description: templateDescription.trim(),
+          duration: templateDuration,
+          passingScore: passingScore,
+          isActive: isActive,
+          subjectId: selectedSubjectId,
+          rules: rules,
+        };
 
-      await createNewTemplate(templateData);
+        await createNewTemplate(templateData);
 
-      // Reset form on success
-      setTemplateTitle('');
-      setTemplateDescription('');
-      setTemplateDuration(60);
-      setPassingScore(70);
-      setIsActive(true);
-      setSelectedSubjectIds([]);
-      setRules([]);
+        // Reset form on success
+        setTemplateTitle('');
+        setTemplateDescription('');
+        setTemplateDuration(60);
+        setPassingScore(70);
+        setIsActive(true);
+        setSelectedSubjectId('');
+        setRules([]);
 
-      // Clear errors
-      setTitleError('');
-      setDurationError('');
-      setPassingScoreError('');
-      setRulesError('');
+        // Clear errors
+        setTitleError('');
+        setDurationError('');
+        setPassingScoreError('');
+        setRulesError('');
 
-      message.success('Template created successfully!');
+        toast.success('Template created successfully!');
+      }
     } catch (error) {
       console.error('Save template error:', error);
     }
@@ -175,11 +219,11 @@ const CreateExamPage: React.FC = () => {
       key: 'difficultyName',
       render: (difficulty: string) => (
         <span className={`px-2 py-1 rounded text-xs font-medium ${
-          difficulty === 'easy' ? 'bg-green-100 text-green-800' :
-          difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+          difficulty === 'Easy' ? 'bg-green-100 text-green-800' :
+          difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
           'bg-red-100 text-red-800'
         }`}>
-          {difficulty.toUpperCase()}
+          {difficulty}
         </span>
       ),
     },
@@ -233,14 +277,16 @@ const CreateExamPage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Create Exam Template</h1>
+        <h1 className="text-3xl font-bold text-gray-800">
+          {isEditMode ? 'Edit Exam Template' : 'Create Exam Template'}
+        </h1>
         <Button
           type="primary"
           size="large"
           loading={savingTemplate}
           onClick={handleSaveTemplate}
         >
-          Save Template
+          {isEditMode ? 'Update Template' : 'Save Template'}
         </Button>
       </div>
 
@@ -310,10 +356,9 @@ const CreateExamPage: React.FC = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Subjects *</label>
               <Select
-                mode="multiple"
-                placeholder="Select subjects for this template"
-                value={selectedSubjectIds}
-                onChange={setSelectedSubjectIds}
+                placeholder="Select a subject for this template"
+                value={selectedSubjectId}
+                onChange={setSelectedSubjectId}
                 style={{ width: '100%' }}
                 optionFilterProp="children"
               >
@@ -323,8 +368,8 @@ const CreateExamPage: React.FC = () => {
                   </Select.Option>
                 ))}
               </Select>
-              {selectedSubjectIds.length === 0 && (
-                <div className="text-red-500 text-sm mt-1">At least one subject must be selected</div>
+              {!selectedSubjectId && (
+                <div className="text-red-500 text-sm mt-1">Subject must be selected</div>
               )}
             </div>
 
@@ -363,7 +408,7 @@ const CreateExamPage: React.FC = () => {
                       optionFilterProp="children"
                       style={{ width: '100%' }}
                     >
-                      {questionTopics.map((topic) => (
+                      {topics.map((topic) => (
                         <Select.Option key={topic.id} value={topic.name}>
                           {topic.name}
                         </Select.Option>
@@ -432,10 +477,10 @@ const CreateExamPage: React.FC = () => {
               </Card>
             )}
 
-            {rules.length > 0 && (
+            {rules && (
               <Table
                 columns={ruleColumns}
-                dataSource={rules.map((rule, index) => ({ ...rule, key: index }))}
+                dataSource={rules?.map((rule, index) => ({ ...rule, key: index }))}
                 pagination={false}
                 size="small"
               />

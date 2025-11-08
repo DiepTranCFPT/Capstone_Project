@@ -7,7 +7,8 @@ import type {
   UpdateExamTemplatePayload,
   CreateExamRulePayload,
   ExamRule,
-  QuestionTopic,
+  MyExamTemplateResponse,
+  BrowseExamTemplateParams,
   // ApiExam
 } from "~/types/test"; // Đảm bảo bạn đã cập nhật file test.ts
     import type { PageInfo } from "~/types/pagination";
@@ -19,7 +20,8 @@ import type {
     // API trả về chi tiết 1 rule
     type RuleDetailResponse = ApiResponse<ExamRule>;
     // API trả về danh sách question topics
-    type QuestionTopicListResponse = ApiResponse<QuestionTopic[]>;
+    // API trả về danh sách my templates
+    type MyTemplateListResponse = MyExamTemplateResponse;
     // API trả về danh sách exams
     // type ExamListResponse = ApiResponse<PageInfo<ApiExam>>;
     // // API trả về chi tiết 1 exam
@@ -60,6 +62,20 @@ import type {
         return axiosInstance.delete(`/exam-templates/${id}`);
       },
 
+      // GET /exam-templates/my-templates
+      getMyTemplates(
+        params?: { pageNo?: number; pageSize?: number; sorts?: string[] }
+      ): Promise<AxiosResponse<MyTemplateListResponse>> {
+        return axiosInstance.get("/exam-templates/my-templates", { params });
+      },
+
+      // GET /exam-templates/browse
+      browseTemplates(
+        params?: BrowseExamTemplateParams
+      ): Promise<AxiosResponse<MyTemplateListResponse>> {
+        return axiosInstance.get("/exam-templates/browse", { params });
+      },
+
       // === Rule CRUD ===
 
       // POST /exam-templates/{templateId}/rules
@@ -85,10 +101,6 @@ import type {
 
       // === Question Topics ===
 
-      // GET /api/questions-topic
-      getQuestionTopics(): Promise<AxiosResponse<QuestionTopicListResponse>> {
-        return axiosInstance.get("/question-topics");
-      },
     };
 
     export default ExamTemplateService;

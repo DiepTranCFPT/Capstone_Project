@@ -1,5 +1,5 @@
 import type { QuestionBankItem } from "./question";
-
+import type { ApiResponse } from "./api";
 export type { QuestionBankItem } from "./question";
 
 export interface Test {
@@ -94,32 +94,38 @@ export interface ExamRule {
   points: number;
 }
 
-export interface QuestionTopic {
-  id: string;
-  name: string;
-  subject: string;
-  description: string | null;
-}
-
 // Dùng khi tạo mới 1 quy tắc (không cần id)
 export type CreateExamRulePayload = Omit<ExamRule, 'id'>;
 
+export interface ExamTemplateSubject {
+  id: string;
+  name: string;
+  description: string;
+}
 // Đại diện cho 1 khuôn mẫu đề thi
 export interface ExamTemplate {
   id: string;
   title: string;
   description: string;
-  subject: {
-    id: string;
-    name: string;
-    description: string;
-  };
+  subject: ExamTemplateSubject;
   duration: number;
   passingScore: number;
   isActive: boolean;
   createdBy: string;
   createdAt?: string;
   rules: ExamRule[]; // API trả về
+  averageRating: number;
+  totalRatings: number;
+  totalTakers: number;
+}
+
+export interface MyExamTemplatePageData {
+  pageNo: number;
+  pageSize: number;
+  totalPage: number;
+  totalElement: number;
+  sortBy: string[];
+  items: ExamTemplate[];
 }
 
 // Dùng khi tạo mới 1 khuôn mẫu
@@ -130,7 +136,7 @@ export interface CreateExamTemplatePayload {
   duration: number;
   passingScore: number;
   isActive: boolean;
-  subject: string; // API của bạn có vẻ dùng subjectNames
+  subjectId: string; // API của bạn có vẻ dùng subjectNames
   rules: CreateExamRulePayload[];
 }
 
@@ -149,7 +155,7 @@ export type UpdateExamTemplatePayload = Omit<CreateExamTemplatePayload, 'rules' 
 /**
  * (API Start) Thông tin cơ bản về môn học hoặc chủ đề.
  */
-interface ExamSubjectInfo {
+export interface ExamSubjectInfo {
   id: string;
   name: string;
   description: string;
@@ -229,4 +235,16 @@ export interface ExamResult {
   score: number;
   startAt: string; // ISO Date string
   endAt: string;   // ISO Date string
+}
+
+export type MyExamTemplateResponse = ApiResponse<MyExamTemplatePageData>;
+
+//types cho api của học sinh xem danh sách bài thi
+export interface BrowseExamTemplateParams {
+  subject?: string;
+  teacherId?: string;
+  minRating?: number;
+  pageNo?: number;
+  pageSize?: number;
+  sorts?: string[];
 }

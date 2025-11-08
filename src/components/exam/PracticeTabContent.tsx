@@ -109,10 +109,14 @@ const PracticeTabContent: React.FC<{ examId: string | undefined }> = ({ examId }
                             </div>
 
                             <button
-                                onClick={() => handleStartPractice('frq')}
+                                onClick={() => {
+                                    if (examId) {
+                                        navigate(`/practice-frq/${examId}`);
+                                    }
+                                }}
                                 className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 border border-indigo-500/60 hover:border-indigo-400 shadow-lg hover:shadow-xl"
                             >
-                                Bắt đầu làm bài
+                                Bắt đầu luyện tập
                             </button>
                         </div>
                     </div>

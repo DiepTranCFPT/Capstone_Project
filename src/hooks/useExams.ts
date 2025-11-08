@@ -7,7 +7,6 @@ import type {
   UpdateExamTemplatePayload,
   CreateExamRulePayload,
   ApiExam,
-  QuestionTopic
 } from "~/types/test";
 import type { PageInfo } from "~/types/pagination";
 import type { ApiResponse } from "~/types/api";
@@ -18,7 +17,6 @@ import { toast } from "~/components/common/Toast";
       const [templates, setTemplates] = useState<ExamTemplate[]>([]);
       const [currentTemplate, setCurrentTemplate] = useState<ExamTemplate | null>(null);
       const [pageInfo, setPageInfo] = useState<PageInfo<ExamTemplate> | null>(null);
-      const [questionTopics, setQuestionTopics] = useState<QuestionTopic[]>([]);
       const [loading, setLoading] = useState(false);
       const [error, setError] = useState<string | null>(null);
 
@@ -197,55 +195,10 @@ import { toast } from "~/components/common/Toast";
         [fetchTemplateById]
       );
 
-      // --- Question Topics Functions ---
-
-      const fetchQuestionTopics = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-          const res = await ExamTemplateService.getQuestionTopics();
-          console.log('Question topics API response:', res);
-
-          // Handle different response structures
-          if (res.status === 200) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const responseData = res.data as any; // Cast to any to handle different structures
-
-            if (responseData.code === 0 || responseData.code === 1000) {
-              // Standard API response with code and data
-              setQuestionTopics(responseData.data || []);
-            } else if (Array.isArray(responseData)) {
-              // Direct array response
-              setQuestionTopics(responseData);
-            } else if (responseData.data && Array.isArray(responseData.data)) {
-              // Nested data array
-              setQuestionTopics(responseData.data);
-            } else if (responseData && typeof responseData === 'object' && responseData.id) {
-              // Single object response (wrap in array)
-              setQuestionTopics([responseData as QuestionTopic]);
-            } else {
-              // Empty or unexpected response
-              setQuestionTopics([]);
-            }
-          } else {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            throw new Error((res.data as any)?.message || "Failed to fetch question topics");
-          }
-        } catch (err) {
-          console.error('Question topics fetch error:', err);
-          handleError(err, "Không thể tải danh sách chủ đề câu hỏi");
-        } finally {
-          setLoading(false);
-        }
-      }, []);
-
-      
-
       return {
         templates,
         currentTemplate,
         pageInfo,
-        questionTopics,
         loading,
         error,
         fetchAllTemplates,
@@ -256,7 +209,6 @@ import { toast } from "~/components/common/Toast";
         addRule,
         updateRule,
         removeRule,
-        fetchQuestionTopics,
       };
     };
 

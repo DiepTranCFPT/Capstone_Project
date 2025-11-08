@@ -1,55 +1,55 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ExamCard from '~/components/exam/ExamCard';
 import StatCard from '~/components/exam/StatCard';
 import TokenConfirmationModal from '~/components/common/TokenConfirmationModal';
 import { FiSearch, FiAward, FiUsers, FiClipboard, FiFileText, FiLoader } from 'react-icons/fi';
 import Section from '~/components/exam/Section';
-import { useExams } from '~/hooks/useExams';
+import { useBrowseExamTemplates } from '~/hooks/useExamBrowser';
 import { useSubjects } from '~/hooks/useSubjects';
-import type { Exam, ApiExam } from '~/types/test';
+import { useExamAttempt } from '~/hooks/useExamAttempt';
+import { useAuth } from '~/hooks/useAuth';
+import type { Exam, ExamTemplate } from '~/types/test';
+import { useNavigate } from 'react-router-dom';
 
-// Dynamic subjects from API will replace hardcoded categories
-const subjectBlocks: Record<string, string[]> = {
-    'Math': ['Math'],
-    'Natural Science': ['Biology', 'Chemistry', 'Physics'],
-    'Social Sciences': ['English', 'History', 'Art', 'Music']
-};
+// Subjects will be fetched from API
 
 const ExamTestPage: React.FC = () => {
-    const { exams: apiExams, loading: examsLoading, error: examsError, fetchAllExams } = useExams();
+    const { templates, loading: examsLoading, error: examsError, applyFilters } = useBrowseExamTemplates();
     const { subjects, loading: subjectsLoading } = useSubjects();
-
-    // Convert ApiExam to Exam format for compatibility
-    const convertApiExamToExam = (apiExam: ApiExam): Exam => ({
-        id: apiExam.id,
-        title: apiExam.title,
-        description: apiExam.description,
-        duration: apiExam.duration,
+    const { startComboAttempt, startComboRandomAttempt } = useExamAttempt();
+    const { isAuthenticated } = useAuth();
+    const navigation = useNavigate();
+    // Convert ExamTemplate to Exam format for compatibility
+    const convertExamTemplateToExam = (template: ExamTemplate): Exam => ({
+        id: template.id,
+        title: template.title,
+        description: template.description,
+        duration: template.duration,
         examTypeId: '1', // Default value
-        subjectId: apiExam.subject.id,
-        teacherId: '1', // Default value
-        totalQuestions: apiExam.rules?.reduce((sum, rule) => sum + rule.numberOfQuestions, 0) || 0,
+        subjectId: template.subject.id,
+        teacherId: template.createdBy, // Use createdBy as teacherId
+        totalQuestions: template.rules?.reduce((sum: number, rule) => sum + rule.numberOfQuestions, 0) || 0,
         maxAttempts: 3, // Default value
-        status: apiExam.isActive ? 'published' : 'draft',
-        createdAt: apiExam.createdAt || new Date().toISOString(),
-        updatedAt: apiExam.createdAt || new Date().toISOString(),
+        status: template.isActive ? 'published' : 'draft',
+        createdAt: template.createdAt || new Date().toISOString(),
+        updatedAt: template.createdAt || new Date().toISOString(),
         tokenCost: 10, // Default value
         questions: [],
-        teacherName: apiExam.createdBy,
-        rating: 4.5, // Default value
-        subject: apiExam.subject.name,
-        attempts: 100, // Default value
+        teacherName: template.createdBy,
+        rating: template.averageRating,
+        subject: template.subject.name,
+        attempts: template.totalTakers,
         parts: 1, // Default value
-        category: apiExam.subject.name
+        category: template.subject.name
     });
 
-    const exams = apiExams.map(convertApiExamToExam);
+    const exams = templates.map(convertExamTemplateToExam);
 
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [activeMainTab, setActiveMainTab] = useState<'individual' | 'combined'>('individual');
     const [activeSubTab, setActiveSubTab] = useState<'selfSelected' | 'platformSelected'>('selfSelected');
     const [selectedRatingFilter, setSelectedRatingFilter] = useState<string>('');
-    const [selectedAttemptsFilter, setSelectedAttemptsFilter] = useState<string>('');
+    const [selectedTeacherFilter, setSelectedTeacherFilter] = useState<string>('');
     const [selectedSubjectsForCombined, setSelectedSubjectsForCombined] = useState<string[]>([]);
     const [selectedExamsForCombined, setSelectedExamsForCombined] = useState<Exam[]>([]);
 
@@ -83,16 +83,35 @@ const ExamTestPage: React.FC = () => {
         );
     };
 
-    const [selectedBlock, setSelectedBlock] = useState<string>('');
+
+// Removed selectedBlock - now selecting subjects directly
 
     const [showTokenConfirmation, setShowTokenConfirmation] = useState(false);
-    const [examToStart, setExamToStart] = useState<Exam | null>(null);
-    const [combinedExamToStart, setCombinedExamToStart] = useState<{ exams: Exam[]; totalCost: number } | null>(null);
 
-    // Fetch data on component mount
+    // Create stable filter object
+    const currentFilters = useMemo(() => {
+        const filters: { subject?: string; minRating?: number; teacherId?: string } = {};
+        if (selectedCategory !== "All") {
+            filters.subject = selectedCategory;
+        }
+        if (selectedRatingFilter) {
+            filters.minRating = parseFloat(selectedRatingFilter);
+        }
+        if (selectedTeacherFilter) {
+            filters.teacherId = selectedTeacherFilter;
+        }
+        return filters;
+    }, [selectedCategory, selectedRatingFilter, selectedTeacherFilter]);
+
+    // Apply filters when they change
+    const prevFiltersRef = useRef(currentFilters);
     useEffect(() => {
-        fetchAllExams();
-    }, [fetchAllExams]);
+        // Only apply filters if they actually changed
+        if (JSON.stringify(prevFiltersRef.current) !== JSON.stringify(currentFilters)) {
+            applyFilters(currentFilters);
+            prevFiltersRef.current = currentFilters;
+        }
+    }, [currentFilters, applyFilters]);
 
     const handleStartExamClick = (exam: Exam) => {
         // Comment out token confirmation - directly navigate to test
@@ -102,36 +121,83 @@ const ExamTestPage: React.FC = () => {
         window.location.href = `/do-test/${exam.id}/full`;
     };
 
-    const handleStartCombinedExamClick = (exams: Exam[], totalCost: number) => {
-        setCombinedExamToStart({ exams, totalCost });
-        setExamToStart(null); // Clear individual exam state
-        setShowTokenConfirmation(true);
+    const handleStartCombinedExamClick = async (exams: Exam[]) => {
+        // Extract templateIds from selected exams
+        const templateIds = exams.map(exam => exam.id);
+
+        try {
+            // Start the combined attempt
+            const attempt = await startComboAttempt({ templateIds });
+
+            if (attempt) {
+                // Store attempt data in localStorage for DoTestPage to use
+                localStorage.setItem('activeExamAttempt', JSON.stringify(attempt));
+                // Navigate to the combined test page
+                navigation( `/do-test/combo/${attempt.examAttemptId}`);
+            }
+        } catch (error) {
+            console.error('Failed to start combined test:', error);
+            // Handle error - could show toast notification
+        }
     };
 
-    const filteredExams = exams.filter(exam => {
-        const categoryMatch = selectedCategory === "All" || exam.subject === selectedCategory;
-        const ratingMatch = selectedRatingFilter === '' || exam.rating >= parseFloat(selectedRatingFilter);
-        // Assuming exam.attempts exists and is a number
-        const attemptsMatch = selectedAttemptsFilter === '' || (exam.attempts && exam.attempts >= parseInt(selectedAttemptsFilter));
-        return categoryMatch && ratingMatch && attemptsMatch;
-    });
+    const handleStartPlatformCombinedExamClick = async (selectedSubjects: string[]) => {
+        // Extract subjectIds from selected subjects
+        const subjectIds = subjects
+            .filter(subject => selectedSubjects.includes(subject.name))
+            .map(subject => subject.id);
+
+        try {
+            // Start the platform-selected combined attempt
+            const attempt = await startComboRandomAttempt({ subjectIds });
+
+            if (attempt) {
+                // Store attempt data in localStorage for DoTestPage to use
+                localStorage.setItem('activeExamAttempt', JSON.stringify(attempt));
+                // Navigate to the combined test page
+                navigation( `/do-test/combo/${attempt.examAttemptId}`);
+            }
+        } catch (error) {
+            console.error('Failed to start platform combined test:', error);
+            // Handle error - could show toast notification
+        }
+    };
+
+
 
     const handleConfirm = () => {
-        if (examToStart) {
-            console.log(`Deducting ${examToStart.tokenCost} tokens for individual exam ${examToStart.title}`);
-            // Simulate token deduction API call here
-            // If successful, navigate to the test page
-            window.location.href = `/do-test/${examToStart.id}/full`;
-        } else if (combinedExamToStart) {
-            console.log(`Deducting ${combinedExamToStart.totalCost} tokens for combined test`);
-            // Simulate token deduction API call here
-            // For now, just log and close modal
-            // Combined exams navigation could be added later
-        }
         setShowTokenConfirmation(false);
     };
 
     const handleCancel = () => setShowTokenConfirmation(false);
+
+    if (!isAuthenticated) {
+        return (
+            <div className="bg-slate-50">
+                {/* Page Title Section */}
+                <Section />
+
+                {/* Login Required Message */}
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                    <div className="text-center py-20">
+                        <div className="text-6xl mb-6">🔒</div>
+                        <h3 className="text-3xl font-bold text-gray-800 mb-4">
+                            Vui lòng đăng nhập để xem
+                        </h3>
+                        <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                            Bạn cần đăng nhập để truy cập vào các bài thi và tính năng của hệ thống.
+                        </p>
+                        <button
+                            onClick={() => window.location.href = '/auth'}
+                            className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+                        >
+                            Đăng nhập
+                        </button>
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-slate-50">
@@ -216,13 +282,14 @@ const ExamTestPage: React.FC = () => {
                                         <option value="3">3 Stars & Up</option>
                                     </select>
                                     <select
-                                        value={selectedAttemptsFilter}
-                                        onChange={(e) => setSelectedAttemptsFilter(e.target.value)}
+                                        value={selectedTeacherFilter}
+                                        onChange={(e) => setSelectedTeacherFilter(e.target.value)}
                                         className="px-5 py-2 text-sm font-medium rounded-full border border-gray-300 bg-white text-gray-700 focus:ring-teal-500 focus:border-teal-500"
                                     >
-                                        <option value="">All Attempts</option>
-                                        <option value="100">100+ Attempts</option>
-                                        <option value="500">500+ Attempts</option>
+                                        <option value="">All Teachers</option>
+                                        <option value="John Smith">John Smith</option>
+                                        <option value="Jane Smith">Jane Smith</option>
+                                        <option value="Bob Johnson">Bob Johnson</option>
                                     </select>
                                 </div>
                                 {/* Search Bar */}
@@ -270,21 +337,27 @@ const ExamTestPage: React.FC = () => {
                                     <div className="space-y-6">
                                         <h3 className="text-2xl font-semibold text-gray-700">Tự Chọn (Self-Selected)</h3>
                                         <div className="mb-4">
-                                            <h4 className="text-lg font-semibold mb-2">Chọn tổ hợp môn (Select subject combination)</h4>
-                                            <select
-                                                value={selectedBlock}
-                                                onChange={(e) => {
-                                                    setSelectedBlock(e.target.value);
-                                                    setSelectedSubjectsForCombined([]);
-                                                    setSelectedExamsForCombined([]);
-                                                }}
-                                                className="px-5 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 focus:ring-teal-500 focus:border-teal-500"
-                                            >
-                                                <option value="">Chọn một tổ hợp (Select a combination)</option>
-                                                {Object.keys(subjectBlocks).map((block) => (
-                                                    <option key={block} value={block}>{block}</option>
-                                                ))}
-                                            </select>
+                                            <h4 className="text-lg font-semibold mb-2">Chọn môn học (Select subjects)</h4>
+                                            {subjectsLoading ? (
+                                                <div className="flex justify-center items-center py-4">
+                                                    <FiLoader className="animate-spin text-teal-500" size={20} />
+                                                    <span className="ml-2 text-gray-600">Loading subjects...</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-wrap gap-2">
+                                                    {subjects.map((subject) => (
+                                                        <label key={subject.id} className="flex items-center space-x-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedSubjectsForCombined.includes(subject.name)}
+                                                                onChange={() => handleSubjectToggle(subject.name)}
+                                                                className="form-checkbox h-4 w-4 text-teal-600 transition duration-150 ease-in-out"
+                                                            />
+                                                            <span>{subject.name}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            )}
                                             {/* Search Bar */}
                                             <div className="relative my-4">
                                                 <input
@@ -298,21 +371,6 @@ const ExamTestPage: React.FC = () => {
                                                 </button>
                                             </div>
                                         </div>
-                                        {selectedBlock && (
-                                            <div className="flex flex-wrap gap-2">
-                                                {subjectBlocks[selectedBlock].map((cat) => (
-                                                    <label key={cat} className="flex items-center space-x-2">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedSubjectsForCombined.includes(cat)}
-                                                            onChange={() => handleSubjectToggle(cat)}
-                                                            className="form-checkbox h-4 w-4 text-teal-600 transition duration-150 ease-in-out"
-                                                        />
-                                                        <span>{cat}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        )}
 
                                         {selectedSubjectsForCombined.length > 0 && (
                                             <div className="space-y-4">
@@ -341,7 +399,7 @@ const ExamTestPage: React.FC = () => {
                                         <div className="mt-6 p-4 bg-teal-50 border border-teal-200 rounded-lg flex justify-between items-center">
                                             <p className="text-lg font-bold text-teal-800">Total Token Cost: {totalCombinedTokenCost} Tokens</p>
                                             <button
-                                                onClick={() => handleStartCombinedExamClick(selectedExamsForCombined, totalCombinedTokenCost)}
+                                                onClick={() => handleStartCombinedExamClick(selectedExamsForCombined)}
                                                 className="bg-teal-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-600"
                                             >
                                                 Start Combined Test
@@ -354,50 +412,31 @@ const ExamTestPage: React.FC = () => {
                                     <div className="space-y-6">
                                         <h3 className="text-2xl font-semibold text-gray-700">Nền Tảng Chọn (Platform Selected)</h3>
                                         <div className="mb-4">
-                                            <h4 className="text-lg font-semibold mb-2">Chọn tổ hợp môn (Select subject combination)</h4>
-                                            <select
-                                                value={selectedBlock}
-                                                onChange={(e) => {
-                                                    setSelectedBlock(e.target.value);
-                                                    setSelectedSubjectsForPlatform([]);
-                                                }}
-                                                className="px-5 py-2 text-sm font-medium rounded-full border border-gray-300 bg-white text-gray-700 focus:ring-teal-500 focus:border-teal-500"
-                                            >
-                                                <option value="">Chọn một tổ hợp (Select a combination)</option>
-                                                {Object.keys(subjectBlocks).map((block) => (
-                                                    <option key={block} value={block}>{block}</option>
-                                                ))}
-                                            </select>
+                                            <h4 className="text-lg font-semibold mb-2">Chọn môn học (Select subjects)</h4>
+                                            {subjectsLoading ? (
+                                                <div className="flex justify-center items-center py-4">
+                                                    <FiLoader className="animate-spin text-teal-500" size={20} />
+                                                    <span className="ml-2 text-gray-600">Loading subjects...</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-wrap gap-2">
+                                                    {subjects.map((subject) => (
+                                                        <label key={subject.id} className="flex items-center space-x-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedSubjectsForPlatform.includes(subject.name)}
+                                                                onChange={() => handlePlatformSubjectToggle(subject.name)}
+                                                                className="form-checkbox h-4 w-4 text-teal-600 transition duration-150 ease-in-out"
+                                                            />
+                                                            <span>{subject.name}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
-                                        {selectedBlock && (
-                                            <div className="flex flex-wrap gap-2">
-                                                {subjectBlocks[selectedBlock].map((cat) => (
-                                                    <label key={cat} className="flex items-center space-x-2">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedSubjectsForPlatform.includes(cat)}
-                                                            onChange={() => handlePlatformSubjectToggle(cat)}
-                                                            className="form-checkbox h-4 w-4 text-teal-600 transition duration-150 ease-in-out"
-                                                        />
-                                                        <span>{cat}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        )}
                                         <div className="mt-6 p-4 bg-teal-50 rounded-lg flex justify-between items-center">
                                             <button
-                                                onClick={() => {
-                                                    const selected: Exam[] = [];
-                                                    selectedSubjectsForPlatform.forEach(subject => {
-                                                        const availableExams = exams.filter(exam => exam.subject === subject);
-                                                        if (availableExams.length > 0) {
-                                                            const randomIndex = Math.floor(Math.random() * availableExams.length);
-                                                            selected.push(availableExams[randomIndex]);
-                                                        }
-                                                    });
-                                                    const totalCost = selected.reduce((sum, exam) => sum + exam.tokenCost, 0);
-                                                    handleStartCombinedExamClick(selected, totalCost);
-                                                }}
+                                                onClick={() => handleStartPlatformCombinedExamClick(selectedSubjectsForPlatform)}
                                                 className="bg-teal-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-600 ml-auto"
                                             >
                                                 Bắt đầu Thi Tổ hợp
@@ -425,7 +464,7 @@ const ExamTestPage: React.FC = () => {
                                     <div className="text-center py-12">
                                         <p className="text-red-500 mb-4">{examsError}</p>
                                         <button
-                                            onClick={() => fetchAllExams()}
+                                            onClick={() => window.location.reload()}
                                             className="bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600"
                                         >
                                             Try Again
@@ -433,7 +472,7 @@ const ExamTestPage: React.FC = () => {
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {filteredExams.map((exam) => (
+                                        {exams.map((exam: Exam) => (
                                             <ExamCard exams={exam} key={exam.id} onStartExam={handleStartExamClick} />
                                         ))}
                                     </div>
@@ -454,8 +493,8 @@ const ExamTestPage: React.FC = () => {
 
             <TokenConfirmationModal
                 isOpen={showTokenConfirmation}
-                exam={examToStart}
-                combinedExam={combinedExamToStart}
+                exam={null}
+                combinedExam={null}
                 onConfirm={handleConfirm}
                 onCancel={handleCancel}
             />

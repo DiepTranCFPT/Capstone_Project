@@ -1,58 +1,134 @@
-import React from 'react';
-import { Table, Tag, Progress, Button } from 'antd';
-import { Link } from 'react-router-dom';
-import { completedTests } from '~/data/mockTest';
-import { EyeOutlined } from '@ant-design/icons';
-import type { CompletedTest } from '~/types/test';
+import React, { useState } from 'react';
+import { Table, Tag, Button, Modal, Spin } from 'antd';
+import { EyeOutlined, FileTextOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import { useExamAttemptHistory, useExamAttempt } from '~/hooks/useExamAttempt';
+import ResultSummary from '~/components/test-result/ResultSummary';
+
+interface HistoryRecord {
+    attemptId: string;
+    examId: string;
+    doneBy: string;
+    score: number;
+    startTime: string;
+    endTime: string | null;
+    rating: number | null;
+}
 
 const TestReportsPage: React.FC = () => {
+    const navigate = useNavigate();
+    const { history, loading: historyLoading, pageInfo, handlePageChange } = useExamAttemptHistory();
+    const { subscribeAttemptResult, attemptResultDetail, loading: resultLoading } = useExamAttempt();
+    const [resultModalVisible, setResultModalVisible] = useState(false);
+
+    const handleViewResults = async (record: HistoryRecord) => {
+        const attemptId = record.attemptId;
+        if (!attemptId) {
+            console.error('Attempt ID is undefined for record:', record);
+            return;
+        }
+        await subscribeAttemptResult(attemptId);
+        setResultModalVisible(true);
+    };
+
+    const handleViewDetails = (record: HistoryRecord) => {
+        const attemptId = record.attemptId;
+        if (!attemptId) {
+            console.error('Attempt ID is undefined for record:', record);
+            return;
+        }
+        navigate(`/test-result/${attemptId}`);
+    };
+
     const columns = [
         {
-            title: 'Test Title',
-            dataIndex: 'title',
-            key: 'title',
-            render: (text: string, record: CompletedTest) => <Link to={`/student/test-reports/${record.id}`}>{text}</Link>,
+            title: 'Exam ID',
+            dataIndex: 'examId',
+            key: 'examId',
         },
         {
-            title: 'Date',
-            dataIndex: 'date',
-            key: 'date',
-        },
-        {
-            title: 'accuracy',
+            title: 'Score',
             dataIndex: 'score',
             key: 'score',
             render: (score: number) => <Tag color={score >= 80 ? 'green' : 'volcano'}>{score}%</Tag>,
         },
         {
-            title: 'AP Score',
-            dataIndex: 'apScore',
-            key: 'apScore',
-            render: (score: number) => <strong>{score} / 5</strong>,
+            title: 'Start Time',
+            dataIndex: 'startTime',
+            key: 'startTime',
+            render: (startTime: string) => startTime ? new Date(startTime).toLocaleString('vi-VN') : 'N/A',
         },
         {
-            title: 'Progress',
-            dataIndex: 'progress',
-            key: 'progress',
-            render: (progress: number) => <Progress percent={progress} size="small" />,
+            title: 'End Time',
+            dataIndex: 'endTime',
+            key: 'endTime',
+            render: (endTime: string) => endTime ? new Date(endTime).toLocaleString('vi-VN') : 'N/A',
         },
         {
             title: 'Action',
             key: 'action',
-            render: (_: unknown, record: CompletedTest) => (
-                <Link to={`/student/test-reports/${record.id}`}>
-                    <Button icon={<EyeOutlined />} type="primary">
-                        View Details
+            render: (_: unknown, record: HistoryRecord) => (
+                <div className="flex gap-2">
+                    <Button
+                        icon={<EyeOutlined />}
+                        type="primary"
+                        onClick={() => handleViewResults(record)}
+                        loading={resultLoading}
+                        size="small"
+                    >
+                        View Results
                     </Button>
-                </Link>
+                    <Button
+                        icon={<FileTextOutlined />}
+                        onClick={() => handleViewDetails(record)}
+                        size="small"
+                    >
+                        Details
+                    </Button>
+                </div>
             ),
         },
     ];
 
     return (
         <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Test Reports</h1>
-            <Table columns={columns} dataSource={completedTests} rowKey="id" pagination={{ pageSize: 10 }} />
+            <h1 className="text-2xl font-bold mb-4">Exam History</h1>
+            <Table
+                columns={columns}
+                dataSource={history}
+                rowKey="attemptId"
+                loading={historyLoading}
+                pagination={{
+                    current: (pageInfo?.pageNo || 0) + 1,
+                    total: pageInfo?.totalElements || pageInfo?.totalElement || 0,
+                    pageSize: pageInfo?.pageSize || 10,
+                    showSizeChanger: true,
+                    onChange: (page, pageSize) => {
+                        handlePageChange(page, pageSize);
+                    },
+                }}
+            />
+
+            <Modal
+                title="Exam Results"
+                open={resultModalVisible}
+                onCancel={() => setResultModalVisible(false)}
+                footer={null}
+                width={800}
+                destroyOnClose
+            >
+                {resultLoading ? (
+                    <div className="text-center py-8">
+                        <Spin size="large" />
+                        <p className="mt-4">Loading results...</p>
+                    </div>
+                ) : (
+                    <ResultSummary
+                        isPractice={false}
+                        attemptResultDetail={attemptResultDetail}
+                    />
+                )}
+            </Modal>
         </div>
     );
 };
