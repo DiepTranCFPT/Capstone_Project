@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ExamCard from '~/components/exam/ExamCard';
 import StatCard from '~/components/exam/StatCard';
 import TokenConfirmationModal from '~/components/common/TokenConfirmationModal';
 import { FiSearch, FiAward, FiUsers, FiClipboard, FiFileText, FiLoader } from 'react-icons/fi';
 import Section from '~/components/exam/Section';
-import { useExams } from '~/hooks/useExams';
+import { useBrowseExamTemplates } from '~/hooks/useExamBrowser';
 import { useSubjects } from '~/hooks/useSubjects';
-import type { Exam, ApiExam } from '~/types/test';
+import type { Exam, ExamTemplate } from '~/types/test';
 
 // Dynamic subjects from API will replace hardcoded categories
 const subjectBlocks: Record<string, string[]> = {
@@ -16,40 +16,40 @@ const subjectBlocks: Record<string, string[]> = {
 };
 
 const ExamTestPage: React.FC = () => {
-    const { exams: apiExams, loading: examsLoading, error: examsError, fetchAllExams } = useExams();
+    const { templates, loading: examsLoading, error: examsError, applyFilters } = useBrowseExamTemplates();
     const { subjects, loading: subjectsLoading } = useSubjects();
 
-    // Convert ApiExam to Exam format for compatibility
-    const convertApiExamToExam = (apiExam: ApiExam): Exam => ({
-        id: apiExam.id,
-        title: apiExam.title,
-        description: apiExam.description,
-        duration: apiExam.duration,
+    // Convert ExamTemplate to Exam format for compatibility
+    const convertExamTemplateToExam = (template: ExamTemplate): Exam => ({
+        id: template.id,
+        title: template.title,
+        description: template.description,
+        duration: template.duration,
         examTypeId: '1', // Default value
-        subjectId: apiExam.subject.id,
-        teacherId: '1', // Default value
-        totalQuestions: apiExam.rules?.reduce((sum, rule) => sum + rule.numberOfQuestions, 0) || 0,
+        subjectId: template.subject.id,
+        teacherId: template.createdBy, // Use createdBy as teacherId
+        totalQuestions: template.rules?.reduce((sum: number, rule) => sum + rule.numberOfQuestions, 0) || 0,
         maxAttempts: 3, // Default value
-        status: apiExam.isActive ? 'published' : 'draft',
-        createdAt: apiExam.createdAt || new Date().toISOString(),
-        updatedAt: apiExam.createdAt || new Date().toISOString(),
+        status: template.isActive ? 'published' : 'draft',
+        createdAt: template.createdAt || new Date().toISOString(),
+        updatedAt: template.createdAt || new Date().toISOString(),
         tokenCost: 10, // Default value
         questions: [],
-        teacherName: apiExam.createdBy,
-        rating: 4.5, // Default value
-        subject: apiExam.subject.name,
-        attempts: 100, // Default value
+        teacherName: template.createdBy,
+        rating: template.averageRating,
+        subject: template.subject.name,
+        attempts: template.totalTakers,
         parts: 1, // Default value
-        category: apiExam.subject.name
+        category: template.subject.name
     });
 
-    const exams = apiExams.map(convertApiExamToExam);
+    const exams = templates.map(convertExamTemplateToExam);
 
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [activeMainTab, setActiveMainTab] = useState<'individual' | 'combined'>('individual');
     const [activeSubTab, setActiveSubTab] = useState<'selfSelected' | 'platformSelected'>('selfSelected');
     const [selectedRatingFilter, setSelectedRatingFilter] = useState<string>('');
-    const [selectedAttemptsFilter, setSelectedAttemptsFilter] = useState<string>('');
+    const [selectedTeacherFilter, setSelectedTeacherFilter] = useState<string>('');
     const [selectedSubjectsForCombined, setSelectedSubjectsForCombined] = useState<string[]>([]);
     const [selectedExamsForCombined, setSelectedExamsForCombined] = useState<Exam[]>([]);
 
@@ -89,10 +89,30 @@ const ExamTestPage: React.FC = () => {
     const [examToStart, setExamToStart] = useState<Exam | null>(null);
     const [combinedExamToStart, setCombinedExamToStart] = useState<{ exams: Exam[]; totalCost: number } | null>(null);
 
-    // Fetch data on component mount
+    // Create stable filter object
+    const currentFilters = useMemo(() => {
+        const filters: { subject?: string; minRating?: number; teacherId?: string } = {};
+        if (selectedCategory !== "All") {
+            filters.subject = selectedCategory;
+        }
+        if (selectedRatingFilter) {
+            filters.minRating = parseFloat(selectedRatingFilter);
+        }
+        if (selectedTeacherFilter) {
+            filters.teacherId = selectedTeacherFilter;
+        }
+        return filters;
+    }, [selectedCategory, selectedRatingFilter, selectedTeacherFilter]);
+
+    // Apply filters when they change
+    const prevFiltersRef = useRef(currentFilters);
     useEffect(() => {
-        fetchAllExams();
-    }, [fetchAllExams]);
+        // Only apply filters if they actually changed
+        if (JSON.stringify(prevFiltersRef.current) !== JSON.stringify(currentFilters)) {
+            applyFilters(currentFilters);
+            prevFiltersRef.current = currentFilters;
+        }
+    }, [currentFilters, applyFilters]);
 
     const handleStartExamClick = (exam: Exam) => {
         // Comment out token confirmation - directly navigate to test
@@ -108,13 +128,7 @@ const ExamTestPage: React.FC = () => {
         setShowTokenConfirmation(true);
     };
 
-    const filteredExams = exams.filter(exam => {
-        const categoryMatch = selectedCategory === "All" || exam.subject === selectedCategory;
-        const ratingMatch = selectedRatingFilter === '' || exam.rating >= parseFloat(selectedRatingFilter);
-        // Assuming exam.attempts exists and is a number
-        const attemptsMatch = selectedAttemptsFilter === '' || (exam.attempts && exam.attempts >= parseInt(selectedAttemptsFilter));
-        return categoryMatch && ratingMatch && attemptsMatch;
-    });
+
 
     const handleConfirm = () => {
         if (examToStart) {
@@ -216,13 +230,14 @@ const ExamTestPage: React.FC = () => {
                                         <option value="3">3 Stars & Up</option>
                                     </select>
                                     <select
-                                        value={selectedAttemptsFilter}
-                                        onChange={(e) => setSelectedAttemptsFilter(e.target.value)}
+                                        value={selectedTeacherFilter}
+                                        onChange={(e) => setSelectedTeacherFilter(e.target.value)}
                                         className="px-5 py-2 text-sm font-medium rounded-full border border-gray-300 bg-white text-gray-700 focus:ring-teal-500 focus:border-teal-500"
                                     >
-                                        <option value="">All Attempts</option>
-                                        <option value="100">100+ Attempts</option>
-                                        <option value="500">500+ Attempts</option>
+                                        <option value="">All Teachers</option>
+                                        <option value="John Smith">John Smith</option>
+                                        <option value="Jane Smith">Jane Smith</option>
+                                        <option value="Bob Johnson">Bob Johnson</option>
                                     </select>
                                 </div>
                                 {/* Search Bar */}
@@ -425,7 +440,7 @@ const ExamTestPage: React.FC = () => {
                                     <div className="text-center py-12">
                                         <p className="text-red-500 mb-4">{examsError}</p>
                                         <button
-                                            onClick={() => fetchAllExams()}
+                                            onClick={() => window.location.reload()}
                                             className="bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600"
                                         >
                                             Try Again
@@ -433,7 +448,7 @@ const ExamTestPage: React.FC = () => {
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {filteredExams.map((exam) => (
+                                        {exams.map((exam: Exam) => (
                                             <ExamCard exams={exam} key={exam.id} onStartExam={handleStartExamClick} />
                                         ))}
                                     </div>

@@ -20,6 +20,7 @@ import ExamDetailsPage from "./pages/exam/ExamDetailsPage";
 import TestResultPage from "./pages/exam/TestResultPage";
 import DoTestPage from "./pages/exam/DoTestPage";
 import PracticePage from "./pages/exam/PracticePage";
+import FRQPracticePage from "./pages/exam/FRQPracticePage";
 
 import MaterialsPage from "./pages/generics/materials/MaterialsPage";
 import MaterialsDetailPage from "./pages/generics/materials/MaterialsDetailPage";
@@ -100,6 +101,7 @@ function App() {
           path="/do-test/:examId/:practiceType/:mode"
           element={<PracticePage />}
         />
+        <Route path="/practice-frq/:examId" element={<FRQPracticePage />} />
         {/* Auth routes */}
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />

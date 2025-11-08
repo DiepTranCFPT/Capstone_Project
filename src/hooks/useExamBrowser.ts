@@ -71,13 +71,19 @@ export const useBrowseExamTemplates = (
   /**
    * Hàm để set filter và gọi lại API
    */
-  const applyFilters = (
-    filters: Omit<BrowseExamTemplateParams, "pageNo" | "pageSize">
-  ) => {
-    const newParams = { ...params, ...filters, pageNo: 0 }; // Reset về trang 0
-    setParams(newParams);
-    fetchTemplates(newParams);
-  };
+  const applyFilters = useCallback(
+    (filters: Omit<BrowseExamTemplateParams, "pageNo" | "pageSize">) => {
+      // Create new params with only pageSize preserved, and merge with new filters
+      const newParams: BrowseExamTemplateParams = {
+        pageNo: 0,
+        pageSize: params.pageSize || 10,
+        ...filters, // Only include filters that are actually set
+      };
+      setParams(newParams);
+      fetchTemplates(newParams);
+    },
+    [params.pageSize, fetchTemplates]
+  );
 
   /**
    * Hàm để xử lý khi Ant Design Table thay đổi trang hoặc kích thước trang.
