@@ -27,7 +27,12 @@ export const useQuestionTopics = () => {
           list = res.data as QuestionTopic[];
           console.log("[useQuestionTopics] Direct array response, count:", list.length);
         }
-        // Case 2: Wrapped in ApiResponse with data field
+        // Case 2: Direct object with items field
+        else if (res.data && typeof res.data === "object" && "items" in res.data && Array.isArray(res.data.items)) {
+          list = res.data.items as QuestionTopic[];
+          console.log("[useQuestionTopics] Direct items array, count:", list.length);
+        }
+        // Case 3: Wrapped in ApiResponse with data field
         else if (res.data?.data) {
           const data = res.data.data;
           // Check if data.data is an array
@@ -43,7 +48,7 @@ export const useQuestionTopics = () => {
             console.log("[useQuestionTopics] ApiResponse<PageInfo>, count:", list.length);
           }
         }
-        // Case 3: ApiResponse format but check structure
+        // Case 4: ApiResponse format but check structure
         else if (res.data && typeof res.data === "object" && "data" in res.data) {
           const innerData = (res.data as { data: unknown }).data;
           if (Array.isArray(innerData)) {
@@ -57,6 +62,8 @@ export const useQuestionTopics = () => {
         console.log("[useQuestionTopics] Final topics list:", list);
         setTopics(list);
       } catch (error) {
+        // Ensure topics is always an array even on error
+        setTopics([]);
         message.error("Không thể tải danh sách chủ đề câu hỏi!");
         console.error("[useQuestionTopics] Error:", error);
       } finally {
@@ -79,4 +86,3 @@ export const useQuestionTopics = () => {
 };
 
 export default useQuestionTopics;
-

@@ -1,0 +1,105 @@
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "~/components/common/Toast";
+import ExamTemplateService from "~/services/examService";
+import type { ApiResponse } from "~/types/api";
+import type { BrowseExamTemplateParams, ExamTemplate, MyExamTemplatePageData } from "~/types/test";
+
+export const useBrowseExamTemplates = (
+  initialParams: BrowseExamTemplateParams = {}
+) => {
+  const [templates, setTemplates] = useState<ExamTemplate[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Trạng thái phân trang và filter
+  const [params, setParams] = useState<BrowseExamTemplateParams>({
+    pageNo: 0,
+    pageSize: 10,
+    ...initialParams,
+  });
+
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  // Xử lý lỗi chung
+  const handleError = (err: unknown, defaultMessage: string) => {
+    setLoading(false);
+    const e = err as { response?: { data?: ApiResponse<unknown> } } & Error;
+    const apiMessage = e.response?.data?.message;
+    const message = apiMessage || e.message || defaultMessage;
+    setError(message);
+    toast.error(message);
+    return message;
+  };
+
+  // Hàm gọi API
+  const fetchTemplates = useCallback(
+    async (newParams: BrowseExamTemplateParams) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await ExamTemplateService.browseTemplates(newParams);
+
+        if (res.data.code === 0 || res.data.code === 1000) {
+          const pageData: MyExamTemplatePageData = res.data.data;
+          setTemplates(pageData.items || []);
+          setTotalElements(pageData.totalElement || 0);
+          setTotalPages(pageData.totalPage || 0);
+          setParams((prev) => ({
+            ...prev,
+            pageNo: pageData.pageNo || 0,
+            pageSize: pageData.pageSize || 10,
+          }));
+        } else {
+          throw new Error(res.data.message || "Failed to fetch browse templates");
+        }
+      } catch (err) {
+        handleError(err, "Không thể tải danh sách khuôn mẫu");
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  // Fetch dữ liệu lần đầu khi component mount
+  useEffect(() => {
+    fetchTemplates(params);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Chỉ chạy 1 lần lúc đầu
+
+  /**
+   * Hàm để set filter và gọi lại API
+   */
+  const applyFilters = (
+    filters: Omit<BrowseExamTemplateParams, "pageNo" | "pageSize">
+  ) => {
+    const newParams = { ...params, ...filters, pageNo: 0 }; // Reset về trang 0
+    setParams(newParams);
+    fetchTemplates(newParams);
+  };
+
+  /**
+   * Hàm để xử lý khi Ant Design Table thay đổi trang hoặc kích thước trang.
+   * Antd pagination là 1-based, nên ta trừ 1.
+   */
+  const handlePageChange = (newPage: number, newSize: number) => {
+    const newParams = { ...params, pageNo: newPage - 1, pageSize: newSize };
+    setParams(newParams);
+    fetchTemplates(newParams);
+  };
+
+  return {
+    templates,
+    loading,
+    error,
+    pageNo: (params.pageNo || 0) + 1, // Chuyển 0-based (API) sang 1-based (cho Antd Table)
+    pageSize: params.pageSize || 10,
+    totalElements,
+    totalPages,
+    filters: params, // Trả ra filter hiện tại
+    fetchTemplates, // Hàm gọi lại API với params hiện tại
+    applyFilters, // Hàm để set filter mới
+    handlePageChange, // Hàm để component Table gọi khi thay đổi trang
+  };
+};

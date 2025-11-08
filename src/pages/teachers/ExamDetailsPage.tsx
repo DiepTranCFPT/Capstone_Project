@@ -3,6 +3,7 @@ import { Button, Card, Tag, Descriptions, Table, Typography, Space, Divider, Spi
 import { EditOutlined, ArrowLeftOutlined, ClockCircleOutlined, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { useNavigate, useParams } from "react-router-dom";
 import { useExamTemplates } from "~/hooks/useExams";
+import { useQuestionTopics } from "~/hooks/useQuestionTopics";
 import type { CreateExamRulePayload, ExamRule } from "~/types/test";
 
 const { Title, Text, Paragraph } = Typography;
@@ -10,7 +11,8 @@ const { Title, Text, Paragraph } = Typography;
 const ExamDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const { examId } = useParams<{ examId: string }>();
-  const { currentTemplate, loading, fetchTemplateById, removeTemplate, addRule, updateRule, removeRule, questionTopics, fetchQuestionTopics } = useExamTemplates();
+  const { currentTemplate, loading, fetchTemplateById, removeTemplate, addRule, updateRule, removeRule } = useExamTemplates();
+  const { topics: questionTopics } = useQuestionTopics();
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [ruleModalVisible, setRuleModalVisible] = useState(false);
   const [editingRule, setEditingRule] = useState<{ id: string; data: CreateExamRulePayload } | null>(null);
@@ -20,8 +22,7 @@ const ExamDetailsPage: React.FC = () => {
     if (examId) {
       fetchTemplateById(examId);
     }
-    fetchQuestionTopics();
-  }, [examId, fetchTemplateById, fetchQuestionTopics]);
+  }, [examId, fetchTemplateById]);
 
   const handleEdit = () => {
     navigate(`/teacher/edit-template/${examId}`);
@@ -229,6 +230,15 @@ const ExamDetailsPage: React.FC = () => {
                   {currentTemplate.isActive ? 'Active' : 'Inactive'}
                 </Tag>
               </Descriptions.Item>
+              <Descriptions.Item label="Average Rating">
+                ⭐ {currentTemplate.averageRating?.toFixed(1) || 'N/A'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Total Ratings">
+                {currentTemplate.totalRatings || 0}
+              </Descriptions.Item>
+              <Descriptions.Item label="Total Takers">
+                {currentTemplate.totalTakers || 0}
+              </Descriptions.Item>
             </Descriptions>
 
             {currentTemplate.description && (
@@ -287,6 +297,18 @@ const ExamDetailsPage: React.FC = () => {
                 <Tag color={currentTemplate.isActive ? 'green' : 'red'}>
                   {currentTemplate.isActive ? 'Active' : 'Inactive'}
                 </Tag>
+              </div>
+              <div className="flex justify-between">
+                <Text>Average Rating:</Text>
+                <Text strong>⭐ {currentTemplate.averageRating?.toFixed(1) || 'N/A'}</Text>
+              </div>
+              <div className="flex justify-between">
+                <Text>Total Ratings:</Text>
+                <Text strong>{currentTemplate.totalRatings || 0}</Text>
+              </div>
+              <div className="flex justify-between">
+                <Text>Total Takers:</Text>
+                <Text strong>{currentTemplate.totalTakers || 0}</Text>
               </div>
             </div>
           </Card>

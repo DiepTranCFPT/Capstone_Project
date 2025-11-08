@@ -74,7 +74,7 @@ const QuestionService = {
     >
   > {
     // Note: endpoint provided by backend spec
-    return axiosInstance.get(`/api/question-topics`, { params });
+    return axiosInstance.get(`/question-topics`, { params });
   },
   // Lấy tất cả câu hỏi v2 (có phân trang)
   async getAllV2(

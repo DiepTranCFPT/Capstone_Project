@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Button, Table, Tag, Input, Select, Space } from "antd";
-import { EyeOutlined, PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { EyeOutlined, PlusOutlined, SearchOutlined, EditOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import { useNavigate } from "react-router-dom";
-import { useExamTemplates } from "~/hooks/useExams";
+import { useMyExamTemplates } from "~/hooks/useMyExam";
 // import { useAuth } from "~/hooks/useAuth";
 import type { ExamTemplate, ExamRule } from "~/types/test";
 
@@ -12,15 +12,10 @@ const { Option } = Select;
 const ExamListPage: React.FC = () => {
   const navigate = useNavigate();
   // const { user } = useAuth();
-  const { templates, loading, fetchAllTemplates, removeTemplate } = useExamTemplates();
+  const { templates, loading, pageNo, pageSize, totalElements, handlePageChange } = useMyExamTemplates();
 
   const [searchText, setSearchText] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
-
-  // Fetch templates when component mounts
-  useEffect(() => {
-    fetchAllTemplates();
-  }, [fetchAllTemplates]);
 
   const clearFilters = () => {
     setSearchText('');
@@ -33,12 +28,6 @@ const ExamListPage: React.FC = () => {
 
   const handleEdit = (templateId: string) => {
     navigate(`/teacher/edit-template/${templateId}`);
-  };
-
-  const handleDelete = async (templateId: string) => {
-    if (window.confirm('Are you sure you want to delete this template?')) {
-      await removeTemplate(templateId);
-    }
   };
 
   const handleCreateNew = () => {
@@ -134,15 +123,6 @@ const ExamListPage: React.FC = () => {
           >
             Edit
           </Button>
-          <Button
-            type="link"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.id)}
-            size="small"
-          >
-            Delete
-          </Button>
         </Space>
       ),
     },
@@ -219,11 +199,14 @@ const ExamListPage: React.FC = () => {
           rowKey="id"
           loading={loading}
           pagination={{
-            pageSize: 10,
+            current: pageNo,
+            pageSize,
+            total: totalElements,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) =>
               `${range[0]}-${range[1]} of ${total} templates`,
+            onChange: handlePageChange,
           }}
         />
       </div>
