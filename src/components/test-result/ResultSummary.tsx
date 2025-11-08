@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiCheckCircle, FiXCircle, FiPercent } from 'react-icons/fi';
+import { CheckCircleOutlined, CloseCircleOutlined, PercentageOutlined } from '@ant-design/icons';
 import type { AttemptResultDetail } from '~/types/examAttempt';
 
 interface ResultSummaryProps {
@@ -8,8 +8,11 @@ interface ResultSummaryProps {
 }
 
 const ResultSummary: React.FC<ResultSummaryProps> = ({ isPractice, attemptResultDetail }) => {
-    const totalQuestions = attemptResultDetail?.questions.length || 0;
-    const correct = attemptResultDetail?.questions.filter(q => q.isCorrect).length || 0;
+     const totalQuestions = attemptResultDetail?.questions.length || 0;
+    
+    // CẬP NHẬT: Tính toán số câu đúng dựa trên `studentAnswer.score`
+    const correct = attemptResultDetail?.questions.filter(q => q.studentAnswer && q.studentAnswer.score > 0).length || 0;
+    
     const incorrect = totalQuestions - correct;
     const accuracy = totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0;
     const score = attemptResultDetail?.score || 0;
@@ -36,9 +39,9 @@ const ResultSummary: React.FC<ResultSummaryProps> = ({ isPractice, attemptResult
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center border-t border-gray-300 pt-4">
                 <div><p className="text-2xl font-bold">{score.toFixed(1)}%</p><p className="text-sm text-gray-500">Score</p></div>
-                <div className="flex items-center justify-center gap-2"><FiPercent /><p className="text-2xl font-bold">{accuracy}%</p><p className="text-sm text-gray-500">Accuracy</p></div>
-                <div className="flex items-center justify-center gap-2"><FiCheckCircle className="text-green-500" /><p className="text-2xl font-bold">{correct}</p><p className="text-sm text-gray-500">Correct</p></div>
-                <div className="flex items-center justify-center gap-2"><FiXCircle className="text-red-500" /><p className="text-2xl font-bold">{incorrect}</p><p className="text-sm text-gray-500">Incorrect</p></div>
+                <div className="flex items-center justify-center gap-2"><PercentageOutlined /><p className="text-2xl font-bold">{accuracy}%</p><p className="text-sm text-gray-500">Accuracy</p></div>
+                <div className="flex items-center justify-center gap-2"><CheckCircleOutlined className="text-green-500" /><p className="text-2xl font-bold">{correct}</p><p className="text-sm text-gray-500">Correct</p></div>
+                <div className="flex items-center justify-center gap-2"><CloseCircleOutlined className="text-red-500" /><p className="text-2xl font-bold">{incorrect}</p><p className="text-sm text-gray-500">Incorrect</p></div>
             </div>
         </div>
     );
