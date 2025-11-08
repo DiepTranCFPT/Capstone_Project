@@ -37,6 +37,7 @@ const QuestionBankPage: React.FC = () => {
     updateQuestion,
     deleteQuestion,
     fetchQuestions,
+    fetchByUserId,
   } = useQuestionBank(teacherId);
 
   const difficultyOptions = useMemo(
@@ -109,7 +110,12 @@ const QuestionBankPage: React.FC = () => {
         toast.success("Question added successfully!");
       }
       // Only fetch and close modal on success
-      await fetchQuestions();
+      // Use fetchByUserId if teacherId exists, otherwise fetch all
+      if (teacherId) {
+        await fetchByUserId(teacherId);
+      } else {
+        await fetchQuestions();
+      }
       setIsModalOpen(false);
     } catch (err) {
       console.error("Save question error", err);

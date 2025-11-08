@@ -87,7 +87,7 @@ import type {
 
       // GET /api/questions-topic
       getQuestionTopics(): Promise<AxiosResponse<QuestionTopicListResponse>> {
-        return axiosInstance.get("/api/question-topics");
+        return axiosInstance.get("/question-topics");
       },
     };
 
