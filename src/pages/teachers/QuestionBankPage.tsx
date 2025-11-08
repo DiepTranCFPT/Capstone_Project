@@ -14,6 +14,7 @@ import {
   EditOutlined,
   PlusOutlined,
   SearchOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import type { Dayjs } from "dayjs";
 import type { QuestionBankItem, NewQuestion } from "~/types/question";
@@ -63,6 +64,8 @@ const QuestionBankPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] =
     useState<QuestionBankItem | null>(null);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [questionToDelete, setQuestionToDelete] = useState<string | null>(null);
 
   //  Filter states
   const [searchText, setSearchText] = useState("");
@@ -87,14 +90,22 @@ const QuestionBankPage: React.FC = () => {
 
   //  Xóa câu hỏi
   const handleDelete = (id: string) => {
-    Modal.confirm({
-      title: "Delete Question",
-      content: "Are you sure you want to delete this question?",
-      onOk() {
-        deleteQuestion(id);
-        toast.success("Question deleted successfully!");
-      },
-    });
+    setQuestionToDelete(id);
+    setDeleteConfirmVisible(true);
+  };
+
+  const confirmDelete = () => {
+    if (questionToDelete) {
+      deleteQuestion(questionToDelete);
+      toast.success("Question deleted successfully!");
+      setDeleteConfirmVisible(false);
+      setQuestionToDelete(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmVisible(false);
+    setQuestionToDelete(null);
   };
 
   //  Lưu hoặc cập nhật câu hỏi
@@ -250,7 +261,12 @@ const QuestionBankPage: React.FC = () => {
           <Button
             type="link"
             danger
-            onClick={() => handleDelete(record.id)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log("Delete button clicked for id:", record.id);
+              handleDelete(record.id);
+            }}
           >
             <DeleteOutlined />
           </Button>
@@ -350,6 +366,25 @@ const QuestionBankPage: React.FC = () => {
         onSubmit={handleSaveNewQuestion}
         editingQuestion={editingQuestion}
       />
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        open={deleteConfirmVisible}
+        onCancel={cancelDelete}
+        onOk={confirmDelete}
+        title={
+          <div className="flex items-center gap-2">
+            <ExclamationCircleOutlined style={{ color: "#ff4d4f", fontSize: "20px" }} />
+            <span>Delete Question</span>
+          </div>
+        }
+        okText="Delete"
+        okType="danger"
+        cancelText="Cancel"
+        centered
+      >
+        <p>Are you sure you want to delete this question? This action cannot be undone.</p>
+      </Modal>
     </div>
   );
 };
