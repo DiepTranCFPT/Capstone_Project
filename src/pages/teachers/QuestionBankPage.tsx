@@ -14,6 +14,8 @@ import {
   EditOutlined,
   PlusOutlined,
   SearchOutlined,
+  ExclamationCircleOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import type { Dayjs } from "dayjs";
 import type { QuestionBankItem, NewQuestion } from "~/types/question";
@@ -37,6 +39,8 @@ const QuestionBankPage: React.FC = () => {
     updateQuestion,
     deleteQuestion,
     fetchQuestions,
+    fetchByUserId,
+    getQuestionById,
   } = useQuestionBank(teacherId);
 
   const difficultyOptions = useMemo(
@@ -62,6 +66,10 @@ const QuestionBankPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] =
     useState<QuestionBankItem | null>(null);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [questionToDelete, setQuestionToDelete] = useState<string | null>(null);
+  const [viewQuestionVisible, setViewQuestionVisible] = useState(false);
+  const [viewingQuestion, setViewingQuestion] = useState<QuestionBankItem | null>(null);
 
   //  Filter states
   const [searchText, setSearchText] = useState("");
@@ -78,41 +86,133 @@ const QuestionBankPage: React.FC = () => {
     setEditingQuestion(null);
   };
 
+  //  Mở modal xem chi tiết
+  const handleView = async (question: QuestionBankItem) => {
+    try {
+      console.log("[QuestionBankPage] Viewing question:", question);
+      // Try to fetch full question details, but use question from list if it fails
+      let fullQuestion: QuestionBankItem | null = null;
+      try {
+        fullQuestion = await getQuestionById(question.id);
+      } catch (error) {
+        console.warn("[QuestionBankPage] Could not fetch full question details, using list data:", error);
+        // Continue with question from list
+      }
+      
+      if (fullQuestion) {
+        const normalizedQuestion: QuestionBankItem = {
+          id: fullQuestion.id || question.id,
+          text: fullQuestion.text || question.text,
+          subject: fullQuestion.subject || question.subject,
+          topic: fullQuestion.topic || question.topic,
+          difficulty: fullQuestion.difficulty || question.difficulty,
+          type: fullQuestion.type || question.type,
+          createdBy: fullQuestion.createdBy || question.createdBy,
+          createdAt: fullQuestion.createdAt || question.createdAt,
+          options: fullQuestion.options || question.options,
+          expectedAnswer: fullQuestion.expectedAnswer || question.expectedAnswer || "",
+          tags: fullQuestion.tags || question.tags,
+        };
+        console.log("[QuestionBankPage] Setting viewing question:", normalizedQuestion);
+        setViewingQuestion(normalizedQuestion);
+      } else {
+        console.log("[QuestionBankPage] Using question from list for view");
+        setViewingQuestion(question);
+      }
+      setViewQuestionVisible(true);
+    } catch (error) {
+      console.error("[QuestionBankPage] Error in handleView:", error);
+      // Always show modal even if there's an error
+      setViewingQuestion(question);
+      setViewQuestionVisible(true);
+    }
+  };
+
   //  Mở modal edit
-  const handleEdit = (question: QuestionBankItem) => {
-    setEditingQuestion(question);
-    setIsModalOpen(true);
+  // Note: Fetches full question details to ensure we have all data including expectedAnswer and options
+  // Once backend returns full answer data, this will work automatically
+  const handleEdit = async (question: QuestionBankItem) => {
+    try {
+      // Fetch full question details to ensure we have all data including expectedAnswer and options
+      const fullQuestion = await getQuestionById(question.id);
+      
+      if (fullQuestion) {
+        // Merge data, prioritizing fullQuestion but keeping question data as fallback
+        const normalizedQuestion: QuestionBankItem = {
+          id: fullQuestion.id || question.id,
+          text: fullQuestion.text || question.text,
+          subject: fullQuestion.subject || question.subject,
+          topic: fullQuestion.topic || question.topic,
+          difficulty: fullQuestion.difficulty || question.difficulty,
+          type: fullQuestion.type || question.type,
+          createdBy: fullQuestion.createdBy || question.createdBy,
+          createdAt: fullQuestion.createdAt || question.createdAt,
+          options: fullQuestion.options || question.options,
+          expectedAnswer: fullQuestion.expectedAnswer || question.expectedAnswer || "",
+          tags: fullQuestion.tags || question.tags,
+        };
+        setEditingQuestion(normalizedQuestion);
+        setIsModalOpen(true);
+      } else {
+        // Fallback to question from list if getById fails
+        setEditingQuestion(question);
+        setIsModalOpen(true);
+      }
+    } catch (error) {
+      console.error("Error fetching question details:", error);
+      // Fallback to question from list
+      setEditingQuestion(question);
+      setIsModalOpen(true);
+    }
   };
 
   //  Xóa câu hỏi
   const handleDelete = (id: string) => {
-    Modal.confirm({
-      title: "Delete Question",
-      content: "Are you sure you want to delete this question?",
-      onOk() {
-        deleteQuestion(id);
-        toast.success("Question deleted successfully!");
-      },
-    });
+    setQuestionToDelete(id);
+    setDeleteConfirmVisible(true);
+  };
+
+  const confirmDelete = () => {
+    if (questionToDelete) {
+      deleteQuestion(questionToDelete);
+      toast.success("Question deleted successfully!");
+      setDeleteConfirmVisible(false);
+      setQuestionToDelete(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmVisible(false);
+    setQuestionToDelete(null);
   };
 
   //  Lưu hoặc cập nhật câu hỏi
   const handleSaveNewQuestion = async (newQuestion: NewQuestion) => {
     try {
+      console.log("[QuestionBankPage] Saving question:", newQuestion);
+      console.log("[QuestionBankPage] Editing question:", editingQuestion);
+      
       if (editingQuestion) {
         // Pass NewQuestion directly - useQuestionBank will transform it to API format
+        console.log("[QuestionBankPage] Updating question with ID:", editingQuestion.id);
         await updateQuestion(editingQuestion.id, newQuestion);
         toast.success("Question updated successfully!");
         setEditingQuestion(null);
       } else {
+        console.log("[QuestionBankPage] Creating new question");
         await createQuestion(newQuestion);
         toast.success("Question added successfully!");
       }
       // Only fetch and close modal on success
-      await fetchQuestions();
+      // Use fetchByUserId if teacherId exists, otherwise fetch all
+      if (teacherId) {
+        await fetchByUserId(teacherId);
+      } else {
+        await fetchQuestions();
+      }
       setIsModalOpen(false);
     } catch (err) {
-      console.error("Save question error", err);
+      console.error("[QuestionBankPage] Save question error:", err);
       // Don't close modal on error so user can fix and retry
       // Error message is already shown by useQuestionBank hook
     }
@@ -238,16 +338,34 @@ const QuestionBankPage: React.FC = () => {
       key: "action",
       render: (_, record) => (
         <Space size="small">
-          <Button type="link" onClick={() => handleEdit(record)}>
-            <EditOutlined />
-          </Button>
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log("[QuestionBankPage] View button clicked for:", record.id);
+              handleView(record);
+            }}
+            title="View details"
+          />
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+            title="Edit"
+          />
           <Button
             type="link"
             danger
-            onClick={() => handleDelete(record.id)}
-          >
-            <DeleteOutlined />
-          </Button>
+            icon={<DeleteOutlined />}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleDelete(record.id);
+            }}
+            title="Delete"
+          />
         </Space>
       ),
     },
@@ -344,6 +462,165 @@ const QuestionBankPage: React.FC = () => {
         onSubmit={handleSaveNewQuestion}
         editingQuestion={editingQuestion}
       />
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        open={deleteConfirmVisible}
+        onCancel={cancelDelete}
+        onOk={confirmDelete}
+        title={
+          <div className="flex items-center gap-2">
+            <ExclamationCircleOutlined style={{ color: "#ff4d4f", fontSize: "20px" }} />
+            <span>Delete Question</span>
+          </div>
+        }
+        okText="Delete"
+        okType="danger"
+        cancelText="Cancel"
+        centered
+      >
+        <p>Are you sure you want to delete this question? This action cannot be undone.</p>
+      </Modal>
+
+      {/* View Question Details Modal */}
+      <Modal
+        open={viewQuestionVisible}
+        onCancel={() => {
+          setViewQuestionVisible(false);
+          setViewingQuestion(null);
+        }}
+        title={
+          <div className="flex items-center gap-2">
+            <EyeOutlined className="text-[#3CBCB2] text-xl" />
+            <span className="text-xl font-semibold">Question Details</span>
+          </div>
+        }
+        footer={[
+          <Button key="close" onClick={() => {
+            setViewQuestionVisible(false);
+            setViewingQuestion(null);
+          }}>
+            Close
+          </Button>,
+        ]}
+        width={800}
+        styles={{
+          body: { padding: "24px", maxHeight: "80vh", overflowY: "auto" },
+        }}
+      >
+        {viewingQuestion && (
+          <div className="space-y-4">
+            {/* Question Text */}
+            <div>
+              <h3 className="text-base font-semibold mb-2 text-gray-700">Question Text</h3>
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <p className="text-gray-800 whitespace-pre-wrap">{viewingQuestion.text}</p>
+              </div>
+            </div>
+
+            {/* Question Info Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-sm font-semibold mb-1 text-gray-700">Type</h3>
+                <Tag color={viewingQuestion.type === "mcq" ? "blue" : "green"}>
+                  {viewingQuestion.type?.toUpperCase()}
+                </Tag>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold mb-1 text-gray-700">Subject</h3>
+                <p className="text-gray-800">{viewingQuestion.subject || "-"}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold mb-1 text-gray-700">Topic</h3>
+                <p className="text-gray-800">{viewingQuestion.topic || "-"}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold mb-1 text-gray-700">Difficulty</h3>
+                <Tag
+                  color={
+                    viewingQuestion.difficulty === "easy"
+                      ? "cyan"
+                      : viewingQuestion.difficulty === "medium"
+                      ? "orange"
+                      : "red"
+                  }
+                >
+                  {viewingQuestion.difficulty}
+                </Tag>
+              </div>
+            </div>
+
+            {/* MCQ Options */}
+            {viewingQuestion.type === "mcq" && viewingQuestion.options && viewingQuestion.options.length > 0 && (
+              <div>
+                <h3 className="text-base font-semibold mb-2 text-gray-700">Choices</h3>
+                <div className="space-y-2">
+                  {viewingQuestion.options.map((option, index) => (
+                    <div
+                      key={option.id || index}
+                      className={`p-3 rounded-lg border ${
+                        option.isCorrect
+                          ? "bg-green-50 border-green-300"
+                          : "bg-gray-50 border-gray-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-600">Choice {index + 1}:</span>
+                        <span className="text-gray-800 flex-1">{option.text}</span>
+                        {option.isCorrect && (
+                          <Tag color="success" className="ml-auto">
+                            Correct Answer
+                          </Tag>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* FRQ Expected Answer */}
+            {viewingQuestion.type === "frq" && viewingQuestion.expectedAnswer && (
+              <div>
+                <h3 className="text-base font-semibold mb-2 text-gray-700">Expected Answer</h3>
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <p className="text-gray-800 whitespace-pre-wrap">{viewingQuestion.expectedAnswer}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Tags */}
+            {viewingQuestion.tags && viewingQuestion.tags.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold mb-2 text-gray-700">Tags</h3>
+                <div className="flex flex-wrap gap-2">
+                  {viewingQuestion.tags.map((tag, index) => (
+                    <Tag key={index} color="default">
+                      {tag}
+                    </Tag>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Metadata */}
+            <div className="pt-4 border-t border-gray-200">
+              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                <div>
+                  <span className="font-semibold">Created At:</span>{" "}
+                  {viewingQuestion.createdAt
+                    ? new Date(viewingQuestion.createdAt).toLocaleString()
+                    : "-"}
+                </div>
+                <div>
+                  <span className="font-semibold">Question ID:</span>{" "}
+                  <span className="font-mono text-xs">{viewingQuestion.id}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

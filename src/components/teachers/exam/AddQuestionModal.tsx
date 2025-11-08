@@ -1,5 +1,15 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Modal, Input, Select, Radio, Button, Space, message } from "antd";
+import { Modal, Input, Select, Radio, Button, Space, message, Form, Divider } from "antd";
+import {
+  QuestionCircleOutlined,
+  BookOutlined,
+  FolderOutlined,
+  ThunderboltOutlined,
+  FileTextOutlined,
+  CheckCircleOutlined,
+  PlusOutlined,
+  CloseOutlined,
+} from "@ant-design/icons";
 import type { NewQuestion, QuestionBankItem } from "~/types/question";
 import { useSubjects } from "~/hooks/useSubjects";
 import { useQuestionTopics } from "~/hooks/useQuestionTopics";
@@ -46,20 +56,28 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
 
   const subjectOptions = useMemo(() => {
     const options = subjects.map((subject) => ({
-      value: subject.name,
+      value: subject.id,
       label: subject.name,
     }));
+    // If formData.subject is a name (from old data), try to find matching ID
     if (
       formData.subject &&
       !options.some((option) => option.value === formData.subject)
     ) {
-      options.push({ value: formData.subject, label: formData.subject });
+      const foundSubject = subjects.find((s) => s.name === formData.subject || s.id === formData.subject);
+      if (foundSubject) {
+        // If found, use the ID
+        return options;
+      } else {
+        // If not found, add as fallback (for backward compatibility)
+        options.push({ value: formData.subject, label: formData.subject });
+      }
     }
     return options;
   }, [subjects, formData.subject]);
 
   const topicOptions = useMemo(() => {
-    const options = topics.map((topic) => ({
+    const options = (topics || []).map((topic) => ({
       value: topic.name,
       label: topic.name,
     }));
@@ -94,15 +112,17 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
     if (editingQuestion) {
       const choices = editingQuestion.type === "mcq" ? editingQuestion.options?.map(opt => opt.text) || ["", "", "", ""] : [];
       const correctIndex = editingQuestion.type === "mcq" ? editingQuestion.options?.findIndex(opt => opt.isCorrect) || 0 : 0;
+      // Try to find subject ID from subject name (for backward compatibility)
+      const subjectId = subjects.find((s) => s.name === editingQuestion.subject)?.id || editingQuestion.subject;
       setFormData({
         text: editingQuestion.text,
-        subject: editingQuestion.subject,
+        subject: subjectId,
         topic: editingQuestion.topic ?? "",
         difficulty: editingQuestion.difficulty,
         type: editingQuestion.type,
         choices: choices.length ? choices : ["", "", "", ""],
-        correctIndex: correctIndex,
-        expectedAnswer: editingQuestion.expectedAnswer,
+        correctIndex: correctIndex >= 0 ? correctIndex : 0,
+        expectedAnswer: editingQuestion.expectedAnswer || "",
         tags: editingQuestion.tags || [],
       });
     } else {
@@ -117,7 +137,7 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
         tags: [],
       });
     }
-  }, [editingQuestion, open]);
+  }, [editingQuestion, open, subjects]);
 
   const handleChange = <K extends keyof NewQuestion>(
     key: K,
@@ -142,30 +162,30 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
   const handleSubmit = () => {
 
     if (!formData.text.trim()) {
-      message.warning("Vui lòng nhập nội dung câu hỏi");
+      message.warning("Please enter question text");
       return;
     }
     
     if (!formData.subject.trim()) {
-      message.warning("Vui lòng nhập môn học");
+      message.warning("Please select a subject");
       return;
     }
 
     if (!(formData.topic ?? "").trim()) {
-      message.warning("Vui lòng nhập chủ đề");
+      message.warning("Please select a topic");
       return;
     }
 
     if (formData.type === "mcq") {
       const nonEmptyChoices = (formData.choices || []).filter((c) => c && c.trim() !== "");
       if (nonEmptyChoices.length < 2) {
-        message.warning("Vui lòng nhập ít nhất 2 lựa chọn cho câu hỏi trắc nghiệm");
+        message.warning("Please enter at least 2 choices for multiple choice question");
         return;
       }
     }
 
     if (formData.type === "frq" && !formData.expectedAnswer?.trim()) {
-      message.warning("Vui lòng nhập đáp án mong đợi cho câu hỏi tự luận");
+      message.warning("Please enter expected answer for essay question");
       return;
     }
 
@@ -176,135 +196,254 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
     <Modal
       open={open}
       onCancel={onCancel}
-      title={editingQuestion ? "Edit Question" : "Add New Question"}
+      title={
+        <div className="flex items-center gap-2">
+          <QuestionCircleOutlined className="text-[#3CBCB2] text-xl" />
+          <span className="text-xl font-semibold">
+            {editingQuestion ? "Edit Question" : "Add New Question"}
+          </span>
+        </div>
+      }
       footer={null}
-      width={700}
+      width={800}
+      styles={{
+        body: { padding: "24px", maxHeight: "80vh", overflowY: "auto" },
+      }}
+      className="question-modal"
     >
-      <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-        {/* Question Text */}
-        <div>
-          <label className="font-medium">Question Text</label>
-          <TextArea
-            rows={3}
-            placeholder="Enter question text"
-            value={formData.text}
-            onChange={(e) => handleChange("text", e.target.value)}
-          />
-        </div>
-
-        {/* Subject */}
-        <div>
-          <label className="font-medium">Subject</label>
-        <Select
-          showSearch
-          optionFilterProp="label"
-          placeholder="Select subject"
-          value={formData.subject || undefined}
-          onChange={(value) =>
-            handleChange("subject", (value ?? "") as NewQuestion["subject"])
-          }
-          options={subjectOptions}
-          loading={subjectsLoading}
-          allowClear
-        />
-        </div>
-
-        {/* Topic */}
-        <div>
-          <label className="font-medium">Topic</label>
-        <Select
-          showSearch
-          optionFilterProp="label"
-          placeholder="Select topic"
-          value={formData.topic || undefined}
-          onChange={(value) =>
-            handleChange("topic", (value ?? "") as NewQuestion["topic"])
-          }
-          options={topicOptions}
-          loading={topicsLoading}
-          allowClear
-        />
-        </div>
-
-        {/* Difficulty */}
-        <div>
-          <label className="font-medium">Difficulty</label>
-          <Select
-            value={formData.difficulty}
-            onChange={(v) =>
-              handleChange("difficulty", v as NewQuestion["difficulty"])
+      <Form layout="vertical" className="question-form">
+        <Space direction="vertical" size="large" style={{ width: "100%" }}>
+          {/* Question Text */}
+          <Form.Item
+            label={
+              <span className="flex items-center gap-2 text-base font-medium">
+                <FileTextOutlined className="text-[#3CBCB2]" />
+                Question Text
+              </span>
             }
-            style={{ width: "100%" }}
+            required
           >
-            {difficultyOptions.map((opt) => (
-              <Option key={opt.value} value={opt.value}>
-                {opt.label}
-              </Option>
-            ))}
-          </Select>
-        </div>
-
-
-        {/* Question Type */}
-        <div>
-          <label className="font-medium">Question Type</label>
-          <Radio.Group
-            value={formData.type}
-            onChange={(e) => handleChange("type", e.target.value)}
-          >
-            <Radio value="mcq">Multiple Choice</Radio>
-            <Radio value="frq">Essay</Radio>
-          </Radio.Group>
-        </div>
-
-        {/* Choices (for MCQ) */}
-        {formData.type === "mcq" ? (
-          <div className="space-y-2">
-            <p className="font-medium">Choices</p>
-            {(formData.choices ?? []).map((choice, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <Radio
-                  checked={formData.correctIndex === index}
-                  onChange={() => handleChange("correctIndex", index)}
-                />
-                <Input
-                  placeholder={`Choice ${index + 1}`}
-                  value={choice}
-                  onChange={(e) => handleChoiceChange(index, e.target.value)}
-                />
-              </div>
-            ))}
-            <Button type="dashed" block onClick={addChoice}>
-              + Add Choice
-            </Button>
-          </div>
-        ) : (
-          // Expected Answer for essay
-          <div>
-            <label className="font-medium">Expected Answer</label>
             <TextArea
-              rows={3}
-              placeholder="Write expected answer here..."
-              value={formData.expectedAnswer}
-              onChange={(e) => handleChange("expectedAnswer", e.target.value)}
+              rows={4}
+              placeholder="Enter question text..."
+              value={formData.text}
+              onChange={(e) => handleChange("text", e.target.value)}
+              style={{ fontSize: "14px" }}
+              showCount
+              maxLength={1000}
             />
-          </div>
-        )}
+          </Form.Item>
 
-        {/* Actions */}
-        <div className="flex justify-end mt-5">
-          <Space>
-            <Button onClick={onCancel}>Cancel</Button>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Subject */}
+            <Form.Item
+              label={
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  <BookOutlined className="text-[#3CBCB2]" />
+                  Subject
+                </span>
+              }
+              required
+            >
+              <Select
+                showSearch
+                optionFilterProp="label"
+                placeholder="Select subject"
+                value={formData.subject || undefined}
+                onChange={(value) =>
+                  handleChange("subject", (value ?? "") as NewQuestion["subject"])
+                }
+                options={subjectOptions}
+                loading={subjectsLoading}
+                allowClear
+                size="large"
+                style={{ width: "100%" }}
+              />
+            </Form.Item>
+
+            {/* Topic */}
+            <Form.Item
+              label={
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  <FolderOutlined className="text-[#3CBCB2]" />
+                  Topic
+                </span>
+              }
+              required
+            >
+              <Select
+                showSearch
+                optionFilterProp="label"
+                placeholder="Select topic"
+                value={formData.topic || undefined}
+                onChange={(value) =>
+                  handleChange("topic", (value ?? "") as NewQuestion["topic"])
+                }
+                loading={topicsLoading}
+                allowClear
+                size="large"
+                style={{ width: "100%" }}
+              >
+                {topicOptions.map((option) => (
+                  <Option key={option.value} value={option.value}>
+                    {option.label}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Difficulty */}
+            <Form.Item
+              label={
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  <ThunderboltOutlined className="text-[#3CBCB2]" />
+                  Difficulty
+                </span>
+              }
+            >
+              <Select
+                value={formData.difficulty}
+                onChange={(v) =>
+                  handleChange("difficulty", v as NewQuestion["difficulty"])
+                }
+                size="large"
+                style={{ width: "100%" }}
+              >
+                {difficultyOptions.map((opt) => (
+                  <Option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            {/* Question Type */}
+            <Form.Item
+              label={
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  <QuestionCircleOutlined className="text-[#3CBCB2]" />
+                  Question Type
+                </span>
+              }
+            >
+              <Radio.Group
+                value={formData.type}
+                onChange={(e) => handleChange("type", e.target.value)}
+                className="w-full"
+                size="large"
+              >
+                <Radio.Button value="mcq" className="flex-1 text-center">
+                  Multiple Choice
+                </Radio.Button>
+                <Radio.Button value="frq" className="flex-1 text-center">
+                  Essay
+                </Radio.Button>
+              </Radio.Group>
+            </Form.Item>
+          </div>
+
+          <Divider style={{ margin: "16px 0" }} />
+
+          {/* Choices (for MCQ) */}
+          {formData.type === "mcq" ? (
+            <Form.Item
+              label={
+                <span className="flex items-center gap-2 text-base font-medium">
+                  <CheckCircleOutlined className="text-[#3CBCB2]" />
+                  Choices
+                </span>
+              }
+              required
+            >
+              <div className="space-y-3">
+                {(formData.choices ?? []).map((choice, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-[#3CBCB2] transition-colors"
+                  >
+                    <Radio
+                      checked={formData.correctIndex === index}
+                      onChange={() => handleChange("correctIndex", index)}
+                      className="mt-1"
+                    />
+                    <Input
+                      placeholder={`Choice ${index + 1}`}
+                      value={choice}
+                      onChange={(e) => handleChoiceChange(index, e.target.value)}
+                      size="large"
+                      className="flex-1"
+                    />
+                    {formData.correctIndex === index && (
+                      <CheckCircleOutlined className="text-green-500 text-lg" />
+                    )}
+                  </div>
+                ))}
+                <Button
+                  type="dashed"
+                  block
+                  onClick={addChoice}
+                  icon={<PlusOutlined />}
+                  size="large"
+                  className="mt-2"
+                >
+                  Add Choice
+                </Button>
+              </div>
+            </Form.Item>
+          ) : (
+            // Expected Answer for essay
+            <Form.Item
+              label={
+                <span className="flex items-center gap-2 text-base font-medium">
+                  <CheckCircleOutlined className="text-[#3CBCB2]" />
+                  Expected Answer
+                </span>
+              }
+              required
+            >
+              <TextArea
+                rows={5}
+                placeholder="Enter expected answer..."
+                value={formData.expectedAnswer}
+                onChange={(e) => handleChange("expectedAnswer", e.target.value)}
+                style={{ fontSize: "14px" }}
+                showCount
+                maxLength={2000}
+              />
+            </Form.Item>
+          )}
+
+          <Divider style={{ margin: "16px 0" }} />
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              onClick={onCancel}
+              size="large"
+              icon={<CloseOutlined />}
+              className="px-6"
+            >
+              Cancel
+            </Button>
             <Button
               type="primary"
               onClick={handleSubmit}
-              style={{ backgroundColor: "#3CBCB2", border: "none" }}
+              size="large"
+              icon={<CheckCircleOutlined />}
+              style={{
+                backgroundColor: "#3CBCB2",
+                border: "none",
+                boxShadow: "0 2px 8px rgba(60, 188, 178, 0.3)",
+              }}
+              className="px-6 hover:bg-[#35a89a]"
             >
-              Save Question
+              {editingQuestion ? "Update" : "Save Question"}
             </Button>
-          </Space>
-        </div>
-      </Space>
+          </div>
+        </Space>
+      </Form>
     </Modal>
   );
 };

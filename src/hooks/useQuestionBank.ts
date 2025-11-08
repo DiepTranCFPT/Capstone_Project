@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { message } from "antd";
 import QuestionService from "~/services/QuestionService";
+import axiosInstance from "~/configs/axios";
 import type { QuestionBankItem, NewQuestion, QuestionOption } from "~/types/question";
 
 export const useQuestionBank = (teacherId?: string) => {
@@ -52,7 +53,7 @@ export const useQuestionBank = (teacherId?: string) => {
     }
 
     const text = normalizeString(record["text"], record["content"], record["questionContent"]);
-    const subject = normalizeString(record["subject"], record["subjectName"], record["subjectDisplay"]);
+    const subject = normalizeString(record["subject"], record["subjectId"], record["subjectDisplay"]);
     const topicValue = normalizeString(record["topic"], record["topicName"], record["topicDisplay"]);
     const typeRaw = normalizeString(record["type"], record["questionType"], record["typeCode"]).toLowerCase();
     const type: QuestionBankItem["type"] = typeRaw === "frq" ? "frq" : "mcq";
@@ -75,21 +76,79 @@ export const useQuestionBank = (teacherId?: string) => {
 
     const createdBy = normalizeString(record["createdBy"], record["authorId"], record["userId"], record["teacherId"]);
 
-    const optionsRaw = (record["options"] ?? record["answers"]) as unknown;
+    // Try multiple field names for options/answers
+    // Note: Backend currently returns answers with only id and content: null
+    // Frontend will try to fetch answer details if content is missing
+    const optionsRaw = (record["options"] ?? 
+                        record["answers"] ?? 
+                        record["choices"] ?? 
+                        record["answerOptions"] ??
+                        record["answer_options"]) as unknown;
+    
     const options = Array.isArray(optionsRaw)
       ? optionsRaw
           .map((item) => {
-            if (!item || typeof item !== "object") {
+            if (!item) {
               return null;
             }
-            const optionRecord = item as Record<string, unknown>;
-            const optionText = normalizeString(optionRecord["text"], optionRecord["content"], optionRecord["label"]);
+            
+            // Handle both object and string cases
+            let optionRecord: Record<string, unknown>;
+            if (typeof item === "string") {
+              // If item is a string, convert to object
+              optionRecord = { text: item, content: item, label: item };
+            } else if (typeof item === "object") {
+              optionRecord = item as Record<string, unknown>;
+              
+              // Check if there's a nested answer object
+              if (optionRecord["answer"] && typeof optionRecord["answer"] === "object") {
+                const nestedAnswer = optionRecord["answer"] as Record<string, unknown>;
+                optionRecord = { ...optionRecord, ...nestedAnswer };
+              }
+              
+              // Check if there's a nested content object
+              if (optionRecord["content"] && typeof optionRecord["content"] === "object") {
+                const nestedContent = optionRecord["content"] as Record<string, unknown>;
+                optionRecord = { ...optionRecord, ...nestedContent };
+              }
+            } else {
+              return null;
+            }
+            
+            const optionText = normalizeString(
+              optionRecord["text"], 
+              optionRecord["content"], 
+              optionRecord["label"],
+              optionRecord["optionText"],
+              optionRecord["option_text"],
+              optionRecord["answerText"],
+              optionRecord["answer_text"],
+              optionRecord["name"],
+              optionRecord["title"],
+              optionRecord["value"]
+            );
+            
             if (!optionText) {
               return null;
             }
-            const optionId = normalizeString(optionRecord["id"], optionRecord["optionId"]);
-            const isCorrectValue = optionRecord["isCorrect"] ?? optionRecord["correct"] ?? optionRecord["isAnswer"];
+            
+            const optionId = normalizeString(
+              optionRecord["id"], 
+              optionRecord["optionId"],
+              optionRecord["option_id"],
+              optionRecord["answerId"],
+              optionRecord["answer_id"]
+            );
+            
+            const isCorrectValue = optionRecord["isCorrect"] ?? 
+                                  optionRecord["correct"] ?? 
+                                  optionRecord["isAnswer"] ??
+                                  optionRecord["is_answer"] ??
+                                  optionRecord["isCorrectAnswer"] ??
+                                  optionRecord["is_correct_answer"] ??
+                                  false;
             const isCorrect = typeof isCorrectValue === "boolean" ? isCorrectValue : Boolean(isCorrectValue);
+            
             return {
               id: optionId || undefined,
               text: optionText,
@@ -104,7 +163,17 @@ export const useQuestionBank = (teacherId?: string) => {
       ? tagsRaw.filter((tag) => typeof tag === "string")
       : undefined;
 
-    const expectedAnswer = normalizeString(record["expectedAnswer"], record["answer"], record["solution"]);
+    // Try multiple field names for expected answer
+    const expectedAnswer = normalizeString(
+      record["expectedAnswer"],
+      record["expected_answer"],
+      record["answer"],
+      record["solution"],
+      record["correctAnswer"],
+      record["correct_answer"],
+      record["expectedResponse"],
+      record["expected_response"]
+    );
 
     return {
       id,
@@ -183,15 +252,56 @@ export const useQuestionBank = (teacherId?: string) => {
   }, [normalizeQuestions]);
 
   // 🔹 Lấy chi tiết câu hỏi
+  // Note: Backend currently returns answers with only id and content: null
+  // This function tries to expand answers and fetch details if needed
+  // Once backend is fixed to return full answer data, this will work automatically
   const getQuestionById = useCallback(async (id: string) => {
     try {
-      const res = await QuestionService.getById(id);
-      return res.data?.data;
+      // Try with expand parameter first
+      let res = await QuestionService.getById(id);
+      let rawData = res.data?.data;
+      
+      // If answers still don't have content, try fetching answer details separately
+      // TODO: Remove this workaround once backend returns full answer data
+      if (rawData && rawData.answers && Array.isArray(rawData.answers)) {
+        const answersWithContent = await Promise.all(
+          rawData.answers.map(async (answer: { id: string; content: unknown }) => {
+            // If answer has id but no content, try to fetch answer details
+            if (answer.id && !answer.content) {
+              try {
+                // Try to get answer details - adjust endpoint if needed
+                const answerRes = await axiosInstance.get(`/answers/${answer.id}`);
+                const answerData = answerRes.data?.data;
+                if (answerData) {
+                  return {
+                    ...answer,
+                    content: answerData.content || answerData.text || answerData.answerText,
+                    isCorrect: answerData.isCorrect || answerData.correct || answerData.isAnswer,
+                  };
+                }
+              } catch (err) {
+                // Silently fail - backend may not have this endpoint yet
+                console.warn(`[useQuestionBank] Could not fetch answer ${answer.id}:`, err);
+              }
+            }
+            return answer;
+          })
+        );
+        rawData = { ...rawData, answers: answersWithContent };
+      }
+      
+      if (rawData) {
+        // Normalize the question data using sanitizeQuestion
+        const normalized = sanitizeQuestion(rawData);
+        return normalized;
+      }
+      return null;
     } catch (error) {
       message.error("Không thể tải thông tin câu hỏi!");
       console.error(error);
+      return null;
     }
-  }, []);
+  }, [sanitizeQuestion]);
 
   // 🔹 Transform NewQuestion to API format
   const transformQuestionForAPI = useCallback((data: NewQuestion | Partial<QuestionBankItem>) => {
@@ -199,7 +309,7 @@ export const useQuestionBank = (teacherId?: string) => {
       // Backend expects `content`; keep `text` for compatibility
       text: data.text,
       content: data.text,
-      subject: data.subject,
+      subjectId: data.subject,
       type: data.type,
     };
 
@@ -266,12 +376,24 @@ export const useQuestionBank = (teacherId?: string) => {
     }
 
     // Add expectedAnswer for FRQ (required)
+    // Backend requires at least one answer, so for FRQ we need to send expectedAnswer as an answer
     if (data.type === "frq") {
       if (data.expectedAnswer && data.expectedAnswer.trim()) {
         transformed.expectedAnswer = data.expectedAnswer.trim();
+        // Backend may require answers array even for FRQ
+        // Create an answer object with the expected answer
+        transformed.answers = [
+          {
+            content: data.expectedAnswer.trim(),
+            text: data.expectedAnswer.trim(),
+            isCorrect: true,
+          }
+        ];
       } else {
         // If no expected answer provided, set empty string (backend should validate)
         transformed.expectedAnswer = "";
+        // Still send empty answers array to satisfy backend requirement
+        transformed.answers = [];
       }
     }
 
