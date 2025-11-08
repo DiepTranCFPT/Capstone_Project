@@ -52,7 +52,7 @@ export const useQuestionBank = (teacherId?: string) => {
     }
 
     const text = normalizeString(record["text"], record["content"], record["questionContent"]);
-    const subject = normalizeString(record["subject"], record["subjectName"], record["subjectDisplay"]);
+    const subject = normalizeString(record["subject"], record["subjectId"], record["subjectDisplay"]);
     const topicValue = normalizeString(record["topic"], record["topicName"], record["topicDisplay"]);
     const typeRaw = normalizeString(record["type"], record["questionType"], record["typeCode"]).toLowerCase();
     const type: QuestionBankItem["type"] = typeRaw === "frq" ? "frq" : "mcq";
@@ -199,7 +199,7 @@ export const useQuestionBank = (teacherId?: string) => {
       // Backend expects `content`; keep `text` for compatibility
       text: data.text,
       content: data.text,
-      subject: data.subject,
+      subjectId: data.subject,
       type: data.type,
     };
 
