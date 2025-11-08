@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Modal, Input, Select, Radio, Button, Space, message } from "antd";
 import type { NewQuestion, QuestionBankItem } from "~/types/question";
+import { useSubjects } from "~/hooks/useSubjects";
+import { useQuestionTopics } from "~/hooks/useQuestionTopics";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -18,9 +20,23 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
   onSubmit,
   editingQuestion,
 }) => {
+  const { subjects, loading: subjectsLoading, fetchSubjects } = useSubjects();
+  const { topics, loading: topicsLoading } = useQuestionTopics();
+
+  const difficultyOptions = useMemo(
+    () => [
+      { value: "easy", label: "Easy" },
+      { value: "medium", label: "Medium" },
+      { value: "hard", label: "Hard" },
+    ],
+    []
+  );
+
+  // Form state must be declared before any memo that depends on it
   const [formData, setFormData] = useState<NewQuestion>({
     text: "",
     subject: "",
+    topic: "",
     difficulty: "medium",
     type: "mcq",
     choices: ["", "", "", ""],
@@ -28,12 +44,44 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
     tags: [],
   });
 
+  const subjectOptions = useMemo(() => {
+    const options = subjects.map((subject) => ({
+      value: subject.name,
+      label: subject.name,
+    }));
+    if (
+      formData.subject &&
+      !options.some((option) => option.value === formData.subject)
+    ) {
+      options.push({ value: formData.subject, label: formData.subject });
+    }
+    return options;
+  }, [subjects, formData.subject]);
+
+  const topicOptions = useMemo(() => {
+    const options = topics.map((topic) => ({
+      value: topic.name,
+      label: topic.name,
+    }));
+    if (formData.topic && !options.some((option) => option.value === formData.topic)) {
+      options.push({ value: formData.topic, label: formData.topic });
+    }
+    return options;
+  }, [topics, formData.topic]);
+
+  
+
+  useEffect(() => {
+    fetchSubjects({ pageNo: 0, pageSize: 1000 });
+  }, [fetchSubjects]);
+
   useEffect(() => {
     if (!open) {
       // Reset form when modal closes
       setFormData({
         text: "",
         subject: "",
+        topic: "",
         difficulty: "medium",
         type: "mcq",
         choices: ["", "", "", ""],
@@ -49,6 +97,7 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
       setFormData({
         text: editingQuestion.text,
         subject: editingQuestion.subject,
+        topic: editingQuestion.topic ?? "",
         difficulty: editingQuestion.difficulty,
         type: editingQuestion.type,
         choices: choices.length ? choices : ["", "", "", ""],
@@ -60,6 +109,7 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
       setFormData({
         text: "",
         subject: "",
+        topic: "",
         difficulty: "medium",
         type: "mcq",
         choices: ["", "", "", ""],
@@ -98,6 +148,11 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
     
     if (!formData.subject.trim()) {
       message.warning("Vui lòng nhập môn học");
+      return;
+    }
+
+    if (!(formData.topic ?? "").trim()) {
+      message.warning("Vui lòng nhập chủ đề");
       return;
     }
 
@@ -140,11 +195,35 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
         {/* Subject */}
         <div>
           <label className="font-medium">Subject</label>
-          <Input
-            placeholder="e.g. Math, History"
-            value={formData.subject}
-            onChange={(e) => handleChange("subject", e.target.value)}
-          />
+        <Select
+          showSearch
+          optionFilterProp="label"
+          placeholder="Select subject"
+          value={formData.subject || undefined}
+          onChange={(value) =>
+            handleChange("subject", (value ?? "") as NewQuestion["subject"])
+          }
+          options={subjectOptions}
+          loading={subjectsLoading}
+          allowClear
+        />
+        </div>
+
+        {/* Topic */}
+        <div>
+          <label className="font-medium">Topic</label>
+        <Select
+          showSearch
+          optionFilterProp="label"
+          placeholder="Select topic"
+          value={formData.topic || undefined}
+          onChange={(value) =>
+            handleChange("topic", (value ?? "") as NewQuestion["topic"])
+          }
+          options={topicOptions}
+          loading={topicsLoading}
+          allowClear
+        />
         </div>
 
         {/* Difficulty */}
@@ -152,12 +231,16 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
           <label className="font-medium">Difficulty</label>
           <Select
             value={formData.difficulty}
-            onChange={(v) => handleChange("difficulty", v)}
+            onChange={(v) =>
+              handleChange("difficulty", v as NewQuestion["difficulty"])
+            }
             style={{ width: "100%" }}
           >
-            <Option value="easy">Easy</Option>
-            <Option value="medium">Medium</Option>
-            <Option value="hard">Hard</Option>
+            {difficultyOptions.map((opt) => (
+              <Option key={opt.value} value={opt.value}>
+                {opt.label}
+              </Option>
+            ))}
           </Select>
         </div>
 

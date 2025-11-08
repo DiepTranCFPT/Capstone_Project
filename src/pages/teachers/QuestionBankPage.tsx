@@ -39,6 +39,25 @@ const QuestionBankPage: React.FC = () => {
     fetchQuestions,
   } = useQuestionBank(teacherId);
 
+  const difficultyOptions = useMemo(
+    () => [
+      { value: "easy", label: "Easy" },
+      { value: "medium", label: "Medium" },
+      { value: "hard", label: "Hard" },
+    ],
+    []
+  );
+
+  const topicOptions = useMemo(() => {
+    const result = new Set<string>();
+    (questionBank || []).forEach((question) => {
+      if (question.topic) {
+        result.add(question.topic);
+      }
+    });
+    return Array.from(result);
+  }, [questionBank]);
+
   //  Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] =
@@ -111,37 +130,65 @@ const QuestionBankPage: React.FC = () => {
 
   // 🔍 Lọc dữ liệu hiển thị
   const filteredData = useMemo(() => {
+    const normalizedSearch = searchText.trim().toLowerCase();
+
     return (questionBank || [])
       .filter((q) => {
-        if (
-          searchText &&
-          !q.text.toLowerCase().includes(searchText.toLowerCase())
-        )
+        const questionText = (q.text || "").toLowerCase();
+        if (normalizedSearch && !questionText.includes(normalizedSearch)) {
           return false;
-        if (selectedSubject !== "All Subjects" && q.subject !== selectedSubject)
-          return false;
-        if (selectedDifficulty !== "all" && q.difficulty !== selectedDifficulty)
-          return false;
-        if (selectedType !== "all" && q.type !== selectedType) return false;
-        if (dateRange) {
-          const created = new Date(q.createdAt);
-          if (
-            created < dateRange[0].toDate() ||
-            created > dateRange[1].toDate()
-          )
-            return false;
         }
+
+        const subject = q.subject || "";
+        if (selectedSubject !== "All Subjects" && subject !== selectedSubject) {
+          return false;
+        }
+
+        const difficulty = q.difficulty || "";
+        if (
+          selectedDifficulty !== "all" &&
+          difficulty.toLowerCase() !== selectedDifficulty.toLowerCase()
+        ) {
+          return false;
+        }
+
+        const topic = (q.topic || "").trim();
+        if (selectedTopic !== "All Topics" && topic !== selectedTopic) {
+          return false;
+        }
+
+        const type = q.type || "";
+        if (selectedType !== "all" && type !== selectedType) {
+          return false;
+        }
+
+        if (dateRange) {
+          const createdAt = q.createdAt ? new Date(q.createdAt) : null;
+          if (!createdAt || Number.isNaN(createdAt.getTime())) {
+            return false;
+          }
+
+          if (
+            createdAt < dateRange[0].toDate() ||
+            createdAt > dateRange[1].toDate()
+          ) {
+            return false;
+          }
+        }
+
         return true;
       })
       .sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt || 0).getTime() -
+          new Date(a.createdAt || 0).getTime()
       );
   }, [
     questionBank,
     searchText,
     selectedSubject,
     selectedDifficulty,
+    selectedTopic,
     selectedType,
     dateRange,
   ]);
@@ -165,6 +212,12 @@ const QuestionBankPage: React.FC = () => {
       ),
     },
     { title: "Subject", dataIndex: "subject", key: "subject" },
+    {
+      title: "Topic",
+      dataIndex: "topic",
+      key: "topic",
+      render: (topic: string | undefined) => topic || "-",
+    },
     {
       title: "Difficulty",
       dataIndex: "difficulty",
@@ -241,13 +294,11 @@ const QuestionBankPage: React.FC = () => {
           className="w-48"
         >
           <Option value="All Topics">All Topics</Option>
-          <Option value="Custom Question">Custom Question</Option>
-          <Option value="Cell Structure">Cell Structure</Option>
-          <Option value="Mechanics">Mechanics</Option>
-          <Option value="Algebra">Algebra</Option>
-          <Option value="20th Century History">
-            20th Century History
-          </Option>
+          {topicOptions.map((topic) => (
+            <Option key={topic} value={topic}>
+              {topic}
+            </Option>
+          ))}
         </Select>
         <Select
           value={selectedDifficulty}
@@ -255,9 +306,11 @@ const QuestionBankPage: React.FC = () => {
           className="w-48"
         >
           <Option value="all">All Difficulties</Option>
-          <Option value="easy">Easy</Option>
-          <Option value="medium">Medium</Option>
-          <Option value="hard">Hard</Option>
+          {difficultyOptions.map((option) => (
+            <Option key={option.value} value={option.value}>
+              {option.label}
+            </Option>
+          ))}
         </Select>
         <Select
           value={selectedType}
