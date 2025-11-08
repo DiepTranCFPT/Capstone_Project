@@ -376,12 +376,24 @@ export const useQuestionBank = (teacherId?: string) => {
     }
 
     // Add expectedAnswer for FRQ (required)
+    // Backend requires at least one answer, so for FRQ we need to send expectedAnswer as an answer
     if (data.type === "frq") {
       if (data.expectedAnswer && data.expectedAnswer.trim()) {
         transformed.expectedAnswer = data.expectedAnswer.trim();
+        // Backend may require answers array even for FRQ
+        // Create an answer object with the expected answer
+        transformed.answers = [
+          {
+            content: data.expectedAnswer.trim(),
+            text: data.expectedAnswer.trim(),
+            isCorrect: true,
+          }
+        ];
       } else {
         // If no expected answer provided, set empty string (backend should validate)
         transformed.expectedAnswer = "";
+        // Still send empty answers array to satisfy backend requirement
+        transformed.answers = [];
       }
     }
 

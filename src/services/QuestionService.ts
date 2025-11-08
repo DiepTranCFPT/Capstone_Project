@@ -17,10 +17,7 @@ const QuestionService = {
   async getById(
     id: string
   ): Promise<AxiosResponse<ApiResponse<QuestionBankItem>>> {
-    // Try to expand answers to get full details
-    return axiosInstance.get(`/questions-v2/${id}`, {
-      params: { expand: "answers" }
-    });
+    return axiosInstance.get(`/questions-v2/${id}`);
   },
 
   //  Tạo câu hỏi mới
