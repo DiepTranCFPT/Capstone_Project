@@ -9,7 +9,7 @@ interface Question {
     explanation: string;
 }
 
-interface FlashCardProps {
+interface FRQCardProps {
     questions: Question[];
     currentIndex: number;
     onNext: () => void;
@@ -17,7 +17,7 @@ interface FlashCardProps {
     onShuffle: () => void;
 }
 
-const FlashCard: React.FC<FlashCardProps> = ({
+const FRQCard: React.FC<FRQCardProps> = ({
     questions,
     currentIndex,
     onNext,
@@ -27,14 +27,14 @@ const FlashCard: React.FC<FlashCardProps> = ({
     const [isFlipped, setIsFlipped] = useState(false);
     const currentQuestion = questions[currentIndex];
 
-    console.log('FlashCard - Questions:', questions);
-    console.log('FlashCard - Current Index:', currentIndex);
-    console.log('FlashCard - Current Question:', currentQuestion);
+    console.log('FRQCard - Questions:', questions);
+    console.log('FRQCard - Current Index:', currentIndex);
+    console.log('FRQCard - Current Question:', currentQuestion);
 
     // Safety check - if no questions or invalid index, show loading/error state
     if (!questions || questions.length === 0 || !currentQuestion) {
         return (
-            <div className="w-full max-w-2xl mx-auto text-center py-20">
+            <div className="w-full max-w-4xl mx-auto text-center py-20">
                 <div className="text-6xl mb-6">📝</div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-4">
                     {questions && questions.length === 0 ? 'Không có câu hỏi nào' : 'Đang tải câu hỏi...'}
@@ -54,12 +54,12 @@ const FlashCard: React.FC<FlashCardProps> = ({
     };
 
     const getCorrectAnswerText = () => {
-        const correctOption = currentQuestion.options.find(opt => opt.id === currentQuestion.correctAnswer);
-        return correctOption ? correctOption.text : '';
+        // For FRQ, the correct answer is usually the first (and only) option
+        return currentQuestion.options.length > 0 ? currentQuestion.options[0].text : '';
     };
 
     return (
-        <div className="w-full max-w-2xl mx-auto">
+        <div className="w-full max-w-4xl mx-auto">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div className="text-sm text-gray-600 font-medium">
@@ -82,52 +82,59 @@ const FlashCard: React.FC<FlashCardProps> = ({
                 ></div>
             </div>
 
-            {/* Flash Card */}
+            {/* FRQ Card */}
             <div className="relative">
                 <div
-                    className={`relative w-full h-96 cursor-pointer transition-transform duration-700 transform-style-preserve-3d ${
-                        isFlipped ? 'rotate-y-180' : ''
-                    }`}
+                    className={`relative w-full min-h-96 cursor-pointer transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}
                     onClick={handleFlip}
                 >
-                    {/* Front of card */}
+                    {/* Front of card - Question */}
                     <div className="absolute inset-0 w-full h-full backface-hidden">
                         <div className="w-full h-full bg-white backdrop-blur-sm rounded-2xl border border-teal-200/60 hover:border-teal-300/80 p-8 flex flex-col items-center justify-center text-center shadow-xl">
                             <div className="absolute top-4 right-4 bg-teal-600/80 text-white px-3 py-1 rounded-full text-sm shadow-md">
-                                Nhấn để lật
+                                Nhấn để xem đáp án
                             </div>
-                            <div className="text-6xl mb-6 text-teal-600">❓</div>
-                            <h3 className="text-xl font-semibold text-gray-800 leading-relaxed">
+                            <div className="text-6xl mb-6 text-teal-600">📝</div>
+                            <h3 className="text-xl font-semibold text-gray-800 leading-relaxed mb-6">
                                 {currentQuestion.text}
                             </h3>
+                            <div className="bg-teal-50/60 rounded-lg p-4 border border-teal-200/50">
+                                <p className="text-teal-700/80 text-sm font-medium">
+                                    Đây là câu hỏi tự luận. Nhấn vào card để xem đáp án mẫu.
+                                </p>
+                            </div>
                             <div className="mt-6 text-teal-600/70 text-sm font-medium">
                                 Nhấn vào card để xem đáp án
                             </div>
                         </div>
                     </div>
 
-                    {/* Back of card */}
+                    {/* Back of card - Answer */}
                     <div className="absolute inset-0 w-full h-full backface-hidden rotate-y-180">
-                        <div className="w-full h-full bg-gradient-to-br from-teal-600/90 via-teal-700/95 to-cyan-600/90 backdrop-blur-sm rounded-2xl border border-teal-400/60 p-8 flex flex-col justify-center text-center shadow-2xl">
+                        <div className="w-full h-full bg-gradient-to-br from-emerald-600/90 via-teal-700/95 to-cyan-600/90 backdrop-blur-sm rounded-2xl border border-teal-400/60 p-8 flex flex-col justify-center text-center shadow-2xl">
                             <div className="absolute top-4 left-4 bg-white/20 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm">
-                                Đáp án
+                                Đáp án mẫu
                             </div>
                             <div className="text-4xl mb-4 text-white">✅</div>
 
-                            <div className="space-y-4">
-                                <div className="bg-white/15 rounded-lg p-4 border border-white/30 backdrop-blur-sm">
-                                    <h4 className="text-white font-semibold mb-2">Đáp án đúng:</h4>
-                                    <p className="text-cyan-100 text-lg font-medium">
-                                        {getCorrectAnswerText()}
-                                    </p>
+                            <div className="space-y-6">
+                                <div className="bg-white/15 rounded-lg p-6 border border-white/30 backdrop-blur-sm">
+                                    <h4 className="text-white font-semibold mb-3 text-lg">Đáp án mẫu:</h4>
+                                    <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+                                        <p className="text-cyan-100 text-base leading-relaxed whitespace-pre-line">
+                                            {getCorrectAnswerText()}
+                                        </p>
+                                    </div>
                                 </div>
 
-                                <div className="bg-white/10 rounded-lg p-4 border border-white/20 backdrop-blur-sm">
-                                    <h4 className="text-white font-semibold mb-2">Giải thích:</h4>
-                                    <p className="text-cyan-100 text-sm leading-relaxed">
-                                        {currentQuestion.explanation}
-                                    </p>
-                                </div>
+                                {currentQuestion.explanation && (
+                                    <div className="bg-white/10 rounded-lg p-4 border border-white/20 backdrop-blur-sm">
+                                        <h4 className="text-white font-semibold mb-2">Giải thích:</h4>
+                                        <p className="text-cyan-100 text-sm leading-relaxed">
+                                            {currentQuestion.explanation}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="mt-6 text-cyan-200/80 text-sm">
@@ -187,4 +194,4 @@ const FlashCard: React.FC<FlashCardProps> = ({
     );
 };
 
-export default FlashCard;
+export default FRQCard;

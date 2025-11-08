@@ -57,6 +57,45 @@ export interface FRQ extends QuestionBankItem {
   type: "frq";
   expectedAnswer: string;
 }
+
+// Types for /questions-v2 API response
+export interface Subject {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
+export interface Difficulty {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
+export interface Answer {
+  id: string;
+  content: string;
+}
+
+export interface QuestionV2 {
+  id: string;
+  content: string;
+  type: "mcq" | "frq";
+  subject: Subject;
+  difficulty: Difficulty;
+  createdBy: string;
+  topic: string;
+  answers: Answer[];
+}
+
+export interface QuestionV2PaginationResponse {
+  pageNo: number;
+  pageSize: number;
+  totalPage: number;
+  totalElement: number;
+  sortBy: string | null;
+  items: QuestionV2[];
+}
+
 export interface QuestionPaginationResponse {
   items: QuestionBankItem[];
   totalElement: number;

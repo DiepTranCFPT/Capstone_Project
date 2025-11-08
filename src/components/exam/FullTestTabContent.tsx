@@ -1,41 +1,47 @@
 import type React from "react";
-// import { useNavigate } from "react-router-dom";
-import { FiAlertTriangle } from 'react-icons/fi';
-import TokenConfirmationModal from "../common/TokenConfirmationModal";
-import { useState } from "react";
-import type { Exam } from "~/types/test";
-import { exams } from "~/data/mockTest";
+import { FiAlertTriangle, FiLoader } from 'react-icons/fi';
+import { useEffect } from "react";
+import type { ApiExam } from "~/types/test";
+import { useExams } from "~/hooks/useExams";
 
 
 const FullTestTabContent: React.FC<{ examId: string | undefined }> = ({ examId }) => {
-    // const navigate = useNavigate();
-    const exam = exams.find(e => e.id === examId || '0') || null;
-    const [showTokenConfirmation, setShowTokenConfirmation] = useState(false);
-    const [examToStart, setExamToStart] = useState<Exam | null>(null);
-    const [combinedExamToStart, setCombinedExamToStart] = useState<{ exams: Exam[]; totalCost: number } | null>(null);
+    const { currentExam, loading, error, fetchExamById } = useExams();
 
-    const handleStartExamClick = (exam: Exam) => {
-            setExamToStart(exam);
-            setCombinedExamToStart(null); // Clear combined exam state
-            setShowTokenConfirmation(true);
-        };
-
-    const handleConfirm = () => {
-        if (examToStart) {
-            console.log(`Deducting ${examToStart.tokenCost} tokens for individual exam ${examToStart.title}`);
-            // Simulate token deduction API call here
-            // If successful, navigate to the test page
-            window.location.href = `/do-test/${examToStart.id}/full`;
-        } else if (combinedExamToStart) {
-            console.log(`Deducting ${combinedExamToStart.totalCost} tokens for combined test`);
-            // Simulate token deduction API call here
-            // For now, just log and close modal
-            // Combined exams navigation could be added later
+    // Fetch exam data when examId changes
+    useEffect(() => {
+        if (examId) {
+            fetchExamById(examId);
         }
-        setShowTokenConfirmation(false);
+    }, [examId, fetchExamById]);
+
+    const handleStartExamClick = (exam: ApiExam) => {
+        // Comment out token confirmation - directly navigate to test
+        window.location.href = `/do-test/${exam.id}/full`;
     };
 
-    const handleCancel = () => setShowTokenConfirmation(false);
+    if (loading) {
+        return (
+            <div className="text-center py-8">
+                <FiLoader className="animate-spin text-teal-500 mx-auto mb-4" size={32} />
+                <p className="text-gray-600">Loading exam details...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-8">
+                <div className="text-red-500 mb-4">Error loading exam: {error}</div>
+                <button
+                    onClick={() => examId && fetchExamById(examId)}
+                    className="bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600"
+                >
+                    Try Again
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -46,19 +52,11 @@ const FullTestTabContent: React.FC<{ examId: string | undefined }> = ({ examId }
                     <p>This is a full test including both Multiple Choice and Free Response sections. The timer will start immediately.</p>
                 </div>
             </div>
-            {exam && (
-                <button onClick={() => handleStartExamClick(exam)} className="mt-4 bg-teal-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-teal-600 transition-colors">
+            {currentExam && (
+                <button onClick={() => handleStartExamClick(currentExam)} className="mt-4 bg-teal-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-teal-600 transition-colors">
                     Vào Thi
                 </button>
             )}
-
-            <TokenConfirmationModal
-                isOpen={showTokenConfirmation}
-                exam={examToStart}
-                combinedExam={combinedExamToStart}
-                onConfirm={handleConfirm}
-                onCancel={handleCancel}
-            />
         </div>
     );
 };
