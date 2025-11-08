@@ -258,7 +258,7 @@ export const useQuestionBank = (teacherId?: string) => {
   const getQuestionById = useCallback(async (id: string) => {
     try {
       // Try with expand parameter first
-      let res = await QuestionService.getById(id);
+      const res = await QuestionService.getById(id);
       let rawData = res.data?.data as unknown as Record<string, unknown> | undefined;
       
       // If answers still don't have content, try fetching answer details separately
