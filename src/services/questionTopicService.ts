@@ -1,6 +1,9 @@
 // src/services/QuestionTopicService.ts
 import axiosInstance from "~/configs/axios";
+import type { AxiosResponse } from "axios";
 import type { ApiResponse } from "~/types/api";
+import type { PageInfo } from "~/types/pagination";
+import type { QuestionTopic } from "~/types/questionTopic";
 
 export interface QuestionTopicPayload {
   name: string;
@@ -8,50 +11,50 @@ export interface QuestionTopicPayload {
 }
 
 const QuestionTopicService = {
-  // Lấy toàn bộ topics
-  async getAllTopics() {
-    const res = await axiosInstance.get<ApiResponse>("/question-topics");
-    return res.data;
+  // Lấy tất cả Topic (có phân trang)
+  async getAll(
+    params?: { pageNo?: number; pageSize?: number; keyword?: string }
+  ): Promise<
+    AxiosResponse<
+      | ApiResponse<QuestionTopic[]>
+      | ApiResponse<PageInfo<QuestionTopic>>
+    >
+  > {
+    return axiosInstance.get("/question-topics", { params });
   },
 
-  // Lấy danh sách topic của giáo viên hiện tại
-  async getMyTopics() {
-    const res = await axiosInstance.get<ApiResponse>("/question-topics/my-topics");
-    return res.data;
+  // Lấy Topic của giáo viên đang đăng nhập
+  async getMyTopics(): Promise<AxiosResponse<ApiResponse<QuestionTopic[]>>> {
+    return axiosInstance.get("/question-topics/my-topics");
   },
 
-  // Lấy topic theo subjectId
-  async getTopicsBySubject(subjectId: string) {
-    const res = await axiosInstance.get<ApiResponse>(
-      `/question-topics/by-subject/${subjectId}`
-    );
-    return res.data;
+  // Lấy Topic theo SubjectId
+  async getBySubjectId(
+    subjectId: string
+  ): Promise<AxiosResponse<ApiResponse<QuestionTopic[]>>> {
+    return axiosInstance.get(`/question-topics/by-subject/${subjectId}`);
   },
 
-  // Tạo topic mới
-  async createTopic(payload: QuestionTopicPayload) {
-    const res = await axiosInstance.post<ApiResponse>(
-      "/question-topics",
-      payload
-    );
-    return res.data;
+  // Tạo Topic mới
+  async create(
+    data: QuestionTopicPayload | Record<string, unknown>
+  ): Promise<AxiosResponse<ApiResponse<QuestionTopic>>> {
+    return axiosInstance.post("/question-topics", data);
   },
 
-  // Cập nhật topic
-  async updateTopic(topicId: string, payload: QuestionTopicPayload) {
-    const res = await axiosInstance.put<ApiResponse>(
-      `/question-topics/${topicId}`,
-      payload
-    );
-    return res.data;
+  // Cập nhật Topic
+  async update(
+    topicId: string,
+    data: Partial<QuestionTopic> | Record<string, unknown>
+  ): Promise<AxiosResponse<ApiResponse<QuestionTopic>>> {
+    return axiosInstance.put(`/question-topics/${topicId}`, data);
   },
 
-  // Xóa topic
-  async deleteTopic(topicId: string) {
-    const res = await axiosInstance.delete<ApiResponse>(
-      `/question-topics/${topicId}`
-    );
-    return res.data;
+  // Xóa Topic
+  async delete(
+    topicId: string
+  ): Promise<AxiosResponse<ApiResponse<{ message: string }>>> {
+    return axiosInstance.delete(`/question-topics/${topicId}`);
   },
 };
 
