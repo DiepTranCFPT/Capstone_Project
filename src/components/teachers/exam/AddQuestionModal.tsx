@@ -121,8 +121,8 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
         difficulty: editingQuestion.difficulty,
         type: editingQuestion.type,
         choices: choices.length ? choices : ["", "", "", ""],
-        correctIndex: correctIndex,
-        expectedAnswer: editingQuestion.expectedAnswer,
+        correctIndex: correctIndex >= 0 ? correctIndex : 0,
+        expectedAnswer: editingQuestion.expectedAnswer || "",
         tags: editingQuestion.tags || [],
       });
     } else {
