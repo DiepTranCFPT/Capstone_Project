@@ -4,24 +4,13 @@ import Sidebar from '~/components/exam/SideBar';
 import ResultSummary from '~/components/test-result/ResultSummary';
 import AdvancedReport from '~/components/test-result/AdvancedReport';
 import { useParams } from 'react-router-dom';
-import AIFeedbackCard from '~/components/common/AIFeedbackCard';
 import { useExamAttempt } from '~/hooks/useExamAttempt';
 import { toast } from '~/components/common/Toast';
 
 const TestResultPage: React.FC = () => {
-    const [isAdvancedUnlocked, setIsAdvancedUnlocked] = useState(false);
+    const [isAdvancedUnlocked, setIsAdvancedUnlocked] = useState(true);
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
-    const [resultData, setResultData] = useState<{
-        attemptId: string;
-        examId: string;
-        doneBy: string;
-        score: number;
-        startTime: string;
-        endTime: string;
-        rating: number | null;
-    } | null>(null);
-    const [isAiAnalyzed] = useState(true);
 
     const { submissionId } = useParams<{ submissionId: string }>();
     const { fetchAttemptResult, rateAttempt, loading, attemptResultDetail } = useExamAttempt();
@@ -29,24 +18,9 @@ const TestResultPage: React.FC = () => {
     const testType = submissionId?.split('-')[2];
     const isPracticeTest = testType === 'mcq' || testType === 'frq';
 
-    // Fetch result data on component mount
     useEffect(() => {
         if (submissionId) {
-            fetchAttemptResult(submissionId).then(result => {
-                if (result && result.attemptId && result.examId) {
-                    // The basic result data should be available from the navigation state or localStorage
-                    // For now, we'll use the detailed result
-                    setResultData({
-                        attemptId: result.attemptId,
-                        examId: result.examId,
-                        doneBy: "Current User", // This should come from auth context
-                        score: result.score,
-                        startTime: result.startTime,
-                        endTime: result.endTime,
-                        rating: result.rating
-                    });
-                }
-            }).catch(err => {
+            fetchAttemptResult(submissionId).catch(err => {
                 console.error('Failed to fetch result:', err);
                 toast.error('Failed to load result data');
             });
@@ -88,7 +62,7 @@ const TestResultPage: React.FC = () => {
         );
     }
 
-    if(resultData === null) {
+    if (!attemptResultDetail) {
         return (
             <div className="bg-slate-50 py-12">
                 <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -106,50 +80,16 @@ const TestResultPage: React.FC = () => {
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-4xl font-bold text-gray-800 mb-8">Result Exam Test</h1>
 
-                
-
                 <div className="flex flex-col md:flex-row gap-8 items-start">
                     <div className="w-full md:w-2/d lg:w-3/4 space-y-8">
                         <ResultSummary isPractice={isPracticeTest} attemptResultDetail={attemptResultDetail} />
 
-                        {isAiAnalyzed && (
-                            <AIFeedbackCard
-                                feedback={{
-                                    score: 7,
-                                    suggestions: [
-                                        "Consider elaborating on the historical context.",
-                                        "Your conclusion could be stronger.",
-                                        "Check for minor grammatical errors in the second paragraph.",
-                                    ],
-                                }}
-                            />
-                        )}
-
-                        {/* Answer Review Section */}
-                        {/* {!isPracticeTest && ( */}
                         <div className="bg-white p-6 rounded-lg shadow border border-gray-300">
                             <h3 className="font-bold text-xl mb-4">Answering Review</h3>
-
                             {isAdvancedUnlocked ? (
                                 <AdvancedReport attemptResultDetail={attemptResultDetail} />
                             ) : (
                                 <>
-                                    {/* Báo cáo cơ bản */}
-                                    <div className="border-b border-gray-300 pb-4 mb-4">
-                                        <p className="mb-2">1. The cat is sleeping ______ the table.</p>
-                                        <div className="flex items-center space-x-4">
-                                            <span>Đáp án của bạn: <span className="font-semibold text-red-600">in (Sai)</span></span>
-                                            <span>Đáp án đúng: <span className="font-semibold text-green-600">on</span></span>
-                                        </div>
-                                    </div>
-                                    <div className="border-b border-gray-300 pb-4 mb-4">
-                                        <p className="mb-2">2. She _______ to the store every day.</p>
-                                        <div className="flex items-center space-x-4">
-                                            <span>Đáp án của bạn: <span className="font-semibold text-green-600">goes (Đúng)</span></span>
-                                        </div>
-                                    </div>
-
-                                    {/* Hướng dẫn mở khóa */}
                                     {!isPracticeTest && (
                                         <div className="mt-8 p-4 rounded-lg bg-teal-50 text-teal-800 flex items-center">
                                             <FiInfo size={24} className="mr-4 flex-shrink-0" />

@@ -54,6 +54,20 @@ export interface AttemptResultQuestion {
   question: ExamQuestionDetail;
   orderNumber: number;
   points: number;
+  // Thêm object studentAnswer dựa trên JSON bạn cung cấp
+  studentAnswer: {
+    studentAnswerId: string;
+    selectedAnswerId: string | null;
+    frqAnswerText: string | null;
+    score: number;
+    feedback: string | null;
+    correctAnswer: {
+      id: string;
+      content: string;
+      isCorrect: boolean;
+      explanation: string | null;
+    };
+  };
   selectedAnswerId?: string;
   frqAnswerText?: string;
   isCorrect?: boolean;
