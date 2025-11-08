@@ -1,54 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Timer from '~/components/do-test/Timer';
 import QuestionCard from '~/components/do-test/QuestionCard';
 import FRQCard from '~/components/do-test/FRQCard';
-import { useTestTaking } from '~/hooks/useTestTaking';
-import type { ExamSubmissionAnswer } from '~/types/test';
+import { useExamAttempt } from '~/hooks/useExamAttempt';
+import type { ExamSubmissionAnswer, ActiveExamQuestion, ExamAnswer } from '~/types/test';
 
 
 const DoTestPage: React.FC = () => {
     const { examId, testType } = useParams<{ examId: string, testType: 'full' | 'mcq' | 'frq' }>();
     const navigate = useNavigate();
-    const { activeExam, loading, error, startExam, submitExam } = useTestTaking();
+    const { submitAttempt, loading, error } = useExamAttempt();
 
     const [activeSection, setActiveSection] = useState<'mcq' | 'frq'>(testType === 'frq' ? 'frq' : 'mcq');
     const [showConFirmed, setShowConFirmed] = useState(false);
     const [isSubmit, setIsSubmit] = useState(false);
     const [isCancel, setIsCancel] = useState(false);
 
+    // Check for stored attempt data from useExamAttempt
+    const storedAttempt = localStorage.getItem('activeExamAttempt');
+    const parsedAttempt = storedAttempt ? JSON.parse(storedAttempt) : null;
+
+    // Use stored attempt data
+    const currentActiveExam = parsedAttempt;
+
     // Separate MCQ and FRQ questions
-    const mcqQuestions = activeExam?.questions.filter(q => q.question.type === 'mcq') || [];
-    const frqQuestions = activeExam?.questions.filter(q => q.question.type === 'frq') || [];
+    const mcqQuestions = currentActiveExam?.questions.filter((q: ActiveExamQuestion) => q.question.type === 'mcq') || [];
+    const frqQuestions = currentActiveExam?.questions.filter((q: ActiveExamQuestion) => q.question.type === 'frq') || [];
 
     console.log('Exam id ', examId);
-    console.log('Active exam:', activeExam);
-    if (activeExam) {
-        console.log('Questions count:', activeExam.questions?.length);
+    console.log('Active exam:', currentActiveExam);
+    console.log('Stored attempt:', parsedAttempt);
+    if (currentActiveExam) {
+        console.log('Questions count:', currentActiveExam.questions?.length);
         console.log('MCQ questions:', mcqQuestions.length);
         console.log('FRQ questions:', frqQuestions.length);
     }
 
-    // Start exam when component mounts
-    useEffect(() => {
-        if (examId) {
-            console.log('Starting exam with ID:', examId);
-            startExam(examId);
-        }
-    }, [examId, startExam]);
-
     const handleSubmit = async () => {
-        if (!activeExam) return;
+        if (!currentActiveExam) return;
 
         // Prepare answers (empty for now, user would fill them during the test)
-        const answers: ExamSubmissionAnswer[] = activeExam.questions.map(q => ({
+        const answers: ExamSubmissionAnswer[] = currentActiveExam.questions.map((q: ActiveExamQuestion) => ({
             examQuestionId: q.examQuestionId,
             selectedAnswerId: undefined, // Would be filled by user selections
             frqAnswerText: undefined // Would be filled by user input
         }));
 
         try {
-            const result = await submitExam(activeExam.examAttemptId, answers);
+            const result = await submitAttempt(currentActiveExam.examAttemptId, { answers });
             if (result) {
                 navigate(`/test-result/${result.id}`);
             }
@@ -179,13 +179,13 @@ const DoTestPage: React.FC = () => {
                                 {error}
                             </p>
                             <button
-                                onClick={() => examId && startExam(examId)}
+                                onClick={() => window.location.reload()}
                                 className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
                             >
                                 Thử lại
                             </button>
                         </div>
-                    ) : activeExam ? (
+                    ) : currentActiveExam ? (
                         <>
                             {/* Conditional Rendering based on testType and activeSection */}
                             {(testType === 'full' && activeSection === 'mcq') || testType === 'mcq' ? (
@@ -196,7 +196,7 @@ const DoTestPage: React.FC = () => {
                                             Phần 1: Trắc nghiệm
                                         </h2>
                                         <div className="space-y-6">
-                                            {mcqQuestions.map((q, index) => (
+                                            {mcqQuestions.map((q: ActiveExamQuestion, index: number) => (
                                                 <QuestionCard key={q.examQuestionId} question={{
                                                     id: q.question.id,
                                                     text: q.question.content,
@@ -205,7 +205,7 @@ const DoTestPage: React.FC = () => {
                                                     type: q.question.type as "mcq",
                                                     createdBy: q.question.createdBy,
                                                     createdAt: new Date().toISOString(),
-                                                    options: q.question.answers.map(a => ({ id: a.id, text: a.content }))
+                                                    options: q.question.answers.map((a: ExamAnswer) => ({ id: a.id, text: a.content }))
                                                 }} questionNumber={index + 1} />
                                             ))}
                                         </div>
@@ -221,7 +221,7 @@ const DoTestPage: React.FC = () => {
                                             Phần 2: Tự luận
                                         </h2>
                                         <div className="space-y-6">
-                                            {frqQuestions.map((q, index) => (
+                                            {frqQuestions.map((q: ActiveExamQuestion, index: number) => (
                                                 <FRQCard key={q.examQuestionId} question={{
                                                     id: q.question.id,
                                                     text: q.question.content,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FiBarChart2, FiUsers, FiTarget, FiCheckCircle } from 'react-icons/fi';
-import { advancedData } from '~/data/mockTest';
+import type { AttemptResultDetail } from '~/types/examAttempt';
 
 interface QuestionDetail {
     question: string;
@@ -9,7 +9,11 @@ interface QuestionDetail {
     explanation: string;
 }
 
-const AdvancedReport: React.FC = () => {
+interface AdvancedReportProps {
+    attemptResultDetail: AttemptResultDetail | null;
+}
+
+const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) => {
     const [showModal, setShowModal] = useState(false);
     const [modalContent, setModalContent] = useState<{ type: 'ai' | 'advisor'; question: QuestionDetail | null }>({ type: 'ai', question: null });
 
@@ -23,6 +27,55 @@ const AdvancedReport: React.FC = () => {
         setModalContent({ type: 'ai', question: null });
     };
 
+    // Compute performance by topic
+    const performanceByTopic = React.useMemo(() => {
+        if (!attemptResultDetail?.questions) return [];
+        const topicMap = new Map<string, { correct: number; total: number }>();
+        attemptResultDetail.questions.forEach(q => {
+            const topic = q.question.topic || 'Unknown';
+            const current = topicMap.get(topic) || { correct: 0, total: 0 };
+            current.total++;
+            if (q.isCorrect) current.correct++;
+            topicMap.set(topic, current);
+        });
+        return Array.from(topicMap.entries()).map(([topic, { correct, total }]) => ({
+            topic,
+            accuracy: total > 0 ? Math.round((correct / total) * 100) : 0
+        }));
+    }, [attemptResultDetail]);
+
+    // Comparison data
+    const comparison = {
+        userScore: attemptResultDetail?.score || 0,
+        averageScore: 70 // Placeholder
+    };
+
+    // Suggestions
+    const suggestions = [
+        "Consider elaborating on the historical context.",
+        "Your conclusion could be stronger.",
+        "Check for minor grammatical errors in the second paragraph.",
+    ];
+
+    // Detailed answers
+    const detailedAnswers = React.useMemo(() => {
+        if (!attemptResultDetail?.questions) return [];
+        return attemptResultDetail.questions.map((q) => {
+            const userAnswer = q.selectedAnswerId
+                ? q.question.answers.find(a => a.id === q.selectedAnswerId)?.content || 'No answer'
+                : q.frqAnswerText || 'No answer';
+            const correctAnswer = q.question.type === 'mcq'
+                ? q.question.answers.find(a => a.id === q.question.answers.find(ans => ans.content.includes('(Correct)'))?.id)?.content || 'Unknown'
+                : 'FRQ - Check with instructor';
+            return {
+                question: q.question.content,
+                userAnswer,
+                correctAnswer,
+                explanation: 'Explanation not available' // Placeholder
+            };
+        });
+    }, [attemptResultDetail]);
+
     return (
         <>
             <div className="space-y-6 animate-fade-in">
@@ -30,7 +83,7 @@ const AdvancedReport: React.FC = () => {
             <div>
                 <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><FiBarChart2 className="mr-2 text-teal-500" />Phân tích hiệu suất theo chủ đề</h4>
                 <div className="space-y-2">
-                    {advancedData.performanceByTopic.map(item => (
+                    {performanceByTopic.map((item) => (
                         <div key={item.topic}>
                             <div className="flex justify-between text-sm font-medium text-gray-600">
                                 <span>{item.topic}</span>
@@ -49,9 +102,9 @@ const AdvancedReport: React.FC = () => {
                 <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><FiUsers className="mr-2 text-teal-500" />So sánh kết quả</h4>
                 <p className="text-gray-600">Điểm của bạn so với điểm trung bình của những người dùng khác.</p>
                 <div className="flex items-baseline justify-center gap-4 mt-2 p-4 bg-gray-50 rounded-lg">
-                    <div><span className="text-3xl font-bold text-teal-600">{advancedData.comparison.userScore}%</span><p className="text-sm">Điểm của bạn</p></div>
+                    <div><span className="text-3xl font-bold text-teal-600">{comparison.userScore.toFixed(1)}%</span><p className="text-sm">Điểm của bạn</p></div>
                     <div className="text-gray-400">vs</div>
-                    <div><span className="text-3xl font-bold text-gray-500">{advancedData.comparison.averageScore}%</span><p className="text-sm">Trung bình</p></div>
+                    <div><span className="text-3xl font-bold text-gray-500">{comparison.averageScore}%</span><p className="text-sm">Trung bình</p></div>
                 </div>
             </div>
 
@@ -59,14 +112,14 @@ const AdvancedReport: React.FC = () => {
             <div>
                 <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><FiTarget className="mr-2 text-teal-500" />Chủ đề cần cải thiện</h4>
                 <ul className="list-disc list-inside space-y-1 text-gray-600">
-                    {advancedData.suggestions.map((s, i) => <li key={i}>{s}</li>)}
+                    {suggestions.map((s, i) => <li key={i}>{s}</li>)}
                 </ul>
             </div>
             {/* Detailed Answers */}
             <div>
                 <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><FiCheckCircle className="mr-2 text-teal-500" />Đáp án và giải thích chi tiết</h4>
                 <div className="space-y-4">
-                    {advancedData.detailedAnswers.map((ans, i) => (
+                    {detailedAnswers.map((ans, i) => (
                         <div key={i} className="p-4 border rounded-lg bg-gray-50">
                             <p className="font-semibold">{ans.question}</p>
                             <p className="text-sm">Bạn chọn: <span className={ans.userAnswer === ans.correctAnswer ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>{ans.userAnswer}</span></p>

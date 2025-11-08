@@ -1,43 +1,116 @@
-import React, { useState } from 'react';
-import { FiInfo } from 'react-icons/fi';
+import React, { useState, useEffect } from 'react';
+import { FiInfo, FiLoader } from 'react-icons/fi';
 import Sidebar from '~/components/exam/SideBar';
 import ResultSummary from '~/components/test-result/ResultSummary';
 import AdvancedReport from '~/components/test-result/AdvancedReport';
 import { useParams } from 'react-router-dom';
 import AIFeedbackCard from '~/components/common/AIFeedbackCard';
+import { useExamAttempt } from '~/hooks/useExamAttempt';
+import { toast } from '~/components/common/Toast';
 
 const TestResultPage: React.FC = () => {
     const [isAdvancedUnlocked, setIsAdvancedUnlocked] = useState(false);
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
+    const [resultData, setResultData] = useState<{
+        attemptId: string;
+        examId: string;
+        doneBy: string;
+        score: number;
+        startTime: string;
+        endTime: string;
+        rating: number | null;
+    } | null>(null);
+    const [isAiAnalyzed] = useState(true);
 
-    const handleSubmitReview = () => {
-        console.log("Submitting review:", { rating, comment, submissionId });
-        // Here you would typically send this data to an API
-        alert("Review submitted successfully!");
-        setRating(0);
-        setComment('');
-    };
-    // Mock state to simulate that an FRQ was analyzed
-    const [isAiAnalyzed] = useState(true); 
     const { submissionId } = useParams<{ submissionId: string }>();
+    const { fetchAttemptResult, rateAttempt, loading, attemptResultDetail } = useExamAttempt();
 
     const testType = submissionId?.split('-')[2];
-
     const isPracticeTest = testType === 'mcq' || testType === 'frq';
+
+    // Fetch result data on component mount
+    useEffect(() => {
+        if (submissionId) {
+            fetchAttemptResult(submissionId).then(result => {
+                if (result && result.attemptId && result.examId) {
+                    // The basic result data should be available from the navigation state or localStorage
+                    // For now, we'll use the detailed result
+                    setResultData({
+                        attemptId: result.attemptId,
+                        examId: result.examId,
+                        doneBy: "Current User", // This should come from auth context
+                        score: result.score,
+                        startTime: result.startTime,
+                        endTime: result.endTime,
+                        rating: result.rating
+                    });
+                }
+            }).catch(err => {
+                console.error('Failed to fetch result:', err);
+                toast.error('Failed to load result data');
+            });
+        }
+    }, [submissionId, fetchAttemptResult]);
+
+    const handleSubmitReview = async () => {
+        if (!submissionId || rating === 0) {
+            toast.error('Please provide a rating');
+            return;
+        }
+
+        try {
+            await rateAttempt(submissionId, { rating, comment });
+            toast.success('Review submitted successfully!');
+            setRating(0);
+            setComment('');
+        } catch (err) {
+            console.error('Failed to submit review:', err);
+            toast.error('Failed to submit review');
+        }
+    };
 
     const handleUnlock = () => {
         console.log("Unlocking with 1 token...");
         setIsAdvancedUnlocked(true);
     };
 
+    if (loading) {
+        return (
+            <div className="bg-slate-50 py-12">
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-center py-20">
+                        <FiLoader className="animate-spin text-teal-500 mr-4" size={24} />
+                        <span className="text-lg text-gray-600">Loading result data...</span>
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
+    if(resultData === null) {
+        return (
+            <div className="bg-slate-50 py-12">
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-center py-20">
+                        <FiInfo className="text-teal-500 mr-4" size={24} />
+                        <span className="text-lg text-gray-600">No result data available.</span>
+                    </div>
+                </main>
+            </div>
+        );
+    };
+
     return (
         <div className="bg-slate-50 py-12">
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-4xl font-bold text-gray-800 mb-8">Result Exam Test</h1>
+
+                
+
                 <div className="flex flex-col md:flex-row gap-8 items-start">
                     <div className="w-full md:w-2/d lg:w-3/4 space-y-8">
-                        <ResultSummary isPractice={isPracticeTest} />
+                        <ResultSummary isPractice={isPracticeTest} attemptResultDetail={attemptResultDetail} />
 
                         {isAiAnalyzed && (
                             <AIFeedbackCard
@@ -58,7 +131,7 @@ const TestResultPage: React.FC = () => {
                             <h3 className="font-bold text-xl mb-4">Answering Review</h3>
 
                             {isAdvancedUnlocked ? (
-                                <AdvancedReport />
+                                <AdvancedReport attemptResultDetail={attemptResultDetail} />
                             ) : (
                                 <>
                                     {/* Báo cáo cơ bản */}

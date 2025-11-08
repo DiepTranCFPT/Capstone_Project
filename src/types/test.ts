@@ -155,7 +155,7 @@ export type UpdateExamTemplatePayload = Omit<CreateExamTemplatePayload, 'rules' 
 /**
  * (API Start) Thông tin cơ bản về môn học hoặc chủ đề.
  */
-interface ExamSubjectInfo {
+export interface ExamSubjectInfo {
   id: string;
   name: string;
   description: string;

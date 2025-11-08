@@ -3,11 +3,14 @@ import { FiAlertTriangle, FiLoader } from 'react-icons/fi';
 import { useEffect } from "react";
 import type { ApiExam } from "~/types/test";
 import { useExams } from "~/hooks/useExams";
+import { useExamAttempt } from "~/hooks/useExamAttempt";
+import { useNavigate } from "react-router-dom";
 
 
 const FullTestTabContent: React.FC<{ examId: string | undefined }> = ({ examId }) => {
     const { currentExam, loading, error, fetchExamById } = useExams();
-
+    const { startSingleAttempt } = useExamAttempt();
+    const navigation = useNavigate();
     // Fetch exam data when examId changes
     useEffect(() => {
         if (examId) {
@@ -15,9 +18,14 @@ const FullTestTabContent: React.FC<{ examId: string | undefined }> = ({ examId }
         }
     }, [examId, fetchExamById]);
 
-    const handleStartExamClick = (exam: ApiExam) => {
-        // Comment out token confirmation - directly navigate to test
-        window.location.href = `/do-test/${exam.id}/full`;
+    const handleStartExamClick = async (exam: ApiExam) => {
+        const attempt = await startSingleAttempt({ templateId: exam.id });
+        if (attempt) {
+            // Store attempt data in localStorage for DoTestPage to use
+            localStorage.setItem('activeExamAttempt', JSON.stringify(attempt));
+            // Navigate to test page
+            navigation(`/do-test/${exam.id}/full`);
+        }
     };
 
     if (loading) {
