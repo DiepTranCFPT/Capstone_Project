@@ -437,8 +437,8 @@ const CreateExamPage: React.FC = () => {
                         onChange={(value) => setRuleForm({ ...ruleForm, questionType: value })}
                         style={{ width: '100%' }}
                       >
-                        <Select.Option value="mcq">MCQ</Select.Option>
-                        <Select.Option value="frq">FRQ</Select.Option>
+                        <Select.Option value="mcq">Multiple Choice Questions</Select.Option>
+                        <Select.Option value="frq">Free-Response Questions</Select.Option>
                       </Select>
                     </div>
                   </div>

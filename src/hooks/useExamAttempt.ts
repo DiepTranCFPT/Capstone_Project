@@ -244,7 +244,12 @@ export const useExamAttemptHistory = () => {
   const [pageInfo, setPageInfo] = useState<PageInfo<HistoryRecord> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sorts, setSorts] = useState<string[]>(["startTime_desc"]);
 
+  if(!sorts) {
+    setSorts(["startTime_desc"]);
+  }
+  
   const handleError = (err: unknown, defaultMessage: string) => {
     setLoading(false);
     const e = err as { response?: { data?: ApiResponse<unknown> } } & Error;
@@ -290,12 +295,11 @@ export const useExamAttemptHistory = () => {
   );
 
   useEffect(() => {
-    fetchHistory(0, 10, ["startTime_desc"]); // Tải trang đầu tiên khi hook được dùng
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    fetchHistory(0, 10, ["startTime_desc"]); // Keep default sorting for initial load
+  }, [fetchHistory]);
 
   const handlePageChange = (newPage: number, newSize: number) => {
-    fetchHistory(newPage - 1, newSize, ["startTime_desc"]); // Antd page là 1-based
+    fetchHistory(newPage - 1, newSize, ["startTime_desc"]);
   };
 
   return {
@@ -305,5 +309,6 @@ export const useExamAttemptHistory = () => {
     error,
     fetchHistory,
     handlePageChange,
+    setSorts,
   };
 };

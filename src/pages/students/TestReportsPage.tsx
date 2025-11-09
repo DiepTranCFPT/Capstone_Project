@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Table, Tag, Button, Modal, Spin } from 'antd';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Table, Tag, Button, Modal, Spin, Select } from 'antd';
 import { EyeOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useExamAttemptHistory, useExamAttempt } from '~/hooks/useExamAttempt';
@@ -17,9 +17,38 @@ interface HistoryRecord {
 
 const TestReportsPage: React.FC = () => {
     const navigate = useNavigate();
-    const { history, loading: historyLoading, pageInfo, handlePageChange } = useExamAttemptHistory();
+    const { history, loading: historyLoading, pageInfo, handlePageChange, setSorts } = useExamAttemptHistory();
     const { subscribeAttemptResult, attemptResultDetail, loading: resultLoading } = useExamAttempt();
     const [resultModalVisible, setResultModalVisible] = useState(false);
+    const [currentSort, setCurrentSort] = useState('startTime_desc');
+
+    const sortOptions = [
+        { label: 'Most Recent', value: 'startTime_desc' },
+        { label: 'Oldest First', value: 'startTime_asc' },
+        { label: 'Highest Score', value: 'score_desc' },
+        { label: 'Lowest Score', value: 'score_asc' },
+    ];
+
+    useEffect(() => {
+        setSorts([currentSort]);
+    }, [currentSort, setSorts]);
+
+    const sortedHistory = useMemo(() => {
+        return [...history].sort((a, b) => {
+            switch (currentSort) {
+                case 'startTime_desc':
+                    return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
+                case 'startTime_asc':
+                    return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+                case 'score_desc':
+                    return b.score - a.score;
+                case 'score_asc':
+                    return a.score - b.score;
+                default:
+                    return 0;
+            }
+        });
+    }, [history, currentSort]);
 
     const handleViewResults = async (record: HistoryRecord) => {
         const attemptId = record.attemptId;
@@ -93,9 +122,17 @@ const TestReportsPage: React.FC = () => {
     return (
         <div className="p-6">
             <h1 className="text-2xl font-bold mb-4">Exam History</h1>
+            <div className="mb-4">
+                <Select
+                    value={currentSort}
+                    onChange={setCurrentSort}
+                    style={{ width: 200 }}
+                    options={sortOptions}
+                />
+            </div>
             <Table
                 columns={columns}
-                dataSource={history}
+                dataSource={sortedHistory}
                 rowKey="attemptId"
                 loading={historyLoading}
                 pagination={{
