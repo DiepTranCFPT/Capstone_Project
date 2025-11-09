@@ -68,15 +68,27 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
     const detailedAnswers = React.useMemo(() => {
         if (!attemptResultDetail?.questions) return [];
         return attemptResultDetail.questions.map((q) => {
-            
-            // 1. Lấy câu trả lời của học sinh
-            const userAnswerContent = q.studentAnswer?.selectedAnswerId
-                ? q.question.answers.find(a => a.id === q.studentAnswer.selectedAnswerId)?.content
-                : null;
-            
-            const userAnswer = userAnswerContent
-                ? cleanAnswerContent(userAnswerContent) // Làm sạch text
-                : (q.studentAnswer?.frqAnswerText || 'No answer'); // Fallback cho FRQ hoặc không trả lời
+
+            // 1. Lấy câu trả lời của học sinh dựa trên loại câu hỏi
+            let userAnswer: string;
+            if (q.question.type === 'frq') {
+                // Cho FRQ, ưu tiên frqAnswerText
+                userAnswer = q.studentAnswer?.frqAnswerText || 'No answer';
+            } else {
+                // Cho MCQ, sử dụng selectedAnswerId để tìm content
+                let userAnswerContent = null;
+                if (q.studentAnswer?.selectedAnswerId) {
+                    userAnswerContent = q.question.answers.find(a => a.id === q.studentAnswer.selectedAnswerId)?.content;
+                    // Nếu không tìm thấy bằng selectedAnswerId, thử tìm bằng content matching
+                    if (!userAnswerContent && q.studentAnswer.selectedAnswerId) {
+                        // Có thể selectedAnswerId là content của answer, thử tìm bằng content
+                        userAnswerContent = q.question.answers.find(a => a.content === q.studentAnswer.selectedAnswerId)?.content;
+                    }
+                }
+                userAnswer = userAnswerContent
+                    ? cleanAnswerContent(userAnswerContent) // Làm sạch text
+                    : (q.studentAnswer?.selectedAnswerId ? `Selected answer ID: ${q.studentAnswer.selectedAnswerId}` : 'No answer');
+            }
 
             // 2. Lấy câu trả lời đúng
             const correctAnswer = q.studentAnswer?.correctAnswer?.content

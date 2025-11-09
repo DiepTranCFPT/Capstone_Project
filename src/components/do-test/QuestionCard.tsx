@@ -1,26 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import type { QuestionBankItem } from '~/types/question';
 
 interface QuestionCardProps {
     question: QuestionBankItem;
     questionNumber: number;
-    onAnswerChange?: (questionIndex: number, hasAnswer: boolean, answerData?: { selectedAnswerId?: string; frqAnswerText?: string }) => void;
+    onAnswerChange: (answerId: string) => void;
+    selectedAnswerId?: string;
 }
 
-const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNumber, onAnswerChange }) => {
-    const [selectedAnswer, setSelectedAnswer] = useState<string>('');
-
-    useEffect(() => {
-        if (onAnswerChange) {
-            onAnswerChange(questionNumber - 1, selectedAnswer !== '', {
-                selectedAnswerId: selectedAnswer || undefined,
-                frqAnswerText: undefined
-            });
-        }
-    }, [selectedAnswer, questionNumber, onAnswerChange]);
-
+const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNumber, onAnswerChange, selectedAnswerId }) => {
     const handleAnswerChange = (answerId: string) => {
-        setSelectedAnswer(answerId);
+        onAnswerChange(answerId);
     };
 
     return (
@@ -33,7 +23,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNumber, o
                             type="radio"
                             name={`question-${question.id}`}
                             value={option.id}
-                            checked={selectedAnswer === option.id}
+                            checked={selectedAnswerId === option.id}
                             onChange={() => handleAnswerChange(option.id || '')}
                             className="h-4 w-4"
                         />

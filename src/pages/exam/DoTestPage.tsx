@@ -8,14 +8,13 @@ import type { ExamSubmissionAnswer, ActiveExamQuestion, ExamAnswer } from '~/typ
 
 
 const DoTestPage: React.FC = () => {
-    const { examId, testType, attemptId } = useParams<{ examId?: string, testType?: 'full' | 'mcq' | 'frq', attemptId?: string }>();
+    const { examId, attemptId } = useParams<{ examId?: string, testType?: 'full' | 'mcq' | 'frq', attemptId?: string }>();
     const navigate = useNavigate();
     const { submitAttempt, loading, error } = useExamAttempt();
 
     // Determine if this is a combo test
-    const isComboTest = examId === 'combo' || !!attemptId;
+    // const isComboTest = examId === 'combo' || !!attemptId;
 
-    const [activeSection, setActiveSection] = useState<'mcq' | 'frq'>(testType === 'frq' ? 'frq' : 'mcq');
     const [showConFirmed, setShowConFirmed] = useState(false);
     const [isSubmit, setIsSubmit] = useState(false);
     const [isCancel, setIsCancel] = useState(false);
@@ -56,14 +55,9 @@ const DoTestPage: React.FC = () => {
     // Use stored attempt data
     const currentActiveExam = parsedAttempt;
 
-    // Separate MCQ and FRQ questions - memoized to prevent unnecessary re-renders
-    const mcqQuestions = useMemo(() =>
-        currentActiveExam?.questions.filter((q: ActiveExamQuestion) => q.question.type === 'mcq') || [],
-        [currentActiveExam?.questions]
-    );
-
-    const frqQuestions = useMemo(() =>
-        currentActiveExam?.questions.filter((q: ActiveExamQuestion) => q.question.type === 'frq') || [],
+    // Sort questions by orderNumber
+    const sortedQuestions = useMemo(() =>
+        currentActiveExam?.questions.slice().sort((a: ActiveExamQuestion, b: ActiveExamQuestion) => a.orderNumber - b.orderNumber) || [],
         [currentActiveExam?.questions]
     );
 
@@ -71,7 +65,7 @@ const DoTestPage: React.FC = () => {
         if (!currentActiveExam) return;
 
         // Prepare answers using stored answer data
-        const submissionAnswers: ExamSubmissionAnswer[] = currentActiveExam.questions.map((q: ActiveExamQuestion, index: number) => {
+        const submissionAnswers: ExamSubmissionAnswer[] = sortedQuestions.map((q: ActiveExamQuestion, index: number) => {
             const answerData = answers[index];
             return {
                 examQuestionId: q.examQuestionId,
@@ -83,12 +77,15 @@ const DoTestPage: React.FC = () => {
         try {
             const result = await submitAttempt(currentActiveExam.examAttemptId, { answers: submissionAnswers });
             if (result) {
+                // Close the confirmation modal
+                setShowConFirmed(false);
                 // Clear localStorage after successful submission
                 localStorage.removeItem('examAnswers');
                 localStorage.removeItem('answeredQuestions');
                 localStorage.removeItem('examRemainingTime');
+                localStorage.removeItem('activeExamAttempt');
                 // Navigate to home page since grading takes time
-                navigate('/');
+                navigate(`/exam-review/${currentActiveExam.examAttemptId}`);
             }
         } catch (err) {
             console.error('Submit failed:', err);
@@ -101,7 +98,8 @@ const DoTestPage: React.FC = () => {
         localStorage.removeItem('examAnswers');
         localStorage.removeItem('answeredQuestions');
         localStorage.removeItem('examRemainingTime');
-
+        localStorage.removeItem('activeExamAttempt');
+        
         // Check if this is a combo test (has attemptId param)
         if (attemptId) {
             // For combo tests, redirect to exam test page
@@ -122,9 +120,7 @@ const DoTestPage: React.FC = () => {
         setIsCancel(true);
     };
 
-    const totalQuestions = testType === 'mcq' ? mcqQuestions.length :
-                          testType === 'frq' ? frqQuestions.length :
-                          mcqQuestions.length + frqQuestions.length;
+    const totalQuestions = sortedQuestions.length;
 
     const handleAnswerChange = useCallback((questionIndex: number, hasAnswer: boolean, answerData?: { selectedAnswerId?: string; frqAnswerText?: string }) => {
         setAnsweredQuestions(prev => {
@@ -140,7 +136,10 @@ const DoTestPage: React.FC = () => {
         if (answerData) {
             setAnswers(prev => ({
                 ...prev,
-                [questionIndex]: answerData
+                [questionIndex]: {
+                    ...prev[questionIndex],
+                    ...answerData
+                }
             }));
         }
     }, []);
@@ -162,34 +161,6 @@ const DoTestPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Navigation Sections */}
-                {(testType === 'full' || isComboTest) && (
-                    <div className="bg-teal-50/60 rounded-xl p-2 mb-6 border border-teal-200/50">
-                        <div className="flex rounded-lg bg-white/80 p-1 shadow-sm">
-                            <button
-                                onClick={() => setActiveSection('mcq')}
-                                className={`flex-1 p-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                                    activeSection === 'mcq'
-                                        ? 'bg-teal-600 text-white shadow-md'
-                                        : 'text-gray-600 hover:text-teal-700 hover:bg-teal-50/50'
-                                }`}
-                            >
-                                📝 Trắc nghiệm
-                            </button>
-                            <button
-                                onClick={() => setActiveSection('frq')}
-                                className={`flex-1 p-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                                    activeSection === 'frq'
-                                        ? 'bg-teal-600 text-white shadow-md'
-                                        : 'text-gray-600 hover:text-teal-700 hover:bg-teal-50/50'
-                                }`}
-                            >
-                                ✍️ Tự luận
-                            </button>
-                        </div>
-                    </div>
-                )}
-
                 <div className="flex-1 overflow-y-auto">
                     <div className="bg-white/60 rounded-xl p-4 mb-6 border border-teal-200/50">
                         <h3 className="font-bold text-gray-800 mb-4 flex items-center">
@@ -197,7 +168,7 @@ const DoTestPage: React.FC = () => {
                             Câu hỏi ({totalQuestions})
                         </h3>
                         <div className="grid grid-cols-5 gap-2">
-                            {[...Array(totalQuestions)].map((_, index) => (
+                            {sortedQuestions.map((q: ActiveExamQuestion, index: number) => (
                                 <button
                                     key={index}
                                     className={`w-10 h-10 rounded-lg border-2 text-sm font-bold transition-all duration-200 ${
@@ -206,7 +177,7 @@ const DoTestPage: React.FC = () => {
                                             : 'bg-white/80 border-gray-200 text-gray-700 hover:bg-teal-100 hover:border-teal-300'
                                     }`}
                                 >
-                                    {index + 1}
+                                    {q.orderNumber}
                                 </button>
                             ))}
                         </div>
@@ -258,60 +229,54 @@ const DoTestPage: React.FC = () => {
                             </button>
                         </div>
                     ) : currentActiveExam ? (
-                        <>
-                            {/* Conditional Rendering based on testType and activeSection */}
-                            {(testType === 'full' && activeSection === 'mcq') || testType === 'mcq' || (isComboTest && activeSection === 'mcq') ? (
-                                <>
-                                    <div className="bg-white/80 rounded-2xl p-6 border border-teal-200/50 shadow-lg">
-                                        <h2 className="text-3xl font-bold text-gray-800 mb-6 flex items-center">
-                                            <span className="mr-3">📝</span>
-                                            Phần 1: Trắc nghiệm
-                                        </h2>
-                                        <div className="space-y-6">
-                                            {mcqQuestions.map((q: ActiveExamQuestion, index: number) => (
-                                                <QuestionCard key={q.examQuestionId} question={{
-                                                    id: q.question.id,
-                                                    text: q.question.content,
-                                                    subject: q.question.subject.name,
-                                                    difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
-                                                    type: q.question.type as "mcq",
-                                                    createdBy: q.question.createdBy,
-                                                    createdAt: new Date().toISOString(),
-                                                    options: q.question.answers
-                                                        .filter((a: ExamAnswer) => a.content !== null)
-                                                        .map((a: ExamAnswer) => ({ id: a.id, text: a.content || '' }))
-                                                }} questionNumber={index + 1} onAnswerChange={handleAnswerChange} />
-                                            ))}
-                                        </div>
-                                    </div>
-                                </>
-                            ) : null}
-
-                            {(testType === 'full' && activeSection === 'frq') || testType === 'frq' || (isComboTest && activeSection === 'frq') ? (
-                                <>
-                                    <div className="bg-white/80 rounded-2xl p-6 border border-indigo-200/50 shadow-lg">
-                                        <h2 className="text-3xl font-bold text-gray-800 mb-6 flex items-center">
-                                            <span className="mr-3">✍️</span>
-                                            Phần 2: Tự luận
-                                        </h2>
-                                        <div className="space-y-6">
-                                            {frqQuestions.map((q: ActiveExamQuestion, index: number) => (
-                                                <FRQCard key={q.examQuestionId} question={{
-                                                    id: q.question.id,
-                                                    text: q.question.content,
-                                                    subject: q.question.subject.name,
-                                                    difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
-                                                    type: q.question.type as "frq",
-                                                    createdBy: q.question.createdBy,
-                                                    createdAt: new Date().toISOString(),
-                                                    expectedAnswer: "Sample answer" // This would come from API if available
-                                                }} questionNumber={mcqQuestions.length + index + 1} onAnswerChange={handleAnswerChange} />
-                                            ))}
-                                        </div>
-                                    </div>
-                                </>
-                            ) : null}
-                        </>
+                        <div className="space-y-8">
+                            {sortedQuestions.map((q: ActiveExamQuestion, index: number) => {
+                                if (q.question.type === 'mcq') {
+                                    const currentAnswer = answers[index];
+                                    return (
+                                        <QuestionCard
+                                            key={q.examQuestionId}
+                                            question={{
+                                                id: q.question.id,
+                                                text: q.question.content,
+                                                subject: q.question.subject.name,
+                                                difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
+                                                type: q.question.type as "mcq",
+                                                createdBy: q.question.createdBy,
+                                                createdAt: new Date().toISOString(),
+                                                options: q.question.answers
+                                                    .filter((a: ExamAnswer) => a.content !== null)
+                                                    .map((a: ExamAnswer) => ({ id: a.id, text: a.content || '' }))
+                                            }}
+                                            questionNumber={q.orderNumber}
+                                            onAnswerChange={(answerId) => handleAnswerChange(index, !!answerId, { selectedAnswerId: answerId })}
+                                            selectedAnswerId={currentAnswer?.selectedAnswerId}
+                                        />
+                                    );
+                                } else if (q.question.type === 'frq') {
+                                    return (
+                                        <FRQCard
+                                            key={q.examQuestionId}
+                                            question={{
+                                                id: q.question.id,
+                                                text: q.question.content,
+                                                subject: q.question.subject.name,
+                                                difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
+                                                type: q.question.type as "frq",
+                                                createdBy: q.question.createdBy,
+                                                createdAt: new Date().toISOString(),
+                                                expectedAnswer: "Sample answer" // This would come from API if available
+                                            }}
+                                            questionNumber={q.orderNumber}
+                                            onAnswerChange={(_questionIndex, hasAnswer, answerData) =>
+                                                handleAnswerChange(index, hasAnswer, answerData)
+                                            }
+                                        />
+                                    );
+                                }
+                                return null;
+                            })}
+                        </div>
                     ) : null}
                 </div>
             </main>
