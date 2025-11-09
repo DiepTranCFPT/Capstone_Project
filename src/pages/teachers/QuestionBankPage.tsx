@@ -7,7 +7,6 @@ import {
   Select,
   Space,
   Modal,
-  DatePicker,
 } from "antd";
 import {
   DeleteOutlined,
@@ -17,7 +16,6 @@ import {
   ExclamationCircleOutlined,
   EyeOutlined,
 } from "@ant-design/icons";
-import type { Dayjs } from "dayjs";
 import type { QuestionBankItem, NewQuestion } from "~/types/question";
 import type { ColumnsType } from "antd/es/table";
 import AddQuestionModal from "~/components/teachers/exam/AddQuestionModal";
@@ -78,7 +76,6 @@ const QuestionBankPage: React.FC = () => {
   const [selectedSubject, setSelectedSubject] =
     useState<string>("All Subjects");
   const [selectedTopic, setSelectedTopic] = useState<string>("All Topics");
-  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null);
 
   //  Đóng modal
   const handleCloseModal = () => {
@@ -225,7 +222,6 @@ const QuestionBankPage: React.FC = () => {
     setSelectedType("all");
     setSelectedSubject("All Subjects");
     setSelectedTopic("All Topics");
-    setDateRange(null);
   };
 
   // 🔍 Lọc dữ liệu hiển thị
@@ -262,20 +258,6 @@ const QuestionBankPage: React.FC = () => {
           return false;
         }
 
-        if (dateRange) {
-          const createdAt = q.createdAt ? new Date(q.createdAt) : null;
-          if (!createdAt || Number.isNaN(createdAt.getTime())) {
-            return false;
-          }
-
-          if (
-            createdAt < dateRange[0].toDate() ||
-            createdAt > dateRange[1].toDate()
-          ) {
-            return false;
-          }
-        }
-
         return true;
       })
       .sort(
@@ -290,7 +272,6 @@ const QuestionBankPage: React.FC = () => {
     selectedDifficulty,
     selectedTopic,
     selectedType,
-    dateRange,
   ]);
 
   // 🧾 Cấu hình cột bảng
@@ -439,10 +420,6 @@ const QuestionBankPage: React.FC = () => {
           <Option value="mcq">MCQ</Option>
           <Option value="frq">FRQ</Option>
         </Select>
-        <DatePicker.RangePicker
-          value={dateRange}
-          onChange={(dates) => setDateRange(dates as [Dayjs, Dayjs] | null)}
-        />
         <Button onClick={clearFilters}>Clear Filters</Button>
       </div>
 
@@ -603,21 +580,6 @@ const QuestionBankPage: React.FC = () => {
               </div>
             )}
 
-            {/* Metadata */}
-            <div className="pt-4 border-t border-gray-200">
-              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                <div>
-                  <span className="font-semibold">Created At:</span>{" "}
-                  {viewingQuestion.createdAt
-                    ? new Date(viewingQuestion.createdAt).toLocaleString()
-                    : "-"}
-                </div>
-                <div>
-                  <span className="font-semibold">Question ID:</span>{" "}
-                  <span className="font-mono text-xs">{viewingQuestion.id}</span>
-                </div>
-              </div>
-            </div>
           </div>
         )}
       </Modal>
