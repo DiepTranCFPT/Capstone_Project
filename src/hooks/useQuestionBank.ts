@@ -85,6 +85,23 @@ export const useQuestionBank = (teacherId?: string) => {
                         record["answerOptions"] ??
                         record["answer_options"]) as unknown;
     
+    // Try to get correctAnswerId from question object
+    const correctAnswerId = normalizeString(
+      record["correctAnswerId"],
+      record["correct_answer_id"],
+      record["correctAnswer"],
+      record["correct_answer"],
+      (record["correctAnswer"] as Record<string, unknown>)?.["id"],
+      (record["correctAnswer"] as Record<string, unknown>)?.["answerId"]
+    );
+    
+    // Debug: Log correctAnswerId if found
+    if (correctAnswerId) {
+      console.log("[useQuestionBank] Found correctAnswerId:", correctAnswerId);
+    } else {
+      console.warn("[useQuestionBank] No correctAnswerId found in question object");
+    }
+    
     const options = Array.isArray(optionsRaw)
       ? optionsRaw
           .map((item) => {
@@ -140,14 +157,21 @@ export const useQuestionBank = (teacherId?: string) => {
               optionRecord["answer_id"]
             );
             
-            const isCorrectValue = optionRecord["isCorrect"] ?? 
-                                  optionRecord["correct"] ?? 
-                                  optionRecord["isAnswer"] ??
-                                  optionRecord["is_answer"] ??
-                                  optionRecord["isCorrectAnswer"] ??
-                                  optionRecord["is_correct_answer"] ??
-                                  false;
-            const isCorrect = typeof isCorrectValue === "boolean" ? isCorrectValue : Boolean(isCorrectValue);
+            // Check if this option is correct by comparing with correctAnswerId
+            let isCorrect = false;
+            if (correctAnswerId && optionId) {
+              isCorrect = correctAnswerId === optionId;
+            } else {
+              // Fallback to check field in option object
+              const isCorrectValue = optionRecord["isCorrect"] ?? 
+                                    optionRecord["correct"] ?? 
+                                    optionRecord["isAnswer"] ??
+                                    optionRecord["is_answer"] ??
+                                    optionRecord["isCorrectAnswer"] ??
+                                    optionRecord["is_correct_answer"] ??
+                                    false;
+              isCorrect = typeof isCorrectValue === "boolean" ? isCorrectValue : Boolean(isCorrectValue);
+            }
             
             return {
               id: optionId || undefined,
@@ -261,6 +285,12 @@ export const useQuestionBank = (teacherId?: string) => {
       const res = await QuestionService.getById(id);
       let rawData = res.data?.data as unknown as Record<string, unknown> | undefined;
       
+      // Debug: Log raw response from backend
+      console.log("[useQuestionBank] Raw response from backend:", JSON.stringify(rawData, null, 2));
+      if (rawData && rawData.answers && Array.isArray(rawData.answers)) {
+        console.log("[useQuestionBank] Answers from backend:", rawData.answers);
+      }
+      
       // If answers still don't have content, try fetching answer details separately
       // TODO: Remove this workaround once backend returns full answer data
       if (rawData && rawData.answers && Array.isArray(rawData.answers)) {
@@ -337,9 +367,14 @@ export const useQuestionBank = (teacherId?: string) => {
         const originalCorrectIndex = data.correctIndex as number;
         // Check if this item's original index matches the correct index
         const isCorrect = item.originalIndex === originalCorrectIndex;
+        const trimmedText = item.text.trim();
         return {
-          text: item.text.trim(),
+          text: trimmedText,
+          content: trimmedText, // Backend requires content field
           isCorrect: isCorrect,
+          correct: isCorrect, // Backend may expect 'correct' field
+          isAnswer: isCorrect, // Backend may expect 'isAnswer' field
+          isCorrectAnswer: isCorrect, // Backend may expect 'isCorrectAnswer' field
         };
       });
       
@@ -348,12 +383,29 @@ export const useQuestionBank = (teacherId?: string) => {
         const hasCorrectAnswer = transformed.options.some((opt: { isCorrect: boolean }) => opt.isCorrect);
         if (!hasCorrectAnswer && transformed.options.length > 0) {
           // If no correct answer found (maybe due to filtering), mark first as correct
-          (transformed.options[0] as { isCorrect: boolean }).isCorrect = true;
+          const firstOption = transformed.options[0] as Record<string, unknown>;
+          firstOption.isCorrect = true;
+          firstOption.correct = true;
+          firstOption.isAnswer = true;
+          firstOption.isCorrectAnswer = true;
           console.warn("[useQuestionBank] No correct answer found after filtering, marking first option as correct");
         }
-        // Some backends may also expect 'answers' field
-        transformed.answers = transformed.options;
+        // Find the correct answer and set correctAnswerId
+        const correctOption = transformed.options.find((opt: { isCorrect?: boolean }) => opt.isCorrect);
+        if (correctOption && (correctOption as { id?: string }).id) {
+          transformed.correctAnswerId = (correctOption as { id: string }).id;
+          transformed.correct_answer_id = (correctOption as { id: string }).id;
+        }
+        // Backend expects answers array with format: { content, isCorrect, explanation }
+        // Clean up options to match backend format
+        transformed.answers = (transformed.options as Array<Record<string, unknown>>).map((opt) => ({
+          content: opt.content || opt.text,
+          isCorrect: opt.isCorrect || false,
+          explanation: opt.explanation || "", // Backend may expect explanation field
+        }));
         console.log("[useQuestionBank] MCQ options:", transformed.options);
+        console.log("[useQuestionBank] Answers for backend:", transformed.answers);
+        console.log("[useQuestionBank] Correct answer ID:", transformed.correctAnswerId);
       } else {
         console.warn("[useQuestionBank] No options found for MCQ question");
       }
@@ -362,17 +414,46 @@ export const useQuestionBank = (teacherId?: string) => {
     else if (data.type === "mcq" && "options" in data && data.options && Array.isArray(data.options)) {
       // Ensure at least one option is marked as correct
       const hasCorrectAnswer = data.options.some((opt: QuestionOption) => opt.isCorrect);
-      if (!hasCorrectAnswer && data.options.length > 0) {
+      // Map options to include content field (backend requires content)
+      const mappedOptions = data.options.map((opt: QuestionOption) => ({
+        ...opt,
+        content: opt.text, // Backend requires content field
+        correct: opt.isCorrect, // Backend may expect 'correct' field
+        isAnswer: opt.isCorrect, // Backend may expect 'isAnswer' field
+        isCorrectAnswer: opt.isCorrect, // Backend may expect 'isCorrectAnswer' field
+      }));
+      if (!hasCorrectAnswer && mappedOptions.length > 0) {
         // Clone options and mark first as correct if none is correct
-        transformed.options = data.options.map((opt: QuestionOption, index: number) => ({
-          ...opt,
-          isCorrect: index === 0,
-        }));
+        transformed.options = mappedOptions.map((opt, index: number) => {
+          const isFirst = index === 0;
+          return {
+            ...opt,
+            isCorrect: isFirst,
+            correct: isFirst,
+            isAnswer: isFirst,
+            isCorrectAnswer: isFirst,
+          };
+        });
       } else {
-        transformed.options = data.options;
+        transformed.options = mappedOptions;
       }
-      // Some backends may also expect 'answers' field
-      transformed.answers = transformed.options;
+      // Find the correct answer and set correctAnswerId
+      if (Array.isArray(transformed.options)) {
+        const correctOption = transformed.options.find((opt: { isCorrect?: boolean }) => opt.isCorrect);
+        if (correctOption && (correctOption as { id?: string }).id) {
+          transformed.correctAnswerId = (correctOption as { id: string }).id;
+          transformed.correct_answer_id = (correctOption as { id: string }).id;
+        }
+      }
+      // Backend expects answers array with format: { content, isCorrect, explanation }
+      // Clean up options to match backend format
+      if (Array.isArray(transformed.options)) {
+        transformed.answers = transformed.options.map((opt: Record<string, unknown>) => ({
+          content: opt.content || opt.text,
+          isCorrect: opt.isCorrect || false,
+          explanation: opt.explanation || "", // Backend may expect explanation field
+        }));
+      }
     }
 
     // Add expectedAnswer for FRQ (required)
@@ -380,13 +461,12 @@ export const useQuestionBank = (teacherId?: string) => {
     if (data.type === "frq") {
       if (data.expectedAnswer && data.expectedAnswer.trim()) {
         transformed.expectedAnswer = data.expectedAnswer.trim();
-        // Backend may require answers array even for FRQ
-        // Create an answer object with the expected answer
+        // Backend expects answers array with format: { content, isCorrect, explanation }
         transformed.answers = [
           {
             content: data.expectedAnswer.trim(),
-            text: data.expectedAnswer.trim(),
             isCorrect: true,
+            explanation: "", // Backend may expect explanation field
           }
         ];
       } else {
