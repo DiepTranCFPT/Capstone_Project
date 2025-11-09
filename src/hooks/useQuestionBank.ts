@@ -188,7 +188,8 @@ export const useQuestionBank = (teacherId?: string) => {
       : undefined;
 
     // Try multiple field names for expected answer
-    const expectedAnswer = normalizeString(
+    // For FRQ, also check answers array for the correct answer content
+    let expectedAnswer = normalizeString(
       record["expectedAnswer"],
       record["expected_answer"],
       record["answer"],
@@ -198,6 +199,46 @@ export const useQuestionBank = (teacherId?: string) => {
       record["expectedResponse"],
       record["expected_response"]
     );
+
+    // If expectedAnswer is still empty and this is FRQ, try to get from answers array
+    if (!expectedAnswer && type === "frq") {
+      // Check both optionsRaw (which may include answers) and record["answers"] separately
+      const answersArray = Array.isArray(record["answers"]) 
+        ? record["answers"] 
+        : (Array.isArray(optionsRaw) ? optionsRaw : []);
+      
+      if (answersArray.length > 0) {
+        // Find the correct answer in the answers array
+        const correctAnswer = answersArray.find((item: unknown) => {
+          if (!item || typeof item !== "object") return false;
+          const itemRecord = item as Record<string, unknown>;
+          const isCorrect = itemRecord["isCorrect"] ?? 
+                           itemRecord["correct"] ?? 
+                           itemRecord["isAnswer"] ??
+                           itemRecord["is_answer"] ??
+                           itemRecord["isCorrectAnswer"] ??
+                           itemRecord["is_correct_answer"] ??
+                           false;
+          return Boolean(isCorrect);
+        });
+
+        // If no correct answer found, use the first answer (for FRQ, usually there's only one)
+        const answerToUse = correctAnswer || answersArray[0];
+
+        if (answerToUse && typeof answerToUse === "object") {
+          const answerRecord = answerToUse as Record<string, unknown>;
+          expectedAnswer = normalizeString(
+            answerRecord["content"],
+            answerRecord["text"],
+            answerRecord["answerText"],
+            answerRecord["answer_text"],
+            answerRecord["expectedAnswer"],
+            answerRecord["expected_answer"],
+            answerRecord["solution"]
+          );
+        }
+      }
+    }
 
     return {
       id,
