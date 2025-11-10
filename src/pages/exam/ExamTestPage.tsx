@@ -76,6 +76,8 @@ const ExamTestPage: React.FC = () => {
     const totalCombinedTokenCost = selectedExamsForCombined.reduce((sum, exam) => sum + exam.tokenCost, 0);
 
     const [selectedSubjectsForPlatform, setSelectedSubjectsForPlatform] = useState<string[]>([]);
+    const [isStartingCombinedTest, setIsStartingCombinedTest] = useState(false);
+    const [isStartingPlatformTest, setIsStartingPlatformTest] = useState(false);
 
     const handlePlatformSubjectToggle = (subject: string) => {
         setSelectedSubjectsForPlatform(prev =>
@@ -122,6 +124,8 @@ const ExamTestPage: React.FC = () => {
     };
 
     const handleStartCombinedExamClick = async (exams: Exam[]) => {
+        setIsStartingCombinedTest(true);
+
         // Extract templateIds from selected exams
         const templateIds = exams.map(exam => exam.id);
 
@@ -138,10 +142,14 @@ const ExamTestPage: React.FC = () => {
         } catch (error) {
             console.error('Failed to start combined test:', error);
             // Handle error - could show toast notification
+        } finally {
+            setIsStartingCombinedTest(false);
         }
     };
 
     const handleStartPlatformCombinedExamClick = async (selectedSubjects: string[]) => {
+        setIsStartingPlatformTest(true);
+
         // Extract subjectIds from selected subjects
         const subjectIds = subjects
             .filter(subject => selectedSubjects.includes(subject.name))
@@ -160,6 +168,8 @@ const ExamTestPage: React.FC = () => {
         } catch (error) {
             console.error('Failed to start platform combined test:', error);
             // Handle error - could show toast notification
+        } finally {
+            setIsStartingPlatformTest(false);
         }
     };
 
@@ -257,8 +267,8 @@ const ExamTestPage: React.FC = () => {
                                         subjects.map((subject) => (
                                             <button
                                                 key={subject.id}
-                                                onClick={() => setSelectedCategory(subject.name)}
-                                                className={`px-5 py-2 text-sm font-medium rounded-full transition-colors duration-300 ${selectedCategory === subject.name
+                                                onClick={() => setSelectedCategory(subject.id)}
+                                                className={`px-5 py-2 text-sm font-medium rounded-full transition-colors duration-300 ${selectedCategory === subject.id
                                                     ? 'bg-teal-500 text-white'
                                                     : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
                                                     }`}
@@ -400,9 +410,17 @@ const ExamTestPage: React.FC = () => {
                                             <p className="text-lg font-bold text-teal-800">Total Token Cost: {totalCombinedTokenCost} Tokens</p>
                                             <button
                                                 onClick={() => handleStartCombinedExamClick(selectedExamsForCombined)}
-                                                className="bg-teal-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-600"
+                                                disabled={isStartingCombinedTest}
+                                                className="bg-teal-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                             >
-                                                Start Combined Test
+                                                {isStartingCombinedTest ? (
+                                                    <>
+                                                        <FiLoader className="animate-spin" size={16} />
+                                                        Đang tải...
+                                                    </>
+                                                ) : (
+                                                    'Start Combined Test'
+                                                )}
                                             </button>
                                         </div>
                                     </div>
@@ -437,9 +455,17 @@ const ExamTestPage: React.FC = () => {
                                         <div className="mt-6 p-4 bg-teal-50 rounded-lg flex justify-between items-center">
                                             <button
                                                 onClick={() => handleStartPlatformCombinedExamClick(selectedSubjectsForPlatform)}
-                                                className="bg-teal-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-600 ml-auto"
+                                                disabled={isStartingPlatformTest}
+                                                className="bg-teal-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-600 ml-auto disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                             >
-                                                Bắt đầu Thi Tổ hợp
+                                                {isStartingPlatformTest ? (
+                                                    <>
+                                                        <FiLoader className="animate-spin" size={16} />
+                                                        Đang tải...
+                                                    </>
+                                                ) : (
+                                                    'Bắt đầu Thi Tổ hợp'
+                                                )}
                                             </button>
                                         </div>
                                     </div>

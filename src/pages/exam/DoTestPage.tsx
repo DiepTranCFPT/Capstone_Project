@@ -18,6 +18,7 @@ const DoTestPage: React.FC = () => {
     const [showConFirmed, setShowConFirmed] = useState(false);
     const [isSubmit, setIsSubmit] = useState(false);
     const [isCancel, setIsCancel] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set());
     const [answers, setAnswers] = useState<Record<string, { selectedAnswerId?: string; frqAnswerText?: string }>>({});
 
@@ -64,6 +65,8 @@ const DoTestPage: React.FC = () => {
     const handleSubmit = async () => {
         if (!currentActiveExam) return;
 
+        setIsSubmitting(true);
+
         // Prepare answers using stored answer data
         const submissionAnswers: ExamSubmissionAnswer[] = sortedQuestions.map((q: ActiveExamQuestion, index: number) => {
             const answerData = answers[index];
@@ -84,12 +87,14 @@ const DoTestPage: React.FC = () => {
                 localStorage.removeItem('answeredQuestions');
                 localStorage.removeItem('examRemainingTime');
                 localStorage.removeItem('activeExamAttempt');
-                // Navigate to home page since grading takes time
-                navigate(`/exam-review/${currentActiveExam.examAttemptId}`);
+                navigate('/exam-test')
+            
             }
         } catch (err) {
             console.error('Submit failed:', err);
             // Handle error - maybe show toast
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -319,9 +324,10 @@ const DoTestPage: React.FC = () => {
                                 ) : (
                                     <button
                                         onClick={handleSubmit}
-                                        className="px-6 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-medium rounded-lg transition-all duration-200 border border-teal-500/60 hover:border-teal-400 shadow-lg hover:shadow-xl"
+                                        disabled={isSubmitting}
+                                        className="px-6 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-medium rounded-lg transition-all duration-200 border border-teal-500/60 hover:border-teal-400 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        Xác nhận nộp
+                                        {isSubmitting ? 'Đang nộp...' : 'Xác nhận nộp'}
                                     </button>
                                 )}
                             </div>

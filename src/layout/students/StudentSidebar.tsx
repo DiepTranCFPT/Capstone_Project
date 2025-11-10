@@ -114,13 +114,16 @@ export default function SidebarStudent() {
               : "px-4 py-3 border-b border-gray-200 not-[]:flex items-center justify-center"
             }`}
         >
-          <Link to="/student/profile">
+          <Link 
+            to="/student/profile"
+            className="flex flex-row gap-1"
+          >
             <Avatar
               size={collapsed ? 32 : 40}
               src={currentUser.imgUrl}
               className="cursor-pointer"
             />
-          </Link>
+          
           {!collapsed && (
             <div>
               <div className="text-sm font-semibold">{currentUser.firstName} {currentUser.lastName}</div>
@@ -131,6 +134,7 @@ export default function SidebarStudent() {
               </div>
             </div>
           )}
+          </Link>
         </div>
       )}
 
