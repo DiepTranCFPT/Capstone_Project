@@ -245,7 +245,10 @@ import { toast } from "~/components/common/Toast";
           questionType: rule.questionType,
           numberOfQuestions: rule.numberOfQuestions,
           points: rule.points
-        }))
+        })),
+        averageRating: template.averageRating,
+        totalRatings: template.totalRatings,
+        totalTakers: template.totalTakers
       });
 
       const fetchAllExams = useCallback(async (params?: { pageNo?: number; pageSize?: number; keyword?: string }) => {

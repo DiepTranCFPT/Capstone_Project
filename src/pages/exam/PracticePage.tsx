@@ -18,6 +18,7 @@ const PracticePage: React.FC = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [shuffledQuestions, setShuffledQuestions] = useState<typeof apiQuestions>([]);
     const [correctAnswers, setCorrectAnswers] = useState<boolean[]>([]);
+    const [isCompleted, setIsCompleted] = useState(false);
 
     useEffect(() => {
         // Update shuffled questions when API questions change
@@ -37,16 +38,11 @@ const PracticePage: React.FC = () => {
     }, [shuffledQuestions]);
 
     const handleNext = () => {
-        if (mode === 'quiz') {
-            // For quiz mode, record if current answer was correct
-            const wasCorrect = correctAnswers[currentIndex] || false;
-            const newCorrectAnswers = [...correctAnswers];
-            newCorrectAnswers[currentIndex] = wasCorrect;
-            setCorrectAnswers(newCorrectAnswers);
-        }
-
         if (currentIndex < shuffledQuestions.length - 1) {
             setCurrentIndex(currentIndex + 1);
+        } else {
+            // Reached the last question, complete the quiz
+            setIsCompleted(true);
         }
     };
 
@@ -60,6 +56,13 @@ const PracticePage: React.FC = () => {
         shuffleQuestions();
         setCurrentIndex(0);
         setCorrectAnswers([]);
+        setIsCompleted(false);
+    };
+
+    const handleAnswerSelected = (isCorrect: boolean) => {
+        const newCorrectAnswers = [...correctAnswers];
+        newCorrectAnswers[currentIndex] = isCorrect;
+        setCorrectAnswers(newCorrectAnswers);
     };
 
     const handleBackToExam = () => {
@@ -191,15 +194,77 @@ const PracticePage: React.FC = () => {
                         />
                     )}
 
-                    {mode === 'quiz' && practiceType === 'mcq' && (
+                    {mode === 'quiz' && practiceType === 'mcq' && !isCompleted && (
                         <PracticeQuizCard
                             questions={shuffledQuestions}
                             currentIndex={currentIndex}
                             onNext={handleNext}
                             onPrevious={handlePrevious}
+                            onAnswerSelected={handleAnswerSelected}
                             correctCount={correctCount}
                             totalCount={totalAnswered}
                         />
+                    )}
+
+                    {mode === 'quiz' && practiceType === 'mcq' && isCompleted && (
+                        <div className="text-center py-20">
+                            <div className="text-6xl mb-6">🎉</div>
+                            <h3 className="text-3xl font-bold text-gray-800 mb-4">
+                                Hoàn thành bài luyện tập!
+                            </h3>
+                            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                                Bạn đã hoàn thành tất cả câu hỏi trong bài luyện tập này.
+                            </p>
+
+                            {/* Final Statistics */}
+                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-teal-200/60 p-8 shadow-xl mb-8 max-w-md mx-auto">
+                                <div className="text-center mb-6">
+                                    <div className="text-4xl font-bold text-teal-600 mb-2">
+                                        {correctCount}/{shuffledQuestions.length}
+                                    </div>
+                                    <div className="text-gray-600">Câu trả lời đúng</div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 text-center">
+                                    <div>
+                                        <div className="text-2xl font-bold text-teal-600">{correctCount}</div>
+                                        <div className="text-xs text-gray-600 font-medium">Đúng</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-2xl font-bold text-gray-600">{shuffledQuestions.length - correctCount}</div>
+                                        <div className="text-xs text-gray-600 font-medium">Sai</div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 pt-4 border-t border-gray-200">
+                                    <div className="text-center">
+                                        <div className="text-2xl font-bold text-cyan-600">
+                                            {shuffledQuestions.length > 0 ? Math.round((correctCount / shuffledQuestions.length) * 100) : 0}%
+                                        </div>
+                                        <div className="text-xs text-gray-600 font-medium">Độ chính xác</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-center space-x-4">
+                                <button
+                                    onClick={() => {
+                                        setCurrentIndex(0);
+                                        setCorrectAnswers([]);
+                                        setIsCompleted(false);
+                                    }}
+                                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg transition-all duration-200 border border-gray-300 hover:border-gray-400 shadow-sm hover:shadow-md"
+                                >
+                                    Làm lại
+                                </button>
+                                <button
+                                    onClick={handleBackToExam}
+                                    className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+                                >
+                                    Quay lại
+                                </button>
+                            </div>
+                        </div>
                     )}
 
                     {mode === 'quiz' && practiceType === 'frq' && (

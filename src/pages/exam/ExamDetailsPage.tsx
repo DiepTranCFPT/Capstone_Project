@@ -30,7 +30,7 @@ const ExamDetailsPage: React.FC = () => {
         level: `Level ${currentExam.passingScore || 'B1'}`, // Default level mapping
         subject: currentExam.subject.name,
         sentences: currentExam.rules?.reduce((sum: number, rule: { id: string; topic: string; difficulty: string; questionType: string; numberOfQuestions: number; points: number }) => sum + rule.numberOfQuestions, 0) || 0,
-        attempts: 200, // This would need to be fetched separately if available
+        totalTakers: currentExam.totalTakers || 0,
         duration: currentExam.duration,
         description: currentExam.description,
         teacherName: currentExam.createdBy
@@ -105,7 +105,7 @@ const ExamDetailsPage: React.FC = () => {
                             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-gray-600 mt-4">
                                 <div className="flex items-center"><FiBookOpen className="mr-2 text-teal-500" /> {examDetails.subject}</div>
                                 <div className="flex items-center"><FiClipboard className="mr-2 text-teal-500" /> {examDetails.sentences} Questions</div>
-                                <div className="flex items-center"><FiUsers className="mr-2 text-teal-500" /> {examDetails.attempts} people attempted</div>
+                                <div className="flex items-center"><FiUsers className="mr-2 text-teal-500" /> {examDetails.totalTakers} people attempted</div>
                             </div>
                             <div className="border-b mt-6 mb-4 border-gray-200">
                                 <nav className="flex space-x-4">

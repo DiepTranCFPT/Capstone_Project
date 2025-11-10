@@ -14,6 +14,7 @@ interface PracticeQuizCardProps {
     currentIndex: number;
     onNext: () => void;
     onPrevious: () => void;
+    onAnswerSelected?: (isCorrect: boolean) => void;
     correctCount: number;
     totalCount: number;
 }
@@ -23,6 +24,7 @@ const PracticeQuizCard: React.FC<PracticeQuizCardProps> = ({
     currentIndex,
     onNext,
     onPrevious,
+    onAnswerSelected,
     correctCount,
     totalCount
 }) => {
@@ -60,6 +62,7 @@ const PracticeQuizCard: React.FC<PracticeQuizCardProps> = ({
         const correct = answerId === currentQuestion.correctAnswer;
         setIsCorrect(correct);
         setShowResult(true);
+        onAnswerSelected?.(correct);
     };
 
     const handleNext = () => {

@@ -71,6 +71,9 @@ export interface ApiExam {
     numberOfQuestions: number;
     points: number;
   }[];
+  averageRating: number;
+  totalRatings: number;
+  totalTakers: number;
 }
 
 export interface CreateExamPayload {
