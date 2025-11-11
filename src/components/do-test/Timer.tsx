@@ -57,8 +57,6 @@ const Timer: React.FC<TimerProps> = ({ initialMinutes, onTimeUp, remainingTime, 
                         onTimeUpRef.current();
                         return 0;
                     }
-                    // Notify parent of time change
-                    onTimeChangeRef.current?.(newSeconds);
                     return newSeconds;
                 });
             }, 1000);
@@ -70,6 +68,17 @@ const Timer: React.FC<TimerProps> = ({ initialMinutes, onTimeUp, remainingTime, 
             }
         };
     }, [isRunning, seconds]);
+
+    // Notify parent of time change in a separate useEffect to avoid setState during render
+    useEffect(() => {
+        if (onTimeChangeRef.current && seconds > 0) {
+            // Use setTimeout to defer the callback to avoid setState during render
+            const timeoutId = setTimeout(() => {
+                onTimeChangeRef.current?.(seconds);
+            }, 0);
+            return () => clearTimeout(timeoutId);
+        }
+    }, [seconds]);
 
     // Save remaining time to localStorage whenever seconds change
     useEffect(() => {

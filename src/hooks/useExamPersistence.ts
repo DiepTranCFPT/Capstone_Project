@@ -71,10 +71,23 @@ export const useExamPersistence = () => {
         const progress: ExamProgress = JSON.parse(progressStr);
         // Validate data integrity
         if (progress.answers && typeof progress.remainingTime === 'number') {
+          // Convert answeredQuestions to Set safely
+          let answeredQuestionsSet: Set<string> = new Set();
+          if (progress.answeredQuestions) {
+            if (Array.isArray(progress.answeredQuestions)) {
+              answeredQuestionsSet = new Set(progress.answeredQuestions.map((id: number | string) => id.toString()));
+            } else if (progress.answeredQuestions instanceof Set) {
+              answeredQuestionsSet = new Set(progress.answeredQuestions);
+            } else if (typeof progress.answeredQuestions === 'object' && progress.answeredQuestions !== null) {
+              // Handle case where it might be stored as object
+              answeredQuestionsSet = new Set(Object.keys(progress.answeredQuestions));
+            }
+          }
+
           // Don't call setLastSavedTime here to avoid state updates during render
           return {
             ...progress,
-            answeredQuestions: new Set(progress.answeredQuestions)
+            answeredQuestions: answeredQuestionsSet
           };
         }
       }
@@ -138,7 +151,7 @@ export const useExamPersistence = () => {
   const hasSavedProgress = useCallback((): boolean => {
     try {
       return localStorage.getItem(STORAGE_KEYS.PROGRESS) !== null ||
-             localStorage.getItem(STORAGE_KEYS.ANSWERS) !== null;
+        localStorage.getItem(STORAGE_KEYS.ANSWERS) !== null;
     } catch {
       return false;
     }

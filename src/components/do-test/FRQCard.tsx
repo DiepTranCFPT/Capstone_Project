@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { FRQ } from '~/types/question';
 import { useAuth } from '~/hooks/useAuth';
 import { Button } from 'antd';
@@ -15,15 +15,54 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
     const { spendTokens } = useAuth();
     const [isAnalyzed, setIsAnalyzed] = useState(false);
     const [answerText, setAnswerText] = useState(savedAnswer || '');
+    const isInitialMountRef = useRef(true);
+    const prevSavedAnswerRef = useRef<string | undefined>(savedAnswer);
+    const isSyncingRef = useRef(false);
 
+    // Sync answerText when savedAnswer prop changes (e.g., when loaded from localStorage)
     useEffect(() => {
-        if (onAnswerChange) {
-            onAnswerChange(questionNumber - 1, answerText.trim() !== '', {
-                selectedAnswerId: undefined,
-                frqAnswerText: answerText.trim() || undefined
+        // Only sync if savedAnswer actually changed from parent
+        if (savedAnswer !== prevSavedAnswerRef.current) {
+            const newValue = savedAnswer || '';
+            prevSavedAnswerRef.current = savedAnswer;
+            
+            // Always update if prop changed, using functional update to avoid dependency
+            setAnswerText(prevText => {
+                if (newValue !== prevText) {
+                    isSyncingRef.current = true;
+                    // Reset flag after state update completes
+                    requestAnimationFrame(() => {
+                        isSyncingRef.current = false;
+                    });
+                    return newValue;
+                }
+                return prevText;
             });
         }
-    }, [answerText, questionNumber, onAnswerChange]);
+    }, [savedAnswer]); // Only depend on savedAnswer
+
+    // Notify parent when answerText changes (skip on initial mount and when syncing)
+    useEffect(() => {
+        // Skip on initial mount - parent already knows about savedAnswer
+        if (isInitialMountRef.current) {
+            isInitialMountRef.current = false;
+            return;
+        }
+
+        // Skip if we're currently syncing from prop
+        if (isSyncingRef.current) {
+            return;
+        }
+
+        // Only notify if answerText actually changed (user input, not from prop)
+        if (onAnswerChange) {
+            const trimmedText = answerText.trim();
+            onAnswerChange(questionNumber - 1, trimmedText !== '', {
+                selectedAnswerId: undefined,
+                frqAnswerText: trimmedText || undefined
+            });
+        }
+    }, [answerText, questionNumber, onAnswerChange]); // Don't include savedAnswer to avoid loop
 
     const handleAnalyze = () => {
         spendTokens(1);

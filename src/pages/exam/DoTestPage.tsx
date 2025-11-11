@@ -40,6 +40,7 @@ const DoTestPage: React.FC = () => {
         return storedAttempt ? JSON.parse(storedAttempt) : null;
     }, []); // Empty dependency array since we only want to read once on mount
 
+
     // Initialize remaining time - use saved time if available, otherwise use full exam time
     const [remainingTime, setRemainingTime] = useState<number>(() => {
         const savedProgress = loadExamProgress();
@@ -49,7 +50,8 @@ const DoTestPage: React.FC = () => {
         return currentActiveExam?.durationInMinute ? currentActiveExam.durationInMinute * 60 : 3600; // Default 60 minutes
     });
 
-    const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(new Set()); // Changed to Set<string> for examQuestionIds
+    // Initialize answers and answeredQuestions - will be loaded from localStorage in useEffect
+    const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(new Set());
     const [answers, setAnswers] = useState<Record<string, { selectedAnswerId?: string; frqAnswerText?: string }>>({});
 
     // Sort questions by orderNumber - moved before useEffect that uses it
@@ -76,47 +78,71 @@ const DoTestPage: React.FC = () => {
         remainingTimeRef.current = remainingTime;
     }, [remainingTime]);
 
-    // Load saved state from localStorage on mount
+    // Load saved state from localStorage on mount - this ensures answers are displayed after reload
     useEffect(() => {
-        const savedProgress = loadExamProgress();
-        if (savedProgress && currentActiveExam) {
-            // Convert old index-based answers to examQuestionId-based if needed
-            let convertedAnswers = savedProgress.answers;
-
-            // Check if answers are stored with indices (old format)
-            const answerKeys = Object.keys(savedProgress.answers);
-            const hasIndexKeys = answerKeys.some(key => !isNaN(Number(key)));
-
-            if (hasIndexKeys && sortedQuestions.length > 0) {
-                // Convert from index-based to examQuestionId-based
-                convertedAnswers = {};
-                answerKeys.forEach(key => {
-                    const index = parseInt(key, 10);
-                    if (index >= 0 && index < sortedQuestions.length) {
-                        const question = sortedQuestions[index];
-                        convertedAnswers[question.examQuestionId] = savedProgress.answers[key];
-                    }
-                });
-            }
-
-            setAnswers(convertedAnswers);
-            setAnsweredQuestions(savedProgress.answeredQuestions);
-
-            // Only update remaining time if we have a valid saved time
-            if (savedProgress.remainingTime > 0) {
-                setRemainingTime(savedProgress.remainingTime);
-            }
-
-            // Set last saved time from loaded progress
-            if (savedProgress.lastSaved) {
-                // Use a timeout to avoid state update during render
-                setTimeout(() => {
-                    // We can't directly set lastSavedTime here since it's from the hook
-                    // Instead, we'll let the save function handle it
-                }, 0);
-            }
+        if (!currentActiveExam || sortedQuestions.length === 0) {
+            return;
         }
-    }, [currentActiveExam, sortedQuestions]); // Add dependencies for proper conversion
+
+        const savedProgress = loadExamProgress();
+        if (!savedProgress || !savedProgress.answers || Object.keys(savedProgress.answers).length === 0) {
+            return;
+        }
+
+        // Convert old index-based answers to examQuestionId-based if needed
+        let convertedAnswers = savedProgress.answers;
+        const answerKeys = Object.keys(savedProgress.answers);
+        const hasIndexKeys = answerKeys.some(key => !isNaN(Number(key)));
+
+        if (hasIndexKeys && sortedQuestions.length > 0) {
+            // Convert from index-based to examQuestionId-based
+            convertedAnswers = {};
+            answerKeys.forEach(key => {
+                const index = parseInt(key, 10);
+                if (index >= 0 && index < sortedQuestions.length) {
+                    const question = sortedQuestions[index];
+                    convertedAnswers[question.examQuestionId] = savedProgress.answers[key];
+                }
+            });
+        }
+
+        // Update answers - always update if we have saved data
+        setAnswers(prevAnswers => {
+            // If prevAnswers is empty, always update
+            if (Object.keys(prevAnswers).length === 0) {
+                return convertedAnswers;
+            }
+            // Otherwise, only update if different
+            const hasChanges = JSON.stringify(prevAnswers) !== JSON.stringify(convertedAnswers);
+            return hasChanges ? convertedAnswers : prevAnswers;
+        });
+
+        // Create answeredQuestions Set from answers - ensure it includes all questions with answers
+        // Build the set directly from convertedAnswers to ensure accuracy
+        const answeredQuestionsSet: Set<string> = new Set();
+
+        // Add all question IDs that have answers in convertedAnswers
+        // This is the source of truth - if there's an answer, the question is answered
+        Object.keys(convertedAnswers).forEach(examQuestionId => {
+            const answer = convertedAnswers[examQuestionId];
+            // Add to set if answer has content (either selectedAnswerId or frqAnswerText)
+            if (answer && (answer.selectedAnswerId || (answer.frqAnswerText && answer.frqAnswerText.trim() !== ''))) {
+                answeredQuestionsSet.add(examQuestionId);
+            }
+        });
+
+        // Always update answeredQuestions when loading from localStorage
+        // Use a new Set reference to ensure re-render
+        setAnsweredQuestions(new Set(answeredQuestionsSet));
+
+        // Only update remaining time if we have a valid saved time
+        setRemainingTime(prevTime => {
+            if (savedProgress.remainingTime > 0 && savedProgress.remainingTime !== prevTime) {
+                return savedProgress.remainingTime;
+            }
+            return prevTime;
+        });
+    }, [currentActiveExam, sortedQuestions, loadExamProgress]);
 
     // Auto-save callback - defined outside useEffect to avoid recreation
     const autoSaveCallback = useCallback(() => {
@@ -210,25 +236,49 @@ const DoTestPage: React.FC = () => {
     const totalQuestions = sortedQuestions.length;
 
     const handleAnswerChange = useCallback((examQuestionId: string, hasAnswer: boolean, answerData?: { selectedAnswerId?: string; frqAnswerText?: string }) => {
-        setAnsweredQuestions(prev => {
-            const newSet = new Set(prev);
-            if (hasAnswer) {
-                newSet.add(examQuestionId);
-            } else {
-                newSet.delete(examQuestionId);
-            }
-            return newSet;
-        });
+        // Only update if answerData actually changed
+        setAnswers(prev => {
+            const currentAnswer = prev[examQuestionId];
+            // Check if answerData is different from current
+            if (answerData) {
+                const isDifferent =
+                    currentAnswer?.selectedAnswerId !== answerData.selectedAnswerId ||
+                    currentAnswer?.frqAnswerText !== answerData.frqAnswerText;
 
-        if (answerData) {
-            setAnswers(prev => ({
+                if (!isDifferent) {
+                    return prev; // No change, return same reference
+                }
+            } else if (!hasAnswer && !currentAnswer) {
+                return prev; // No change, return same reference
+            }
+
+            // Update answers
+            const newAnswers = {
                 ...prev,
                 [examQuestionId]: {
                     ...prev[examQuestionId],
                     ...answerData
                 }
-            }));
-        }
+            };
+
+            // Update answeredQuestions
+            setAnsweredQuestions(prevAnswered => {
+                const newSet = new Set(prevAnswered);
+                if (hasAnswer) {
+                    newSet.add(examQuestionId);
+                } else {
+                    newSet.delete(examQuestionId);
+                }
+                // Only update if set actually changed
+                if (newSet.size === prevAnswered.size &&
+                    Array.from(newSet).every(id => prevAnswered.has(id))) {
+                    return prevAnswered; // No change
+                }
+                return newSet;
+            });
+
+            return newAnswers;
+        });
     }, []);
 
 
@@ -284,11 +334,10 @@ const DoTestPage: React.FC = () => {
                             {sortedQuestions.map((q: ActiveExamQuestion) => (
                                 <button
                                     key={q.examQuestionId}
-                                    className={`w-10 h-10 rounded-lg border-2 text-sm font-bold transition-all duration-200 ${
-                                        answeredQuestions.has(q.examQuestionId)
-                                            ? 'bg-teal-600 text-white border-teal-600 shadow-md'
-                                            : 'bg-white/80 border-gray-200 text-gray-700 hover:bg-teal-100 hover:border-teal-300'
-                                    }`}
+                                    className={`w-10 h-10 rounded-lg border-2 text-sm font-bold transition-all duration-200 ${answeredQuestions.has(q.examQuestionId)
+                                        ? 'bg-teal-600 text-white border-teal-600 shadow-md'
+                                        : 'bg-white/80 border-gray-200 text-gray-700 hover:bg-teal-100 hover:border-teal-300'
+                                        }`}
                                 >
                                     {q.orderNumber}
                                 </button>
@@ -400,9 +449,8 @@ const DoTestPage: React.FC = () => {
                 <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center">
                     <div className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-teal-200/50 max-w-md mx-4">
                         <div className="text-center">
-                            <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
-                                isSubmit ? 'bg-teal-100' : 'bg-red-100'
-                            }`}>
+                            <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${isSubmit ? 'bg-teal-100' : 'bg-red-100'
+                                }`}>
                                 <span className="text-2xl">
                                     {isSubmit ? '✅' : '❌'}
                                 </span>
