@@ -27,7 +27,7 @@ const ExamDetailsPage: React.FC = () => {
     // Convert API exam data to display format
     const examDetails = currentExam ? {
         title: currentExam.title,
-        level: `Level ${currentExam.passingScore || 'B1'}`, // Default level mapping
+        level: `Passing Score ${currentExam.passingScore || 'Unknown'}`, // Default level mapping
         subject: currentExam.subject.name,
         sentences: currentExam.rules?.reduce((sum: number, rule: { id: string; topic: string; difficulty: string; questionType: string; numberOfQuestions: number; points: number }) => sum + rule.numberOfQuestions, 0) || 0,
         totalTakers: currentExam.totalTakers || 0,

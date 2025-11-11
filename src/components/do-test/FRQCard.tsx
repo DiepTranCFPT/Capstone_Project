@@ -7,13 +7,14 @@ import { FaRobot } from 'react-icons/fa';
 interface FRQCardProps {
     question: FRQ;
     questionNumber: number;
+    savedAnswer?: string;
     onAnswerChange?: (questionIndex: number, hasAnswer: boolean, answerData?: { selectedAnswerId?: string; frqAnswerText?: string }) => void;
 }
 
-const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, onAnswerChange }) => {
+const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer, onAnswerChange }) => {
     const { spendTokens } = useAuth();
     const [isAnalyzed, setIsAnalyzed] = useState(false);
-    const [answerText, setAnswerText] = useState('');
+    const [answerText, setAnswerText] = useState(savedAnswer || '');
 
     useEffect(() => {
         if (onAnswerChange) {

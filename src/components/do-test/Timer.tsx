@@ -1,30 +1,65 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const Timer: React.FC<{ initialMinutes: number, onTimeUp: () => void }> = ({ initialMinutes, onTimeUp }) => {
+interface TimerProps {
+    initialMinutes: number;
+    onTimeUp: () => void;
+    remainingTime?: number;
+    onTimeChange?: (seconds: number) => void;
+}
+
+const Timer: React.FC<TimerProps> = ({ initialMinutes, onTimeUp, remainingTime, onTimeChange }) => {
     const [seconds, setSeconds] = useState(() => {
-        // Load saved time from localStorage, or use initial minutes
+        // Always start with initial time, remainingTime will be synced via useEffect
         const savedTime = localStorage.getItem('examRemainingTime');
-        return savedTime ? parseInt(savedTime, 10) : initialMinutes * 60;
+        const parsedSavedTime = savedTime ? parseInt(savedTime, 10) : null;
+        return (parsedSavedTime && parsedSavedTime > 0) ? parsedSavedTime : initialMinutes * 60;
     });
     const [isRunning, setIsRunning] = useState(true);
     const onTimeUpRef = useRef(onTimeUp);
+    const onTimeChangeRef = useRef(onTimeChange);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
+    const hasInitializedRef = useRef(false);
 
-    // Update ref when onTimeUp changes
+    // Update refs when callbacks change
     useEffect(() => {
         onTimeUpRef.current = onTimeUp;
     }, [onTimeUp]);
 
     useEffect(() => {
+        onTimeChangeRef.current = onTimeChange;
+    }, [onTimeChange]);
+
+    // Sync with external remainingTime changes (only if it's a valid time > 0)
+    // Use a ref to avoid dependency on seconds which would cause infinite loops
+    const prevRemainingTimeRef = useRef<number | undefined>(undefined);
+    useEffect(() => {
+        // Only sync if remainingTime has actually changed and is valid
+        if (remainingTime !== undefined &&
+            remainingTime > 0 &&
+            remainingTime !== prevRemainingTimeRef.current &&
+            hasInitializedRef.current) {
+            setSeconds(remainingTime);
+            prevRemainingTimeRef.current = remainingTime;
+        }
+        if (!hasInitializedRef.current) {
+            hasInitializedRef.current = true;
+            prevRemainingTimeRef.current = remainingTime;
+        }
+    }, [remainingTime]);
+
+    useEffect(() => {
         if (isRunning && seconds > 0) {
             intervalRef.current = setInterval(() => {
                 setSeconds(prev => {
-                    if (prev <= 1) {
+                    const newSeconds = prev - 1;
+                    if (newSeconds <= 0) {
                         setIsRunning(false);
                         onTimeUpRef.current();
                         return 0;
                     }
-                    return prev - 1;
+                    // Notify parent of time change
+                    onTimeChangeRef.current?.(newSeconds);
+                    return newSeconds;
                 });
             }, 1000);
         }
@@ -41,11 +76,13 @@ const Timer: React.FC<{ initialMinutes: number, onTimeUp: () => void }> = ({ ini
         localStorage.setItem('examRemainingTime', seconds.toString());
     }, [seconds]);
 
-    // Reset timer when initialMinutes changes
+    // Reset timer when initialMinutes changes (but not when remainingTime is controlled)
     useEffect(() => {
-        setSeconds(initialMinutes * 60);
-        setIsRunning(true);
-    }, [initialMinutes]);
+        if (remainingTime === undefined) {
+            setSeconds(initialMinutes * 60);
+            setIsRunning(true);
+        }
+    }, [initialMinutes, remainingTime]);
 
     const formatTime = () => {
         const mins = Math.floor(seconds / 60);

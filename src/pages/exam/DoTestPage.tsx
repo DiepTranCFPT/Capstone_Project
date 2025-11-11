@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Timer from '~/components/do-test/Timer';
 import QuestionCard from '~/components/do-test/QuestionCard';
 import FRQCard from '~/components/do-test/FRQCard';
 import { useExamAttempt } from '~/hooks/useExamAttempt';
+import { useExamPersistence } from '~/hooks/useExamPersistence';
+import { useExamUnloadWarning } from '~/hooks/useExamUnloadWarning';
 import type { ExamSubmissionAnswer, ActiveExamQuestion, ExamAnswer } from '~/types/test';
 
 
@@ -12,6 +14,19 @@ const DoTestPage: React.FC = () => {
     const navigate = useNavigate();
     const { submitAttempt, loading, error } = useExamAttempt();
 
+    // Exam persistence hooks
+    const {
+        saveExamProgress,
+        loadExamProgress,
+        clearExamProgress,
+        startAutoSave,
+        stopAutoSave,
+        lastSavedTime
+    } = useExamPersistence();
+
+    // Unload warning hook
+    useExamUnloadWarning(true);
+
     // Determine if this is a combo test
     // const isComboTest = examId === 'combo' || !!attemptId;
 
@@ -19,48 +34,112 @@ const DoTestPage: React.FC = () => {
     const [isSubmit, setIsSubmit] = useState(false);
     const [isCancel, setIsCancel] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set());
+    // Check for stored attempt data from useExamAttempt - memoize to prevent recreation
+    const currentActiveExam = useMemo(() => {
+        const storedAttempt = localStorage.getItem('activeExamAttempt');
+        return storedAttempt ? JSON.parse(storedAttempt) : null;
+    }, []); // Empty dependency array since we only want to read once on mount
+
+    // Initialize remaining time - use saved time if available, otherwise use full exam time
+    const [remainingTime, setRemainingTime] = useState<number>(() => {
+        const savedProgress = loadExamProgress();
+        if (savedProgress && savedProgress.remainingTime > 0) {
+            return savedProgress.remainingTime;
+        }
+        return currentActiveExam?.durationInMinute ? currentActiveExam.durationInMinute * 60 : 3600; // Default 60 minutes
+    });
+
+    const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(new Set()); // Changed to Set<string> for examQuestionIds
     const [answers, setAnswers] = useState<Record<string, { selectedAnswerId?: string; frqAnswerText?: string }>>({});
 
-    // Load saved state from localStorage
-    useEffect(() => {
-        const savedAnswers = localStorage.getItem('examAnswers');
-        const savedAnsweredQuestions = localStorage.getItem('answeredQuestions');
-
-        if (savedAnswers) {
-            setAnswers(JSON.parse(savedAnswers));
-        }
-
-        if (savedAnsweredQuestions) {
-            setAnsweredQuestions(new Set(JSON.parse(savedAnsweredQuestions)));
-        }
-    }, []);
-
-    // Save state to localStorage whenever answers or answeredQuestions change
-    useEffect(() => {
-        if (Object.keys(answers).length > 0) {
-            localStorage.setItem('examAnswers', JSON.stringify(answers));
-        }
-    }, [answers]);
-
-    useEffect(() => {
-        if (answeredQuestions.size > 0) {
-            localStorage.setItem('answeredQuestions', JSON.stringify(Array.from(answeredQuestions)));
-        }
-    }, [answeredQuestions]);
-
-    // Check for stored attempt data from useExamAttempt
-    const storedAttempt = localStorage.getItem('activeExamAttempt');
-    const parsedAttempt = storedAttempt ? JSON.parse(storedAttempt) : null;
-
-    // Use stored attempt data
-    const currentActiveExam = parsedAttempt;
-
-    // Sort questions by orderNumber
+    // Sort questions by orderNumber - moved before useEffect that uses it
     const sortedQuestions = useMemo(() =>
         currentActiveExam?.questions.slice().sort((a: ActiveExamQuestion, b: ActiveExamQuestion) => a.orderNumber - b.orderNumber) || [],
         [currentActiveExam?.questions]
     );
+
+    // Refs to store current values for auto-save callback
+    const answersRef = useRef(answers);
+    const answeredQuestionsRef = useRef(answeredQuestions);
+    const remainingTimeRef = useRef(remainingTime);
+
+    // Update refs when values change
+    useEffect(() => {
+        answersRef.current = answers;
+    }, [answers]);
+
+    useEffect(() => {
+        answeredQuestionsRef.current = answeredQuestions;
+    }, [answeredQuestions]);
+
+    useEffect(() => {
+        remainingTimeRef.current = remainingTime;
+    }, [remainingTime]);
+
+    // Load saved state from localStorage on mount
+    useEffect(() => {
+        const savedProgress = loadExamProgress();
+        if (savedProgress && currentActiveExam) {
+            // Convert old index-based answers to examQuestionId-based if needed
+            let convertedAnswers = savedProgress.answers;
+
+            // Check if answers are stored with indices (old format)
+            const answerKeys = Object.keys(savedProgress.answers);
+            const hasIndexKeys = answerKeys.some(key => !isNaN(Number(key)));
+
+            if (hasIndexKeys && sortedQuestions.length > 0) {
+                // Convert from index-based to examQuestionId-based
+                convertedAnswers = {};
+                answerKeys.forEach(key => {
+                    const index = parseInt(key, 10);
+                    if (index >= 0 && index < sortedQuestions.length) {
+                        const question = sortedQuestions[index];
+                        convertedAnswers[question.examQuestionId] = savedProgress.answers[key];
+                    }
+                });
+            }
+
+            setAnswers(convertedAnswers);
+            setAnsweredQuestions(savedProgress.answeredQuestions);
+
+            // Only update remaining time if we have a valid saved time
+            if (savedProgress.remainingTime > 0) {
+                setRemainingTime(savedProgress.remainingTime);
+            }
+
+            // Set last saved time from loaded progress
+            if (savedProgress.lastSaved) {
+                // Use a timeout to avoid state update during render
+                setTimeout(() => {
+                    // We can't directly set lastSavedTime here since it's from the hook
+                    // Instead, we'll let the save function handle it
+                }, 0);
+            }
+        }
+    }, [currentActiveExam, sortedQuestions]); // Add dependencies for proper conversion
+
+    // Auto-save callback - defined outside useEffect to avoid recreation
+    const autoSaveCallback = useCallback(() => {
+        // Get current values from refs at save time
+        saveExamProgress(
+            answersRef.current,
+            answeredQuestionsRef.current,
+            remainingTimeRef.current,
+            currentActiveExam?.examAttemptId,
+            examId
+        );
+    }, [saveExamProgress, currentActiveExam?.examAttemptId, examId]);
+
+    // Auto-save setup - only depend on stable values
+    useEffect(() => {
+        if (currentActiveExam) {
+            startAutoSave(autoSaveCallback, 30000); // Auto-save every 30 seconds
+
+            return () => {
+                stopAutoSave();
+            };
+        }
+    }, [currentActiveExam, autoSaveCallback, startAutoSave, stopAutoSave]); // Include autoSaveCallback as dependency
 
     const handleSubmit = async () => {
         if (!currentActiveExam) return;
@@ -68,8 +147,8 @@ const DoTestPage: React.FC = () => {
         setIsSubmitting(true);
 
         // Prepare answers using stored answer data
-        const submissionAnswers: ExamSubmissionAnswer[] = sortedQuestions.map((q: ActiveExamQuestion, index: number) => {
-            const answerData = answers[index];
+        const submissionAnswers: ExamSubmissionAnswer[] = sortedQuestions.map((q: ActiveExamQuestion) => {
+            const answerData = answers[q.examQuestionId];
             return {
                 examQuestionId: q.examQuestionId,
                 selectedAnswerId: answerData?.selectedAnswerId || null,
@@ -82,16 +161,19 @@ const DoTestPage: React.FC = () => {
             if (result) {
                 // Close the confirmation modal
                 setShowConFirmed(false);
-                // Clear localStorage after successful submission
-                localStorage.removeItem('examAnswers');
-                localStorage.removeItem('answeredQuestions');
-                localStorage.removeItem('examRemainingTime');
-                localStorage.removeItem('activeExamAttempt');
-                navigate('/exam-test')
-            
+                // Clear all exam progress after successful submission
+                clearExamProgress();
+                navigate('/exam-test');
+            } else {
+                // If submission failed, close modal anyway to prevent getting stuck
+                setShowConFirmed(false);
+                // Maybe show error message here
+                console.error('Submission failed - no result returned');
             }
         } catch (err) {
             console.error('Submit failed:', err);
+            // Close modal even on error to prevent getting stuck
+            setShowConFirmed(false);
             // Handle error - maybe show toast
         } finally {
             setIsSubmitting(false);
@@ -99,12 +181,12 @@ const DoTestPage: React.FC = () => {
     };
 
     const handleCancel = () => {
-        // Clear localStorage when cancelling
-        localStorage.removeItem('examAnswers');
-        localStorage.removeItem('answeredQuestions');
-        localStorage.removeItem('examRemainingTime');
-        localStorage.removeItem('activeExamAttempt');
-        
+        // Close the confirmation modal
+        setShowConFirmed(false);
+
+        // Clear all exam progress when cancelling
+        clearExamProgress();
+
         // Check if this is a combo test (has attemptId param)
         if (attemptId) {
             // For combo tests, redirect to exam test page
@@ -127,13 +209,13 @@ const DoTestPage: React.FC = () => {
 
     const totalQuestions = sortedQuestions.length;
 
-    const handleAnswerChange = useCallback((questionIndex: number, hasAnswer: boolean, answerData?: { selectedAnswerId?: string; frqAnswerText?: string }) => {
+    const handleAnswerChange = useCallback((examQuestionId: string, hasAnswer: boolean, answerData?: { selectedAnswerId?: string; frqAnswerText?: string }) => {
         setAnsweredQuestions(prev => {
             const newSet = new Set(prev);
             if (hasAnswer) {
-                newSet.add(questionIndex);
+                newSet.add(examQuestionId);
             } else {
-                newSet.delete(questionIndex);
+                newSet.delete(examQuestionId);
             }
             return newSet;
         });
@@ -141,8 +223,8 @@ const DoTestPage: React.FC = () => {
         if (answerData) {
             setAnswers(prev => ({
                 ...prev,
-                [questionIndex]: {
-                    ...prev[questionIndex],
+                [examQuestionId]: {
+                    ...prev[examQuestionId],
                     ...answerData
                 }
             }));
@@ -162,7 +244,33 @@ const DoTestPage: React.FC = () => {
                 <div className="bg-teal-50/60 rounded-xl p-4 mb-6 border border-teal-200/50">
                     <div className="flex items-center justify-between">
                         <span className="font-semibold text-gray-700">⏱️ Thời gian còn lại:</span>
-                        <Timer initialMinutes={currentActiveExam?.durationInMinute || 60} onTimeUp={handleSubmit} />
+                        <Timer
+                            initialMinutes={currentActiveExam?.durationInMinute || 60}
+                            onTimeUp={handleSubmit}
+                            remainingTime={remainingTime}
+                            onTimeChange={setRemainingTime}
+                        />
+                    </div>
+                    {/* Auto-save indicator */}
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-teal-200/30">
+                        <span className="text-sm text-gray-600">💾 Tự động lưu:</span>
+                        <div className="flex items-center gap-2">
+                            {lastSavedTime && Date.now() - lastSavedTime < 2000 ? (
+                                <div className="flex items-center gap-1 text-xs text-teal-600 font-medium">
+                                    <div className="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></div>
+                                    Đang lưu...
+                                </div>
+                            ) : lastSavedTime ? (
+                                <span className="text-xs text-gray-500">
+                                    {new Date(lastSavedTime).toLocaleTimeString('vi-VN', {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                </span>
+                            ) : (
+                                <span className="text-xs text-gray-400">Chưa lưu</span>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -173,11 +281,11 @@ const DoTestPage: React.FC = () => {
                             Câu hỏi ({totalQuestions})
                         </h3>
                         <div className="grid grid-cols-5 gap-2">
-                            {sortedQuestions.map((q: ActiveExamQuestion, index: number) => (
+                            {sortedQuestions.map((q: ActiveExamQuestion) => (
                                 <button
-                                    key={index}
+                                    key={q.examQuestionId}
                                     className={`w-10 h-10 rounded-lg border-2 text-sm font-bold transition-all duration-200 ${
-                                        answeredQuestions.has(index)
+                                        answeredQuestions.has(q.examQuestionId)
                                             ? 'bg-teal-600 text-white border-teal-600 shadow-md'
                                             : 'bg-white/80 border-gray-200 text-gray-700 hover:bg-teal-100 hover:border-teal-300'
                                     }`}
@@ -235,9 +343,9 @@ const DoTestPage: React.FC = () => {
                         </div>
                     ) : currentActiveExam ? (
                         <div className="space-y-8">
-                            {sortedQuestions.map((q: ActiveExamQuestion, index: number) => {
+                            {sortedQuestions.map((q: ActiveExamQuestion) => {
                                 if (q.question.type === 'mcq') {
-                                    const currentAnswer = answers[index];
+                                    const currentAnswer = answers[q.examQuestionId];
                                     return (
                                         <QuestionCard
                                             key={q.examQuestionId}
@@ -254,11 +362,12 @@ const DoTestPage: React.FC = () => {
                                                     .map((a: ExamAnswer) => ({ id: a.id, text: a.content || '' }))
                                             }}
                                             questionNumber={q.orderNumber}
-                                            onAnswerChange={(answerId) => handleAnswerChange(index, !!answerId, { selectedAnswerId: answerId })}
+                                            onAnswerChange={(answerId) => handleAnswerChange(q.examQuestionId, !!answerId, { selectedAnswerId: answerId })}
                                             selectedAnswerId={currentAnswer?.selectedAnswerId}
                                         />
                                     );
                                 } else if (q.question.type === 'frq') {
+                                    const currentAnswer = answers[q.examQuestionId];
                                     return (
                                         <FRQCard
                                             key={q.examQuestionId}
@@ -273,8 +382,9 @@ const DoTestPage: React.FC = () => {
                                                 expectedAnswer: "Sample answer" // This would come from API if available
                                             }}
                                             questionNumber={q.orderNumber}
+                                            savedAnswer={currentAnswer?.frqAnswerText}
                                             onAnswerChange={(_questionIndex, hasAnswer, answerData) =>
-                                                handleAnswerChange(index, hasAnswer, answerData)
+                                                handleAnswerChange(q.examQuestionId, hasAnswer, answerData)
                                             }
                                         />
                                     );

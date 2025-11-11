@@ -23,7 +23,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNumber, o
                             type="radio"
                             name={`question-${question.id}`}
                             value={option.id}
-                            checked={selectedAnswerId === option.id}
+                            checked={String(selectedAnswerId) === String(option.id)}
                             onChange={() => handleAnswerChange(option.id || '')}
                             className="h-4 w-4"
                         />
