@@ -50,6 +50,24 @@ const DoTestPage: React.FC = () => {
         return currentActiveExam?.durationInMinute ? currentActiveExam.durationInMinute * 60 : 3600; // Default 60 minutes
     });
 
+    // Timer countdown logic
+    useEffect(() => {
+        if (remainingTime > 0) {
+            const timer = setTimeout(() => {
+                setRemainingTime(prev => {
+                    const newTime = prev - 1;
+                    if (newTime <= 0) {
+                        handleSubmit();
+                        return 0;
+                    }
+                    return newTime;
+                });
+            }, 1000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [remainingTime]);
+
     // Initialize answers and answeredQuestions - will be loaded from localStorage in useEffect
     const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(new Set());
     const [answers, setAnswers] = useState<Record<string, { selectedAnswerId?: string; frqAnswerText?: string }>>({});
@@ -64,6 +82,9 @@ const DoTestPage: React.FC = () => {
     const answersRef = useRef(answers);
     const answeredQuestionsRef = useRef(answeredQuestions);
     const remainingTimeRef = useRef(remainingTime);
+
+    // Refs for question navigation
+    const questionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     // Update refs when values change
     useEffect(() => {
@@ -281,13 +302,24 @@ const DoTestPage: React.FC = () => {
         });
     }, []);
 
+    // Navigation function to scroll to a specific question
+    const scrollToQuestion = useCallback((questionIndex: number) => {
+        const questionElement = questionRefs.current[questionIndex];
+        if (questionElement) {
+            questionElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    }, []);
+
 
     return (
         <div className="flex h-screen bg-teal-50/80">
             {/* Left Sidebar */}
             <aside className="w-72 bg-white/95 backdrop-blur-sm p-6 flex flex-col shadow-xl border-r border-teal-200/50">
                 <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">📚 English Test</h2>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">📚{currentActiveExam?.title || 'Exam'}</h2>
                     <div className="h-1 w-16 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full"></div>
                 </div>
 
@@ -324,6 +356,29 @@ const DoTestPage: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Progress Bar */}
+                <div className="bg-white/60 rounded-xl p-4 mb-6 border border-teal-200/50">
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="font-semibold text-gray-700">📊 Tiến độ</span>
+                        <span className="text-sm text-gray-600">
+                            {answeredQuestions.size}/{totalQuestions} câu
+                        </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+                        <div
+                            className="bg-gradient-to-r from-teal-500 to-cyan-500 h-3 rounded-full transition-all duration-500 ease-out"
+                            style={{
+                                width: totalQuestions > 0 ? `${(answeredQuestions.size / totalQuestions) * 100}%` : '0%'
+                            }}
+                        ></div>
+                    </div>
+                    <div className="text-center">
+                        <span className="text-xs text-gray-500">
+                            {totalQuestions > 0 ? Math.round((answeredQuestions.size / totalQuestions) * 100) : 0}% hoàn thành
+                        </span>
+                    </div>
+                </div>
+
                 <div className="flex-1 overflow-y-auto">
                     <div className="bg-white/60 rounded-xl p-4 mb-6 border border-teal-200/50">
                         <h3 className="font-bold text-gray-800 mb-4 flex items-center">
@@ -331,11 +386,12 @@ const DoTestPage: React.FC = () => {
                             Câu hỏi ({totalQuestions})
                         </h3>
                         <div className="grid grid-cols-5 gap-2">
-                            {sortedQuestions.map((q: ActiveExamQuestion) => (
+                            {sortedQuestions.map((q: ActiveExamQuestion, index: number) => (
                                 <button
                                     key={q.examQuestionId}
-                                    className={`w-10 h-10 rounded-lg border-2 text-sm font-bold transition-all duration-200 ${answeredQuestions.has(q.examQuestionId)
-                                        ? 'bg-teal-600 text-white border-teal-600 shadow-md'
+                                    onClick={() => scrollToQuestion(index)}
+                                    className={`w-10 h-10 rounded-lg border-2 text-sm font-bold transition-all duration-200 cursor-pointer ${answeredQuestions.has(q.examQuestionId)
+                                        ? 'bg-teal-600 text-white border-teal-600 shadow-md hover:bg-teal-700'
                                         : 'bg-white/80 border-gray-200 text-gray-700 hover:bg-teal-100 hover:border-teal-300'
                                         }`}
                                 >
@@ -392,50 +448,58 @@ const DoTestPage: React.FC = () => {
                         </div>
                     ) : currentActiveExam ? (
                         <div className="space-y-8">
-                            {sortedQuestions.map((q: ActiveExamQuestion) => {
+                            {sortedQuestions.map((q: ActiveExamQuestion, index: number) => {
                                 if (q.question.type === 'mcq') {
                                     const currentAnswer = answers[q.examQuestionId];
                                     return (
-                                        <QuestionCard
+                                        <div
                                             key={q.examQuestionId}
-                                            question={{
-                                                id: q.question.id,
-                                                text: q.question.content,
-                                                subject: q.question.subject.name,
-                                                difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
-                                                type: q.question.type as "mcq",
-                                                createdBy: q.question.createdBy,
-                                                createdAt: new Date().toISOString(),
-                                                options: q.question.answers
-                                                    .filter((a: ExamAnswer) => a.content !== null)
-                                                    .map((a: ExamAnswer) => ({ id: a.id, text: a.content || '' }))
-                                            }}
-                                            questionNumber={q.orderNumber}
-                                            onAnswerChange={(answerId) => handleAnswerChange(q.examQuestionId, !!answerId, { selectedAnswerId: answerId })}
-                                            selectedAnswerId={currentAnswer?.selectedAnswerId}
-                                        />
+                                            ref={(el) => { questionRefs.current[index] = el; }}
+                                        >
+                                            <QuestionCard
+                                                question={{
+                                                    id: q.question.id,
+                                                    text: q.question.content,
+                                                    subject: q.question.subject.name,
+                                                    difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
+                                                    type: q.question.type as "mcq",
+                                                    createdBy: q.question.createdBy,
+                                                    createdAt: new Date().toISOString(),
+                                                    options: q.question.answers
+                                                        .filter((a: ExamAnswer) => a.content !== null)
+                                                        .map((a: ExamAnswer) => ({ id: a.id, text: a.content || '' }))
+                                                }}
+                                                questionNumber={q.orderNumber}
+                                                onAnswerChange={(answerId) => handleAnswerChange(q.examQuestionId, !!answerId, { selectedAnswerId: answerId })}
+                                                selectedAnswerId={currentAnswer?.selectedAnswerId}
+                                            />
+                                        </div>
                                     );
                                 } else if (q.question.type === 'frq') {
                                     const currentAnswer = answers[q.examQuestionId];
                                     return (
-                                        <FRQCard
+                                        <div
                                             key={q.examQuestionId}
-                                            question={{
-                                                id: q.question.id,
-                                                text: q.question.content,
-                                                subject: q.question.subject.name,
-                                                difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
-                                                type: q.question.type as "frq",
-                                                createdBy: q.question.createdBy,
-                                                createdAt: new Date().toISOString(),
-                                                expectedAnswer: "Sample answer" // This would come from API if available
-                                            }}
-                                            questionNumber={q.orderNumber}
-                                            savedAnswer={currentAnswer?.frqAnswerText}
-                                            onAnswerChange={(_questionIndex, hasAnswer, answerData) =>
-                                                handleAnswerChange(q.examQuestionId, hasAnswer, answerData)
-                                            }
-                                        />
+                                            ref={(el) => { questionRefs.current[index] = el; }}
+                                        >
+                                            <FRQCard
+                                                question={{
+                                                    id: q.question.id,
+                                                    text: q.question.content,
+                                                    subject: q.question.subject.name,
+                                                    difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
+                                                    type: q.question.type as "frq",
+                                                    createdBy: q.question.createdBy,
+                                                    createdAt: new Date().toISOString(),
+                                                    expectedAnswer: "Sample answer" // This would come from API if available
+                                                }}
+                                                questionNumber={q.orderNumber}
+                                                savedAnswer={currentAnswer?.frqAnswerText}
+                                                onAnswerChange={(_questionIndex, hasAnswer, answerData) =>
+                                                    handleAnswerChange(q.examQuestionId, hasAnswer, answerData)
+                                                }
+                                            />
+                                        </div>
                                     );
                                 }
                                 return null;

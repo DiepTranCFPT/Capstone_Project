@@ -25,7 +25,7 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
         if (savedAnswer !== prevSavedAnswerRef.current) {
             const newValue = savedAnswer || '';
             prevSavedAnswerRef.current = savedAnswer;
-            
+
             // Always update if prop changed, using functional update to avoid dependency
             setAnswerText(prevText => {
                 if (newValue !== prevText) {
@@ -41,28 +41,38 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
         }
     }, [savedAnswer]); // Only depend on savedAnswer
 
+    // Notify parent about saved answer on initial mount
+    useEffect(() => {
+        if (savedAnswer && savedAnswer.trim() !== '' && onAnswerChange && isInitialMountRef.current) {
+            onAnswerChange(questionNumber - 1, true, {
+                selectedAnswerId: undefined,
+                frqAnswerText: savedAnswer.trim() || undefined
+            });
+        }
+    }, []); // Empty dependency array - only run once on mount
+
     // Notify parent when answerText changes (skip on initial mount and when syncing)
     useEffect(() => {
-        // Skip on initial mount - parent already knows about savedAnswer
-        if (isInitialMountRef.current) {
-            isInitialMountRef.current = false;
-            return;
-        }
-
         // Skip if we're currently syncing from prop
         if (isSyncingRef.current) {
             return;
         }
 
-        // Only notify if answerText actually changed (user input, not from prop)
-        if (onAnswerChange) {
+        // Always notify on initial mount if there's a saved answer
+        const shouldNotify = !isInitialMountRef.current || (savedAnswer && savedAnswer.trim() !== '');
+
+        if (shouldNotify && onAnswerChange) {
             const trimmedText = answerText.trim();
             onAnswerChange(questionNumber - 1, trimmedText !== '', {
                 selectedAnswerId: undefined,
                 frqAnswerText: trimmedText || undefined
             });
         }
-    }, [answerText, questionNumber, onAnswerChange]); // Don't include savedAnswer to avoid loop
+
+        if (isInitialMountRef.current) {
+            isInitialMountRef.current = false;
+        }
+    }, [answerText, questionNumber, onAnswerChange]); // Remove savedAnswer from deps to avoid array size changes
 
     const handleAnalyze = () => {
         spendTokens(1);
