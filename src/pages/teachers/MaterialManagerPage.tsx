@@ -11,6 +11,7 @@ import type { Subject } from "~/types/subject";
 import LessonService from "~/services/LessonService";
 import LessonModal, { type LessonFormValues } from "~/components/teachers/Lesson/lessonModal";
 import MaterialModal from "~/components/teachers/material/MaterialModal";
+import EditModal, { type EditMaterialFormValues } from "~/components/teachers/material/EditModal";
 
 
 const { Title } = Typography;
@@ -51,6 +52,7 @@ const MaterialManagerPage: React.FC = () => {
     fetchAll,
     remove,
     create,
+    update,
   } = useLearningMaterialsAdmin();
 
   const [filteredData, setFilteredData] = useState<LearningMaterial[]>([]);
@@ -58,7 +60,7 @@ const MaterialManagerPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
   const [serverKeyword, setServerKeyword] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [creating] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [materialTypes, setMaterialTypes] = useState<MaterialType[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loadingTypes, setLoadingTypes] = useState(false);
@@ -66,6 +68,9 @@ const MaterialManagerPage: React.FC = () => {
   const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
   const [addingLesson, setAddingLesson] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<LearningMaterial | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingMaterial, setEditingMaterial] = useState<LearningMaterial | null>(null);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     if (error) {
@@ -121,11 +126,11 @@ const MaterialManagerPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (isAddOpen) {
+    if (isAddOpen || isEditOpen) {
       fetchMaterialTypes();
       fetchSubjects();
     }
-  }, [isAddOpen]);
+  }, [isAddOpen, isEditOpen]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -182,7 +187,10 @@ const MaterialManagerPage: React.FC = () => {
     setIsAddOpen(true);
   };
 
-  // deprecated: handled inside MaterialModal
+  const handleEdit = useCallback((material: LearningMaterial) => {
+    setEditingMaterial(material);
+    setIsEditOpen(true);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -234,6 +242,7 @@ const MaterialManagerPage: React.FC = () => {
           setPageSize={setPageSize}
           onDelete={handleDelete}
           onAddLesson={handleAddLesson}
+          onEdit={handleEdit}
         />
 
         <MaterialModal
@@ -246,7 +255,7 @@ const MaterialManagerPage: React.FC = () => {
           onCancel={() => setIsAddOpen(false)}
           onSubmit={async (values) => {
             try {
-              // setCreating được điều khiển bởi component cha để show loading nếu cần
+              setCreating(true);
               await create(values);
               message.success("Material created successfully!");
               await reloadMaterials({ pageNo: 0 });
@@ -254,6 +263,8 @@ const MaterialManagerPage: React.FC = () => {
               setIsAddOpen(false);
             } catch {
               message.error("Failed to create material!");
+            } finally {
+              setCreating(false);
             }
           }}
         />
@@ -264,6 +275,39 @@ const MaterialManagerPage: React.FC = () => {
           material={selectedMaterial}
           onCancel={handleCloseLessonModal}
           onSubmit={handleCreateLesson}
+        />
+
+        <EditModal
+          open={isEditOpen}
+          loading={updating}
+          material={editingMaterial}
+          materialTypes={materialTypes}
+          subjects={subjects}
+          loadingTypes={loadingTypes}
+          loadingSubjects={loadingSubjects}
+          onCancel={() => {
+            setIsEditOpen(false);
+            setEditingMaterial(null);
+          }}
+          onSubmit={async (values: EditMaterialFormValues) => {
+            if (!editingMaterial) {
+              message.error("Material not found.");
+              return;
+            }
+
+            try {
+              setUpdating(true);
+              await update(editingMaterial.id, values);
+              message.success("Material updated successfully!");
+              await reloadMaterials();
+              setIsEditOpen(false);
+              setEditingMaterial(null);
+            } catch {
+              message.error("Failed to update material!");
+            } finally {
+              setUpdating(false);
+            }
+          }}
         />
       </Card>
     </div>
