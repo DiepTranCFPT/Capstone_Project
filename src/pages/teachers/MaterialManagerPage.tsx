@@ -12,6 +12,33 @@ import type { Subject } from "~/types/subject";
 
 const { Title } = Typography;
 
+const normalizeApiList = <T,>(source: unknown): T[] => {
+  if (Array.isArray(source)) {
+    return source as T[];
+  }
+  if (!source || typeof source !== "object") {
+    return [];
+  }
+
+  const obj = source as Record<string, unknown>;
+  const candidateKeys: Array<keyof Record<string, unknown>> = ["data", "items", "content"];
+
+  for (const key of candidateKeys) {
+    const value = obj[key];
+    if (Array.isArray(value)) {
+      return value as T[];
+    }
+    if (value && typeof value === "object") {
+      const nested = normalizeApiList<T>(value);
+      if (nested.length > 0) {
+        return nested;
+      }
+    }
+  }
+
+  return [];
+};
+
 const MaterialManagerPage: React.FC = () => {
   const {
     materials,
@@ -65,10 +92,9 @@ const MaterialManagerPage: React.FC = () => {
   const fetchMaterialTypes = async () => {
     try {
       setLoadingTypes(true);
-      const response = await MaterialTypeService.getAll();
-      if (response.data.data) {
-        setMaterialTypes(response.data.data || []);
-      }
+      const response = await MaterialTypeService.getAll({ pageSize: 1000 });
+      const list = normalizeApiList<MaterialType>(response.data);
+      setMaterialTypes(list);
     } catch {
       message.error("Failed to load material types");
     } finally {
@@ -80,9 +106,8 @@ const MaterialManagerPage: React.FC = () => {
     try {
       setLoadingSubjects(true);
       const response = await SubjectService.getAll({ pageSize: 1000 });
-      if (response.data.data) {
-        setSubjects(response.data.data?.items || []);
-      }
+      const list = normalizeApiList<Subject>(response.data);
+      setSubjects(list);
     } catch {
       message.error("Failed to load subjects");
     } finally {
@@ -243,13 +268,11 @@ const MaterialManagerPage: React.FC = () => {
                 filterOption={(input, option) =>
                   String(option?.label ?? "").toLowerCase().includes(input.toLowerCase())
                 }
-              >
-                {materialTypes.map((type) => (
-                  <Select.Option key={type.id} value={type.id} label={type.name}>
-                    {type.name}
-                  </Select.Option>
-                ))}
-              </Select>
+                options={materialTypes.map((type) => ({
+                  label: type.name,
+                  value: type.id,
+                }))}
+              />
             </Form.Item>
 
             <Form.Item
