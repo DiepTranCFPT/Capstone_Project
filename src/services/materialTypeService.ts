@@ -3,6 +3,7 @@
 import axiosInstance from "~/configs/axios";
 import type { AxiosResponse } from "axios";
 import type { ApiResponse } from "~/types/api";
+import type { PageInfo } from "~/types/pagination";
 
 export interface MaterialType {
   id: string;
@@ -15,10 +16,14 @@ export interface MaterialTypePayload {
   description?: string;
 }
 
+type MaterialTypeListResponse = PageInfo<MaterialType> | MaterialType[];
+
 const MaterialTypeService = {
   // Lấy tất cả material-types
-  async getAll(): Promise<AxiosResponse<ApiResponse<MaterialType[]>>> {
-    return axiosInstance.get("/material-types");
+  async getAll(
+    params?: { pageNo?: number; pageSize?: number; keyword?: string },
+  ): Promise<AxiosResponse<ApiResponse<MaterialTypeListResponse> | MaterialType[]>> {
+    return axiosInstance.get("/material-types", { params });
   },
 
   // Lấy material-type theo ID
