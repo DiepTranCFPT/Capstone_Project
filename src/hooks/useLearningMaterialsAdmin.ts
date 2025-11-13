@@ -1,123 +1,154 @@
-// src/hooks/useLearningMaterialsAdmin.ts
-import { useState, useCallback, useEffect } from "react";
-import { message } from "antd";
-import type { LearningMaterial, PageInfo } from "~/types/learningMaterial";
+import { useState, useCallback } from "react";
+import type { LearningMaterial, LearningMaterialQuery, PageInfo } from "~/types/learningMaterial";
 import LearningMaterialService from "~/services/learningMaterialService";
 
-export const useLearningMaterialsAdmin = () => {
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  if (typeof error === "string" && error.trim() !== "") {
+    return error;
+  }
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+  return fallback;
+};
+
+export function useLearningMaterial() {
   const [materials, setMaterials] = useState<LearningMaterial[]>([]);
+  const [pageInfo, setPageInfo] = useState<PageInfo<LearningMaterial> | null>(null);
   const [loading, setLoading] = useState(false);
-  const [total, setTotal] = useState(0);
-  const [pageNo, setPageNo] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
-  const [search, setSearch] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchMaterials = useCallback(async () => {
-    setLoading(true);
+  //  Lấy danh sách (có phân trang)
+  const fetchAll = useCallback(async (query?: LearningMaterialQuery) => {
     try {
-      const params = {
-        pageNo,
-        pageSize,
-        keyword: search || undefined,
-      };
-
-      const res = await LearningMaterialService.getAll(params);
-
-      const page = res.data.data as PageInfo<LearningMaterial>;
-
-      const items = page.items ?? page.content ?? [];
-
-      const totalCount = page.totalElement ?? page.totalElements ?? 0;
-
-      setMaterials(items);
-      setTotal(totalCount);
-    } catch (error) {
-      console.error(" Failed to fetch materials:", error);
-      message.error("Không thể tải danh sách tài liệu");
+      setLoading(true);
+      const res = await LearningMaterialService.getAll(query);
+      const data = res.data.data;
+      setPageInfo(data);
+      setMaterials(data.items || data.content || []);
+    } catch (err: unknown) {
+      console.error("❌ Fetch materials error:", err);
+      setError(getErrorMessage(err, "Failed to load materials"));
     } finally {
       setLoading(false);
     }
-  }, [pageNo, pageSize, search]);
-
-  // Helper để search server-side từ UI khác (ví dụ MaterialFilter)
-  const applyServerSearch = useCallback((keyword: string) => {
-    setPageNo(0);
-    setSearch(keyword);
   }, []);
 
-  const deleteMaterial = useCallback(
-    async (id: string) => {
-      try {
-        const res = await LearningMaterialService.delete(id);
-        if (res.data.code === 1000 || res.data.code === 0) {
-          message.success("Xóa tài liệu thành công");
-          // refetch current page
-          fetchMaterials();
-        } else {
-          message.error(res.data.message || "Xóa thất bại");
-        }
-      } catch (error) {
-        console.error(" Failed to delete material:", error);
-        message.error("Không thể xóa tài liệu");
-      }
-    },
-    [fetchMaterials]
-  );
+  //  Lấy chi tiết
+  const getById = useCallback(async (id: string): Promise<LearningMaterial | null> => {
+    try {
+      setLoading(true);
+      const res = await LearningMaterialService.getById(id);
+      return res.data.data;
+    } catch (err: unknown) {
+      console.error("❌ Get material error:", err);
+      setError(getErrorMessage(err, "Failed to load material"));
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const updateMaterial = useCallback(
-    async (id: string, data: Partial<LearningMaterial>) => {
-      try {
-        const res = await LearningMaterialService.update(id, data);
-        if (res.data.code === 1000) {
-          message.success("Cập nhật thành công");
-          fetchMaterials();
-        } else {
-          message.error(res.data.message || "Cập nhật thất bại");
-        }
-      } catch (error) {
-        console.error(" Failed to update material:", error);
-        message.error("Không thể cập nhật tài liệu");
-      }
-    },
-    [fetchMaterials]
-  );
+  //  Tạo mới
+  const create = useCallback(async (payload: Partial<LearningMaterial>) => {
+    try {
+      setLoading(true);
+      const res = await LearningMaterialService.create(payload);
+      return res.data.data;
+    } catch (err: unknown) {
+      console.error("❌ Create material error:", err);
+      const message = getErrorMessage(err, "Failed to create material");
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const createMaterial = useCallback(
-    async (data: Partial<LearningMaterial>) => {
-      try {
-        const res = await LearningMaterialService.create(data);
-        if (res.data.code === 1000 || res.data.code === 0) {
-          message.success("Tạo tài liệu thành công");
-          fetchMaterials();
-        } else {
-          message.error(res.data.message || "Tạo tài liệu thất bại");
-        }
-      } catch (error) {
-        console.error(" Failed to create material:", error);
-        message.error("Không thể tạo tài liệu");
-      }
-    },
-    [fetchMaterials]
-  );
+  //  Cập nhật
+  const update = useCallback(async (id: string, payload: Partial<LearningMaterial>) => {
+    try {
+      setLoading(true);
+      const res = await LearningMaterialService.update(id, payload);
+      return res.data.data;
+    } catch (err: unknown) {
+      console.error("❌ Update material error:", err);
+      const message = getErrorMessage(err, "Failed to update material");
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  useEffect(() => {
-    fetchMaterials();
-  }, [fetchMaterials]);
+  //  Xóa
+  const remove = useCallback(async (id: string) => {
+    try {
+      setLoading(true);
+      await LearningMaterialService.delete(id);
+    } catch (err: unknown) {
+      console.error("❌ Delete material error:", err);
+      const message = getErrorMessage(err, "Failed to delete material");
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  //  Tìm kiếm
+  const search = useCallback(async (keyword: string) => {
+    try {
+      setLoading(true);
+      const res = await LearningMaterialService.search(keyword);
+      setMaterials(res.data.data);
+    } catch (err: unknown) {
+      console.error("❌ Search error:", err);
+      setError(getErrorMessage(err, "Failed to search materials"));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  //  Lấy các materials khác (ví dụ public, my, registered)
+  const getPublic = useCallback(async () => {
+    const res = await LearningMaterialService.getPublic();
+    return res.data.data;
+  }, []);
+
+  const getMyMaterials = useCallback(async () => {
+    const res = await LearningMaterialService.getMyMaterials();
+    return res.data.data;
+  }, []);
+
+  const getRegistered = useCallback(async () => {
+    const res = await LearningMaterialService.getRegistered();
+    return res.data.data;
+  }, []);
 
   return {
     materials,
+    pageInfo,
     loading,
-    total,
-    pageNo,
-    setPageNo,
-    pageSize,
-    setPageSize,
+    error,
+    fetchAll,
+    getById,
+    create,
+    update,
+    remove,
     search,
-    setSearch,
-    applyServerSearch,
-    fetchMaterials,
-    deleteMaterial,
-    updateMaterial,
-    createMaterial,
+    getPublic,
+    getMyMaterials,
+    getRegistered,
   };
-};
+}
+
+export default useLearningMaterial;
