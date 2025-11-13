@@ -15,8 +15,7 @@ import { FileAddOutlined, MenuFoldOutlined, MenuUnfoldOutlined, TagsOutlined } f
 const teacherMenu = [
     { label: "Dashboard", path: "/teacher/dashboard", icon: <FaTachometerAlt /> },
     { label: "My Classes", path: "/teacher/classes", icon: <FaUsers /> },
-    { label: "materials", path: "Materials", icon: <TagsOutlined /> },
-    { label: "Lesson Materials", path: "/teacher/lesson-materials", icon: <TagsOutlined /> },
+    { label: "Materials", path: "Materials", icon: <TagsOutlined /> },
     { label: "Questions Bank", path: "/teacher/question-bank", icon: <FaUsers /> },
     { label: "Templates", path: "/teacher/templates", icon: <FaClipboardList /> }, 
     { label: "Create Template", path: "/teacher/create-template", icon: <FileAddOutlined /> },

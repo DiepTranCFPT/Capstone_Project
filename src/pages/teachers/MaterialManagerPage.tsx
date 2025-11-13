@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Card, Typography, Button, message, Modal, Form, Input, Switch, Select } from "antd";
+import { Card, Typography, Button, message } from "antd";
 import { ReloadOutlined, PlusOutlined } from "@ant-design/icons";
 import useLearningMaterialsAdmin from "~/hooks/useLearningMaterialsAdmin";
 import type { LearningMaterial, LearningMaterialQuery } from "~/types/learningMaterial";
@@ -8,6 +8,9 @@ import MaterialTable from "~/components/admins/materials/MaterialTable";
 import MaterialTypeService, { type MaterialType } from "~/services/materialTypeService";
 import SubjectService from "~/services/subjectService";
 import type { Subject } from "~/types/subject";
+import LessonService from "~/services/LessonService";
+import LessonModal, { type LessonFormValues } from "~/components/teachers/Lesson/lessonModal";
+import MaterialModal from "~/components/teachers/material/MaterialModal";
 
 
 const { Title } = Typography;
@@ -55,12 +58,14 @@ const MaterialManagerPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
   const [serverKeyword, setServerKeyword] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [form] = Form.useForm();
+  const [creating] = useState(false);
   const [materialTypes, setMaterialTypes] = useState<MaterialType[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loadingTypes, setLoadingTypes] = useState(false);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
+  const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
+  const [addingLesson, setAddingLesson] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState<LearningMaterial | null>(null);
 
   useEffect(() => {
     if (error) {
@@ -132,6 +137,38 @@ const MaterialManagerPage: React.FC = () => {
     }
   };
 
+  const handleAddLesson = useCallback((material: LearningMaterial) => {
+    setSelectedMaterial(material);
+    setIsLessonModalOpen(true);
+  }, []);
+
+  const handleCloseLessonModal = useCallback(() => {
+    setIsLessonModalOpen(false);
+    setSelectedMaterial(null);
+  }, []);
+
+  const handleCreateLesson = useCallback(async (values: LessonFormValues) => {
+    if (!selectedMaterial) {
+      message.error("Learning material not found.");
+      return;
+    }
+
+    try {
+      setAddingLesson(true);
+      await LessonService.create({
+        ...values,
+        learningMaterialId: selectedMaterial.id,
+      });
+      message.success("Lesson created successfully!");
+      handleCloseLessonModal();
+    } catch (error: unknown) {
+      message.error("Failed to create lesson!");
+      console.error("Create lesson error:", error);
+    } finally {
+      setAddingLesson(false);
+    }
+  }, [handleCloseLessonModal, selectedMaterial]);
+
   const applyServerSearch = useCallback(
     (keyword: string) => {
       const normalizedKeyword = keyword.trim();
@@ -142,26 +179,10 @@ const MaterialManagerPage: React.FC = () => {
   );
 
   const openAddModal = () => {
-    form.resetFields();
-    form.setFieldsValue({ isPublic: true });
     setIsAddOpen(true);
   };
 
-  const handleCreate = async () => {
-    try {
-      const values = await form.validateFields();
-      setCreating(true);
-      await create(values);
-      message.success("Material created successfully!");
-      await reloadMaterials({ pageNo: 0 });
-      setPageNo(0);
-      setIsAddOpen(false);
-    } catch {
-      // validation or create error already handled
-    } finally {
-      setCreating(false);
-    }
-  };
+  // deprecated: handled inside MaterialModal
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -212,96 +233,38 @@ const MaterialManagerPage: React.FC = () => {
           setPageNo={setPageNo}
           setPageSize={setPageSize}
           onDelete={handleDelete}
+          onAddLesson={handleAddLesson}
         />
 
-        <Modal
-          title="Add Material"
+        <MaterialModal
           open={isAddOpen}
-          onOk={handleCreate}
-          confirmLoading={creating}
+          loading={creating}
+          materialTypes={materialTypes}
+          subjects={subjects}
+          loadingTypes={loadingTypes}
+          loadingSubjects={loadingSubjects}
           onCancel={() => setIsAddOpen(false)}
-          okText="Create"
-          cancelText="Cancel"
-        >
-          <Form
-            form={form}
-            layout="vertical"
-            initialValues={{ isPublic: true }}
-          >
-            <Form.Item
-              label="Title"
-              name="title"
-              rules={[{ required: true, message: "Please enter title" }]}
-            >
-              <Input placeholder="Enter title" />
-            </Form.Item>
+          onSubmit={async (values) => {
+            try {
+              // setCreating được điều khiển bởi component cha để show loading nếu cần
+              await create(values);
+              message.success("Material created successfully!");
+              await reloadMaterials({ pageNo: 0 });
+              setPageNo(0);
+              setIsAddOpen(false);
+            } catch {
+              message.error("Failed to create material!");
+            }
+          }}
+        />
 
-            <Form.Item
-              label="Description"
-              name="description"
-              rules={[{ required: true, message: "Please enter description" }]}
-            >
-              <Input.TextArea placeholder="Enter description" rows={3} />
-            </Form.Item>
-
-            <Form.Item
-              label="Content URL"
-              name="contentUrl"
-              rules={[
-                { required: true, message: "Please enter content URL" },
-                { type: "url", message: "Please enter a valid URL" },
-              ]}
-            >
-              <Input placeholder="https://..." />
-            </Form.Item>
-
-            <Form.Item
-              label="Material Type"
-              name="typeId"
-              rules={[{ required: true, message: "Please select material type" }]}
-            >
-              <Select
-                placeholder="Select material type"
-                loading={loadingTypes}
-                showSearch
-                optionFilterProp="label"
-                filterOption={(input, option) =>
-                  String(option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-                }
-                options={materialTypes.map((type) => ({
-                  label: type.name,
-                  value: type.id,
-                }))}
-              />
-            </Form.Item>
-
-            <Form.Item
-              label="Subject"
-              name="subjectId"
-              rules={[{ required: true, message: "Please select subject" }]}
-            >
-              <Select
-                placeholder="Select subject"
-                loading={loadingSubjects}
-                showSearch
-                optionFilterProp="label"
-                filterOption={(input, option) =>
-                  String(option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-                }
-              >
-                {subjects.map((subject) => (
-                  <Select.Option key={subject.id} value={subject.id} label={subject.name}>
-                    {subject.name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
-
-            <Form.Item label="Public" name="isPublic" valuePropName="checked">
-              <Switch />
-            </Form.Item>
-          </Form>
-        </Modal>
+        <LessonModal
+          open={isLessonModalOpen}
+          loading={addingLesson}
+          material={selectedMaterial}
+          onCancel={handleCloseLessonModal}
+          onSubmit={handleCreateLesson}
+        />
       </Card>
     </div>
   );

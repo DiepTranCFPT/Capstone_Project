@@ -1,6 +1,6 @@
 import React from "react";
 import { Table, Tag, Button, Space, Tooltip, Popconfirm } from "antd";
-import { EyeOutlined, DeleteOutlined } from "@ant-design/icons";
+import { EyeOutlined, DeleteOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import type { LearningMaterial } from "~/types/learningMaterial";
 
@@ -13,6 +13,7 @@ interface Props {
   setPageNo: (page: number) => void;
   setPageSize: (size: number) => void;
   onDelete: (id: string) => void;
+  onAddLesson?: (material: LearningMaterial) => void;
 }
 
 const MaterialTable: React.FC<Props> = ({
@@ -24,7 +25,24 @@ const MaterialTable: React.FC<Props> = ({
   setPageNo,
   setPageSize,
   onDelete,
+  onAddLesson,
 }) => {
+  const renderTypeTag = (typeName: string) => {
+    const normalized = typeName?.toLowerCase() ?? "";
+    const isFree = normalized.includes("free");
+    const isToken = normalized.includes("token");
+
+    if (isFree) {
+      return <Tag color="green">{typeName}</Tag>;
+    }
+
+    if (isToken) {
+      return <Tag color="orange">{typeName}</Tag>;
+    }
+
+    return <Tag>{typeName}</Tag>;
+  };
+
   const columns: ColumnsType<LearningMaterial> = [
     {
       title: "Title",
@@ -36,6 +54,7 @@ const MaterialTable: React.FC<Props> = ({
       title: "Type",
       dataIndex: "typeName",
       key: "typeName",
+      render: (typeName: string) => renderTypeTag(typeName),
     },
     {
       title: "Subject",
@@ -75,6 +94,13 @@ const MaterialTable: React.FC<Props> = ({
               href={record.contentUrl}
               target="_blank"
               className="bg-green-500 hover:bg-green-600 border-0"
+            />
+          </Tooltip>
+          <Tooltip title="Add Lesson">
+            <Button
+              icon={<PlusCircleOutlined />}
+              className="text-blue-600 border-blue-600 hover:text-white hover:bg-blue-600"
+              onClick={() => onAddLesson?.(record)}
             />
           </Tooltip>
           <Tooltip title="Delete">

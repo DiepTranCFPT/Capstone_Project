@@ -185,7 +185,6 @@ function App() {
           <Route path="classes" element={<MyClassesPage />} />
           <Route path="classes/:classId" element={<ClassroomDetailPage />} />
           <Route path="materials" element={<MaterialManagerPage />} />
-          {/* <Route path="lesson-materials" element={<LessonMaterialManagerPage />} /> */}
           <Route path="question-bank" element={<QuestionBankPage />} />
           <Route path="create-template" element={<CreateExamPage />} />
           <Route path="templates" element={<ExamListPage />} />
