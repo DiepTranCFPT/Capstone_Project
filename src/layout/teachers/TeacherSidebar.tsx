@@ -16,9 +16,10 @@ const teacherMenu = [
     { label: "Dashboard", path: "/teacher/dashboard", icon: <FaTachometerAlt /> },
     { label: "My Classes", path: "/teacher/classes", icon: <FaUsers /> },
     { label: "materials", path: "Materials", icon: <TagsOutlined /> },
+    { label: "Lesson Materials", path: "/teacher/lesson-materials", icon: <TagsOutlined /> },
     { label: "Questions Bank", path: "/teacher/question-bank", icon: <FaUsers /> },
-    { label: "Templates", path: "/teacher/templates", icon: <FaClipboardList /> }, // Trang danh sách mới
-        { label: "Create Template", path: "/teacher/create-template", icon: <FileAddOutlined /> }, // Trang tạo mới
+    { label: "Templates", path: "/teacher/templates", icon: <FaClipboardList /> }, 
+    { label: "Create Template", path: "/teacher/create-template", icon: <FileAddOutlined /> },
     { label: "Grading", path: "/teacher/grading", icon: <FaClipboardList /> },
     { label: "Analytics", path: "/teacher/analytics", icon: <FaChartBar /> },
     { label: "Settings", path: "/teacher/settings", icon: <FaCog /> },
