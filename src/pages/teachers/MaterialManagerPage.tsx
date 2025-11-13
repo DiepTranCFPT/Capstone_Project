@@ -3,6 +3,7 @@ import { Card, Typography, Button, message } from "antd";
 import { ReloadOutlined, PlusOutlined } from "@ant-design/icons";
 import useLearningMaterialsAdmin from "~/hooks/useLearningMaterialsAdmin";
 import type { LearningMaterial, LearningMaterialQuery } from "~/types/learningMaterial";
+import type { Lesson } from "~/types/lesson";
 import MaterialFilter from "~/components/admins/materials/MaterialFilter";
 import MaterialTable from "~/components/admins/materials/MaterialTable";
 import MaterialTypeService, { type MaterialType } from "~/services/materialTypeService";
@@ -71,12 +72,33 @@ const MaterialManagerPage: React.FC = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<LearningMaterial | null>(null);
   const [updating, setUpdating] = useState(false);
-
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [loadingLessons, setLoadingLessons] = useState(false);
   useEffect(() => {
     if (error) {
       message.error(error);
     }
   }, [error]);
+
+  const normalizeLessons = useCallback((source: unknown): Lesson[] => {
+    if (Array.isArray(source)) {
+      return source as Lesson[];
+    }
+    if (!source || typeof source !== "object") {
+      return [];
+    }
+    const obj = source as Record<string, unknown>;
+    if (Array.isArray(obj.items)) {
+      return obj.items as Lesson[];
+    }
+    if (Array.isArray(obj.data)) {
+      return obj.data as Lesson[];
+    }
+    if (Array.isArray(obj.content)) {
+      return obj.content as Lesson[];
+    }
+    return [];
+  }, []);
 
   const reloadMaterials = useCallback(
     async (override?: LearningMaterialQuery) => {
@@ -142,37 +164,63 @@ const MaterialManagerPage: React.FC = () => {
     }
   };
 
-  const handleAddLesson = useCallback((material: LearningMaterial) => {
-    setSelectedMaterial(material);
-    setIsLessonModalOpen(true);
-  }, []);
+  const fetchLessonsByMaterial = useCallback(
+    async (materialId: string) => {
+      try {
+        setLoadingLessons(true);
+        const res = await LessonService.getByLearningMaterial(materialId);
+        setLessons(normalizeLessons(res.data.data));
+      } catch (error) {
+        console.error("Failed to fetch lessons:", error);
+        message.error("Failed to load lessons for this material.");
+        setLessons([]);
+      } finally {
+        setLoadingLessons(false);
+      }
+    },
+    [normalizeLessons],
+  );
+
+  const handleAddLesson = useCallback(
+    (material: LearningMaterial) => {
+      setSelectedMaterial(material);
+      void fetchLessonsByMaterial(material.id);
+      setIsLessonModalOpen(true);
+    },
+    [fetchLessonsByMaterial],
+  );
 
   const handleCloseLessonModal = useCallback(() => {
     setIsLessonModalOpen(false);
     setSelectedMaterial(null);
+    setLessons([]);
   }, []);
 
-  const handleCreateLesson = useCallback(async (values: LessonFormValues) => {
-    if (!selectedMaterial) {
-      message.error("Learning material not found.");
-      return;
-    }
+  const handleCreateLesson = useCallback(
+    async (values: LessonFormValues) => {
+      if (!selectedMaterial) {
+        message.error("Learning material not found.");
+        return;
+      }
 
-    try {
-      setAddingLesson(true);
-      await LessonService.create({
-        ...values,
-        learningMaterialId: selectedMaterial.id,
-      });
-      message.success("Lesson created successfully!");
-      handleCloseLessonModal();
-    } catch (error: unknown) {
-      message.error("Failed to create lesson!");
-      console.error("Create lesson error:", error);
-    } finally {
-      setAddingLesson(false);
-    }
-  }, [handleCloseLessonModal, selectedMaterial]);
+      try {
+        setAddingLesson(true);
+        await LessonService.create({
+          ...values,
+          learningMaterialId: selectedMaterial.id,
+        });
+        message.success("Lesson created successfully!");
+        const refreshed = await LessonService.getByLearningMaterial(selectedMaterial.id);
+        setLessons(normalizeLessons(refreshed.data.data));
+      } catch (error: unknown) {
+        message.error("Failed to create lesson!");
+        console.error("Create lesson error:", error);
+      } finally {
+        setAddingLesson(false);
+      }
+    },
+    [normalizeLessons, selectedMaterial],
+  );
 
   const applyServerSearch = useCallback(
     (keyword: string) => {
@@ -271,10 +319,12 @@ const MaterialManagerPage: React.FC = () => {
 
         <LessonModal
           open={isLessonModalOpen}
-          loading={addingLesson}
           material={selectedMaterial}
+          loadingLessons={loadingLessons}
+          lessons={lessons}
           onCancel={handleCloseLessonModal}
-          onSubmit={handleCreateLesson}
+          onCreateLesson={handleCreateLesson}
+          creating={addingLesson}
         />
 
         <EditModal

@@ -2,7 +2,10 @@
 
 export interface Lesson {
     id: string;
-    title: string;
+    title?: string;
+    name?: string;
+    file?: string;
+    url?: string;
     description?: string;
     learningMaterialId: string;
     order?: number; // Thứ tự hiển thị trong learning material

@@ -98,7 +98,7 @@ const MaterialTable: React.FC<Props> = ({
               className="bg-green-500 hover:bg-green-600 border-0"
             />
           </Tooltip>
-          <Tooltip title="Add Lesson">
+          <Tooltip title="View Lessons">
             <Button
               icon={<PlusCircleOutlined />}
               className="text-blue-600 border-blue-600 hover:text-white hover:bg-blue-600"
