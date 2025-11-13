@@ -1,6 +1,6 @@
 import React from "react";
 import { Table, Tag, Button, Space, Tooltip, Popconfirm } from "antd";
-import { EyeOutlined, DeleteOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import { EyeOutlined, DeleteOutlined, PlusCircleOutlined, EditOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import type { LearningMaterial } from "~/types/learningMaterial";
 
@@ -14,6 +14,7 @@ interface Props {
   setPageSize: (size: number) => void;
   onDelete: (id: string) => void;
   onAddLesson?: (material: LearningMaterial) => void;
+  onEdit?: (material: LearningMaterial) => void;
 }
 
 const MaterialTable: React.FC<Props> = ({
@@ -26,6 +27,7 @@ const MaterialTable: React.FC<Props> = ({
   setPageSize,
   onDelete,
   onAddLesson,
+  onEdit,
 }) => {
   const renderTypeTag = (typeName: string) => {
     const normalized = typeName?.toLowerCase() ?? "";
@@ -101,6 +103,12 @@ const MaterialTable: React.FC<Props> = ({
               icon={<PlusCircleOutlined />}
               className="text-blue-600 border-blue-600 hover:text-white hover:bg-blue-600"
               onClick={() => onAddLesson?.(record)}
+            />
+          </Tooltip>
+          <Tooltip title="Edit">
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => onEdit?.(record)}
             />
           </Tooltip>
           <Tooltip title="Delete">
