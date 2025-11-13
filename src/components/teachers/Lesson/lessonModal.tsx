@@ -1,96 +1,152 @@
-import React, { useEffect } from "react";
-import { Form, Input, Modal } from "antd";
+import React, { useMemo, useState } from "react";
+import { Empty, List, Modal, Spin, Typography, Button, Form, Input } from "antd";
 import type { LearningMaterial } from "~/types/learningMaterial";
+import type { Lesson } from "~/types/lesson";
 
 export interface LessonFormValues {
-    name: string;
-    file?: string;
-    url?: string;
-    questionId?: string;
-    learningMaterialId: string;
+  name: string;
+  file: string;
+  url: string;
 }
 
 interface LessonModalProps {
-    open: boolean;
-    loading: boolean;
-    material: LearningMaterial | null;
-    onCancel: () => void;
-    onSubmit: (values: LessonFormValues) => Promise<void> | void;
+  open: boolean;
+  material: LearningMaterial | null;
+  lessons?: Lesson[];
+  loadingLessons?: boolean;
+  onCancel: () => void;
+  onCreateLesson?: (values: LessonFormValues) => Promise<void> | void;
+  creating?: boolean;
 }
 
 const LessonModal: React.FC<LessonModalProps> = ({
-    open,
-    loading,
-    material,
-    onCancel,
-    onSubmit,
+  open,
+  material,
+  lessons = [],
+  loadingLessons = false,
+  onCancel,
+  onCreateLesson,
+  creating = false,
 }) => {
-    const [form] = Form.useForm<LessonFormValues>();
+  const getLessonTitle = (lesson: Lesson): string => {
+    if (lesson.name) return lesson.name;
+    if (lesson.title) return lesson.title;
+    return lesson.id;
+  };
 
-    useEffect(() => {
-        if (open) {
-            form.resetFields();
-            form.setFieldsValue({
-                learningMaterialId: material?.id ?? "",
-            });
-        }
-    }, [open, material, form]);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [form] = Form.useForm<LessonFormValues>();
+  const canCreate = useMemo(() => Boolean(material), [material]);
 
-    const handleOk = async () => {
-        try {
-            const values = await form.validateFields();
-            await onSubmit(values);
-        } catch (error: unknown) {
-            if (typeof error === "object" && error !== null && "errorFields" in error) {
-                return;
-            }
-            console.error("LessonModal submit error:", error);
-        }
-    };
+  const openCreateModal = () => {
+    if (!material) {
+      return;
+    }
+    form.resetFields();
+    form.setFieldsValue({
+      name: `Lesson ${lessons.length + 1}`,
+    });
+    setIsCreateOpen(true);
+  };
 
-    return (
-        <Modal
-            title={material ? `Add Lesson • ${material.title}` : "Add Lesson"}
-            open={open}
-            onOk={handleOk}
-            confirmLoading={loading}
-            onCancel={onCancel}
-            okText="Create"
-            cancelText="Cancel"
-            destroyOnClose
-        >
-            <Form form={form} layout="vertical">
-                <Form.Item
-                    label="Name"
-                    name="name"
-                    rules={[{ required: true, message: "Please enter lesson name" }]}
-                >
-                    <Input placeholder="Enter lesson name" />
-                </Form.Item>
+  const handleCreate = async () => {
+    if (!onCreateLesson) {
+      return;
+    }
+    try {
+      const values = await form.validateFields();
+      await onCreateLesson(values);
+      setIsCreateOpen(false);
+    } catch (error: unknown) {
+      if (typeof error === "object" && error !== null && "errorFields" in error) {
+        return;
+      }
+      console.error("Lesson creation error:", error);
+    }
+  };
 
-                <Form.Item label="File" name="file">
-                    <Input placeholder="Enter file path or identifier" />
-                </Form.Item>
+  return (
+    <Modal
+      title={material ? `Lessons • ${material.title}` : "Lessons"}
+      open={open}
+      footer={[
+        <Button key="close" onClick={onCancel}>
+          Close
+        </Button>,
+        <Button key="create" type="primary" onClick={() => openCreateModal()} disabled={!canCreate}>
+          Add Lesson
+        </Button>,
+      ]}
+      onCancel={onCancel}
+      destroyOnClose
+    >
+      <Typography.Title level={5}>Existing Lessons</Typography.Title>
+      <div className="max-h-64 overflow-y-auto mb-4">
+        {loadingLessons ? (
+          <div className="flex justify-center py-6">
+            <Spin />
+          </div>
+        ) : lessons.length > 0 ? (
+            <List
+            size="small"
+            dataSource={lessons}
+            renderItem={(lesson) => {
+              const secondary = lesson.url ?? lesson.file ?? lesson.description;
+              return (
+                <List.Item>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{getLessonTitle(lesson)}</span>
+                    {secondary && <span className="text-gray-500 text-xs">{secondary}</span>}
+                  </div>
+                </List.Item>
+              );
+            }}
+          />
+        ) : (
+          <div className="flex justify-center py-6">
+            <Empty description="No lessons yet." />
+          </div>
+        )}
+      </div>
 
-                <Form.Item
-                    label="URL"
-                    name="url"
-                    rules={[{ type: "url", message: "Please enter a valid URL" }]}
-                >
-                    <Input placeholder="https://..." />
-                </Form.Item>
+      <Modal
+        title="Add Lesson"
+        open={isCreateOpen}
+        onOk={handleCreate}
+        confirmLoading={creating}
+        onCancel={() => setIsCreateOpen(false)}
+        okText="Create"
+        cancelText="Cancel"
+        destroyOnClose
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item
+            label="Name"
+            name="name"
+            rules={[{ required: true, message: "Vui lòng nhập tên bài học" }]}
+          >
+            <Input placeholder="Nhập tên bài học" />
+          </Form.Item>
 
+          <Form.Item
+            label="File"
+            name="file"
+            rules={[{ required: true, message: "Vui lòng nhập thông tin file" }]}
+          >
+            <Input placeholder="Nhập thông tin file" />
+          </Form.Item>
 
-                <Form.Item
-                    label="Learning Material ID"
-                    name="learningMaterialId"
-                    rules={[{ required: true, message: "Missing learning material" }]}
-                >
-                    <Input disabled />
-                </Form.Item>
-            </Form>
-        </Modal>
-    );
+          <Form.Item
+            label="URL"
+            name="url"
+            rules={[{ required: true, message: "Vui lòng nhập URL" }]}
+          >
+            <Input placeholder="Nhập URL" type="url" />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </Modal>
+  );
 };
 
 export default LessonModal;
