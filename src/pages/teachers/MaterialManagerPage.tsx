@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Card, Typography, Button, message, Modal, Form, Input, Switch, Select } from "antd";
 import { ReloadOutlined, PlusOutlined } from "@ant-design/icons";
-import { useLearningMaterialsAdmin } from "~/hooks/useLearningMaterialsAdmin";
-import type { LearningMaterial } from "~/types/learningMaterial";
+import useLearningMaterialsAdmin from "~/hooks/useLearningMaterialsAdmin";
+import type { LearningMaterial, LearningMaterialQuery } from "~/types/learningMaterial";
 import MaterialFilter from "~/components/admins/materials/MaterialFilter";
 import MaterialTable from "~/components/admins/materials/MaterialTable";
 import MaterialTypeService, { type MaterialType } from "~/services/materialTypeService";
@@ -15,19 +15,18 @@ const { Title } = Typography;
 const MaterialManagerPage: React.FC = () => {
   const {
     materials,
+    pageInfo,
     loading,
-    total,
-    pageNo,
-    setPageNo,
-    pageSize,
-    setPageSize,
-    applyServerSearch,
-    fetchMaterials,
-    deleteMaterial,
-    createMaterial,
+    error,
+    fetchAll,
+    remove,
+    create,
   } = useLearningMaterialsAdmin();
 
   const [filteredData, setFilteredData] = useState<LearningMaterial[]>([]);
+  const [pageNo, setPageNo] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [serverKeyword, setServerKeyword] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form] = Form.useForm();
@@ -37,8 +36,27 @@ const MaterialManagerPage: React.FC = () => {
   const [loadingSubjects, setLoadingSubjects] = useState(false);
 
   useEffect(() => {
-    fetchMaterials();
-  }, [fetchMaterials]);
+    if (error) {
+      message.error(error);
+    }
+  }, [error]);
+
+  const reloadMaterials = useCallback(
+    async (override?: LearningMaterialQuery) => {
+      const finalQuery: LearningMaterialQuery = {
+        pageNo,
+        pageSize,
+        keyword: serverKeyword.trim() || undefined,
+        ...override,
+      };
+      await fetchAll(finalQuery);
+    },
+    [fetchAll, pageNo, pageSize, serverKeyword],
+  );
+
+  useEffect(() => {
+    reloadMaterials();
+  }, [reloadMaterials]);
 
   useEffect(() => {
     setFilteredData(materials);
@@ -81,12 +99,22 @@ const MaterialManagerPage: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteMaterial(id);
+      await remove(id);
+      await reloadMaterials();
       message.success("Material deleted successfully!");
     } catch {
       message.error("Failed to delete material!");
     }
   };
+
+  const applyServerSearch = useCallback(
+    (keyword: string) => {
+      const normalizedKeyword = keyword.trim();
+      setPageNo(0);
+      setServerKeyword(normalizedKeyword);
+    },
+    [],
+  );
 
   const openAddModal = () => {
     form.resetFields();
@@ -98,7 +126,10 @@ const MaterialManagerPage: React.FC = () => {
     try {
       const values = await form.validateFields();
       setCreating(true);
-      await createMaterial(values);
+      await create(values);
+      message.success("Material created successfully!");
+      await reloadMaterials({ pageNo: 0 });
+      setPageNo(0);
       setIsAddOpen(false);
     } catch {
       // validation or create error already handled
@@ -122,7 +153,9 @@ const MaterialManagerPage: React.FC = () => {
           <div className="flex gap-2">
             <Button
               icon={<ReloadOutlined />}
-              onClick={fetchMaterials}
+              onClick={() => {
+                void reloadMaterials();
+              }}
               className="bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-sm"
             >
               Reload
@@ -148,7 +181,7 @@ const MaterialManagerPage: React.FC = () => {
         <MaterialTable
           loading={loading}
           data={filteredData}
-          total={total}
+          total={pageInfo?.totalElements ?? pageInfo?.totalElement ?? materials.length}
           pageNo={pageNo}
           pageSize={pageSize}
           setPageNo={setPageNo}

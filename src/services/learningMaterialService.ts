@@ -1,90 +1,59 @@
 import axiosInstance from "~/configs/axios";
 import type { AxiosResponse } from "axios";
-import type {
-  LearningMaterial,
-  LearningMaterialQuery,
-  PageInfo,
-  ApiResponse,
-} from "~/types/learningMaterial";
+import type { ApiResponse } from "~/types/api";
+import type { LearningMaterial, LearningMaterialQuery, PageInfo } from "~/types/learningMaterial";
 
 const LearningMaterialService = {
-  //  ADMIN API
-
-  // Lấy tất cả tài liệu (Admin)
-  async getAll(
-    params?: LearningMaterialQuery
-  ): Promise<AxiosResponse<ApiResponse<PageInfo<LearningMaterial>>>> {
-    return axiosInstance.get("/learning-materials", { params });
-  },
-
-  // Lấy chi tiết tài liệu theo ID
-  async getById(
-    id: string
-  ): Promise<AxiosResponse<ApiResponse<LearningMaterial>>> {
+  getById(id: string): Promise<AxiosResponse<ApiResponse<LearningMaterial>>> {
     return axiosInstance.get(`/learning-materials/${id}`);
   },
 
-  // Cập nhật tài liệu
-  async update(
-    id: string,
-    data: Partial<LearningMaterial>
-  ): Promise<AxiosResponse<ApiResponse<LearningMaterial>>> {
-    return axiosInstance.put(`/learning-materials/${id}`, data);
+  update(id: string, payload: Partial<LearningMaterial>): Promise<AxiosResponse<ApiResponse<LearningMaterial>>> {
+    return axiosInstance.put(`/learning-materials/${id}`, payload);
   },
 
-  // Xóa tài liệu (soft delete)
-  async delete(
-    id: string
-  ): Promise<AxiosResponse<ApiResponse<{ message: string }>>> {
+  delete(id: string): Promise<AxiosResponse<ApiResponse<null>>> {
     return axiosInstance.delete(`/learning-materials/${id}`);
   },
 
-  //  TEACHER API
-
-  // Tạo mới tài liệu học
-  async create(
-    data: Partial<LearningMaterial>
-  ): Promise<AxiosResponse<ApiResponse<LearningMaterial>>> {
-    return axiosInstance.post("/learning-materials", data);
+  getAll(params?: LearningMaterialQuery): Promise<AxiosResponse<ApiResponse<PageInfo<LearningMaterial>>>> {
+    return axiosInstance.get(`/learning-materials`, { params });
   },
 
-  // Lấy danh sách tài liệu của giáo viên hiện tại
-  async getMyMaterials(
-    params?: LearningMaterialQuery
-  ): Promise<AxiosResponse<ApiResponse<PageInfo<LearningMaterial>>>> {
-    return axiosInstance.get("/learning-materials/my-materials", { params });
+  create(payload: Partial<LearningMaterial>): Promise<AxiosResponse<ApiResponse<LearningMaterial>>> {
+    return axiosInstance.post(`/learning-materials`, payload);
   },
 
-  // Lấy tài liệu theo loại (typeId)
-  async getByType(
-    typeId: string
-  ): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {
+  register(learningMaterialId: string): Promise<AxiosResponse<ApiResponse<unknown>>> {
+    return axiosInstance.post(`/learning-materials/register/${learningMaterialId}`);
+  },
+
+  search(keyword: string): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {
+    return axiosInstance.get(`/learning-materials/search`, { params: { keyword } });
+  },
+
+  getRegistered(): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {
+    return axiosInstance.get(`/learning-materials/registered`);
+  },
+
+  getPublic(): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {
+    return axiosInstance.get(`/learning-materials/public`);
+  },
+
+  getMyMaterials(): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {
+    return axiosInstance.get(`/learning-materials/my-materials`);
+  },
+
+  getByType(typeId: string): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {
     return axiosInstance.get(`/learning-materials/by-type/${typeId}`);
   },
 
-  // Lấy tài liệu theo môn học (subjectId)
-  async getBySubject(
-    subjectId: string
-  ): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {
+  getBySubject(subjectId: string): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {
     return axiosInstance.get(`/learning-materials/by-subject/${subjectId}`);
   },
 
-  // STUDENT API
-
-  // Tìm kiếm tài liệu theo từ khóa
-  async search(
-    keyword: string
-  ): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {
-    return axiosInstance.get(`/learning-materials/search`, {
-      params: { keyword },
-    });
-  },
-
-  // Lấy danh sách tài liệu public
-  async getPublic(
-    params?: LearningMaterialQuery
-  ): Promise<AxiosResponse<ApiResponse<PageInfo<LearningMaterial>>>> {
-    return axiosInstance.get(`/learning-materials/public`, { params });
+  getAllNoPaging(): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {
+    return axiosInstance.get(`/learning-materials/all`);
   },
 };
 
