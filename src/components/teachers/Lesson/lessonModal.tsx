@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
-import { Empty, List, Modal, Spin, Typography, Button, Form, Input, Popconfirm, Tooltip } from "antd";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Empty, List, Modal, Spin, Typography, Button, Form, Input, Popconfirm, Tooltip, message } from "antd";
+import { EditOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons";
+import LessonService from "~/services/LessonService";
 import type { LearningMaterial } from "~/types/learningMaterial";
 import type { Lesson } from "~/types/lesson";
 
@@ -45,6 +46,80 @@ const LessonModal: React.FC<LessonModalProps> = ({
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletingLessonId, setDeletingLessonId] = useState<string | null>(null);
+  const [previewLesson, setPreviewLesson] = useState<Lesson | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [loadingLessonDetail, setLoadingLessonDetail] = useState(false);
+  const openPreviewModal = (lesson: Lesson) => {
+    setPreviewLesson(lesson);
+    setIsPreviewOpen(true);
+  };
+
+  const closePreviewModal = () => {
+    setIsPreviewOpen(false);
+    setPreviewLesson(null);
+  };
+
+  const getEmbeddedUrl = (lesson: Lesson): string | null => {
+    const rawUrl = lesson.url ?? lesson.file ?? "";
+    if (!rawUrl) return null;
+    try {
+      const url = new URL(rawUrl);
+      const host = url.hostname;
+      if (host.includes("youtube.com")) {
+        const videoId = url.searchParams.get("v");
+        if (videoId) {
+          return `https://www.youtube.com/embed/${videoId}`;
+        }
+      }
+      if (host.includes("youtu.be")) {
+        const pathId = url.pathname.replace("/", "");
+        if (pathId) {
+          return `https://www.youtube.com/embed/${pathId}`;
+        }
+      }
+      return rawUrl;
+    } catch {
+      return rawUrl;
+    }
+  };
+
+  const renderPreviewContent = () => {
+    if (!previewLesson) {
+      return (
+        <div className="py-8 text-center text-gray-500">
+          Không tìm thấy thông tin bài học.
+        </div>
+      );
+    }
+    const embedUrl = getEmbeddedUrl(previewLesson);
+    return (
+      <div className="space-y-4">
+        <Typography.Title level={4} className="!mb-2">
+          {previewLesson.name ?? previewLesson.title ?? "Lesson"}
+        </Typography.Title>
+        <div className="rounded-xl overflow-hidden bg-black">
+          {embedUrl ? (
+            <iframe
+              title={previewLesson.name ?? previewLesson.title ?? "Lesson preview"}
+              src={embedUrl}
+              className="w-full aspect-video"
+              allowFullScreen
+            />
+          ) : (
+            <div className="text-white text-center py-16">
+              Không có URL để hiển thị.
+            </div>
+          )}
+        </div>
+        {previewLesson.description && (
+          <div>
+            <Typography.Title level={5}>Description</Typography.Title>
+            <Typography.Paragraph>{previewLesson.description}</Typography.Paragraph>
+          </div>
+        )}
+      </div>
+    );
+  };
   const [form] = Form.useForm<LessonFormValues>();
   const canCreate = useMemo(() => Boolean(material), [material]);
 
@@ -61,16 +136,33 @@ const LessonModal: React.FC<LessonModalProps> = ({
     setIsFormOpen(true);
   };
 
-  const openEditModal = (lesson: Lesson) => {
+  const openEditModal = async (lesson: Lesson) => {
     setFormMode("edit");
     setEditingLesson(lesson);
     setIsFormOpen(true);
-    form.setFieldsValue({
-      name: lesson.name ?? lesson.title ?? "",
-      description: lesson.description ?? "",
-      file: lesson.file ?? "",
-      url: lesson.url ?? "",
-    });
+    setLoadingLessonDetail(true);
+    try {
+      const response = await LessonService.getById(lesson.id);
+      const detail = response.data.data ?? lesson;
+      setEditingLesson(detail);
+      form.setFieldsValue({
+        name: detail.name ?? detail.title ?? "",
+        description: detail.description ?? "",
+        file: detail.file ?? "",
+        url: detail.url ?? "",
+      });
+    } catch (error) {
+      console.error("Fetch lesson detail error:", error);
+      message.error("Không thể tải thông tin bài học. Vui lòng thử lại.");
+      form.setFieldsValue({
+        name: lesson.name ?? lesson.title ?? "",
+        description: lesson.description ?? "",
+        file: lesson.file ?? "",
+        url: lesson.url ?? "",
+      });
+    } finally {
+      setLoadingLessonDetail(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -160,6 +252,15 @@ const LessonModal: React.FC<LessonModalProps> = ({
                       )}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
+                      <Tooltip title="Xem bài học">
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<EyeOutlined />}
+                          onClick={() => openPreviewModal(lesson)}
+                          aria-label="Xem bài học"
+                        />
+                      </Tooltip>
                       {onUpdateLesson ? (
                         <Tooltip title="Sửa bài học">
                           <Button
@@ -209,7 +310,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
         title={formMode === "create" ? "Add Lesson" : "Edit Lesson"}
         open={isFormOpen}
         onOk={handleSubmit}
-        confirmLoading={submitting || (formMode === "create" && creating)}
+        confirmLoading={loadingLessonDetail || submitting || (formMode === "create" && creating)}
         onCancel={() => {
           setIsFormOpen(false);
           setEditingLesson(null);
@@ -277,6 +378,21 @@ const LessonModal: React.FC<LessonModalProps> = ({
             />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title={previewLesson ? previewLesson.name ?? previewLesson.title : "Lesson preview"}
+        open={isPreviewOpen}
+        footer={[
+          <Button key="close" onClick={closePreviewModal}>
+            Close
+          </Button>,
+        ]}
+        onCancel={closePreviewModal}
+        width={900}
+        destroyOnClose
+      >
+        {renderPreviewContent()}
       </Modal>
     </Modal>
   );

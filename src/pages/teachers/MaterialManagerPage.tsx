@@ -13,6 +13,7 @@ import LessonService from "~/services/LessonService";
 import LessonModal, { type LessonFormValues } from "~/components/teachers/Lesson/lessonModal";
 import MaterialModal from "~/components/teachers/material/MaterialModal";
 import EditModal, { type EditMaterialFormValues } from "~/components/teachers/material/EditModal";
+import MaterialPreviewModal from "~/components/teachers/material/MaterialPreviewModal";
 
 
 const { Title } = Typography;
@@ -74,6 +75,8 @@ const MaterialManagerPage: React.FC = () => {
   const [updating, setUpdating] = useState(false);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loadingLessons, setLoadingLessons] = useState(false);
+  const [previewMaterial, setPreviewMaterial] = useState<LearningMaterial | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   useEffect(() => {
     if (error) {
       message.error(error);
@@ -189,6 +192,11 @@ const MaterialManagerPage: React.FC = () => {
     },
     [fetchLessonsByMaterial],
   );
+
+  const handlePreview = useCallback((material: LearningMaterial) => {
+    setPreviewMaterial(material);
+    setIsPreviewOpen(true);
+  }, []);
 
   const handleCloseLessonModal = useCallback(() => {
     setIsLessonModalOpen(false);
@@ -337,6 +345,7 @@ const MaterialManagerPage: React.FC = () => {
           onDelete={handleDelete}
           onAddLesson={handleAddLesson}
           onEdit={handleEdit}
+          onPreview={handlePreview}
         />
 
         <MaterialModal
@@ -373,6 +382,15 @@ const MaterialManagerPage: React.FC = () => {
           onUpdateLesson={handleUpdateLesson}
           onDeleteLesson={handleDeleteLesson}
           creating={addingLesson}
+        />
+
+        <MaterialPreviewModal
+          open={isPreviewOpen}
+          material={previewMaterial}
+          onClose={() => {
+            setIsPreviewOpen(false);
+            setPreviewMaterial(null);
+          }}
         />
 
         <EditModal
