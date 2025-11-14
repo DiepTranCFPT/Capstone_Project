@@ -1,12 +1,14 @@
 import React, { useMemo, useState } from "react";
-import { Empty, List, Modal, Spin, Typography, Button, Form, Input } from "antd";
+import { Empty, List, Modal, Spin, Typography, Button, Form, Input, Popconfirm, Tooltip } from "antd";
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import type { LearningMaterial } from "~/types/learningMaterial";
 import type { Lesson } from "~/types/lesson";
 
 export interface LessonFormValues {
   name: string;
-  file: string;
-  url: string;
+  file?: string;
+  url?: string;
+  description?: string;
 }
 
 interface LessonModalProps {
@@ -16,6 +18,8 @@ interface LessonModalProps {
   loadingLessons?: boolean;
   onCancel: () => void;
   onCreateLesson?: (values: LessonFormValues) => Promise<void> | void;
+  onUpdateLesson?: (lessonId: string, values: LessonFormValues) => Promise<void> | void;
+  onDeleteLesson?: (lessonId: string) => Promise<void> | void;
   creating?: boolean;
 }
 
@@ -26,6 +30,8 @@ const LessonModal: React.FC<LessonModalProps> = ({
   loadingLessons = false,
   onCancel,
   onCreateLesson,
+  onUpdateLesson,
+  onDeleteLesson,
   creating = false,
 }) => {
   const getLessonTitle = (lesson: Lesson): string => {
@@ -34,7 +40,11 @@ const LessonModal: React.FC<LessonModalProps> = ({
     return lesson.id;
   };
 
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"create" | "edit">("create");
+  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [deletingLessonId, setDeletingLessonId] = useState<string | null>(null);
   const [form] = Form.useForm<LessonFormValues>();
   const canCreate = useMemo(() => Boolean(material), [material]);
 
@@ -46,22 +56,70 @@ const LessonModal: React.FC<LessonModalProps> = ({
     form.setFieldsValue({
       name: `Lesson ${lessons.length + 1}`,
     });
-    setIsCreateOpen(true);
+    setFormMode("create");
+    setEditingLesson(null);
+    setIsFormOpen(true);
   };
 
-  const handleCreate = async () => {
-    if (!onCreateLesson) {
+  const openEditModal = (lesson: Lesson) => {
+    setFormMode("edit");
+    setEditingLesson(lesson);
+    setIsFormOpen(true);
+    form.setFieldsValue({
+      name: lesson.name ?? lesson.title ?? "",
+      description: lesson.description ?? "",
+      file: lesson.file ?? "",
+      url: lesson.url ?? "",
+    });
+  };
+
+  const handleSubmit = async () => {
+    if (formMode === "create" && !onCreateLesson) {
+      return;
+    }
+    if (formMode === "edit" && (!onUpdateLesson || !editingLesson)) {
       return;
     }
     try {
       const values = await form.validateFields();
-      await onCreateLesson(values);
-      setIsCreateOpen(false);
+      // Kiểm tra ít nhất một trong hai (file hoặc url) phải có
+      if (!values.file && !values.url) {
+        form.setFields([
+          { name: 'file', errors: ['Vui lòng nhập file hoặc URL'] },
+          { name: 'url', errors: ['Vui lòng nhập file hoặc URL'] },
+        ]);
+        return;
+      }
+      setSubmitting(true);
+      if (formMode === "create" && onCreateLesson) {
+        await onCreateLesson(values);
+      }
+      if (formMode === "edit" && onUpdateLesson && editingLesson) {
+        await onUpdateLesson(editingLesson.id, values);
+      }
+      setIsFormOpen(false);
+      setEditingLesson(null);
     } catch (error: unknown) {
       if (typeof error === "object" && error !== null && "errorFields" in error) {
         return;
       }
       console.error("Lesson creation error:", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (lessonId: string) => {
+    if (!onDeleteLesson) {
+      return;
+    }
+    try {
+      setDeletingLessonId(lessonId);
+      await onDeleteLesson(lessonId);
+    } catch (error) {
+      console.error("Lesson delete error:", error);
+    } finally {
+      setDeletingLessonId(null);
     }
   };
 
@@ -87,16 +145,54 @@ const LessonModal: React.FC<LessonModalProps> = ({
             <Spin />
           </div>
         ) : lessons.length > 0 ? (
-            <List
+          <List
             size="small"
             dataSource={lessons}
             renderItem={(lesson) => {
               const secondary = lesson.url ?? lesson.file ?? lesson.description;
               return (
-                <List.Item>
-                  <div className="flex flex-col">
-                    <span className="font-medium">{getLessonTitle(lesson)}</span>
-                    {secondary && <span className="text-gray-500 text-xs">{secondary}</span>}
+                <List.Item className="!flex !items-center">
+                  <div className="flex w-full items-center justify-between gap-3">
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <span className="font-medium">{getLessonTitle(lesson)}</span>
+                      {secondary && (
+                        <span className="text-gray-500 text-xs break-all">{secondary}</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {onUpdateLesson ? (
+                        <Tooltip title="Sửa bài học">
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<EditOutlined />}
+                            onClick={() => openEditModal(lesson)}
+                            aria-label="Sửa bài học"
+                          />
+                        </Tooltip>
+                      ) : null}
+                      {onDeleteLesson ? (
+                        <Popconfirm
+                          title="Xóa bài học?"
+                          description="Hành động này không thể hoàn tác."
+                          okText="Xóa"
+                          cancelText="Hủy"
+                          okButtonProps={{ danger: true, loading: deletingLessonId === lesson.id }}
+                          onConfirm={() => handleDelete(lesson.id)}
+                        >
+                          <Tooltip title="Xóa bài học">
+                            <Button
+                              type="text"
+                              danger
+                              size="small"
+                              icon={<DeleteOutlined />}
+                              loading={deletingLessonId === lesson.id}
+                              aria-label="Xóa bài học"
+                            />
+                          </Tooltip>
+                        </Popconfirm>
+                      ) : null}
+                    </div>
                   </div>
                 </List.Item>
               );
@@ -110,12 +206,15 @@ const LessonModal: React.FC<LessonModalProps> = ({
       </div>
 
       <Modal
-        title="Add Lesson"
-        open={isCreateOpen}
-        onOk={handleCreate}
-        confirmLoading={creating}
-        onCancel={() => setIsCreateOpen(false)}
-        okText="Create"
+        title={formMode === "create" ? "Add Lesson" : "Edit Lesson"}
+        open={isFormOpen}
+        onOk={handleSubmit}
+        confirmLoading={submitting || (formMode === "create" && creating)}
+        onCancel={() => {
+          setIsFormOpen(false);
+          setEditingLesson(null);
+        }}
+        okText={formMode === "create" ? "Create" : "Save"}
         cancelText="Cancel"
         destroyOnClose
       >
@@ -129,19 +228,53 @@ const LessonModal: React.FC<LessonModalProps> = ({
           </Form.Item>
 
           <Form.Item
+            label="Description"
+            name="description"
+          >
+            <Input.TextArea placeholder="Nhập mô tả" rows={3} />
+          </Form.Item>
+
+          <Form.Item
             label="File"
             name="file"
-            rules={[{ required: true, message: "Vui lòng nhập thông tin file" }]}
+            help="Nhập file hoặc URL (ít nhất một trong hai)"
+            dependencies={['url']}
           >
-            <Input placeholder="Nhập thông tin file" />
+            <Input 
+              placeholder="Nhập thông tin file" 
+              onChange={(e) => {
+                const value = e.target.value;
+                const urlValue = form.getFieldValue('url');
+                if (value || urlValue) {
+                  form.setFields([
+                    { name: 'file', errors: [] },
+                    { name: 'url', errors: [] },
+                  ]);
+                }
+              }}
+            />
           </Form.Item>
 
           <Form.Item
             label="URL"
             name="url"
-            rules={[{ required: true, message: "Vui lòng nhập URL" }]}
+            help="Nhập file hoặc URL (ít nhất một trong hai)"
+            dependencies={['file']}
           >
-            <Input placeholder="Nhập URL" type="url" />
+            <Input 
+              placeholder="Nhập URL" 
+              type="url"
+              onChange={(e) => {
+                const value = e.target.value;
+                const fileValue = form.getFieldValue('file');
+                if (value || fileValue) {
+                  form.setFields([
+                    { name: 'file', errors: [] },
+                    { name: 'url', errors: [] },
+                  ]);
+                }
+              }}
+            />
           </Form.Item>
         </Form>
       </Modal>

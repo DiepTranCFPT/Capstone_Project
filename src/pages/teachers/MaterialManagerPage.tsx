@@ -196,6 +196,14 @@ const MaterialManagerPage: React.FC = () => {
     setLessons([]);
   }, []);
 
+  const refreshLessons = useCallback(
+    async (materialId: string) => {
+      const refreshed = await LessonService.getByLearningMaterial(materialId);
+      setLessons(normalizeLessons(refreshed.data.data));
+    },
+    [normalizeLessons],
+  );
+
   const handleCreateLesson = useCallback(
     async (values: LessonFormValues) => {
       if (!selectedMaterial) {
@@ -210,8 +218,7 @@ const MaterialManagerPage: React.FC = () => {
           learningMaterialId: selectedMaterial.id,
         });
         message.success("Lesson created successfully!");
-        const refreshed = await LessonService.getByLearningMaterial(selectedMaterial.id);
-        setLessons(normalizeLessons(refreshed.data.data));
+        await refreshLessons(selectedMaterial.id);
       } catch (error: unknown) {
         message.error("Failed to create lesson!");
         console.error("Create lesson error:", error);
@@ -219,7 +226,46 @@ const MaterialManagerPage: React.FC = () => {
         setAddingLesson(false);
       }
     },
-    [normalizeLessons, selectedMaterial],
+    [refreshLessons, selectedMaterial],
+  );
+
+  const handleUpdateLesson = useCallback(
+    async (lessonId: string, values: LessonFormValues) => {
+      if (!selectedMaterial) {
+        message.error("Learning material not found.");
+        return;
+      }
+      try {
+        await LessonService.update(lessonId, {
+          ...values,
+          learningMaterialId: selectedMaterial.id,
+        });
+        message.success("Lesson updated successfully!");
+        await refreshLessons(selectedMaterial.id);
+      } catch (error) {
+        console.error("Update lesson error:", error);
+        message.error("Failed to update lesson!");
+      }
+    },
+    [refreshLessons, selectedMaterial],
+  );
+
+  const handleDeleteLesson = useCallback(
+    async (lessonId: string) => {
+      if (!selectedMaterial) {
+        message.error("Learning material not found.");
+        return;
+      }
+      try {
+        await LessonService.delete(lessonId);
+        message.success("Lesson deleted successfully!");
+        await refreshLessons(selectedMaterial.id);
+      } catch (error) {
+        console.error("Delete lesson error:", error);
+        message.error("Failed to delete lesson!");
+      }
+    },
+    [refreshLessons, selectedMaterial],
   );
 
   const applyServerSearch = useCallback(
@@ -324,6 +370,8 @@ const MaterialManagerPage: React.FC = () => {
           lessons={lessons}
           onCancel={handleCloseLessonModal}
           onCreateLesson={handleCreateLesson}
+          onUpdateLesson={handleUpdateLesson}
+          onDeleteLesson={handleDeleteLesson}
           creating={addingLesson}
         />
 
