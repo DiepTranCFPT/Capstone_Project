@@ -15,6 +15,7 @@ interface Props {
   onDelete: (id: string) => void;
   onAddLesson?: (material: LearningMaterial) => void;
   onEdit?: (material: LearningMaterial) => void;
+  onPreview?: (material: LearningMaterial) => void;
 }
 
 const MaterialTable: React.FC<Props> = ({
@@ -28,6 +29,7 @@ const MaterialTable: React.FC<Props> = ({
   onDelete,
   onAddLesson,
   onEdit,
+  onPreview,
 }) => {
   const renderTypeTag = (typeName: string) => {
     const normalized = typeName?.toLowerCase() ?? "";
@@ -93,8 +95,7 @@ const MaterialTable: React.FC<Props> = ({
             <Button
               type="primary"
               icon={<EyeOutlined />}
-              href={record.contentUrl}
-              target="_blank"
+              onClick={() => onPreview?.(record)}
               className="bg-green-500 hover:bg-green-600 border-0"
             />
           </Tooltip>
