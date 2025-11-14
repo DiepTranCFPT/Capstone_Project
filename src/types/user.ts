@@ -1,3 +1,4 @@
+import type { Permission } from "./permission";
 
 export interface User {
   id: string;
@@ -8,6 +9,7 @@ export interface User {
   dob?: string | Date;  
   roles: string[];
   active: boolean;
+  permissions?: Permission[];
 }
 
 export interface UserPaginationData {

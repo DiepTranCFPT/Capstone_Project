@@ -28,13 +28,13 @@ const decodeJWT = (token: string): JwtPayload | null => {
 };
 
 // Helper function to map API roles to User role type
-const mapRolesToUserRole = (roles: string[]): 'USER' | 'TEACHER' | 'ADMIN' | 'ACADEMIC_ADVISOR' | 'PARENT' => {
-    if (roles === null || roles.length === 0) return 'USER'; // default to student if roles is null or empty
+const mapRolesToUserRole = (roles: string[]): 'STUDENT' | 'TEACHER' | 'ADMIN' | 'ACADEMIC_ADVISOR' | 'PARENT' => {
+    if (roles === null || roles.length === 0) return 'STUDENT'; // default to student if roles is null or empty
     if (roles.includes('ADMIN')) return 'ADMIN';
     if (roles.includes('TEACHER')) return 'TEACHER';
     if (roles.includes('ACADEMIC_ADVISOR')) return 'ACADEMIC_ADVISOR';
     if (roles.includes('PARENT')) return 'PARENT';
-    return 'USER'; // default to user
+    return 'STUDENT'; // default to user
 };
 
 export const loginApi = async (email: string, password: string): Promise<AuthResponse> => {

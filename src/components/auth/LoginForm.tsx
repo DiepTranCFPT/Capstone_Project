@@ -55,7 +55,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ buttonClasses }) => {
     useEffect(() => {
         if (user) {
             switch (user.role) {
-                case 'USER':
+                case 'STUDENT':
                     navigate('/');
                     break;
                 case 'TEACHER':
