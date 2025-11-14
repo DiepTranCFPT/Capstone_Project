@@ -1,161 +1,115 @@
-import { useParams } from "react-router-dom";
-import { materials } from "~/data/materials";
-import { Button } from "antd";
-import { ShoppingCartOutlined, PlayCircleOutlined } from "@ant-design/icons";
+import { useParams, Link } from "react-router-dom";
 import MaterialDetailTab from "~/components/teachers/content-management/materials/MaterialDetailTab";
+import { useMaterialDetail } from "~/hooks/useMaterialDetail";
 
 const MaterialsDetailPage: React.FC = () => {
   const { id } = useParams();
-  const material = materials.find((m) => m.id.toString() === id);
+  const { material, loading, error } = useMaterialDetail(id);
+  const updatedAt = material
+    ? new Date(material.updatedAt).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      })
+    : "";
+  const highlights = [
+    "Build powerful, fast, user-friendly and reactive web apps.",
+    "Master fundamental concepts behind structuring React projects.",
+    "Create reusable components that you can use in all your projects.",
+    "Learn to build complex applications with state management and routing.",
+  ];
   
-  if (!material) {
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Đang tải thông tin tài liệu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !material) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-semibold text-gray-800 mb-2">Material not found</h2>
-          <p className="text-gray-500">The material you're looking for doesn't exist.</p>
+          <p className="text-gray-500">
+            {error || "The material you're looking for doesn't exist."}
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-blue-50 min-h-screen">
-      <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <div className="max-w-6xl mx-auto mb-8">
-          <nav className="text-sm text-gray-600 mb-4">
-            <span className="hover:text-blue-600 cursor-pointer">Home</span>
-            <span className="mx-2">/</span>
-            <span className="hover:text-blue-600 cursor-pointer">Materials</span>
-            <span className="mx-2">/</span>
-            <span className="text-gray-800 font-medium">{material.title}</span>
-          </nav>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{material.title}</h1>
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
-              {material.category || "Arts • Design"}
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="text-yellow-500">★★★★★</span>
-              <span>(4.8)</span>
-            </span>
-            <span>1,234 students enrolled</span>
+    <div className="min-h-screen bg-gray-100 pb-16">
+      <div className="text-white" style={{ backgroundColor: '#3CBCB2' }}>
+        <div className="max-w-6xl mx-auto px-4 py-10">
+          <div className="text-sm mb-6">
+            <Link to="/materials" className="text-white/80 hover:text-white transition-colors font-medium">
+              &lt; All Courses
+            </Link>
+          </div>
+          <div className="flex flex-col gap-6">
+            <div>
+              <p className="uppercase tracking-wider text-xs text-white/90 mb-4 font-semibold">
+                {material.typeName?.toUpperCase() || material.subjectName?.toUpperCase() || "COURSE"}
+              </p>
+              <h1 className="text-4xl md:text-5xl font-bold leading-tight text-white">
+                {material.title}
+              </h1>
+              <p className="mt-4 text-lg text-white/95 max-w-3xl leading-relaxed">
+                {material.description}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-4 text-sm text-white/85">
+              <span>Created by {material.authorName || "Admin"}</span>
+              <span className="opacity-60">•</span>
+              <span>Last updated {updatedAt}</span>
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Section - Course Content */}
-            <div className="lg:col-span-2 space-y-6">
-              Course Preview
-              <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                <div className="relative">
-                  <img
-                    src={material.image}
-                    alt={material.title}
-                    className="w-full h-80 object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
-                    <Button 
-                      type="primary" 
-                      icon={<PlayCircleOutlined />} 
-                      size="large"
-                      className="bg-white text-blue-600 border-0 hover:bg-gray-100"
-                    >
-                      Preview Course
-                    </Button>
-                  </div>
+      <div className="max-w-6xl mx-auto px-4 -mt-16">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.5fr,1fr] gap-8 items-start">
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <MaterialDetailTab material={{
+              id: material.id,
+              title: material.title,
+              description: material.description,
+              contentUrl: material.contentUrl,
+              typeId: material.typeId,
+              typeName: material.typeName,
+              subjectId: material.subjectId,
+              subjectName: material.subjectName,
+              authorId: material.authorId,
+              authorName: material.authorName,
+              isPublic: material.isPublic,
+              createdAt: material.createdAt,
+              updatedAt: material.updatedAt,
+              topic: material.typeName,
+              subject: material.subjectName,
+              free: true,
+              image: material.thumbnail,
+            }} />
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              What you'll learn
+            </h2>
+            <div className="space-y-3">
+              {highlights.map((item) => (
+                <div key={item} className="flex items-start gap-3">
+                  <span className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs mt-0.5 flex-shrink-0">
+                    ✓
+                  </span>
+                  <p className="text-gray-700 text-sm leading-relaxed">{item}</p>
                 </div>
-              </div>
-
-              {/* Course Details Tabs */}
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <MaterialDetailTab material={material} />
-              </div>
-            </div>
-
-            {/* Right Sidebar - Purchase Section */}
-            <div className="lg:col-span-1">
-              <div className="sticky top-8">
-                <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
-                  {/* Price Section */}
-                  <div className="text-center mb-6">
-                    <div className="mb-4">
-                      {material.free ? (
-                        <div className="text-4xl font-bold text-green-600 mb-2">Free</div>
-                      ) : (
-                        <div className="flex items-center justify-center gap-2 mb-2">
-                          <span className="text-4xl font-bold text-gray-900">${material.price}</span>
-                          <span className="text-lg text-gray-500 line-through">${(material.price! * 1.5).toFixed(0)}</span>
-                        </div>
-                      )}
-                      <p className="text-sm text-gray-500">
-                        {material.free ? "Lifetime access" : "One-time payment"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="space-y-3 mb-6">
-                    <button 
-                     
-                      className="w-full bg-teal-400 hover:bg-teal-500 text-white border-0 rounded-xl h-12 font-semibold"
-                    >
-                      <ShoppingCartOutlined />
-                      Add to Cart
-                    </button>
-                    <button 
-         
-                      className="w-full border-2 border-teal-400 text-teal-400 hover:bg-blue-50 rounded-xl h-12 font-semibold"
-                    >
-                      Buy Now
-                    </button>
-                  </div>
-
-                  {/* Course Features */}
-                  <div className="border-t pt-6">
-                    <h3 className="font-semibold text-gray-900 mb-4">This course includes:</h3>
-                    <ul className="space-y-3 text-sm text-gray-600">
-                      <li className="flex items-center gap-3">
-                        <span className="w-5 h-5 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs">✓</span>
-                        12 hours of video content
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <span className="w-5 h-5 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs">✓</span>
-                        Downloadable resources
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <span className="w-5 h-5 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs">✓</span>
-                        Certificate of completion
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <span className="w-5 h-5 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs">✓</span>
-                        Lifetime access
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <span className="w-5 h-5 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs">✓</span>
-                        30-day money-back guarantee
-                      </li>
-                    </ul>
-                  </div>
-
-                  {/* Instructor Info */}
-                  <div className="border-t pt-6 mt-6">
-                    <h3 className="font-semibold text-gray-900 mb-3">Instructor</h3>
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        JD
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">John Doe</p>
-                        <p className="text-sm text-gray-500">Art & Design Expert</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
