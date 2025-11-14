@@ -19,6 +19,7 @@ import ExamTestPage from "./pages/exam/ExamTestPage";
 import ExamDetailsPage from "./pages/exam/ExamDetailsPage";
 import TestResultPage from "./pages/exam/TestResultPage";
 import DoTestPage from "./pages/exam/DoTestPage";
+import OngoingExamsPage from "./pages/exam/OngoingExamsPage";
 import PracticePage from "./pages/exam/PracticePage";
 import FRQPracticePage from "./pages/exam/FRQPracticePage";
 
@@ -136,6 +137,7 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<HomePages />} />
           <Route path="/exam-test" element={<ExamTestPage />} />
+          <Route path="/ongoing-exams" element={<OngoingExamsPage />} />
           <Route path="/exam-details/:examId" element={<ExamDetailsPage />} />
           <Route
             path="/test-result/:submissionId"
