@@ -157,7 +157,7 @@ function App() {
         <Route
           path="/student"
           element={
-            <ProtectedRoute roles={["USER"]}>
+            <ProtectedRoute roles={["STUDENT"]}>
               <StudentLayout />
             </ProtectedRoute>
           }

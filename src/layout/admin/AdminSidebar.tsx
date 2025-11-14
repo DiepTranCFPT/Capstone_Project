@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   UserOutlined,
-  SettingOutlined,
+  // SettingOutlined,
   TrophyOutlined,
   DashboardOutlined,
   ReadOutlined,
@@ -31,7 +31,7 @@ const adminMenu = [
   { key: "/admin/questions", label: "Questions", icon: <QuestionCircleOutlined /> },
   { key: "/admin/certificates", label: "Certificates & Ranking", icon: <TrophyOutlined /> },
   { key: "/subscriptions", label: "Subscriptions & Payments", icon: <CreditCardOutlined /> },
-  { key: "/settings", label: "Settings", icon: <SettingOutlined /> },
+  // { key: "/settings", label: "Settings", icon: <SettingOutlined /> },
 ];
 
 export default function AdminSidebar() {
