@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   UserOutlined,
-  SettingOutlined,
+  // SettingOutlined,
   TrophyOutlined,
   DashboardOutlined,
   ReadOutlined,
@@ -17,6 +17,8 @@ import {
 } from "@ant-design/icons";
 import { getCurrentUserApi } from "~/services/authService"; 
 import type { User } from "~/types/user";
+import { FaSignOutAlt } from "react-icons/fa";
+import { useAuth } from "~/hooks/useAuth";
 
 const adminMenu = [
   { key: "/dashboard", label: "Dashboard", icon: <DashboardOutlined /> },
@@ -29,7 +31,7 @@ const adminMenu = [
   { key: "/admin/questions", label: "Questions", icon: <QuestionCircleOutlined /> },
   { key: "/admin/certificates", label: "Certificates & Ranking", icon: <TrophyOutlined /> },
   { key: "/subscriptions", label: "Subscriptions & Payments", icon: <CreditCardOutlined /> },
-  { key: "/settings", label: "Settings", icon: <SettingOutlined /> },
+  // { key: "/settings", label: "Settings", icon: <SettingOutlined /> },
 ];
 
 export default function AdminSidebar() {
@@ -40,6 +42,7 @@ export default function AdminSidebar() {
  
 const [adminUser, setAdminUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { logout } = useAuth();
 
   const toggleCollapse = () => {
     setCollapsed(!collapsed);
@@ -160,6 +163,16 @@ useEffect(() => {
           );
         })}
       </nav>
+      {/* Logout */}
+                  <div className="p-2 border-t border-gray-200">
+                      <button
+                          onClick={logout}
+                          className={`flex items-center p-3 rounded-lg w-full text-red-500 hover:cursor-pointer hover:bg-red-50 ${collapsed ? 'justify-center' : ''}`}
+                      >
+                          <FaSignOutAlt className="text-lg" />
+                          {!collapsed && <span className="ml-4 font-medium">Logout</span>}
+                      </button>
+                  </div>
     </div>
   );
 }
