@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router-dom';
 const ExamTestPage: React.FC = () => {
     const { templates, loading: examsLoading, error: examsError, applyFilters } = useBrowseExamTemplates();
     const { subjects, loading: subjectsLoading } = useSubjects();
-    const { startComboAttempt, startComboRandomAttempt } = useExamAttempt();
+    const { startSingleAttempt, startComboAttempt, startComboRandomAttempt } = useExamAttempt();
     const { isAuthenticated } = useAuth();
     const navigation = useNavigate();
     // Convert ExamTemplate to Exam format for compatibility
@@ -115,12 +115,35 @@ const ExamTestPage: React.FC = () => {
         }
     }, [currentFilters, applyFilters]);
 
-    const handleStartExamClick = (exam: Exam) => {
-        // Comment out token confirmation - directly navigate to test
-        // setExamToStart(exam);
-        // setCombinedExamToStart(null); // Clear combined exam state
-        // setShowTokenConfirmation(true);
-        window.location.href = `/do-test/${exam.id}/full`;
+    const handleStartExamClick = async (exam: Exam) => {
+        // Check if there's an existing active attempt for this exam
+        const existingAttemptKey = `exam_attempt_${exam.id}`;
+        const existingAttemptStr = localStorage.getItem(existingAttemptKey);
+        let attempt = null;
+
+        if (existingAttemptStr) {
+            const existingAttempt = JSON.parse(existingAttemptStr);
+            // Check if the attempt still has time remaining
+            const savedProgress = localStorage.getItem('examProgress');
+            if (savedProgress) {
+                const progress = JSON.parse(savedProgress);
+                if (progress.remainingTime > 0 && progress.examId === exam.id) {
+                    // Continue existing attempt
+                    localStorage.setItem('activeExamAttempt', JSON.stringify(existingAttempt));
+                    window.location.href = `/do-test/${exam.id}/full`;
+                    return;
+                }
+            }
+        }
+
+        // Create new attempt for individual exam
+        attempt = await startSingleAttempt({ templateId: exam.id });
+        if (attempt) {
+            // Store attempt data for continuation
+            localStorage.setItem('activeExamAttempt', JSON.stringify(attempt));
+            localStorage.setItem(existingAttemptKey, JSON.stringify(attempt));
+            window.location.href = `/do-test/${exam.id}/full`;
+        }
     };
 
     const handleStartCombinedExamClick = async (exams: Exam[]) => {

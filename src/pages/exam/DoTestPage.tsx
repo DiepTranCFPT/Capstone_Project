@@ -40,6 +40,19 @@ const DoTestPage: React.FC = () => {
         return storedAttempt ? JSON.parse(storedAttempt) : null;
     }, []); // Empty dependency array since we only want to read once on mount
 
+    // For individual exams, check if we have an attempt stored by exam ID
+    const examSpecificAttempt = useMemo(() => {
+        if (examId && !attemptId) {
+            const attemptKey = `exam_attempt_${examId}`;
+            const storedAttempt = localStorage.getItem(attemptKey);
+            return storedAttempt ? JSON.parse(storedAttempt) : null;
+        }
+        return null;
+    }, [examId, attemptId]);
+
+    // Use the appropriate attempt data
+    const activeExamData = currentActiveExam || examSpecificAttempt;
+
 
     // Initialize remaining time - use saved time if available, otherwise use full exam time
     const [remainingTime, setRemainingTime] = useState<number>(() => {
@@ -47,7 +60,7 @@ const DoTestPage: React.FC = () => {
         if (savedProgress && savedProgress.remainingTime > 0) {
             return savedProgress.remainingTime;
         }
-        return currentActiveExam?.durationInMinute ? currentActiveExam.durationInMinute * 60 : 3600; // Default 60 minutes
+        return activeExamData?.durationInMinute ? activeExamData.durationInMinute * 60 : 3600; // Default 60 minutes
     });
 
     // Timer countdown logic
@@ -74,8 +87,8 @@ const DoTestPage: React.FC = () => {
 
     // Sort questions by orderNumber - moved before useEffect that uses it
     const sortedQuestions = useMemo(() =>
-        currentActiveExam?.questions.slice().sort((a: ActiveExamQuestion, b: ActiveExamQuestion) => a.orderNumber - b.orderNumber) || [],
-        [currentActiveExam?.questions]
+        activeExamData?.questions.slice().sort((a: ActiveExamQuestion, b: ActiveExamQuestion) => a.orderNumber - b.orderNumber) || [],
+        [activeExamData?.questions]
     );
 
     // Refs to store current values for auto-save callback
@@ -101,7 +114,7 @@ const DoTestPage: React.FC = () => {
 
     // Load saved state from localStorage on mount - this ensures answers are displayed after reload
     useEffect(() => {
-        if (!currentActiveExam || sortedQuestions.length === 0) {
+        if (!activeExamData || sortedQuestions.length === 0) {
             return;
         }
 
@@ -163,7 +176,7 @@ const DoTestPage: React.FC = () => {
             }
             return prevTime;
         });
-    }, [currentActiveExam, sortedQuestions, loadExamProgress]);
+    }, [activeExamData, sortedQuestions, loadExamProgress]);
 
     // Auto-save callback - defined outside useEffect to avoid recreation
     const autoSaveCallback = useCallback(() => {
@@ -172,24 +185,24 @@ const DoTestPage: React.FC = () => {
             answersRef.current,
             answeredQuestionsRef.current,
             remainingTimeRef.current,
-            currentActiveExam?.examAttemptId,
+            activeExamData?.examAttemptId,
             examId
         );
-    }, [saveExamProgress, currentActiveExam?.examAttemptId, examId]);
+    }, [saveExamProgress, activeExamData?.examAttemptId, examId]);
 
     // Auto-save setup - only depend on stable values
     useEffect(() => {
-        if (currentActiveExam) {
+        if (activeExamData) {
             startAutoSave(autoSaveCallback, 30000); // Auto-save every 30 seconds
 
             return () => {
                 stopAutoSave();
             };
         }
-    }, [currentActiveExam, autoSaveCallback, startAutoSave, stopAutoSave]); // Include autoSaveCallback as dependency
+    }, [activeExamData, autoSaveCallback, startAutoSave, stopAutoSave]); // Include autoSaveCallback as dependency
 
     const handleSubmit = async () => {
-        if (!currentActiveExam) return;
+        if (!activeExamData) return;
 
         setIsSubmitting(true);
 
@@ -204,7 +217,7 @@ const DoTestPage: React.FC = () => {
         });
 
         try {
-            const result = await submitAttempt(currentActiveExam.examAttemptId, { answers: submissionAnswers });
+            const result = await submitAttempt(activeExamData.examAttemptId, { answers: submissionAnswers });
             if (result) {
                 // Close the confirmation modal
                 setShowConFirmed(false);
@@ -319,7 +332,7 @@ const DoTestPage: React.FC = () => {
             {/* Left Sidebar */}
             <aside className="w-72 bg-white/95 backdrop-blur-sm p-6 flex flex-col shadow-xl border-r border-teal-200/50">
                 <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">📚{currentActiveExam?.title || 'Exam'}</h2>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">📚{activeExamData?.title || 'Exam'}</h2>
                     <div className="h-1 w-16 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full"></div>
                 </div>
 
@@ -327,7 +340,7 @@ const DoTestPage: React.FC = () => {
                     <div className="flex items-center justify-between">
                         <span className="font-semibold text-gray-700">⏱️ Thời gian còn lại:</span>
                         <Timer
-                            initialMinutes={currentActiveExam?.durationInMinute || 60}
+                            initialMinutes={activeExamData?.durationInMinute || 60}
                             onTimeUp={handleSubmit}
                             remainingTime={remainingTime}
                             onTimeChange={setRemainingTime}
@@ -446,7 +459,7 @@ const DoTestPage: React.FC = () => {
                                 Thử lại
                             </button>
                         </div>
-                    ) : currentActiveExam ? (
+                    ) : activeExamData ? (
                         <div className="space-y-8">
                             {sortedQuestions.map((q: ActiveExamQuestion, index: number) => {
                                 if (q.question.type === 'mcq') {
