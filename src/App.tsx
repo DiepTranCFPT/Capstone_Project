@@ -25,6 +25,7 @@ import FRQPracticePage from "./pages/exam/FRQPracticePage";
 
 import MaterialsPage from "./pages/generics/materials/MaterialsPage";
 import MaterialsDetailPage from "./pages/generics/materials/MaterialsDetailPage";
+import MaterialLearnPage from "./pages/generics/materials/MaterialLearnPage";
 import CommunityPage from "./pages/community/CommunityPage";
 import StudentDashboardPage from "./pages/students/StudentDashboardPage";
 import StudentLayout from "./layout/students/StudentLayout";
@@ -145,6 +146,7 @@ function App() {
           />
           <Route path="/materials" element={<MaterialsPage />} />
           <Route path="/materials/:id" element={<MaterialsDetailPage />} />
+          <Route path="/materials/:id/learn" element={<MaterialLearnPage />} />
           <Route path="/community" element={<CommunityPage />} />
           <Route
             path="/community/groups/:groupId"
