@@ -25,7 +25,7 @@ const LearningMaterialService = {
   },
 
   register(learningMaterialId: string): Promise<AxiosResponse<ApiResponse<unknown>>> {
-    return axiosInstance.post(`/learning-materials/register/${learningMaterialId}`);
+    return axiosInstance.post(`/learning-materials/register/${learningMaterialId}`, {});
   },
 
   search(keyword: string): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {
