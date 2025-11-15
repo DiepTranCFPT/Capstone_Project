@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import MaterialDetailTab from "~/components/teachers/content-management/materials/MaterialDetailTab";
+import MaterialDetailTab from "./MaterialDetailTab";
 import { useMaterialDetail } from "~/hooks/useMaterialDetail";
 
 const MaterialsDetailPage: React.FC = () => {

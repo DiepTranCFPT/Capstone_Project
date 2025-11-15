@@ -67,3 +67,4 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
 };
 
 export default MaterialDetailTab;
+
