@@ -61,6 +61,9 @@ const Navbar: React.FC = () => {
         <Link to="/exam-test" className={`transition-colors duration-300 ${location.pathname === '/exam-test' ? 'text-teal-500 border-b-2 border-teal-500' : 'text-black'} hover:text-teal-500 hover:border-b-2 hover:border-teal-500 text-base font-semibold`}>
           Exam Test
         </Link>
+        <Link to="/learning-pathway" className={`transition-colors duration-300 ${location.pathname === '/learning-pathway' ? 'text-teal-500 border-b-2 border-teal-500' : 'text-black'} hover:text-teal-500 hover:border-b-2 hover:border-teal-500 text-base font-semibold`}>
+          Path Way
+        </Link>
         {/* <Link to="/about" className="text-black text-base font-semibold">
           About
         </Link>
