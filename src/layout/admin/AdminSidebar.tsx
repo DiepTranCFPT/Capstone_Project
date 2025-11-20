@@ -15,22 +15,23 @@ import {
   IdcardOutlined,
   CreditCardOutlined,
 } from "@ant-design/icons";
-import { getCurrentUserApi } from "~/services/authService"; 
+import { getCurrentUserApi } from "~/services/authService";
 import type { User } from "~/types/user";
 import { FaSignOutAlt } from "react-icons/fa";
 import { useAuth } from "~/hooks/useAuth";
 
 const adminMenu = [
-  { key: "/dashboard", label: "Dashboard", icon: <DashboardOutlined /> },
+  { key: "/admin/dashboard", label: "Dashboard", icon: <DashboardOutlined /> },
   { key: "/admin/users", label: "Users", icon: <UserOutlined /> },
   { key: "/admin/courses", label: "Courses", icon: <ReadOutlined /> },
   { key: "/admin/parents", label: "Parents", icon: <AuditOutlined /> },
   { key: "/admin/students", label: "Students", icon: <UsergroupAddOutlined /> },
+  { key: "/admin/subjects", label: "Subjects", icon: <ReadOutlined /> },
   { key: "/admin/mock-tests", label: "Mock Tests", icon: <FormOutlined /> },
   { key: "/admin/teachers", label: "Teacher", icon: <IdcardOutlined /> },
   { key: "/admin/questions", label: "Questions", icon: <QuestionCircleOutlined /> },
   { key: "/admin/certificates", label: "Certificates & Ranking", icon: <TrophyOutlined /> },
-  { key: "/subscriptions", label: "Subscriptions & Payments", icon: <CreditCardOutlined /> },
+  { key: "/admin/subscriptions", label: "Subscriptions & Payments", icon: <CreditCardOutlined /> },
   // { key: "/settings", label: "Settings", icon: <SettingOutlined /> },
 ];
 
@@ -39,8 +40,8 @@ export default function AdminSidebar() {
   const [collapsed, setCollapsed] = useState(
     localStorage.getItem("sidebar-admin-collapsed") === "true"
   );
- 
-const [adminUser, setAdminUser] = useState<User | null>(null);
+
+  const [adminUser, setAdminUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { logout } = useAuth();
 
@@ -49,31 +50,31 @@ const [adminUser, setAdminUser] = useState<User | null>(null);
     localStorage.setItem("sidebar-admin-collapsed", (!collapsed).toString());
   };
 
-useEffect(() => {
-  const fetchAdminData = async () => {
-    try {
-      const response = await getCurrentUserApi();
+  useEffect(() => {
+    const fetchAdminData = async () => {
+      try {
+        const response = await getCurrentUserApi();
 
-      setAdminUser({
-        id: String(response.user.id),
-        email: response.user.email,
-        firstName: response.user.firstName,
-        lastName: response.user.lastName,
-        imgUrl: response.user.imgUrl,
-        dob: response.user.dob,
-        roles: [response.user.role], 
-        active: true, 
-      });
-    } catch (err) {
-      console.error("Failed to fetch admin profile:", err);
-      message.error("Không thể tải thông tin Admin!");
-    } finally {
-      setLoading(false);
-    }
-  };
+        setAdminUser({
+          id: String(response.user.id),
+          email: response.user.email,
+          firstName: response.user.firstName,
+          lastName: response.user.lastName,
+          imgUrl: response.user.imgUrl,
+          dob: response.user.dob,
+          roles: [response.user.role],
+          active: true,
+        });
+      } catch (err) {
+        console.error("Failed to fetch admin profile:", err);
+        message.error("Không thể tải thông tin Admin!");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchAdminData();
-}, []);
+    fetchAdminData();
+  }, []);
 
   if (loading) {
     return (
@@ -85,16 +86,14 @@ useEffect(() => {
 
   return (
     <div
-      className={`h-screen sticky top-0 ${
-        collapsed ? "w-20" : "w-64"
-      } bg-white flex flex-col shadow-lg transition-all duration-300`}
+      className={`h-screen sticky top-0 ${collapsed ? "w-20" : "w-64"
+        } bg-white flex flex-col shadow-lg transition-all duration-300`}
     >
       <div
-        className={`${
-          !collapsed
+        className={`${!collapsed
             ? "flex justify-between items-center border-b"
             : "flex items-center"
-        }`}
+          }`}
       >
         {!collapsed && (
           <div className="text-xs uppercase font-bold text-gray-500 mt-2 mb-2 px-4">
@@ -112,11 +111,10 @@ useEffect(() => {
       </div>
 
       <div
-        className={`${
-          !collapsed
+        className={`${!collapsed
             ? "px-4 py-3 border-b flex items-center gap-3"
             : "px-4 py-3 border-b flex items-center justify-center"
-        }`}
+          }`}
       >
         <Link to="/admin/profile">
           <Avatar
@@ -144,13 +142,11 @@ useEffect(() => {
             <Link
               key={item.key}
               to={item.key}
-              className={`flex items-center transition-all duration-200 mt-1 ${
-                collapsed ? "justify-center w-12 h-12" : "px-6 py-2 w-11/12"
-              } ${
-                isActive
+              className={`flex items-center transition-all duration-200 mt-1 ${collapsed ? "justify-center w-12 h-12" : "px-6 py-2 w-11/12"
+                } ${isActive
                   ? "bg-blue-500 text-white rounded-2xl"
                   : "text-black hover:bg-blue-500 hover:text-white rounded-2xl"
-              }`}
+                }`}
               style={{ minHeight: collapsed ? 48 : undefined }}
             >
               <span className={`text-lg ${isActive ? "text-white" : ""}`}>
@@ -164,15 +160,15 @@ useEffect(() => {
         })}
       </nav>
       {/* Logout */}
-                  <div className="p-2 border-t border-gray-200">
-                      <button
-                          onClick={logout}
-                          className={`flex items-center p-3 rounded-lg w-full text-red-500 hover:cursor-pointer hover:bg-red-50 ${collapsed ? 'justify-center' : ''}`}
-                      >
-                          <FaSignOutAlt className="text-lg" />
-                          {!collapsed && <span className="ml-4 font-medium">Logout</span>}
-                      </button>
-                  </div>
+      <div className="p-2 border-t border-gray-200">
+        <button
+          onClick={logout}
+          className={`flex items-center p-3 rounded-lg w-full text-red-500 hover:cursor-pointer hover:bg-red-50 ${collapsed ? 'justify-center' : ''}`}
+        >
+          <FaSignOutAlt className="text-lg" />
+          {!collapsed && <span className="ml-4 font-medium">Logout</span>}
+        </button>
+      </div>
     </div>
   );
 }

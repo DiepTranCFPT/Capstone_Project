@@ -4,14 +4,17 @@ import {
     FaTachometerAlt,
     FaUserPlus,
     FaFileInvoiceDollar,
-    FaSignOutAlt
+    FaSignOutAlt,
+    FaBell
 } from 'react-icons/fa';
 import { useAuth } from '~/hooks/useAuth';
-import { Avatar, Button } from 'antd';
+import { useNotifications } from '~/hooks/useNotifications';
+import { Avatar, Button, Badge } from 'antd';
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 
 const parentMenu = [
     { label: "Dashboard", path: "/parent/dashboard", icon: <FaTachometerAlt /> },
+    { label: "Notifications", path: "/parent/notifications", icon: <FaBell /> },
     { label: "Link Student", path: "/parent/link-student", icon: <FaUserPlus /> },
     { label: "Billing", path: "/parent/billing", icon: <FaFileInvoiceDollar /> },
 ];
@@ -19,6 +22,7 @@ const parentMenu = [
 const ParentSidebar: React.FC = () => {
     const location = useLocation();
     const { user, logout } = useAuth();
+    const { stats } = useNotifications();
     const [collapsed, setCollapsed] = useState(false);
 
     const toggleCollapse = () => {
@@ -54,12 +58,14 @@ const ParentSidebar: React.FC = () => {
             <nav className="flex-1 mt-4 flex flex-col items-center">
                 {parentMenu.map((item) => {
                     const isActive = location.pathname === item.path;
+                    const showBadge = item.path === "/parent/notifications" && stats.unread > 0;
+
                     return (
                         <Link
                             key={item.path}
                             to={item.path}
                             className={`
-                            flex items-center transition-all duration-200 active-menu mt-1
+                            flex items-center transition-all duration-200 active-menu mt-1 relative
                             ${collapsed ? "justify-center w-12 h-12" : "px-6 py-2 w-11/12"}
                             ${isActive
                                     ? "bg-backgroundColor text-white rounded-2xl"
@@ -70,11 +76,24 @@ const ParentSidebar: React.FC = () => {
                                 minHeight: collapsed ? 48 : undefined,
                             }}
                         >
-                            <span className={`text-lg ${isActive ? "text-white" : ""}`}>
+                            <span className={`text-lg ${isActive ? "text-white" : ""} relative`}>
                                 {item.icon}
+                                {showBadge && collapsed && (
+                                    <Badge
+                                        count={stats.unread}
+                                        size="small"
+                                        className="absolute -top-2 -right-2"
+                                        style={{ fontSize: '8px' }}
+                                    />
+                                )}
                             </span>
                             {!collapsed && (
-                                <span className="font-medium ml-3">{item.label}</span>
+                                <div className="flex items-center justify-between flex-1 ml-3">
+                                    <span className="font-medium">{item.label}</span>
+                                    {showBadge && (
+                                        <Badge count={stats.unread} />
+                                    )}
+                                </div>
                             )}
                         </Link>
                     );

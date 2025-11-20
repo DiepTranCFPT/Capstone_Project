@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     FaTachometerAlt,
     FaUsers,
     FaClipboardList,
     FaChartBar,
-    FaCog,
+    // FaCog,
     FaSignOutAlt,
+    FaCalendarAlt,
+    // FaBookOpen,
 } from 'react-icons/fa';
 import { useAuth } from '~/hooks/useAuth';
 import { Avatar, Button } from 'antd';
@@ -17,11 +19,14 @@ const teacherMenu = [
     { label: "My Classes", path: "/teacher/classes", icon: <FaUsers /> },
     { label: "Materials", path: "Materials", icon: <TagsOutlined /> },
     { label: "Questions Bank", path: "/teacher/question-bank", icon: <FaUsers /> },
-    { label: "Templates", path: "/teacher/templates", icon: <FaClipboardList /> }, 
+    { label: "Templates", path: "/teacher/templates", icon: <FaClipboardList /> },
     { label: "Create Template", path: "/teacher/create-template", icon: <FileAddOutlined /> },
     { label: "Grading", path: "/teacher/grading", icon: <FaClipboardList /> },
     { label: "Analytics", path: "/teacher/analytics", icon: <FaChartBar /> },
-    { label: "Settings", path: "/teacher/settings", icon: <FaCog /> },
+    // { label: "Tutor Profile", path: "/teacher/tutor-profile", icon: <FaBookOpen /> },
+    { label: "My Availability", path: "/teacher/availability", icon: <FaCalendarAlt /> },
+    { label: "Booking Requests", path: "/teacher/bookings", icon: <FaCalendarAlt /> },
+    // { label: "Settings", path: "/teacher/settings", icon: <FaCog /> },
 ];
 
 const TeacherSidebar: React.FC = () => {
@@ -29,9 +34,15 @@ const TeacherSidebar: React.FC = () => {
     const { user, logout } = useAuth();
     const [collapsed, setCollapsed] = useState(false);
 
+    const navigate = useNavigate();
     const toggleCollapse = () => {
         setCollapsed(!collapsed);
     };
+
+    const handleProfileClick = () => {
+        // Navigate to profile page or open profile modal
+        navigate("/teacher/tutor-profile");
+    }
 
     return (
         <div className={`sticky top-0 h-screen bg-white shadow-lg flex flex-col transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}>
@@ -47,7 +58,9 @@ const TeacherSidebar: React.FC = () => {
 
             {/* Profile */}
             {user && (
-                <div className={"p-4 border-b border-gray-200 flex flex-row items-center" + (collapsed ? " justify-center" : "")}>
+                <div className={"p-4 border-b border-gray-200 flex flex-row items-center hover:cursor-pointer" + (collapsed ? " justify-center" : "")}
+                    onClick={() => handleProfileClick()}
+                >
                     <Avatar size={collapsed ? 32 : 40} src={user.imgUrl || undefined} />
                     {!collapsed && (
                         <div className='flex flex-col px-2'>
