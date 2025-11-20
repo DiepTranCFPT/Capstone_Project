@@ -3,15 +3,26 @@ import type { AxiosResponse } from "axios";
 import type { ApiResponse } from "~/types/api";
 import type { Lesson, LessonQuery, PageInfo } from "~/types/lesson";
 
+type LessonPayload = Partial<Omit<Lesson, "file" | "url">> & {
+  file?: string | File | null;
+  url?: string | File | null;
+};
+
 const isFileInstance = (value: unknown): value is File => value instanceof File;
 
-const buildLessonPayload = (payload: Partial<Lesson>) => {
-  if (!payload || !isFileInstance(payload.file)) {
+const buildLessonPayload = (payload: LessonPayload | undefined) => {
+  if (!payload) {
+    return payload;
+  }
+
+  const containsFile = Object.values(payload).some((value) => isFileInstance(value as unknown));
+  if (!containsFile) {
     return payload;
   }
 
   const formData = new FormData();
-  Object.entries(payload).forEach(([key, value]) => {
+  Object.entries(payload).forEach(([key, rawValue]) => {
+    const value = rawValue as unknown;
     if (value === undefined || value === null) {
       return;
     }
@@ -28,8 +39,9 @@ const buildLessonPayload = (payload: Partial<Lesson>) => {
   return formData;
 };
 
-const needsMultipart = (payload: Partial<Lesson>): boolean => {
-  return Boolean(payload.file && isFileInstance(payload.file));
+const needsMultipart = (payload: LessonPayload | undefined): boolean => {
+  if (!payload) return false;
+  return Object.values(payload).some((value) => isFileInstance(value as unknown));
 };
 
 const LessonService = {
@@ -37,7 +49,7 @@ const LessonService = {
     return axiosInstance.get(`/lessons/${id}`);
   },
 
-  update(id: string, payload: Partial<Lesson>): Promise<AxiosResponse<ApiResponse<Lesson>>> {
+  update(id: string, payload: LessonPayload): Promise<AxiosResponse<ApiResponse<Lesson>>> {
     const data = buildLessonPayload(payload);
     if (needsMultipart(payload)) {
       return axiosInstance.put(`/lessons/${id}`, data, {
@@ -55,7 +67,7 @@ const LessonService = {
     return axiosInstance.get(`/lessons`, { params });
   },
 
-  create(payload: Partial<Lesson>): Promise<AxiosResponse<ApiResponse<Lesson>>> {
+  create(payload: LessonPayload): Promise<AxiosResponse<ApiResponse<Lesson>>> {
     const data = buildLessonPayload(payload);
     if (needsMultipart(payload)) {
       return axiosInstance.post(`/lessons`, data, {

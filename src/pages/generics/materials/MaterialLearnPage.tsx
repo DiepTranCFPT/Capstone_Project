@@ -116,7 +116,7 @@ const MaterialLearnPage: React.FC = () => {
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                   {(() => {
                     const urlIsVideo = selectedLesson.url ? isVideoSource(selectedLesson.url) : false;
-                    const videoSource = selectedLesson.file || (urlIsVideo ? selectedLesson.url : "");
+                    const videoSource = urlIsVideo ? selectedLesson.url || "" : "";
                     const embedUrl = videoSource ? getYouTubeEmbedUrl(videoSource) : null;
                     if (videoSource && embedUrl) {
                       return (
@@ -132,22 +132,7 @@ const MaterialLearnPage: React.FC = () => {
                       );
                     }
 
-                    if (videoSource && isVideoFile(videoSource)) {
-                      return (
-                        <div className="bg-black">
-                          <video
-                            className="w-full h-full"
-                            style={{ maxHeight: "640px" }}
-                            controls
-                            src={videoSource}
-                          >
-                            Trình duyệt không hỗ trợ phát video.
-                          </video>
-                        </div>
-                      );
-                    }
-
-                    if (videoSource) {
+                    if (videoSource && !embedUrl) {
                       return (
                         <div className="bg-gray-900 aspect-video flex items-center justify-center">
                           <a
@@ -164,20 +149,20 @@ const MaterialLearnPage: React.FC = () => {
 
                     return (
                       <div className="bg-gray-900 aspect-video flex items-center justify-center">
-                        <p className="text-white">Chưa có nội dung</p>
+                        <p className="text-white">Chưa có video</p>
                       </div>
                     );
                   })()}
                 </div>
 
-                {selectedLesson.url && !isVideoSource(selectedLesson.url) && (
+                {!!selectedLesson.file && (
                   <div className="bg-white rounded-xl shadow-sm p-6 flex items-center justify-between">
                     <div>
                       <p className="text-gray-800 font-medium">Tài liệu PDF đính kèm</p>
                       <p className="text-sm text-gray-500">Tải xuống để xem chi tiết nội dung.</p>
                     </div>
                     <a
-                      href={selectedLesson.url}
+                      href={selectedLesson.file}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
