@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Empty, List, Modal, Spin, Typography, Button, Form, Input, Popconfirm, Tooltip, message, Upload } from "antd";
-import type { UploadFile, UploadProps } from "antd";
-import { EditOutlined, DeleteOutlined, EyeOutlined, UploadOutlined, FilePdfOutlined } from "@ant-design/icons";
+import type { UploadFile } from "antd";
+import { EditOutlined, DeleteOutlined, EyeOutlined, UploadOutlined } from "@ant-design/icons";
 import LessonService from "~/services/LessonService";
 import type { LearningMaterial } from "~/types/learningMaterial";
 import type { Lesson } from "~/types/lesson";
@@ -9,14 +9,14 @@ import type { Lesson } from "~/types/lesson";
 export interface LessonFormValues {
   name: string;
   file?: File | string | null;
-  url?: string | File | null;
+  url?: string;
   description?: string;
 }
 
 interface LessonFormFields {
   name: string;
   file?: UploadFile[];
-  url?: UploadFile[];
+  url?: string;
   description?: string;
 }
 
@@ -57,11 +57,23 @@ const LessonModal: React.FC<LessonModalProps> = ({
   const [previewLesson, setPreviewLesson] = useState<Lesson | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [loadingLessonDetail, setLoadingLessonDetail] = useState(false);
+  const [loadingPreviewDetail, setLoadingPreviewDetail] = useState(false);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
-  const [documentList, setDocumentList] = useState<UploadFile[]>([]);
-  const openPreviewModal = (lesson: Lesson) => {
+  const openPreviewModal = async (lesson: Lesson) => {
     setPreviewLesson(lesson);
     setIsPreviewOpen(true);
+    try {
+      setLoadingPreviewDetail(true);
+      const response = await LessonService.getById(lesson.id);
+      if (response.data.data) {
+        setPreviewLesson(response.data.data);
+      }
+    } catch (error) {
+      console.error("Fetch preview detail error:", error);
+      message.error("Không thể tải chi tiết bài học.");
+    } finally {
+      setLoadingPreviewDetail(false);
+    }
   };
 
   const closePreviewModal = () => {
@@ -69,8 +81,8 @@ const LessonModal: React.FC<LessonModalProps> = ({
     setPreviewLesson(null);
   };
 
-  const getEmbeddedUrl = (lesson: Lesson): string | null => {
-    const rawUrl = lesson.file ?? lesson.url ?? "";
+const getEmbeddedUrl = (lesson: Lesson): string | null => {
+    const rawUrl = lesson.url ?? lesson.file ?? "";
     if (!rawUrl) return null;
     try {
       const url = new URL(rawUrl);
@@ -102,13 +114,18 @@ const LessonModal: React.FC<LessonModalProps> = ({
       );
     }
     const embedUrl = getEmbeddedUrl(previewLesson);
+    const hasPdf = Boolean(previewLesson.file);
+    const pdfName = previewLesson.file ? extractFileName(previewLesson.file) : "";
+
     return (
       <div className="space-y-4">
         <Typography.Title level={4} className="!mb-2">
           {previewLesson.name ?? previewLesson.title ?? "Lesson"}
         </Typography.Title>
         <div className="rounded-xl overflow-hidden bg-black">
-          {embedUrl ? (
+          {loadingPreviewDetail ? (
+            <div className="text-white text-center py-16">Đang tải nội dung...</div>
+          ) : embedUrl ? (
             <iframe
               title={previewLesson.name ?? previewLesson.title ?? "Lesson preview"}
               src={embedUrl}
@@ -117,7 +134,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
             />
           ) : (
             <div className="text-white text-center py-16">
-              Không có URL để hiển thị.
+              Không có video để hiển thị.
             </div>
           )}
         </div>
@@ -127,6 +144,21 @@ const LessonModal: React.FC<LessonModalProps> = ({
             <Typography.Paragraph>{previewLesson.description}</Typography.Paragraph>
           </div>
         )}
+        <div>
+          <Typography.Title level={5}>Tài liệu PDF</Typography.Title>
+          {hasPdf ? (
+            <Button
+              type="primary"
+              onClick={() => window.open(previewLesson.file ?? "", "_blank", "noopener,noreferrer")}
+            >
+              Tải {pdfName}
+            </Button>
+          ) : (
+            <Typography.Paragraph className="text-gray-500 mb-0">
+              Chưa có tài liệu PDF.
+            </Typography.Paragraph>
+          )}
+        </div>
       </div>
     );
   };
@@ -161,12 +193,11 @@ const LessonModal: React.FC<LessonModalProps> = ({
     const initialValues: LessonFormFields = {
       name: nextValues?.name ?? "",
       description: nextValues?.description,
-      url: nextValues?.url ?? [],
+      url: nextValues?.url ?? "",
       file: nextValues?.file ?? [],
     };
     form.setFieldsValue(initialValues);
     setFileList(initialValues.file ?? []);
-    setDocumentList(initialValues.url ?? []);
   };
 
   const openCreateModal = () => {
@@ -176,7 +207,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
     resetFormState({
       name: `Lesson ${lessons.length + 1}`,
       file: [],
-      url: [],
+      url: "",
     });
     setFormMode("create");
     setEditingLesson(null);
@@ -193,22 +224,20 @@ const LessonModal: React.FC<LessonModalProps> = ({
       const detail = response.data.data ?? lesson;
       setEditingLesson(detail);
       const initialFileList = buildInitialUploadList(detail.file);
-      const initialDocumentList = buildInitialUploadList(detail.url);
       resetFormState({
         name: detail.name ?? detail.title ?? "",
         description: detail.description ?? "",
-        url: initialDocumentList,
+        url: detail.url ?? "",
         file: initialFileList,
       });
     } catch (error) {
       console.error("Fetch lesson detail error:", error);
       message.error("Không thể tải thông tin bài học. Vui lòng thử lại.");
       const fallbackFileList = buildInitialUploadList(lesson.file);
-      const fallbackDocumentList = buildInitialUploadList(lesson.url);
       resetFormState({
         name: lesson.name ?? lesson.title ?? "",
         description: lesson.description ?? "",
-        url: fallbackDocumentList,
+        url: lesson.url ?? "",
         file: fallbackFileList,
       });
     } finally {
@@ -222,18 +251,11 @@ const LessonModal: React.FC<LessonModalProps> = ({
     resetFormState();
   };
 
-  const handleUploadChange = (type: "video" | "document"): UploadProps["onChange"] => ({ fileList: newFileList }) => {
+  const handleUploadChange = ({ fileList: newFileList }: { fileList: UploadFile[] }) => {
     const latestList = newFileList.slice(-1);
-    if (type === "video") {
-      setFileList(latestList);
-      form.setFieldsValue({ file: latestList });
-    } else {
-      setDocumentList(latestList);
-      form.setFieldsValue({ url: latestList });
-    }
-    const otherField = type === "video" ? "url" : "file";
-    const otherValue = form.getFieldValue(otherField) as UploadFile[] | undefined;
-    if (latestList.length > 0 || (otherValue && otherValue.length > 0)) {
+    setFileList(latestList);
+    form.setFieldsValue({ file: latestList });
+    if (latestList.length > 0 || (form.getFieldValue("url") as string)?.trim()) {
       form.setFields([
         { name: "file", errors: [] },
         { name: "url", errors: [] },
@@ -267,8 +289,8 @@ const LessonModal: React.FC<LessonModalProps> = ({
       const payload: LessonFormValues = {
         name: values.name,
         description: values.description,
-        url: values.url?.trim() ? values.url.trim() : undefined,
         file: normalizeFileValue(values.file),
+        url: values.url?.trim() ? values.url.trim() : undefined,
       };
 
       // Kiểm tra ít nhất một trong hai (file hoặc url) phải có
@@ -429,44 +451,41 @@ const LessonModal: React.FC<LessonModalProps> = ({
           </Form.Item>
 
           <Form.Item
-            label="Video"
-            name="file"
-            help="Tải video (MP4, MOV, WEBM...)"
+            label="Video URL"
+            name="url"
+            help="Nhập đường dẫn video (YouTube, Vimeo, ...)"
           >
-            <Upload
-              multiple={false}
-              maxCount={1}
-              accept="video/*"
-              beforeUpload={() => false}
-              fileList={fileList}
-              onChange={handleUploadChange("video")}
-              onRemove={() => {
-                setFileList([]);
-                form.setFieldsValue({ file: [] });
+            <Input
+              placeholder="https://..."
+              onChange={(e) => {
+                if (e.target.value) {
+                  form.setFields([
+                    { name: "file", errors: [] },
+                    { name: "url", errors: [] },
+                  ]);
+                }
               }}
-            >
-              <Button icon={<UploadOutlined />}>Chọn video</Button>
-            </Upload>
+            />
           </Form.Item>
 
           <Form.Item
-            label="Tài liệu (PDF)"
-            name="url"
-            help="Tải lên tài liệu PDF (tùy chọn)"
+            label="Tài liệu PDF"
+            name="file"
+            help="Tải lên file PDF ghi chú quan trọng"
           >
             <Upload
               multiple={false}
               maxCount={1}
               accept="application/pdf"
               beforeUpload={() => false}
-              fileList={documentList}
-              onChange={handleUploadChange("document")}
+              fileList={fileList}
+              onChange={handleUploadChange}
               onRemove={() => {
-                setDocumentList([]);
-                form.setFieldsValue({ url: [] });
+                setFileList([]);
+                form.setFieldsValue({ file: [] });
               }}
             >
-              <Button icon={<FilePdfOutlined />}>Chọn tài liệu PDF</Button>
+              <Button icon={<UploadOutlined />}>Chọn PDF</Button>
             </Upload>
           </Form.Item>
         </Form>
