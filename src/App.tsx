@@ -48,6 +48,7 @@ import MockTestManagerPage from "./pages/admins/MockTestManagerPage";
 import TeacherManagerPage from "./pages/admins/TeacherManagerPage";
 import UserManagerPage from "./pages/admins/UserManagerPage";
 import CertificatesRankingManagerPage from "./pages/admins/CertificatesRankingManagerPage";
+import SubjectManagerPage from "./pages/admins/SubjectManagerPage";
 
 // --- Teacher Imports ---
 import TeacherLayout from "./layout/teachers/TeacherLayout";
@@ -140,6 +141,7 @@ function App() {
           />
           <Route path="users" element={<UserManagerPage />} />
           <Route path="subscriptions" element={<PackagePaymentManagerPage />} />
+          <Route path="subjects" element={<SubjectManagerPage />} />
         </Route>
 
         {/* Main routes with Layout */}

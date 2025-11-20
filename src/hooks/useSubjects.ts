@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { message } from "antd";
 import type { Subject, NewSubject } from "~/types/subject";
 import type { PageInfo } from "~/types/pagination";
 import SubjectService from "~/services/subjectService";
+import { toast } from "~/components/common/Toast";
 
 
 export const useSubjects = () => {
@@ -18,7 +18,7 @@ export const useSubjects = () => {
       setSubjects(res.data.data.items || []);
       setPageInfo(res.data.data);
     } catch {
-      message.error("Không thể tải danh sách môn học");
+      toast.error("Không thể tải danh sách môn học");
     } finally {
       setLoading(false);
     }
@@ -30,7 +30,7 @@ export const useSubjects = () => {
       const res = await SubjectService.getById(id);
       return res.data.data;
     } catch {
-      message.error("Không thể tải thông tin môn học");
+      toast.error("Không thể tải thông tin môn học");
       return null;
     }
   }, []);
@@ -39,11 +39,11 @@ export const useSubjects = () => {
   const createSubject = useCallback(async (data: NewSubject) => {
     try {
       const res = await SubjectService.create(data);
-      message.success("Tạo môn học thành công");
+      toast.success("Tạo môn học thành công");
       fetchSubjects();
       return res.data.data;
     } catch {
-      message.error("Tạo môn học thất bại");
+      toast.error("Tạo môn học thất bại");
       return null;
     }
   }, [fetchSubjects]);
@@ -52,11 +52,11 @@ export const useSubjects = () => {
   const updateSubject = useCallback(async (id: string, data: Partial<Subject>) => {
     try {
       const res = await SubjectService.update(id, data);
-      message.success("Cập nhật môn học thành công");
+      toast.success("Cập nhật môn học thành công");
       fetchSubjects();
       return res.data.data;
     } catch {
-      message.error("Cập nhật môn học thất bại");
+      toast.error("Cập nhật môn học thất bại");
       return null;
     }
   }, [fetchSubjects]);
@@ -65,10 +65,10 @@ export const useSubjects = () => {
   const deleteSubject = useCallback(async (id: string) => {
     try {
       await SubjectService.delete(id);
-      message.success("Xóa môn học thành công");
+      toast.success("Xóa môn học thành công");
       fetchSubjects();
     } catch {
-      message.error("Xóa môn học thất bại");
+      toast.error("Xóa môn học thất bại");
     }
   }, [fetchSubjects]);
 

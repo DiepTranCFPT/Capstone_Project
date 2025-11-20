@@ -26,6 +26,7 @@ const adminMenu = [
   { key: "/admin/courses", label: "Courses", icon: <ReadOutlined /> },
   { key: "/admin/parents", label: "Parents", icon: <AuditOutlined /> },
   { key: "/admin/students", label: "Students", icon: <UsergroupAddOutlined /> },
+  { key: "/admin/subjects", label: "Subjects", icon: <ReadOutlined /> },
   { key: "/admin/mock-tests", label: "Mock Tests", icon: <FormOutlined /> },
   { key: "/admin/teachers", label: "Teacher", icon: <IdcardOutlined /> },
   { key: "/admin/questions", label: "Questions", icon: <QuestionCircleOutlined /> },
