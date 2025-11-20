@@ -30,6 +30,17 @@ const getYouTubeEmbedUrl = (url: string): string | null => {
   return null;
 };
 
+const isVideoFile = (url: string): boolean => {
+  if (!url) return false;
+  const lowerUrl = url.split("?")[0].toLowerCase();
+  const videoExtensions = [".mp4", ".mov", ".webm", ".mkv", ".avi", ".ogg"];
+  return videoExtensions.some((ext) => lowerUrl.endsWith(ext));
+};
+
+const isVideoSource = (url: string): boolean => {
+  return Boolean(getYouTubeEmbedUrl(url) || isVideoFile(url));
+};
+
 const MaterialLearnPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -103,33 +114,78 @@ const MaterialLearnPage: React.FC = () => {
             {selectedLesson ? (
               <>
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  {selectedLesson.url && getYouTubeEmbedUrl(selectedLesson.url) ? (
-                    <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-                      <iframe
-                        src={getYouTubeEmbedUrl(selectedLesson.url) || ""}
-                        title={selectedLesson.title || selectedLesson.name || "Bài học"}
-                        className="absolute top-0 left-0 w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    </div>
-                  ) : selectedLesson.url ? (
-                    <div className="bg-gray-900 aspect-video flex items-center justify-center">
-                      <a
-                        href={selectedLesson.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                      >
-                        Mở bài giảng
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="bg-gray-900 aspect-video flex items-center justify-center">
-                      <p className="text-white">Chưa có video</p>
-                    </div>
-                  )}
+                  {(() => {
+                    const urlIsVideo = selectedLesson.url ? isVideoSource(selectedLesson.url) : false;
+                    const videoSource = selectedLesson.file || (urlIsVideo ? selectedLesson.url : "");
+                    const embedUrl = videoSource ? getYouTubeEmbedUrl(videoSource) : null;
+                    if (videoSource && embedUrl) {
+                      return (
+                        <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                          <iframe
+                            src={embedUrl}
+                            title={selectedLesson.title || selectedLesson.name || "Bài học"}
+                            className="absolute top-0 left-0 w-full h-full"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </div>
+                      );
+                    }
+
+                    if (videoSource && isVideoFile(videoSource)) {
+                      return (
+                        <div className="bg-black">
+                          <video
+                            className="w-full h-full"
+                            style={{ maxHeight: "640px" }}
+                            controls
+                            src={videoSource}
+                          >
+                            Trình duyệt không hỗ trợ phát video.
+                          </video>
+                        </div>
+                      );
+                    }
+
+                    if (videoSource) {
+                      return (
+                        <div className="bg-gray-900 aspect-video flex items-center justify-center">
+                          <a
+                            href={videoSource}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                          >
+                            Mở nội dung bài học
+                          </a>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="bg-gray-900 aspect-video flex items-center justify-center">
+                        <p className="text-white">Chưa có nội dung</p>
+                      </div>
+                    );
+                  })()}
                 </div>
+
+                {selectedLesson.url && !isVideoSource(selectedLesson.url) && (
+                  <div className="bg-white rounded-xl shadow-sm p-6 flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-800 font-medium">Tài liệu PDF đính kèm</p>
+                      <p className="text-sm text-gray-500">Tải xuống để xem chi tiết nội dung.</p>
+                    </div>
+                    <a
+                      href={selectedLesson.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                      Tải PDF
+                    </a>
+                  </div>
+                )}
 
                 {/* Lesson Title */}
                 <div className="bg-white rounded-xl shadow-sm p-6">
@@ -200,7 +256,6 @@ const MaterialLearnPage: React.FC = () => {
               </div>
             )}
           </div>
-
           {/* Right Section - Course Content */}
           <div className="bg-white rounded-xl shadow-sm lg:w-96 xl:w-[420px] lg:flex-shrink-0 flex flex-col h-fit lg:max-h-[calc(100vh-120px)]">
             <div className="p-6 pb-4 border-b border-gray-100">
