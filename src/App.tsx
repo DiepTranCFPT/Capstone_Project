@@ -62,10 +62,12 @@ import TeacherExamDetailsPage from "./pages/teachers/ExamDetailsPage";
 import GradingPage from "./pages/teachers/GradingPage";
 import ClassAnalyticsPage from "./pages/teachers/ClassAnalyticsPage";
 import GradeSubmissionPage from "./pages/teachers/GradeSubmissionPage";
+import TeacherBookingRequestsPage from "./pages/teachers/TeacherBookingRequestsPage";
 
 // --- Parent Imports ---
 import ParentLayout from "./layout/parents/ParentLayout";
 import ParentDashboardPage from "./pages/parents/ParentDashboardPage";
+import NotificationCenterPage from "./pages/parents/NotificationCenterPage";
 import LinkStudentPage from "./pages/parents/LinkStudentPage";
 import StudentDetailPage from "./pages/parents/StudentDetailPage";
 import ParentBillingPage from "./pages/parents/ParentBillingPage";
@@ -81,6 +83,10 @@ import ReportingPage from "./pages/advisor/ReportingPage";
 import ConsultationPage from "./pages/advisor/ConsultationPage";
 import APPathwaysPage from "./pages/advisor/APPathwaysPage";
 import RankingPage from "./pages/ranking/RankingPage";
+import AdminDashboardPage from "./pages/admins/AdminDashboardPage";
+import PackagePaymentManagerPage from "./pages/admins/PackagePaymentManagerPage";
+import TeacherAvailabilityPage from "./pages/teachers/TeacherAvailabilityPage";
+import TeacherProfilePage from "./pages/teachers/TeacherProfilePage";
 // Layout Wrapper for common UI elements
 const Layout = () => (
   <div className="flex flex-col min-h-screen">
@@ -122,6 +128,7 @@ function App() {
             </ProtectedRoute>
           }
         >
+          <Route path="dashboard" element={<AdminDashboardPage />} />
           <Route path="parents" element={<ParentManagerPage />} />
           <Route path="courses" element={<CourseManagerPage />} />
           <Route path="students" element={<StudentMangerPage />} />
@@ -132,6 +139,7 @@ function App() {
             element={<CertificatesRankingManagerPage />}
           />
           <Route path="users" element={<UserManagerPage />} />
+          <Route path="subscriptions" element={<PackagePaymentManagerPage />} />
         </Route>
 
         {/* Main routes with Layout */}
@@ -199,12 +207,16 @@ function App() {
             path="grading/:submissionId"
             element={<GradeSubmissionPage />}
           />
+          <Route path="tutor-profile" element={<TeacherProfilePage />} />
+          <Route path="availability" element={<TeacherAvailabilityPage />} />
+          <Route path="bookings" element={<TeacherBookingRequestsPage />} />
           <Route path="analytics" element={<ClassAnalyticsPage />} />
         </Route>
 
         {/* Parent routes with ParentLayout */}
         <Route path="/parent" element={<ParentLayout />}>
           <Route path="dashboard" element={<ParentDashboardPage />} />
+          <Route path="notifications" element={<NotificationCenterPage />} />
           <Route path="link-student" element={<LinkStudentPage />} />
           <Route path="student/:studentId" element={<StudentDetailPage />} />
           <Route path="billing" element={<ParentBillingPage />} />

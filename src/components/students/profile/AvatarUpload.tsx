@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Upload, Button, Card, Avatar, message, Spin } from "antd";
+import { Upload, Button, Card, Avatar, Spin } from "antd";
 import { UploadOutlined, UserOutlined, CameraOutlined } from "@ant-design/icons";
 import type { UploadProps } from "antd";
 import { uploadAvatarApi } from "~/services/authService";
 import { useAuth } from "~/hooks/useAuth";
+import { toast } from "~/components/common/Toast";
 
 interface AvatarUploadProps {
   onSuccess?: () => void;
@@ -21,14 +22,14 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ onSuccess }) => {
       // Update auth context with new avatar URL
       updateAuthFromStorage();
 
-      message.success("Tải lên ảnh đại diện thành công!");
+      toast.success("Tải lên ảnh đại diện thành công!");
 
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
       console.error("Error uploading avatar:", error);
-      message.error(error instanceof Error ? error.message : "Có lỗi xảy ra khi tải lên ảnh đại diện");
+      toast.error(error instanceof Error ? error.message : "Có lỗi xảy ra khi tải lên ảnh đại diện");
     } finally {
       setLoading(false);
     }
@@ -39,14 +40,14 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ onSuccess }) => {
       // Validate file type
       const isImage = file.type.startsWith('image/');
       if (!isImage) {
-        message.error('Chỉ cho phép tải lên file ảnh!');
+        toast.error('Chỉ cho phép tải lên file ảnh!');
         return false;
       }
 
       // Validate file size (max 5MB)
       const isLessThan5MB = file.size / 1024 / 1024 < 5;
       if (!isLessThan5MB) {
-        message.error('Kích thước ảnh không được vượt quá 5MB!');
+        toast.error('Kích thước ảnh không được vượt quá 5MB!');
         return false;
       }
 
