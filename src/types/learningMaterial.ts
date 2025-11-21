@@ -13,6 +13,7 @@ export interface LearningMaterial {
   createdAt: string;
   updatedAt: string;
   thumbnail?: string;
+  fileImage?: string;
   uploader?: string;
 }
 export interface LearningMaterialQuery {
