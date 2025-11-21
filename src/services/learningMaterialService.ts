@@ -20,7 +20,12 @@ const LearningMaterialService = {
     return axiosInstance.get(`/learning-materials`, { params });
   },
 
-  create(payload: Partial<LearningMaterial>): Promise<AxiosResponse<ApiResponse<LearningMaterial>>> {
+  create(payload: Partial<LearningMaterial> | FormData): Promise<AxiosResponse<ApiResponse<LearningMaterial>>> {
+    if (payload instanceof FormData) {
+      return axiosInstance.post(`/learning-materials`, payload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    }
     return axiosInstance.post(`/learning-materials`, payload);
   },
 

@@ -58,7 +58,7 @@ export function useLearningMaterial() {
   }, []);
 
   //  Tạo mới
-  const create = useCallback(async (payload: Partial<LearningMaterial>) => {
+  const create = useCallback(async (payload: unknown) => {
     try {
       setLoading(true);
       const res = await LearningMaterialService.create(payload);
