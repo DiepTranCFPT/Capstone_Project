@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Tabs } from 'antd';
 import Timer from '~/components/do-test/Timer';
 import QuestionCard from '~/components/do-test/QuestionCard';
 import FRQCard from '~/components/do-test/FRQCard';
@@ -432,7 +433,7 @@ const DoTestPage: React.FC = () => {
 
             {/* Main Content */}
             <main className="flex-1 p-8 overflow-y-auto bg-white/40">
-                <div className="max-w-4xl mx-auto space-y-8">
+                <div className="max-w-4xl mx-auto">
                     {loading ? (
                         <div className="text-center py-20">
                             <div className="text-6xl mb-6">⏳</div>
@@ -460,64 +461,93 @@ const DoTestPage: React.FC = () => {
                             </button>
                         </div>
                     ) : activeExamData ? (
-                        <div className="space-y-8">
-                            {sortedQuestions.map((q: ActiveExamQuestion, index: number) => {
-                                if (q.question.type === 'mcq') {
-                                    const currentAnswer = answers[q.examQuestionId];
-                                    return (
-                                        <div
-                                            key={q.examQuestionId}
-                                            ref={(el) => { questionRefs.current[index] = el; }}
-                                        >
-                                            <QuestionCard
-                                                question={{
-                                                    id: q.question.id,
-                                                    text: q.question.content,
-                                                    subject: q.question.subject.name,
-                                                    difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
-                                                    type: q.question.type as "mcq",
-                                                    createdBy: q.question.createdBy,
-                                                    createdAt: new Date().toISOString(),
-                                                    options: q.question.answers
-                                                        .filter((a: ExamAnswer) => a.content !== null)
-                                                        .map((a: ExamAnswer) => ({ id: a.id, text: a.content || '' }))
-                                                }}
-                                                questionNumber={q.orderNumber}
-                                                onAnswerChange={(answerId) => handleAnswerChange(q.examQuestionId, !!answerId, { selectedAnswerId: answerId })}
-                                                selectedAnswerId={currentAnswer?.selectedAnswerId}
-                                            />
-                                        </div>
-                                    );
-                                } else if (q.question.type === 'frq') {
-                                    const currentAnswer = answers[q.examQuestionId];
-                                    return (
-                                        <div
-                                            key={q.examQuestionId}
-                                            ref={(el) => { questionRefs.current[index] = el; }}
-                                        >
-                                            <FRQCard
-                                                question={{
-                                                    id: q.question.id,
-                                                    text: q.question.content,
-                                                    subject: q.question.subject.name,
-                                                    difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
-                                                    type: q.question.type as "frq",
-                                                    createdBy: q.question.createdBy,
-                                                    createdAt: new Date().toISOString(),
-                                                    expectedAnswer: "Sample answer" // This would come from API if available
-                                                }}
-                                                questionNumber={q.orderNumber}
-                                                savedAnswer={currentAnswer?.frqAnswerText}
-                                                onAnswerChange={(_questionIndex, hasAnswer, answerData) =>
-                                                    handleAnswerChange(q.examQuestionId, hasAnswer, answerData)
-                                                }
-                                            />
-                                        </div>
-                                    );
-                                }
-                                return null;
-                            })}
-                        </div>
+                        <Tabs
+                            defaultActiveKey="mcq"
+                            type="card"
+                            className="custom-tabs"
+                        >
+                            {/* MCQ Tab */}
+                            {(() => {
+                                const mcqQuestions = sortedQuestions.filter((q: ActiveExamQuestion) => q.question.type === 'mcq');
+                                return (
+                                    <Tabs.TabPane
+                                        tab={`MCQ (${mcqQuestions.length})`}
+                                        key="mcq"
+                                        className="space-y-8"
+                                    >
+                                        {mcqQuestions.map((q: ActiveExamQuestion) => {
+                                            const index = sortedQuestions.findIndex((q2: ActiveExamQuestion) => q2.examQuestionId === q.examQuestionId);
+                                            const currentAnswer = answers[q.examQuestionId];
+                                            return (
+                                                <div
+                                                    key={q.examQuestionId}
+                                                    ref={(el) => { questionRefs.current[index] = el; }}
+                                                >
+                                                    <QuestionCard
+                                                        question={{
+                                                            id: q.question.id,
+                                                            text: q.question.content,
+                                                            subject: q.question.subject.name,
+                                                            difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
+                                                            type: q.question.type as "mcq",
+                                                            createdBy: q.question.createdBy,
+                                                            createdAt: new Date().toISOString(),
+                                                            options: q.question.answers
+                                                                .filter((a: ExamAnswer) => a.content !== null)
+                                                                .map((a: ExamAnswer) => ({ id: a.id, text: a.content || '' }))
+                                                        }}
+                                                        questionNumber={q.orderNumber}
+                                                        onAnswerChange={(answerId) => handleAnswerChange(q.examQuestionId, !!answerId, { selectedAnswerId: answerId })}
+                                                        selectedAnswerId={currentAnswer?.selectedAnswerId}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </Tabs.TabPane>
+                                );
+                            })()}
+
+                            {/* FRQ Tab */}
+                            {(() => {
+                                const frqQuestions = sortedQuestions.filter((q: ActiveExamQuestion) => q.question.type === 'frq');
+                                return (
+                                    <Tabs.TabPane
+                                        tab={`FRQ (${frqQuestions.length})`}
+                                        key="frq"
+                                        className="space-y-8"
+                                    >
+                                        {frqQuestions.map((q: ActiveExamQuestion) => {
+                                            const index = sortedQuestions.indexOf(q);
+                                            const currentAnswer = answers[q.examQuestionId];
+                                            return (
+                                                <div
+                                                    key={q.examQuestionId}
+                                                    ref={(el) => { questionRefs.current[index] = el; }}
+                                                >
+                                                    <FRQCard
+                                                        question={{
+                                                            id: q.question.id,
+                                                            text: q.question.content,
+                                                            subject: q.question.subject.name,
+                                                            difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
+                                                            type: q.question.type as "frq",
+                                                            createdBy: q.question.createdBy,
+                                                            createdAt: new Date().toISOString(),
+                                                            expectedAnswer: "Sample answer" // This would come from API if available
+                                                        }}
+                                                        questionNumber={q.orderNumber}
+                                                        savedAnswer={currentAnswer?.frqAnswerText}
+                                                        onAnswerChange={(_questionIndex, hasAnswer, answerData) =>
+                                                            handleAnswerChange(q.examQuestionId, hasAnswer, answerData)
+                                                        }
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </Tabs.TabPane>
+                                );
+                            })()}
+                        </Tabs>
                     ) : null}
                 </div>
             </main>
