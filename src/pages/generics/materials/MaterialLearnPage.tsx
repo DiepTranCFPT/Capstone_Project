@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Tabs } from "antd";
+import { Tabs, message } from "antd";
 import { useMaterialDetail } from "~/hooks/useMaterialDetail";
 import { useLesson } from "~/hooks/useLesson";
 import type { Lesson } from "~/types/lesson";
+import FileContentService from "~/services/fileContentService";
 
 // Hàm chuyển đổi YouTube URL thành embed URL
 const getYouTubeEmbedUrl = (url: string): string | null => {
@@ -49,6 +50,35 @@ const MaterialLearnPage: React.FC = () => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [activeTab, setActiveTab] = useState("about");
+  const [openingFile, setOpeningFile] = useState(false);
+  const handleOpenPdf = async () => {
+    if (!selectedLesson?.file) {
+      message.warning("Không có tài liệu để xem.");
+      return;
+    }
+
+    const fileRef = selectedLesson.file;
+    if (fileRef.startsWith("http://") || fileRef.startsWith("https://")) {
+      window.open(fileRef, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    try {
+      setOpeningFile(true);
+      const response = await FileContentService.viewLessonFile(fileRef);
+      const url = window.URL.createObjectURL(response.data);
+      window.open(url, "_blank", "noopener,noreferrer");
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 5000);
+    } catch (error) {
+      console.error("Open PDF error:", error);
+      message.error("Không thể mở tài liệu. Vui lòng thử lại.");
+    } finally {
+      setOpeningFile(false);
+    }
+  };
+
 
   useEffect(() => {
     if (id) {
@@ -159,16 +189,15 @@ const MaterialLearnPage: React.FC = () => {
                   <div className="bg-white rounded-xl shadow-sm p-6 flex items-center justify-between">
                     <div>
                       <p className="text-gray-800 font-medium">Tài liệu PDF đính kèm</p>
-                      <p className="text-sm text-gray-500">Tải xuống để xem chi tiết nội dung.</p>
+                      <p className="text-sm text-gray-500">Nhấn để xem chi tiết nội dung.</p>
                     </div>
-                    <a
-                      href={selectedLesson.file}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    <button
+                      onClick={handleOpenPdf}
+                      disabled={openingFile}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-70"
                     >
-                      Tải PDF
-                    </a>
+                      {openingFile ? "Đang mở..." : "Xem PDF"}
+                    </button>
                   </div>
                 )}
 

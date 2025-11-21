@@ -3,6 +3,7 @@ import { Empty, List, Modal, Spin, Typography, Button, Form, Input, Popconfirm, 
 import type { UploadFile } from "antd";
 import { EditOutlined, DeleteOutlined, EyeOutlined, UploadOutlined } from "@ant-design/icons";
 import LessonService from "~/services/LessonService";
+import FileContentService from "~/services/fileContentService";
 import type { LearningMaterial } from "~/types/learningMaterial";
 import type { Lesson } from "~/types/lesson";
 
@@ -59,6 +60,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
   const [loadingLessonDetail, setLoadingLessonDetail] = useState(false);
   const [loadingPreviewDetail, setLoadingPreviewDetail] = useState(false);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [pdfOpening, setPdfOpening] = useState(false);
   const openPreviewModal = async (lesson: Lesson) => {
     setPreviewLesson(lesson);
     setIsPreviewOpen(true);
@@ -149,9 +151,29 @@ const getEmbeddedUrl = (lesson: Lesson): string | null => {
           {hasPdf ? (
             <Button
               type="primary"
-              onClick={() => window.open(previewLesson.file ?? "", "_blank", "noopener,noreferrer")}
+              loading={pdfOpening}
+              onClick={async () => {
+                if (!previewLesson.file) return;
+                const fileRef = previewLesson.file;
+                if (fileRef.startsWith("http://") || fileRef.startsWith("https://")) {
+                  window.open(fileRef, "_blank", "noopener,noreferrer");
+                  return;
+                }
+                try {
+                  setPdfOpening(true);
+                  const response = await FileContentService.viewLessonFile(fileRef);
+                  const url = window.URL.createObjectURL(response.data);
+                  window.open(url, "_blank", "noopener,noreferrer");
+                  setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+                } catch (error) {
+                  console.error("Open PDF error:", error);
+                  message.error("Không thể mở tài liệu.");
+                } finally {
+                  setPdfOpening(false);
+                }
+              }}
             >
-              Tải {pdfName}
+              Xem {pdfName}
             </Button>
           ) : (
             <Typography.Paragraph className="text-gray-500 mb-0">
