@@ -20,6 +20,8 @@ export interface Material {
   lessons?: number;
   views?: string;
   image?: string;
+  thumbnail?: string;
+  fileImage?: string;
   category?: string;
 }
 
