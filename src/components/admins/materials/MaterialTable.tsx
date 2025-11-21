@@ -1,5 +1,5 @@
 import React from "react";
-import { Table, Tag, Button, Space, Tooltip, Popconfirm } from "antd";
+import { Table, Tag, Button, Space, Tooltip, Popconfirm, Image } from "antd";
 import { EyeOutlined, DeleteOutlined, PlusCircleOutlined, EditOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import type { LearningMaterial } from "~/types/learningMaterial";
@@ -48,6 +48,28 @@ const MaterialTable: React.FC<Props> = ({
   };
 
   const columns: ColumnsType<LearningMaterial> = [
+    {
+      title: "Image",
+      dataIndex: "thumbnail",
+      key: "thumbnail",
+      width: 80,
+      render: (thumbnail?: string) =>
+        thumbnail ? (
+          <Image
+            src={thumbnail}
+            alt="thumbnail"
+            width={48}
+            height={48}
+            className="rounded-md object-cover"
+            fallback="https://via.placeholder.com/48x48?text=No+Img"
+            preview={false}
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-md bg-gray-100 flex items-center justify-center text-xs text-gray-500">
+            N/A
+          </div>
+        ),
+    },
     {
       title: "Title",
       dataIndex: "title",
