@@ -115,10 +115,40 @@ const DoTestPage: React.FC = () => {
 
     // Load saved state from localStorage on mount - this ensures answers are displayed after reload
     useEffect(() => {
-        if (!activeExamData || sortedQuestions.length === 0) {
-            return;
+        if (!activeExamData || sortedQuestions.length === 0) return;
+
+        // 🥇 Priority 1: Cross-device savedAnswer from API
+        const apiAnswers: Record<string, { selectedAnswerId?: string; frqAnswerText?: string }> = {};
+        const answeredSet: Set<string> = new Set();
+
+        sortedQuestions.forEach((question: ActiveExamQuestion) => {
+            if (question.savedAnswer && (question.savedAnswer.selectedAnswerId || question.savedAnswer.frqAnswerText)) {
+                apiAnswers[question.examQuestionId] = {
+                    selectedAnswerId: question.savedAnswer.selectedAnswerId || undefined,
+                    frqAnswerText: question.savedAnswer.frqAnswerText || undefined
+                };
+                answeredSet.add(question.examQuestionId);
+                console.log('🔄 Found mobile savedAnswer:', question.examQuestionId);
+            }
+        });
+
+        // 🎯 If there are API answers (mobile->web), use them
+        if (Object.keys(apiAnswers).length > 0) {
+            console.log('📱 Loading answers from mobile cross-device continuation');
+            setAnswers(apiAnswers);
+            setAnsweredQuestions(answeredSet);
+
+            // ⏱️ Timer logic: localStorage saved time → API duration → default
+            const savedProgress = loadExamProgress();
+            if (savedProgress && savedProgress.remainingTime != null && savedProgress.remainingTime > 0) {
+                setRemainingTime(savedProgress.remainingTime);
+            } else if (activeExamData.durationInMinute) {
+                setRemainingTime(activeExamData.durationInMinute * 60);
+            }
+            return; // 🚫 Don't load from localStorage
         }
 
+        // 🥈 Priority 2: localStorage backup (ongoing exams)
         const savedProgress = loadExamProgress();
         if (!savedProgress || !savedProgress.answers || Object.keys(savedProgress.answers).length === 0) {
             return;
@@ -153,21 +183,15 @@ const DoTestPage: React.FC = () => {
         });
 
         // Create answeredQuestions Set from answers - ensure it includes all questions with answers
-        // Build the set directly from convertedAnswers to ensure accuracy
         const answeredQuestionsSet: Set<string> = new Set();
-
-        // Add all question IDs that have answers in convertedAnswers
-        // This is the source of truth - if there's an answer, the question is answered
         Object.keys(convertedAnswers).forEach(examQuestionId => {
             const answer = convertedAnswers[examQuestionId];
-            // Add to set if answer has content (either selectedAnswerId or frqAnswerText)
             if (answer && (answer.selectedAnswerId || (answer.frqAnswerText && answer.frqAnswerText.trim() !== ''))) {
                 answeredQuestionsSet.add(examQuestionId);
             }
         });
 
         // Always update answeredQuestions when loading from localStorage
-        // Use a new Set reference to ensure re-render
         setAnsweredQuestions(new Set(answeredQuestionsSet));
 
         // Only update remaining time if we have a valid saved time
