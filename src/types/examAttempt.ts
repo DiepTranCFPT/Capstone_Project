@@ -97,3 +97,30 @@ export interface AttemptResultDetail {
  * (Sử dụng lại ExamResult từ test.ts vì cấu trúc khớp)
  */
 export type AttemptHistoryResponse = PageInfo<ExamResult>;
+
+/**
+ * Payload cho API /exam-attempts/{attemptId}/save-progress
+ */
+export interface SaveProgressPayload {
+  answers: {
+    examQuestionId: string;
+    selectedAnswerId?: string | null; // Dùng cho MCQ
+    frqAnswerText?: string | null;    // Dùng cho FRQ
+  }[];
+}
+
+/**
+ * Item chấm điểm trong payload manual-grade
+ */
+export interface ManualGradeItem {
+  examQuestionId: string;
+  score: number;
+  feedback?: string;
+}
+
+/**
+ * Payload cho API /exam-attempts/{attemptId}/manual-grade
+ */
+export interface ManualGradePayload {
+  grades: ManualGradeItem[];
+}

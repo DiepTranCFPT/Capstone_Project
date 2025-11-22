@@ -5,7 +5,7 @@ import Timer from '~/components/do-test/Timer';
 import QuestionCard from '~/components/do-test/QuestionCard';
 import FRQCard from '~/components/do-test/FRQCard';
 import { useExamAttempt } from '~/hooks/useExamAttempt';
-import { useExamPersistence } from '~/hooks/useExamPersistence';
+import { useEnhancedExamPersistence } from '~/hooks/useEnhancedExamPersistence';
 import { useExamUnloadWarning } from '~/hooks/useExamUnloadWarning';
 import type { ExamSubmissionAnswer, ActiveExamQuestion, ExamAnswer } from '~/types/test';
 
@@ -15,26 +15,27 @@ const DoTestPage: React.FC = () => {
     const navigate = useNavigate();
     const { submitAttempt, loading, error } = useExamAttempt();
 
-    // Exam persistence hooks
+    // Enhanced exam persistence hooks with dual-save mechanism
     const {
         saveExamProgress,
         loadExamProgress,
         clearExamProgress,
         startAutoSave,
         stopAutoSave,
-        lastSavedTime
-    } = useExamPersistence();
+        lastSavedTime,
+        syncStatus,
+        syncToServer
+    } = useEnhancedExamPersistence();
 
     // Unload warning hook
     useExamUnloadWarning(true);
-
-    // Determine if this is a combo test
-    // const isComboTest = examId === 'combo' || !!attemptId;
 
     const [showConFirmed, setShowConFirmed] = useState(false);
     const [isSubmit, setIsSubmit] = useState(false);
     const [isCancel, setIsCancel] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isManualSyncing, setIsManualSyncing] = useState(false);
+
     // Check for stored attempt data from useExamAttempt - memoize to prevent recreation
     const currentActiveExam = useMemo(() => {
         const storedAttempt = localStorage.getItem('activeExamAttempt');
@@ -53,7 +54,6 @@ const DoTestPage: React.FC = () => {
 
     // Use the appropriate attempt data
     const activeExamData = currentActiveExam || examSpecificAttempt;
-
 
     // Initialize remaining time - use saved time if available, otherwise use full exam time
     const [remainingTime, setRemainingTime] = useState<number>(() => {
@@ -115,10 +115,40 @@ const DoTestPage: React.FC = () => {
 
     // Load saved state from localStorage on mount - this ensures answers are displayed after reload
     useEffect(() => {
-        if (!activeExamData || sortedQuestions.length === 0) {
-            return;
+        if (!activeExamData || sortedQuestions.length === 0) return;
+
+        // 🥇 Priority 1: Cross-device savedAnswer from API
+        const apiAnswers: Record<string, { selectedAnswerId?: string; frqAnswerText?: string }> = {};
+        const answeredSet: Set<string> = new Set();
+
+        sortedQuestions.forEach((question: ActiveExamQuestion) => {
+            if (question.savedAnswer && (question.savedAnswer.selectedAnswerId || question.savedAnswer.frqAnswerText)) {
+                apiAnswers[question.examQuestionId] = {
+                    selectedAnswerId: question.savedAnswer.selectedAnswerId || undefined,
+                    frqAnswerText: question.savedAnswer.frqAnswerText || undefined
+                };
+                answeredSet.add(question.examQuestionId);
+                console.log('🔄 Found mobile savedAnswer:', question.examQuestionId);
+            }
+        });
+
+        // 🎯 If there are API answers (mobile->web), use them
+        if (Object.keys(apiAnswers).length > 0) {
+            console.log('📱 Loading answers from mobile cross-device continuation');
+            setAnswers(apiAnswers);
+            setAnsweredQuestions(answeredSet);
+
+            // ⏱️ Timer logic: localStorage saved time → API duration → default
+            const savedProgress = loadExamProgress();
+            if (savedProgress && savedProgress.remainingTime != null && savedProgress.remainingTime > 0) {
+                setRemainingTime(savedProgress.remainingTime);
+            } else if (activeExamData.durationInMinute) {
+                setRemainingTime(activeExamData.durationInMinute * 60);
+            }
+            return; // 🚫 Don't load from localStorage
         }
 
+        // 🥈 Priority 2: localStorage backup (ongoing exams)
         const savedProgress = loadExamProgress();
         if (!savedProgress || !savedProgress.answers || Object.keys(savedProgress.answers).length === 0) {
             return;
@@ -153,21 +183,15 @@ const DoTestPage: React.FC = () => {
         });
 
         // Create answeredQuestions Set from answers - ensure it includes all questions with answers
-        // Build the set directly from convertedAnswers to ensure accuracy
         const answeredQuestionsSet: Set<string> = new Set();
-
-        // Add all question IDs that have answers in convertedAnswers
-        // This is the source of truth - if there's an answer, the question is answered
         Object.keys(convertedAnswers).forEach(examQuestionId => {
             const answer = convertedAnswers[examQuestionId];
-            // Add to set if answer has content (either selectedAnswerId or frqAnswerText)
             if (answer && (answer.selectedAnswerId || (answer.frqAnswerText && answer.frqAnswerText.trim() !== ''))) {
                 answeredQuestionsSet.add(examQuestionId);
             }
         });
 
         // Always update answeredQuestions when loading from localStorage
-        // Use a new Set reference to ensure re-render
         setAnsweredQuestions(new Set(answeredQuestionsSet));
 
         // Only update remaining time if we have a valid saved time
@@ -200,7 +224,23 @@ const DoTestPage: React.FC = () => {
                 stopAutoSave();
             };
         }
-    }, [activeExamData, autoSaveCallback, startAutoSave, stopAutoSave]); // Include autoSaveCallback as dependency
+    }, [activeExamData, autoSaveCallback, startAutoSave, stopAutoSave]);
+
+    // Manual sync function
+    const handleManualSync = useCallback(async () => {
+        if (!activeExamData?.examAttemptId || isManualSyncing) return;
+
+        setIsManualSyncing(true);
+        try {
+            await syncToServer(
+                activeExamData.examAttemptId,
+                answersRef.current,
+                answeredQuestionsRef.current
+            );
+        } finally {
+            setIsManualSyncing(false);
+        }
+    }, [activeExamData?.examAttemptId, syncToServer, isManualSyncing]);
 
     const handleSubmit = async () => {
         if (!activeExamData) return;
@@ -228,32 +268,24 @@ const DoTestPage: React.FC = () => {
             } else {
                 // If submission failed, close modal anyway to prevent getting stuck
                 setShowConFirmed(false);
-                // Maybe show error message here
                 console.error('Submission failed - no result returned');
             }
         } catch (err) {
             console.error('Submit failed:', err);
-            // Close modal even on error to prevent getting stuck
             setShowConFirmed(false);
-            // Handle error - maybe show toast
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const handleCancel = () => {
-        // Close the confirmation modal
         setShowConFirmed(false);
-
-        // Clear all exam progress when cancelling
         clearExamProgress();
 
         // Check if this is a combo test (has attemptId param)
         if (attemptId) {
-            // For combo tests, redirect to exam test page
             navigate('/exam-test');
         } else {
-            // For individual exams, redirect to exam details
             navigate(`/exam-details/${examId}`);
         }
     };
@@ -271,10 +303,9 @@ const DoTestPage: React.FC = () => {
     const totalQuestions = sortedQuestions.length;
 
     const handleAnswerChange = useCallback((examQuestionId: string, hasAnswer: boolean, answerData?: { selectedAnswerId?: string; frqAnswerText?: string }) => {
-        // Only update if answerData actually changed
         setAnswers(prev => {
             const currentAnswer = prev[examQuestionId];
-            // Check if answerData is different from current
+            
             if (answerData) {
                 const isDifferent =
                     currentAnswer?.selectedAnswerId !== answerData.selectedAnswerId ||
@@ -327,6 +358,47 @@ const DoTestPage: React.FC = () => {
         }
     }, []);
 
+    // Get sync status display info
+    const getSyncStatusInfo = () => {
+        if (syncStatus.isSyncing) {
+            return {
+                text: 'Đang đồng bộ...',
+                color: 'text-blue-600',
+                icon: '🔄'
+            };
+        }
+        if (syncStatus.syncError) {
+            return {
+                text: 'Lỗi đồng bộ',
+                color: 'text-red-600',
+                icon: '⚠️'
+            };
+        }
+        if (syncStatus.hasUnsyncedChanges) {
+            return {
+                text: 'Có thay đổi chưa đồng bộ',
+                color: 'text-orange-600',
+                icon: '⏳'
+            };
+        }
+        if (syncStatus.lastSyncTime) {
+            return {
+                text: `Đã đồng bộ: ${new Date(syncStatus.lastSyncTime).toLocaleTimeString('vi-VN', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}`,
+                color: 'text-green-600',
+                icon: '✅'
+            };
+        }
+        return {
+            text: 'Chưa đồng bộ',
+            color: 'text-gray-500',
+            icon: '📱'
+        };
+    };
+
+    const syncStatusInfo = getSyncStatusInfo();
 
     return (
         <div className="flex h-screen bg-teal-50/80">
@@ -347,6 +419,7 @@ const DoTestPage: React.FC = () => {
                             onTimeChange={setRemainingTime}
                         />
                     </div>
+                    
                     {/* Auto-save indicator */}
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-teal-200/30">
                         <span className="text-sm text-gray-600">💾 Tự động lưu:</span>
@@ -368,6 +441,38 @@ const DoTestPage: React.FC = () => {
                             )}
                         </div>
                     </div>
+
+                    {/* Server sync indicator */}
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-teal-200/30">
+                        <span className="text-sm text-gray-600">☁️ Đồng bộ server:</span>
+                        <div className="flex items-center gap-2">
+                            <span className={`text-xs ${syncStatusInfo.color} flex items-center gap-1`}>
+                                <span>{syncStatusInfo.icon}</span>
+                                <span className="truncate max-w-24">{syncStatusInfo.text}</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Manual sync button */}
+                    {activeExamData?.examAttemptId && (
+                        <button
+                            onClick={handleManualSync}
+                            disabled={isManualSyncing || syncStatus.isSyncing}
+                            className="w-full mt-3 px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white text-xs font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                        >
+                            {isManualSyncing ? (
+                                <>
+                                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                                    Đang sync...
+                                </>
+                            ) : (
+                                <>
+                                    <span>🔄</span>
+                                    Sync ngay
+                                </>
+                            )}
+                        </button>
+                    )}
                 </div>
 
                 {/* Progress Bar */}

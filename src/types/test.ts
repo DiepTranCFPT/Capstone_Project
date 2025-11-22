@@ -194,6 +194,14 @@ export interface ActiveExamQuestion {
   question: ExamQuestionDetail;
   orderNumber: number;
   points: number;
+  savedAnswer?: {  // ✅ Thêm field này
+    studentAnswerId: string;
+    selectedAnswerId?: string | null;
+    frqAnswerText?: string | null;
+    score: string | null;
+    feedback: string | null;
+    correctAnswer: string | null;
+  } | null;
 }
 
 /**

@@ -13,6 +13,8 @@ import type {
   StartComboRandomPayload,
   RateAttemptPayload,
   AttemptResultDetail,
+  SaveProgressPayload,
+  ManualGradePayload,
 } from "~/types/examAttempt";
 
 /**
@@ -103,6 +105,29 @@ const ExamAttemptService = {
   ): Promise<AxiosResponse<ApiResponse<AttemptResultDetail>>> {
     return axiosInstance.get(`/exam-attempts/${attemptId}/subscribe`);
   },
+
+  /**
+   * 🔹 Lưu tiến độ làm bài (Save Progress).
+   * POST /exam-attempts/{attemptId}/save-progress
+   */
+  saveProgress(
+    attemptId: string,
+    data: SaveProgressPayload
+  ): Promise<AxiosResponse<ApiResponse<string>>> { // Giả sử data trả về là string hoặc object đơn giản
+    return axiosInstance.post(`/exam-attempts/${attemptId}/save-progress`, data);
+  },
+
+  /**
+   * 🔹 Chấm điểm thủ công (Manual Grade) - Dành cho giáo viên.
+   * PUT /exam-attempts/{attemptId}/manual-grade
+   */
+  manualGrade(
+    attemptId: string,
+    data: ManualGradePayload
+  ): Promise<AxiosResponse<ApiResponse<AttemptResultDetail>>> {
+    return axiosInstance.put(`/exam-attempts/${attemptId}/manual-grade`, data);
+  },
+
 };
 
 export default ExamAttemptService;
