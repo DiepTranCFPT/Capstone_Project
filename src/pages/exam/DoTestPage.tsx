@@ -5,7 +5,7 @@ import Timer from '~/components/do-test/Timer';
 import QuestionCard from '~/components/do-test/QuestionCard';
 import FRQCard from '~/components/do-test/FRQCard';
 import { useExamAttempt } from '~/hooks/useExamAttempt';
-import { useExamPersistence } from '~/hooks/useExamPersistence';
+import { useEnhancedExamPersistence } from '~/hooks/useEnhancedExamPersistence';
 import { useExamUnloadWarning } from '~/hooks/useExamUnloadWarning';
 import type { ExamSubmissionAnswer, ActiveExamQuestion, ExamAnswer } from '~/types/test';
 
@@ -15,26 +15,27 @@ const DoTestPage: React.FC = () => {
     const navigate = useNavigate();
     const { submitAttempt, loading, error } = useExamAttempt();
 
-    // Exam persistence hooks
+    // Enhanced exam persistence hooks with dual-save mechanism
     const {
         saveExamProgress,
         loadExamProgress,
         clearExamProgress,
         startAutoSave,
         stopAutoSave,
-        lastSavedTime
-    } = useExamPersistence();
+        lastSavedTime,
+        syncStatus,
+        syncToServer
+    } = useEnhancedExamPersistence();
 
     // Unload warning hook
     useExamUnloadWarning(true);
-
-    // Determine if this is a combo test
-    // const isComboTest = examId === 'combo' || !!attemptId;
 
     const [showConFirmed, setShowConFirmed] = useState(false);
     const [isSubmit, setIsSubmit] = useState(false);
     const [isCancel, setIsCancel] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isManualSyncing, setIsManualSyncing] = useState(false);
+
     // Check for stored attempt data from useExamAttempt - memoize to prevent recreation
     const currentActiveExam = useMemo(() => {
         const storedAttempt = localStorage.getItem('activeExamAttempt');
@@ -53,7 +54,6 @@ const DoTestPage: React.FC = () => {
 
     // Use the appropriate attempt data
     const activeExamData = currentActiveExam || examSpecificAttempt;
-
 
     // Initialize remaining time - use saved time if available, otherwise use full exam time
     const [remainingTime, setRemainingTime] = useState<number>(() => {
@@ -200,7 +200,23 @@ const DoTestPage: React.FC = () => {
                 stopAutoSave();
             };
         }
-    }, [activeExamData, autoSaveCallback, startAutoSave, stopAutoSave]); // Include autoSaveCallback as dependency
+    }, [activeExamData, autoSaveCallback, startAutoSave, stopAutoSave]);
+
+    // Manual sync function
+    const handleManualSync = useCallback(async () => {
+        if (!activeExamData?.examAttemptId || isManualSyncing) return;
+
+        setIsManualSyncing(true);
+        try {
+            await syncToServer(
+                activeExamData.examAttemptId,
+                answersRef.current,
+                answeredQuestionsRef.current
+            );
+        } finally {
+            setIsManualSyncing(false);
+        }
+    }, [activeExamData?.examAttemptId, syncToServer, isManualSyncing]);
 
     const handleSubmit = async () => {
         if (!activeExamData) return;
@@ -228,32 +244,24 @@ const DoTestPage: React.FC = () => {
             } else {
                 // If submission failed, close modal anyway to prevent getting stuck
                 setShowConFirmed(false);
-                // Maybe show error message here
                 console.error('Submission failed - no result returned');
             }
         } catch (err) {
             console.error('Submit failed:', err);
-            // Close modal even on error to prevent getting stuck
             setShowConFirmed(false);
-            // Handle error - maybe show toast
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const handleCancel = () => {
-        // Close the confirmation modal
         setShowConFirmed(false);
-
-        // Clear all exam progress when cancelling
         clearExamProgress();
 
         // Check if this is a combo test (has attemptId param)
         if (attemptId) {
-            // For combo tests, redirect to exam test page
             navigate('/exam-test');
         } else {
-            // For individual exams, redirect to exam details
             navigate(`/exam-details/${examId}`);
         }
     };
@@ -271,10 +279,9 @@ const DoTestPage: React.FC = () => {
     const totalQuestions = sortedQuestions.length;
 
     const handleAnswerChange = useCallback((examQuestionId: string, hasAnswer: boolean, answerData?: { selectedAnswerId?: string; frqAnswerText?: string }) => {
-        // Only update if answerData actually changed
         setAnswers(prev => {
             const currentAnswer = prev[examQuestionId];
-            // Check if answerData is different from current
+            
             if (answerData) {
                 const isDifferent =
                     currentAnswer?.selectedAnswerId !== answerData.selectedAnswerId ||
@@ -327,6 +334,47 @@ const DoTestPage: React.FC = () => {
         }
     }, []);
 
+    // Get sync status display info
+    const getSyncStatusInfo = () => {
+        if (syncStatus.isSyncing) {
+            return {
+                text: 'Đang đồng bộ...',
+                color: 'text-blue-600',
+                icon: '🔄'
+            };
+        }
+        if (syncStatus.syncError) {
+            return {
+                text: 'Lỗi đồng bộ',
+                color: 'text-red-600',
+                icon: '⚠️'
+            };
+        }
+        if (syncStatus.hasUnsyncedChanges) {
+            return {
+                text: 'Có thay đổi chưa đồng bộ',
+                color: 'text-orange-600',
+                icon: '⏳'
+            };
+        }
+        if (syncStatus.lastSyncTime) {
+            return {
+                text: `Đã đồng bộ: ${new Date(syncStatus.lastSyncTime).toLocaleTimeString('vi-VN', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })}`,
+                color: 'text-green-600',
+                icon: '✅'
+            };
+        }
+        return {
+            text: 'Chưa đồng bộ',
+            color: 'text-gray-500',
+            icon: '📱'
+        };
+    };
+
+    const syncStatusInfo = getSyncStatusInfo();
 
     return (
         <div className="flex h-screen bg-teal-50/80">
@@ -347,6 +395,7 @@ const DoTestPage: React.FC = () => {
                             onTimeChange={setRemainingTime}
                         />
                     </div>
+                    
                     {/* Auto-save indicator */}
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-teal-200/30">
                         <span className="text-sm text-gray-600">💾 Tự động lưu:</span>
@@ -368,6 +417,38 @@ const DoTestPage: React.FC = () => {
                             )}
                         </div>
                     </div>
+
+                    {/* Server sync indicator */}
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-teal-200/30">
+                        <span className="text-sm text-gray-600">☁️ Đồng bộ server:</span>
+                        <div className="flex items-center gap-2">
+                            <span className={`text-xs ${syncStatusInfo.color} flex items-center gap-1`}>
+                                <span>{syncStatusInfo.icon}</span>
+                                <span className="truncate max-w-24">{syncStatusInfo.text}</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Manual sync button */}
+                    {activeExamData?.examAttemptId && (
+                        <button
+                            onClick={handleManualSync}
+                            disabled={isManualSyncing || syncStatus.isSyncing}
+                            className="w-full mt-3 px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white text-xs font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                        >
+                            {isManualSyncing ? (
+                                <>
+                                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                                    Đang sync...
+                                </>
+                            ) : (
+                                <>
+                                    <span>🔄</span>
+                                    Sync ngay
+                                </>
+                            )}
+                        </button>
+                    )}
                 </div>
 
                 {/* Progress Bar */}

@@ -8,7 +8,9 @@ import type {
 } from "~/types/test";
 import type {
   AttemptResultDetail,
+  ManualGradePayload,
   RateAttemptPayload,
+  SaveProgressPayload,
   StartComboPayload,
   StartComboRandomPayload,
   StartSinglePayload,
@@ -220,6 +222,62 @@ export const useExamAttempt = () => {
     }
   }, []);
 
+  /**
+   * Lưu tiến độ làm bài (thường dùng cho Auto-save hoặc nút "Lưu tạm").
+   * Hàm này thường không nên hiện toast success liên tục để tránh spam, 
+   * trừ khi có lỗi.
+   */
+  const saveProgress = useCallback(
+    async (attemptId: string, payload: SaveProgressPayload) => {
+      // Lưu ý: Có thể không cần set loading toàn cục nếu muốn save ngầm (silent save)
+      // Ở đây mình set loading để có thể hiển thị trạng thái "Đang lưu..."
+      setLoading(true);
+      try {
+        const res = await ExamAttemptService.saveProgress(attemptId, payload);
+        if (res.data.code === 0 || res.data.code === 1000) {
+          // Success - có thể return true để component biết đã lưu xong
+          return true;
+        } else {
+          console.error("Save progress failed:", res.data.message);
+          return false;
+        }
+      } catch (err) {
+        console.error("Save progress error:", err);
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  /**
+   * Chấm điểm thủ công (Dành cho Teacher grading).
+   */
+  const gradeAttempt = useCallback(
+    async (attemptId: string, payload: ManualGradePayload) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await ExamAttemptService.manualGrade(attemptId, payload);
+        if (res.data.code === 0 || res.data.code === 1000) {
+          toast.success("Đã lưu điểm chấm thành công!");
+          // Cập nhật lại chi tiết kết quả nếu đang xem
+          // setAttemptResultDetail(res.data.data); 
+          return res.data.data;
+        } else {
+          throw new Error(res.data.message || "Không thể lưu điểm chấm");
+        }
+      } catch (err) {
+        handleError(err, "Không thể lưu điểm chấm");
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   return {
     loading,
     error,
@@ -233,6 +291,8 @@ export const useExamAttempt = () => {
     rateAttempt,
     fetchAttemptResult,
     subscribeAttemptResult,
+    saveProgress,
+    gradeAttempt,
   };
 };
 
