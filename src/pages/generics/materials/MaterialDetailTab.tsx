@@ -1,8 +1,10 @@
-import React from "react";
-import { Tabs, message } from "antd";
+import React, { useEffect, useState } from "react";
+import { Tabs, message, Spin } from "antd";
 import { useNavigate } from "react-router-dom";
 import type { Material } from "~/types/material";
 import { useMaterialRegister } from "~/hooks/useMaterialRegister";
+import UserService from "~/services/userService";
+import type { User } from "~/types/user";
 
 interface MaterialDetailTabProps {
   material: Material;
@@ -11,6 +13,31 @@ interface MaterialDetailTabProps {
 const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
   const { register, loading, error } = useMaterialRegister();
   const navigate = useNavigate();
+  const [instructor, setInstructor] = useState<User | null>(null);
+  const [loadingInstructor, setLoadingInstructor] = useState(false);
+
+  // Fetch thông tin instructor
+  useEffect(() => {
+    const fetchInstructor = async () => {
+      if (!material.authorId) return;
+      
+      setLoadingInstructor(true);
+      try {
+        const response = await UserService.getUserProfile(material.authorId);
+        if (response.data) {
+          setInstructor(response.data);
+        }
+      } catch (err) {
+        console.error("Lỗi khi lấy thông tin instructor:", err);
+        // Nếu API lỗi, vẫn hiển thị thông tin cơ bản từ material
+        // Không set instructor để fallback về hiển thị authorName
+      } finally {
+        setLoadingInstructor(false);
+      }
+    };
+
+    fetchInstructor();
+  }, [material.authorId]);
 
   const handleRegister = async () => {
     try {
@@ -112,14 +139,92 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
             ),
           },
           {
-            key: "curriculum",
-            label: "Curriculum",
-            children: <p>Curriculum content will go here...</p>,
-          },
-          {
             key: "instructor",
             label: "Instructor",
-            children: <p>Instructor details will go here...</p>,
+            children: (
+              <div>
+                {loadingInstructor ? (
+                  <div className="flex justify-center items-center py-8">
+                    <Spin size="large" />
+                  </div>
+                ) : instructor ? (
+                  <div className="flex flex-col md:flex-row gap-6">
+                    {/* Avatar */}
+                    <div className="flex-shrink-0">
+                      <img
+                        src={instructor.imgUrl || "https://placehold.co/150x150"}
+                        alt={`${instructor.firstName} ${instructor.lastName}`}
+                        className="w-32 h-32 rounded-full object-cover border-4 border-teal-100"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = "https://placehold.co/150x150";
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Thông tin */}
+                    <div className="flex-1">
+                      <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                        {instructor.firstName} {instructor.lastName}
+                      </h3>
+                      {instructor.roles && instructor.roles.length > 0 && (
+                        <p className="text-teal-600 font-semibold mb-3">
+                          {instructor.roles.map(role => {
+                            const roleNames: Record<string, string> = {
+                              'TEACHER': 'Giáo viên',
+                              'ADMIN': 'Quản trị viên',
+                              'STUDENT': 'Học sinh',
+                              'ACADEMIC_ADVISOR': 'Cố vấn học tập',
+                              'PARENT': 'Phụ huynh'
+                            };
+                            return roleNames[role] || role;
+                          }).join(', ')}
+                        </p>
+                      )}
+                      {instructor.email && (
+                        <p className="text-gray-600 mb-2">
+                          <span className="font-medium">Email:</span> {instructor.email}
+                        </p>
+                      )}
+                      {material.authorName && (
+                        <p className="text-gray-600 mb-4">
+                          <span className="font-medium">Tên hiển thị:</span> {material.authorName}
+                        </p>
+                      )}
+                      {instructor.dob && (
+                        <p className="text-gray-600">
+                          <span className="font-medium">Ngày sinh:</span>{" "}
+                          {new Date(instructor.dob).toLocaleDateString("vi-VN", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col md:flex-row gap-6">
+                    {/* Avatar placeholder */}
+                    <div className="flex-shrink-0">
+                      <div className="w-32 h-32 rounded-full bg-teal-100 flex items-center justify-center border-4 border-teal-200">
+                        <span className="text-4xl font-bold text-teal-600">
+                          {material.authorName ? material.authorName.charAt(0).toUpperCase() : '?'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Thông tin cơ bản từ material */}
+                    <div className="flex-1">
+                      <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                        {material.authorName || "Người tạo"}
+                      </h3>
+                      <p className="text-teal-600 font-semibold mb-3">Giáo viên</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ),
           },
           {
             key: "reviews",
