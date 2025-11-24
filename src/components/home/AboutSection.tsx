@@ -8,22 +8,21 @@ const AboutSection: React.FC = () => {
         <div className="w-[661px] h-[482px] mt-[44px] mr-[40px] relative">
           <div className="w-72 h-80 absolute bg-white rounded-tr-[40px] rounded-bl-[40px] border border-black/40" />
           <img
-            className="w-64 h-80 absolute top-[7px] left-[7px] rounded-tr-[40px] rounded-bl-[40px]"
-            src="https://placehold.co/261x329"
-            alt="Image 1"
+            className="w-64 h-80 absolute top-[7px] left-[7px] rounded-tr-[40px] rounded-bl-[40px] object-cover shadow-xl"
+            src="/asia-businesswoman-using-laptop-talk-colleagues-about-plan-video-call-meeting-living-room.jpg"
+            alt="Nữ sinh viên học trực tuyến"
           />
           <div className="w-64 h-80 absolute left-[330px] top-[141px] bg-white rounded-tl-[40px] rounded-br-[40px] border border-black/40" />
           <img
-            className="w-60 h-80 absolute left-[337px] top-[148px] rounded-tl-[40px] rounded-br-[40px]"
-            src="https://placehold.co/242x327"
-            alt="Image 2"
+            className="w-60 h-80 absolute left-[337px] top-[148px] rounded-tl-[40px] rounded-br-[40px] object-cover shadow-lg brightness-95"
+            src="/imagestudent.jpg"
+            alt="Nữ sinh viên đang học tập"
           />
           <div className="w-64 h-20 absolute top-[388px] bg-teal-400 rounded-tr-[40px] rounded-bl-[40px]" />
           <div className="w-10 h-10 absolute top-[410px] left-[24px] bg-zinc-300 rounded-full" />
           <div className="absolute top-[416px] left-[88px] flex items-center text-white text-base font-bold font-['Inter']">
             ONLINE SUPPORT <br /> +0123456789
           </div>
-          <div className="w-16 h-16 absolute top-[136px] left-[102px] bg-white rounded-full" />
         </div>
 
         {/* Khối bên phải */}
