@@ -124,3 +124,35 @@ export interface ManualGradeItem {
 export interface ManualGradePayload {
   grades: ManualGradeItem[];
 }
+
+/**
+ * Payload cho API /exam-attempts/{attemptId}/request-review
+ */
+export interface RequestReviewPayload {
+  reason: string;
+}
+
+/**
+ * Param cho API /exam-attempts/teacher/review-queue
+ */
+export interface ReviewQueueQueryParams {
+  pageNo?: number;
+  pageSize?: number;
+  includePending?: boolean;
+  includeReviewRequested?: boolean;
+  sorts?: string[];
+}
+
+/**
+ * Item trong danh sách hàng chờ chấm điểm (response của review-queue)
+ */
+export interface ReviewQueueItem {
+  attemptId: string;
+  examId: string;
+  doneBy: string;
+  score: number;
+  startTime: string;
+  endTime: string;
+  status: string;
+  rating: number;
+}

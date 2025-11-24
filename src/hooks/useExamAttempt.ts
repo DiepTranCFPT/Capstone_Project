@@ -10,6 +10,9 @@ import type {
   AttemptResultDetail,
   ManualGradePayload,
   RateAttemptPayload,
+  RequestReviewPayload,
+  ReviewQueueItem,
+  ReviewQueueQueryParams,
   SaveProgressPayload,
   StartComboPayload,
   StartComboRandomPayload,
@@ -278,6 +281,31 @@ export const useExamAttempt = () => {
     []
   );
 
+  /**
+   *  Yêu cầu phúc khảo bài thi.
+   */
+  const requestReview = useCallback(
+    async (attemptId: string, payload: RequestReviewPayload) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await ExamAttemptService.requestReview(attemptId, payload);
+        if (res.data.code === 0 || res.data.code === 1000) {
+          toast.success("Đã gửi yêu cầu phúc khảo thành công!");
+          return true;
+        } else {
+          throw new Error(res.data.message || "Không thể gửi yêu cầu phúc khảo");
+        }
+      } catch (err) {
+        handleError(err, "Không thể gửi yêu cầu phúc khảo");
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   return {
     loading,
     error,
@@ -293,6 +321,7 @@ export const useExamAttempt = () => {
     subscribeAttemptResult,
     saveProgress,
     gradeAttempt,
+    requestReview
   };
 };
 
@@ -370,5 +399,62 @@ export const useExamAttemptHistory = () => {
     fetchHistory,
     handlePageChange,
     setSorts,
+  };
+};
+
+/**
+ * Hook quản lý danh sách chấm điểm của giáo viên (Teacher Review Queue).
+ */
+export const useTeacherReviewQueue = () => {
+  const [queue, setQueue] = useState<ReviewQueueItem[]>([]);
+  const [pageInfo, setPageInfo] = useState<PageInfo<ReviewQueueItem> | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleError = (err: unknown, defaultMessage: string) => {
+    setLoading(false);
+    const e = err as { response?: { data?: ApiResponse<unknown> } } & Error;
+    const apiMessage = e.response?.data?.message;
+    const message = apiMessage || e.message || defaultMessage;
+    setError(message);
+    toast.error(message);
+  };
+
+  const fetchReviewQueue = useCallback(
+    async (params?: ReviewQueueQueryParams) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await ExamAttemptService.getTeacherReviewQueue(params);
+        if (res.data.code === 0 || res.data.code === 1000) {
+          const data = res.data.data;
+          // Kiểm tra structure trả về từ API
+          if (data.items) {
+            setQueue(data.items);
+            setPageInfo(data);
+          } else if (Array.isArray(data)) {
+            setQueue(data);
+            setPageInfo(null); // Hoặc tạo fake page info nếu cần
+          } else {
+            setQueue([]);
+          }
+        } else {
+          throw new Error(res.data.message || "Failed to fetch review queue");
+        }
+      } catch (err) {
+        handleError(err, "Không thể tải danh sách chờ chấm điểm");
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  return {
+    queue,
+    pageInfo,
+    loading,
+    error,
+    fetchReviewQueue
   };
 };

@@ -5,9 +5,10 @@ import type { AttemptResultDetail } from '~/types/examAttempt';
 interface ResultSummaryProps {
     isPractice: boolean;
     attemptResultDetail: AttemptResultDetail | null;
+    onReviewRequest?: () => void;
 }
 
-const ResultSummary: React.FC<ResultSummaryProps> = ({ isPractice, attemptResultDetail }) => {
+const ResultSummary: React.FC<ResultSummaryProps> = ({ isPractice, attemptResultDetail, onReviewRequest }) => {
      const totalQuestions = attemptResultDetail?.questions.length || 0;
     
     // CẬP NHẬT: Tính toán số câu đúng dựa trên `studentAnswer.score`
@@ -35,7 +36,15 @@ const ResultSummary: React.FC<ResultSummaryProps> = ({ isPractice, attemptResult
                         )}
                     </div>
                 </div>
-                <button className="bg-orange-500 text-white font-bold px-6 py-2 rounded-lg hover:bg-orange-600">Retake</button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={onReviewRequest}
+                        className="bg-blue-500 text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-600"
+                    >
+                        Yêu cầu chấm lại
+                    </button>
+                    <button className="bg-orange-500 text-white font-bold px-6 py-2 rounded-lg hover:bg-orange-600">Retake</button>
+                </div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center border-t border-gray-300 pt-4">
                 <div><p className="text-2xl font-bold">{score.toFixed(1)}%</p><p className="text-sm text-gray-500">Score</p></div>

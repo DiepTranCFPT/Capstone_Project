@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiInfo, FiLoader } from 'react-icons/fi';
+import { Modal, Input, Button } from 'antd';
 import Sidebar from '~/components/exam/SideBar';
 import ResultSummary from '~/components/test-result/ResultSummary';
 import AdvancedReport from '~/components/test-result/AdvancedReport';
@@ -11,9 +12,11 @@ const TestResultPage: React.FC = () => {
     const [isAdvancedUnlocked, setIsAdvancedUnlocked] = useState(true);
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
+    const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [reviewReason, setReviewReason] = useState('');
 
     const { submissionId } = useParams<{ submissionId: string }>();
-    const { fetchAttemptResult, rateAttempt, loading, attemptResultDetail } = useExamAttempt();
+    const { fetchAttemptResult, rateAttempt, requestReview, loading, attemptResultDetail } = useExamAttempt();
 
     const testType = submissionId?.split('-')[2];
     const isPracticeTest = testType === 'mcq' || testType === 'frq';
@@ -47,6 +50,30 @@ const TestResultPage: React.FC = () => {
     const handleUnlock = () => {
         console.log("Unlocking with 1 token...");
         setIsAdvancedUnlocked(true);
+    };
+
+    const handleReviewRequest = () => {
+        setIsReviewModalOpen(true);
+    };
+
+    const handleSubmitReviewRequest = async () => {
+        if (!submissionId || !reviewReason.trim()) {
+            toast.error('Please provide a reason for review request');
+            return;
+        }
+
+        try {
+            await requestReview(submissionId, { reason: reviewReason.trim() });
+            setIsReviewModalOpen(false);
+            setReviewReason('');
+        } catch (err) {
+            console.error('Failed to submit review request:', err);
+        }
+    };
+
+    const handleCancelReviewRequest = () => {
+        setIsReviewModalOpen(false);
+        setReviewReason('');
     };
 
     if (loading) {
