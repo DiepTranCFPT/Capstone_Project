@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Table,
   Button,
@@ -6,143 +6,122 @@ import {
   Avatar,
   Input,
   Space,
-  Tag,
   Typography,
   Card,
-  Select,
+  Modal,
+  Alert,
 } from "antd";
 import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
   SearchOutlined,
-  FilterOutlined,
+  CheckOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-import type { Teacher } from "~/types/teacher";
-import { teachers } from "~/data/teacher";
+import type { UnverifiedTeacherProfile } from "~/types/teacherProfile";
+import { useTeacherProfile } from "~/hooks/useTeacherProfile";
 
 const { Title } = Typography;
 
 const TeacherManager: React.FC = () => {
   const [searchText, setSearchText] = useState("");
-  const [filteredData, setFilteredData] = useState(teachers);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [subjectFilter, setSubjectFilter] = useState<string>("all");
+  const [filteredData, setFilteredData] = useState<UnverifiedTeacherProfile[]>([]);
+  const { unverifiedProfiles, loading, error, fetchUnverifiedProfiles, verifyProfile } = useTeacherProfile();
+
+  // Initialize data on component mount
+  useEffect(() => {
+    fetchUnverifiedProfiles();
+  }, [fetchUnverifiedProfiles]);
+
+  // Update filtered data when unverified profiles change
+  useEffect(() => {
+    setFilteredData(unverifiedProfiles);
+  }, [unverifiedProfiles]);
 
   const handleSearch = (value: string) => {
     setSearchText(value);
-    applyFilters(value, statusFilter, subjectFilter);
-  };
+    if (!value.trim()) {
+      setFilteredData(unverifiedProfiles);
+      return;
+    }
 
-  const handleStatusFilter = (value: string) => {
-    setStatusFilter(value);
-    applyFilters(searchText, value, subjectFilter);
-  };
-
-  const handleSubjectFilter = (value: string) => {
-    setSubjectFilter(value);
-    applyFilters(searchText, statusFilter, value);
-  };
-
-  const applyFilters = (search: string, status: string, subject: string) => {
-    const filtered = teachers.filter((teacher) => {
-      const matchesSearch =
-        teacher.fullName.toLowerCase().includes(search.toLowerCase()) ||
-        teacher.email.toLowerCase().includes(search.toLowerCase()) ||
-        teacher.subject.toLowerCase().includes(search.toLowerCase());
-
-      const matchesStatus = status === "all" || teacher.status === status;
-      const matchesSubject =
-        subject === "all" ||
-        teacher.subject.split(", ").includes(subject);
-
-      return matchesSearch && matchesStatus && matchesSubject;
-    });
+    const filtered = unverifiedProfiles.filter((profile) =>
+      profile.firstName?.toLowerCase().includes(value.toLowerCase()) ||
+      profile.lastName?.toLowerCase().includes(value.toLowerCase()) ||
+      profile.email?.toLowerCase().includes(value.toLowerCase()) ||
+      profile.teacherProfile.specialization?.toLowerCase().includes(value.toLowerCase())
+    );
     setFilteredData(filtered);
   };
 
-  // Get unique subjects for filter
-  const allSubjects = teachers.flatMap((t) =>
-    t.subject.split(",").map((s) => s.trim())
-  );
-  const uniqueSubjects = [...new Set(allSubjects)];
+  const handleVerifyProfile = async (profileId: string) => {
+    Modal.confirm({
+      title: 'Approve Teacher Profile',
+      content: 'Are you sure you want to approve this teacher profile?',
+      okText: 'Approve',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        const success = await verifyProfile(profileId);
+        if (success) {
+          // Refresh the list after successful verification
+          await fetchUnverifiedProfiles();
+        }
+      },
+    });
+  };
 
-  const columns: ColumnsType<Teacher> = [
+  const columns: ColumnsType<UnverifiedTeacherProfile> = [
     {
       title: "Name",
-      dataIndex: "fullName",
-      key: "fullName",
-      render: (text, record) => (
+      dataIndex: ["firstName", "lastName"],
+      key: "name",
+      render: (_, record) => (
         <div className="flex items-center space-x-3">
           <Avatar
-            src={record.avatarUrl}
+            src={record.imgUrl}
             size={48}
             className="shadow-sm border-2 border-gray-100"
           >
-            {record.fullName.charAt(0)}
+            {record.firstName?.charAt(0)}
           </Avatar>
           <div className="flex flex-col">
-            <span className="font-semibold text-gray-900">{text}</span>
+            <span className="font-semibold text-gray-900">
+              {record.firstName} {record.lastName}
+            </span>
             <span className="text-sm text-gray-500">{record.email}</span>
           </div>
         </div>
       ),
     },
     {
-      title: "Teacher ID",
-      dataIndex: "id",
-      key: "id",
-      render: (id) => <span className="text-gray-700 font-medium">{id}</span>,
+      title: "Qualification",
+      dataIndex: ["teacherProfile", "qualification"],
+      key: "qualification",
+      render: (qualification) => <span className="text-gray-700">{qualification}</span>,
     },
     {
-      title: "Subject",
-      dataIndex: "subject",
-      key: "subject",
-      render: (subjects: string) => (
-        <div className="flex flex-wrap gap-1">
-          {subjects.split(",").map((subj, idx) => (
-            <Tag key={idx} color="blue" className="text-xs">
-              {subj.trim()}
-            </Tag>
-          ))}
-        </div>
+      title: "Specialization",
+      dataIndex: ["teacherProfile", "specialization"],
+      key: "specialization",
+      render: (specialization) => <span className="text-gray-700">{specialization}</span>,
+    },
+    {
+      title: "Experience",
+      dataIndex: ["teacherProfile", "experience"],
+      key: "experience",
+      render: (experience) => <span className="text-gray-700">{experience}</span>,
+    },
+    {
+      title: "Certificates",
+      dataIndex: ["teacherProfile", "certificateUrls"],
+      key: "certificates",
+      render: (certificateUrls: string[]) => (
+        <span className="text-purple-600 font-semibold">{certificateUrls?.length || 0}</span>
       ),
     },
     {
-      title: "Courses Assigned",
-      dataIndex: "coursesAssigned",
-      key: "coursesAssigned",
-      align: "center",
-      render: (courses) => (
-        <span className="text-purple-600 font-semibold">{courses}</span>
-      ),
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      align: "center",
-      render: (status) => (
-        <Tag
-          color={status === "Active" ? "success" : "error"}
-          className="px-3 py-1 rounded-full font-medium"
-        >
-          <div className="flex items-center">
-            <div
-              className={`w-2 h-2 rounded-full mr-2 ${
-                status === "Active" ? "bg-green-400" : "bg-red-400"
-              }`}
-            />
-            {status}
-          </div>
-        </Tag>
-      ),
-    },
-    {
-      title: "Created At",
-      dataIndex: "createdAt",
-      key: "createdAt",
+      title: "Applied Date",
+      dataIndex: "dob",
+      key: "appliedDate",
       align: "center",
       render: (date) => <span className="text-gray-600">{date}</span>,
     },
@@ -152,20 +131,22 @@ const TeacherManager: React.FC = () => {
       align: "center",
       render: (_, record) => (
         <Space>
-          <Tooltip title="Edit">
+          <Tooltip title="View Profile">
             <Button
-              type="primary"
-              icon={<EditOutlined />}
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => console.log("Edit:", record)}
+              icon={<EyeOutlined />}
+              onClick={() => console.log("View:", record)}
             />
           </Tooltip>
-          <Tooltip title="Delete">
+          <Tooltip title="Approve Profile">
             <Button
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => console.log("Delete:", record)}
-            />
+              type="primary"
+              icon={<CheckOutlined />}
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => handleVerifyProfile(record.teacherProfile.id)}
+              loading={loading}
+            >
+              Approve
+            </Button>
           </Tooltip>
         </Space>
       ),
@@ -179,15 +160,15 @@ const TeacherManager: React.FC = () => {
         <div className="mb-4">
           <div className="mb-3">
             <Title level={2} className="mb-1 text-gray-900">
-              Teachers Management
+              Teacher Profile Approvals
             </Title>
-            <p className="text-gray-600 text-sm">Manage your teachers here</p>
+            <p className="text-gray-600 text-sm">Review and approve teacher profile applications</p>
           </div>
 
-          {/* Search and Add Button */}
+          {/* Search */}
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <Input.Search
-              placeholder="Search for teacher..."
+              placeholder="Search by name, email, or specialization..."
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               onSearch={handleSearch}
@@ -197,67 +178,31 @@ const TeacherManager: React.FC = () => {
             />
             <Button
               type="primary"
-              icon={<PlusOutlined />}
-              className="bg-blue-600 hover:bg-blue-700 border-0 shadow-sm px-4 h-9 whitespace-nowrap"
+              icon={<CheckOutlined />}
+              onClick={() => fetchUnverifiedProfiles()}
+              loading={loading}
+              className="bg-blue-600 hover:bg-blue-700 border-0"
             >
-              Add Teacher
+              Refresh
             </Button>
           </div>
         </div>
 
-        {/* Filter Section */}
-        <div className="flex flex-wrap gap-3 mb-4">
-          <div className="flex items-center gap-2">
-            <FilterOutlined className="text-gray-400" />
-            <span className="text-sm text-gray-600">Filter by:</span>
-          </div>
-
-          <Select
-            placeholder="Status"
-            value={statusFilter}
-            onChange={handleStatusFilter}
-            className="min-w-32"
-            options={[
-              { label: "All Status", value: "all" },
-              { label: "Active", value: "Active" },
-              { label: "Inactive", value: "Inactive" },
-            ]}
+        {/* Error Alert */}
+        {error && (
+          <Alert
+            message="Error"
+            description={error}
+            type="error"
+            showIcon
+            className="mb-4"
           />
+        )}
 
-          <Select
-            placeholder="Subject"
-            value={subjectFilter}
-            onChange={handleSubjectFilter}
-            className="min-w-36"
-            options={[
-              { label: "All Subjects", value: "all" },
-              ...uniqueSubjects.map((subj) => ({
-                label: subj,
-                value: subj,
-              })),
-            ]}
-          />
-
-          {(statusFilter !== "all" ||
-            subjectFilter !== "all" ||
-            searchText) && (
-            <Button
-              type="text"
-              size="small"
-              onClick={() => {
-                setSearchText("");
-                setStatusFilter("all");
-                setSubjectFilter("all");
-                setFilteredData(teachers);
-              }}
-              className="text-red-600 hover:bg-red-50 hover:text-red-700"
-            >
-              Clear filters
-            </Button>
-          )}
-
-          <div className="ml-auto text-sm text-gray-500">
-            Showing {filteredData.length} of {teachers.length} teachers
+        {/* Stats */}
+        <div className="mb-4">
+          <div className="text-sm text-gray-500">
+            Showing {filteredData.length} of {unverifiedProfiles.length} pending approval{unverifiedProfiles.length !== 1 ? 's' : ''}
           </div>
         </div>
 
@@ -271,7 +216,7 @@ const TeacherManager: React.FC = () => {
               showSizeChanger: true,
               showQuickJumper: true,
               showTotal: (total, range) =>
-                `${range[0]}-${range[1]} of ${total} teachers`,
+                `${range[0]}-${range[1]} of ${total} profile${total !== 1 ? 's' : ''}`,
               className: "px-4 py-2",
               size: "small",
             }}
@@ -279,7 +224,8 @@ const TeacherManager: React.FC = () => {
             className="overflow-x-auto"
             scroll={{ x: 800 }}
             size="middle"
-            rowKey="id"
+            rowKey={(record) => record.teacherProfile.id}
+            loading={loading}
           />
         </div>
       </Card>

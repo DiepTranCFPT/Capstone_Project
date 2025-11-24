@@ -1,3 +1,5 @@
+import type { TeacherProfileData } from "./teacherProfile";
+
 export interface User {
     id: string;
     firstName: string;
@@ -7,6 +9,7 @@ export interface User {
     dob: Date;
     role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'ACADEMIC_ADVISOR' | 'PARENT';
     tokenBalance: number;
+    teacherProfile?: TeacherProfileData;
 };
 
 export interface LoginApiResponse {

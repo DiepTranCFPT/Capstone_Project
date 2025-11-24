@@ -647,6 +647,7 @@ export const getCurrentUserApi = async (): Promise<AuthResponse> => {
             dob: userData.dob ? new Date(userData.dob) : new Date(),
             role: mapRolesToUserRole(roles),
             tokenBalance: userData.tokenBalance || 0,
+            teacherProfile: userData.teacherProfile,
         };
 
         return { user, token: '' }; // Token is already available from login

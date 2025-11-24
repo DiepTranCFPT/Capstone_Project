@@ -1,4 +1,5 @@
 import type { Permission } from "./permission";
+import type { TeacherProfileData } from "./teacherProfile";
 
 export interface User {
   id: string;
@@ -10,6 +11,7 @@ export interface User {
   roles: string[];
   active: boolean;
   permissions?: Permission[];
+  teacherProfile?: TeacherProfileData;
 }
 
 export interface UserPaginationData {
