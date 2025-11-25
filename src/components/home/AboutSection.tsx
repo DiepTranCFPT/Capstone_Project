@@ -82,11 +82,11 @@ const AboutSection: React.FC = () => {
 
           {/* Get More About Us */}
           <div className="absolute top-[17px] left-[31px] flex items-center border border-black/20 bg-white rounded-[30px] px-4 py-2">
-            <div className="w-8 h-8 bg-slate-300/60 rounded-full flex items-center justify-center mr-2">
+            <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mr-2">
               <img
-                className="w-7 h-6 rotate-[16.48deg]"
-                src="https://placehold.co/27x25"
-                alt="arrow icon"
+                className="w-8 h-8 object-contain"
+                src="/elearning_2888414.png"
+                alt="Get more about us logo"
               />
             </div>
             <span className="text-black text-base font-normal font-['Inter']">
