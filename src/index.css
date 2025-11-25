@@ -158,3 +158,21 @@
 .hero-fade {
   animation: heroFade 0.9s ease-out both;
 }
+
+@keyframes loadingShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  50% {
+    transform: translateX(50%);
+  }
+
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+.loading-shimmer {
+  animation: loadingShimmer 1.6s ease-in-out infinite;
+}
