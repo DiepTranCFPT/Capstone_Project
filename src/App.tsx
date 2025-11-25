@@ -92,6 +92,7 @@ import AdminDashboardPage from "./pages/admins/AdminDashboardPage";
 import PackagePaymentManagerPage from "./pages/admins/PackagePaymentManagerPage";
 import TeacherAvailabilityPage from "./pages/teachers/TeacherAvailabilityPage";
 import TeacherProfilePage from "./pages/teachers/TeacherProfilePage";
+import LoadingPage from "./pages/LoadingPage";
 // Layout Wrapper for common UI elements
 const Layout = () => (
   <div className="flex flex-col min-h-screen">
@@ -123,6 +124,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/verify-otp" element={<OtpVerificationPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+        <Route path="/loading" element={<LoadingPage />} />
 
         {/*Admin routes with AdminLayout */}
         <Route
