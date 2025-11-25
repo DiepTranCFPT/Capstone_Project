@@ -4,6 +4,7 @@ import * as Yup from 'yup';
 import { useAuth } from '~/hooks/useAuth';
 import { toast, authMessages } from '~/components/common/Toast';
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { Select } from 'antd';
 
 const RegisterSchema = Yup.object().shape({
     firstName: Yup.string().min(2, 'Name too short! - should be 2 chars minimum').required('Required'),
@@ -12,6 +13,7 @@ const RegisterSchema = Yup.object().shape({
     password: Yup.string().min(6, 'Password too short! - should be 6 chars minimum').required('Required'),
     dob: Yup.date().required('Required'),
     confirmPassword: Yup.string().oneOf([Yup.ref('password')], 'Passwords must match').required('Required'),
+    roleName: Yup.string().required('Required'),
 
 });
 
@@ -23,20 +25,20 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ buttonClasses }) => {
     const { register } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [isSubmitting, setSubmitting] = useState(false);
 
-    const handleSubmit = async (values: { firstName: string; lastName: string; email: string; password: string; dob: Date; confirmPassword: string }) => {
+    const handleSubmit = async (values: { firstName: string; lastName: string; email: string; password: string; dob: Date, roleName: string; confirmPassword: string }) => {
         try {
-            await register(values.email, values.password, values.firstName, values.lastName, values.dob);
-            toast.success(authMessages.register.success);
-            // Redirect to email verification pending page instead of login
-            // window.location.href = '/auth?verification=pending';
+            await register(values.email, values.password, values.firstName, values.lastName, values.dob, values.roleName);         
+            setSubmitting(false);
         } catch {
             toast.error(authMessages.register.error);
+            setSubmitting(false);
         }
     };
 
     return (
-        <div className="w-full bg-white rounded-lg shadow-xl md:mt-0 sm:max-w-md xl:p-0 border border-gray-100">
+        <div className="w-full max-w-md bg-white rounded-lg shadow-xl md:mt-0 xl:p-0 border border-gray-100">
             <div className="p-6 space-y-6 md:space-y-7 sm:p-8">
                 <h1 className="text-xl font-bold leading-tight tracking-tight text-backgroundColor md:text-2xl text-center">
                     Create Account
@@ -45,116 +47,140 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ buttonClasses }) => {
                     </p>
                 </h1>
                 <Formik
-                    initialValues={{ firstName: '', lastName: '', dob: new Date(), email: '', password: '', confirmPassword: '' }}
+                    initialValues={{ firstName: '', lastName: '', dob: new Date(), email: '', password: '', confirmPassword: '', roleName: '' }}
                     validationSchema={RegisterSchema}
-                    onSubmit={(values, { setSubmitting }) => {
+                    onSubmit={(values) => {
                         handleSubmit(values);
                         setSubmitting(true);
                     }}
                 >
-                    {({ isSubmitting }) => (
-                        <Form className="space-y-5 md:space-y-6">
-                            <div>
-                                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                                    First Name
-                                </label>
-                                <Field
-                                    name="firstName"
-                                    type="text"
-                                    className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="John Doe"
-                                />
-                                <ErrorMessage name="firstName" component="div" className="mt-1 text-sm text-red-600 italic" />
-                            </div>
-                            <div>
-                                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                                    Lats Name
-                                </label>
-                                <Field
-                                    name="lastName"
-                                    type="text"
-                                    className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="John Doe"
-                                />
-                                <ErrorMessage name="lastName" component="div" className="mt-1 text-sm text-red-600 italic" />
-                            </div>
-                            <div>
-                                <label htmlFor="dob" className="block text-sm font-medium text-gray-700">
-                                    Day of Birth
-                                </label>
-                                <Field
-                                    name="dob"
-                                    type="date"
-                                    className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                />
-                                <ErrorMessage name="dob" component="div" className="mt-1 text-sm text-red-600 italic" />
-                            </div>
-                            <div>
-                                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                                    Email
-                                </label>
-                                <Field
-                                    name="email"
-                                    type="email"
-                                    className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="you@example.com"
-                                />
-                                <ErrorMessage name="email" component="div" className="mt-1 text-sm text-red-600 italic" />
-                            </div>
-
-                            <div>
-                                <label
-                                    htmlFor="password"
-                                    className="block text-sm font-medium text-gray-700"
-                                >
-                                    Password
-                                </label>
-                                <div className='relative'>
-                                    <Field
-                                        name="password"
-                                        type={showPassword ? "text" : "password"}
-                                        className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm"
-                                        placeholder="••••••••"
-                                    />
-                                    <button
-                                        type="button"
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-xs"
-                                        onClick={() => setShowPassword((prev) => !prev)}
-                                        tabIndex={-1}
-                                    >
-                                        {showPassword ? <FaEyeSlash /> : <FaEye />}
-                                    </button>
+                    
+                        <Form >
+                            <div className="space-y-5 md:space-y-2 mb-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                                            First Name
+                                        </label>
+                                        <Field
+                                            name="firstName"
+                                            type="text"
+                                            className="w-full px-2 py-1 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder="John"
+                                        />
+                                        <ErrorMessage name="firstName" component="div" className="mt-1 text-sm text-red-600 italic" />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                                            Last Name
+                                        </label>
+                                        <Field
+                                            name="lastName"
+                                            type="text"
+                                            className="w-full px-2 py-1 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder="Doe"
+                                        />
+                                        <ErrorMessage name="lastName" component="div" className="mt-1 text-sm text-red-600 italic" />
+                                    </div>
                                 </div>
-                                <ErrorMessage name="password" component="div" className="mt-1 text-sm text-red-600 italic" />
-                            </div>
-
-                            <div>
-                                <label
-                                    htmlFor="confirmPassword"
-                                    className="block text-sm font-medium text-gray-700"
-                                >
-                                    Confirm Password
-                                </label>
-                                <div className='relative'>
+                                <div>
+                                    <label htmlFor="dob" className="block text-sm font-medium text-gray-700">
+                                        Day of Birth
+                                    </label>
                                     <Field
-                                        name="confirmPassword"
-                                        type={showConfirmPassword ? "text" : "password"}
-                                        className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="••••••••"
+                                        name="dob"
+                                        type="date"
+                                        className="w-full px-2 py-1 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                     />
-                                    <button
-                                        type="button"
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-xs"
-                                        onClick={() => setShowConfirmPassword((prev) => !prev)}
-                                        tabIndex={-1}
-                                    >
-                                        {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-                                    </button>
+                                    <ErrorMessage name="dob" component="div" className="mt-1 text-sm text-red-600 italic" />
                                 </div>
-                                <ErrorMessage name="confirmPassword" component="div" className="mt-1 text-sm text-red-600 italic"
-                                />
-                            </div>
+                                <div>
+                                    <label htmlFor="roleName" className="block text-sm font-medium text-gray-700">
+                                        Role
+                                    </label>
+                                    <Field name="roleName" className="w-full px-2 py-1 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                        {({ field, form }: { field: { name: string; value: string; onChange: (...args: unknown[]) => void }; form: { setFieldValue: (field: string, value: unknown) => void } }) => (
+                                            <Select
+                                                {...field}
+                                                placeholder="Select a role"
+                                                onChange={(value) => form.setFieldValue('roleName', value)}
+                                                options={[
+                                                    { label: 'Parent', value: 'PARENT' },
+                                                    { label: 'Student', value: 'STUDENT' },
+                                                    { label: 'Teacher', value: 'TEACHER' }
+                                                ]}
+                                                style={{ width: '100%', marginTop: '4px' }}
+                                            />
+                                        )}
+                                    </Field>
+                                    <ErrorMessage name="roleName" component="div" className="mt-1 text-sm text-red-600 italic" />
+                                </div>
+                                <div>
+                                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                                        Email
+                                    </label>
+                                    <Field
+                                        name="email"
+                                        type="email"
+                                        className="w-full px-2 py-1 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="you@example.com"
+                                    />
+                                    <ErrorMessage name="email" component="div" className="mt-1 text-sm text-red-600 italic" />
+                                </div>
 
+                                <div>
+                                    <label
+                                        htmlFor="password"
+                                        className="block text-sm font-medium text-gray-700"
+                                    >
+                                        Password
+                                    </label>
+                                    <div className='relative'>
+                                        <Field
+                                            name="password"
+                                            type={showPassword ? "text" : "password"}
+                                            className="w-full px-2 py-1 mt-1 border border-gray-300 rounded-md"
+                                            placeholder="••••••••"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-xs"
+                                            onClick={() => setShowPassword((prev) => !prev)}
+                                            tabIndex={-1}
+                                        >
+                                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                        </button>
+                                    </div>
+                                    <ErrorMessage name="password" component="div" className="mt-1 text-sm text-red-600 italic" />
+                                </div>
+
+                                <div>
+                                    <label
+                                        htmlFor="confirmPassword"
+                                        className="block text-sm font-medium text-gray-700"
+                                    >
+                                        Confirm Password
+                                    </label>
+                                    <div className='relative'>
+                                        <Field
+                                            name="confirmPassword"
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            className="w-full px-2 py-1 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder="••••••••"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 text-xs"
+                                            onClick={() => setShowConfirmPassword((prev) => !prev)}
+                                            tabIndex={-1}
+                                        >
+                                            {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                                        </button>
+                                    </div>
+                                    <ErrorMessage name="confirmPassword" component="div" className="mt-1 text-sm text-red-600 italic"
+                                    />
+                                </div>
+                            </div>
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
@@ -174,8 +200,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ buttonClasses }) => {
                                     }
                                 </div>
                             </button>
-                        </Form>
-                    )}
+                        </Form>                
                 </Formik>
             </div>
         </div>

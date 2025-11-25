@@ -383,10 +383,10 @@ export const googleLoginApi = async (code: string): Promise<AuthResponse> => {
 
 };
 
-export const registerApi = async (email: string, password: string, firstName: string, lastName: string, dob: Date): Promise<AuthResponse> => {
+export const registerApi = async (email: string, password: string, firstName: string, lastName: string, dob: Date, roleName: string): Promise<AuthResponse> => {
     try {
         console.log('Registration API: Sending request without auth header');
-        const response = await publicAxios.post<AuthResponse>('/users', { email, password, firstName, lastName, dob });
+        const response = await publicAxios.post<AuthResponse>('/auth/register', { email, password, firstName, lastName, dob, roleName });
         console.log('Registration API: Success response', response.data);
         return response.data;
     } catch (error: unknown) {
