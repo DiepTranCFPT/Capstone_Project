@@ -21,7 +21,7 @@ const teacherMenu = [
     { label: "Questions Bank", path: "/teacher/question-bank", icon: <FaUsers /> },
     { label: "Templates", path: "/teacher/templates", icon: <FaClipboardList /> },
     { label: "Create Template", path: "/teacher/create-template", icon: <FileAddOutlined /> },
-    { label: "Grading", path: "/teacher/grading", icon: <FaClipboardList /> },
+    { label: "Review Queue", path: "/teacher/review-queue", icon: <FaClipboardList /> },
     { label: "Analytics", path: "/teacher/analytics", icon: <FaChartBar /> },
     // { label: "Tutor Profile", path: "/teacher/tutor-profile", icon: <FaBookOpen /> },
     { label: "My Availability", path: "/teacher/availability", icon: <FaCalendarAlt /> },

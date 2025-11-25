@@ -109,7 +109,11 @@ const TestResultPage: React.FC = () => {
 
                 <div className="flex flex-col md:flex-row gap-8 items-start">
                     <div className="w-full md:w-2/d lg:w-3/4 space-y-8">
-                        <ResultSummary isPractice={isPracticeTest} attemptResultDetail={attemptResultDetail} />
+                        <ResultSummary
+                            isPractice={isPracticeTest}
+                            attemptResultDetail={attemptResultDetail}
+                            onReviewRequest={handleReviewRequest}
+                        />
 
                         <div className="bg-white p-6 rounded-lg shadow border border-gray-300">
                             <h3 className="font-bold text-xl mb-4">Answering Review</h3>
@@ -173,6 +177,27 @@ const TestResultPage: React.FC = () => {
 
                 </div>
             </main>
+            {/* Review Request Modal */}
+            <Modal
+                title="Yêu cầu phúc khảo"
+                visible={isReviewModalOpen}
+                onCancel={handleCancelReviewRequest}
+                footer={[
+                    <Button key="back" onClick={handleCancelReviewRequest}>
+                        Hủy
+                    </Button>,
+                    <Button key="submit" type="primary" loading={loading} onClick={handleSubmitReviewRequest}>
+                        Gửi Yêu Cầu
+                    </Button>,
+                ]}
+            >
+                <Input.TextArea
+                    rows={4}
+                    placeholder="Vui lòng nhập lý do bạn muốn phúc khảo..."
+                    value={reviewReason}
+                    onChange={(e) => setReviewReason(e.target.value)}
+                />
+            </Modal>
         </div>
     );
 };

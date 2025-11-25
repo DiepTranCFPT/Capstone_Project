@@ -67,6 +67,7 @@ import GradingPage from "./pages/teachers/GradingPage";
 import ClassAnalyticsPage from "./pages/teachers/ClassAnalyticsPage";
 import GradeSubmissionPage from "./pages/teachers/GradeSubmissionPage";
 import TeacherBookingRequestsPage from "./pages/teachers/TeacherBookingRequestsPage";
+import TeacherReviewQueuePage from "./pages/teachers/TeacherReviewQueuePage";
 
 // --- Parent Imports ---
 import ParentLayout from "./layout/parents/ParentLayout";
@@ -209,6 +210,7 @@ function App() {
           <Route path="template-details/:examId" element={<TeacherExamDetailsPage />} />
           <Route path="edit-template/:examId" element={<CreateExamPage />} />
           <Route path="grading" element={<GradingPage />} />
+          <Route path="review-queue" element={<TeacherReviewQueuePage />} />
           <Route
             path="grading/:submissionId"
             element={<GradeSubmissionPage />}
