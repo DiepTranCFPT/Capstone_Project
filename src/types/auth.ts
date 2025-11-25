@@ -52,7 +52,7 @@ export interface AuthContextType {
     initialLoading: boolean;
     error: string | null;
     login: (email: string, password: string) => Promise<string | null>;
-    register: (email: string, password: string, firstName: string, lastName: string, dob: Date) => Promise<void>;
+    register: (email: string, password: string, firstName: string, lastName: string, dob: Date, roleName: string) => Promise<void>;
     loginWithGoogle: (code: string) => Promise<void>;
     verifyEmail: (email: string, token: string) => Promise<void>;
     verifyOtp: (email: string, otp: string, newPassword: string) => Promise<void>;

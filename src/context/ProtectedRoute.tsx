@@ -13,6 +13,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles }) => {
     if (user && roles && !roles.includes(user.role)) {
         if (user.role === "ADMIN") return <Navigate to="/admin/dashboard" />
         else if (user.role === "TEACHER") return <Navigate to="/teacher/dashboard" />
+        else if (user.role === "PARENT") return <Navigate to="/parent/dashboard" />
         return <Navigate to="/" />;
     }
     return children;

@@ -222,7 +222,10 @@ function App() {
         </Route>
 
         {/* Parent routes with ParentLayout */}
-        <Route path="/parent" element={<ParentLayout />}>
+        <Route path="/parent" element={
+          <ProtectedRoute roles={["PARENT"]}>
+            <ParentLayout />
+          </ProtectedRoute>}>
           <Route path="dashboard" element={<ParentDashboardPage />} />
           <Route path="notifications" element={<NotificationCenterPage />} />
           <Route path="link-student" element={<LinkStudentPage />} />

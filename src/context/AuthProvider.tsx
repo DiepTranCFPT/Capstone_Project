@@ -203,14 +203,16 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         }
     }, [handleAuthResponse]);
 
-    const register = useCallback(async (email: string, password: string, firstName: string, lastName: string, dob: Date) => {
+    const register = useCallback(async (email: string, password: string, firstName: string, lastName: string, dob: Date, roleName: string) => {
         setLoading(true);
         setError(null);
         try {
-            await registerApi(email, password, firstName, lastName, dob);
+            await registerApi(email, password, firstName, lastName, dob, roleName);
+            toast.success('Registration successful! Please verify your email before logging in.');
         } catch (err: unknown) {
             if (err instanceof Error) { setError(err.message); }
             else { setError('Registration failed'); }
+            toast.error('Registration failed. ' + (err instanceof Error ? err.message : ''));
         } finally {
             setLoading(false);
         }
