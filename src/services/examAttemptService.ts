@@ -15,6 +15,9 @@ import type {
   AttemptResultDetail,
   SaveProgressPayload,
   ManualGradePayload,
+  RequestReviewPayload,
+  ReviewQueueQueryParams,
+  ReviewQueueItem,
 } from "~/types/examAttempt";
 
 /**
@@ -126,6 +129,27 @@ const ExamAttemptService = {
     data: ManualGradePayload
   ): Promise<AxiosResponse<ApiResponse<AttemptResultDetail>>> {
     return axiosInstance.put(`/exam-attempts/${attemptId}/manual-grade`, data);
+  },
+
+  /**
+   * 🔹 Yêu cầu phúc khảo/xem lại bài thi (Học sinh).
+   * POST /exam-attempts/{attemptId}/request-review
+   */
+  requestReview(
+    attemptId: string,
+    data: RequestReviewPayload
+  ): Promise<AxiosResponse<ApiResponse<string>>> {
+    return axiosInstance.post(`/exam-attempts/${attemptId}/request-review`, data);
+  },
+
+  /**
+   * 🔹 Lấy danh sách các bài thi cần chấm/xem lại (Giáo viên).
+   * GET /exam-attempts/teacher/review-queue
+   */
+  getTeacherReviewQueue(
+    params?: ReviewQueueQueryParams
+  ): Promise<AxiosResponse<ApiResponse<PageInfo<ReviewQueueItem>>>> {
+    return axiosInstance.get("/exam-attempts/teacher/review-queue", { params });
   },
 
 };

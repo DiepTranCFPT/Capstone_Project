@@ -1,52 +1,39 @@
-// Teacher profile specific types
-export interface TeacherProfile {
+export interface TeacherProfilePayload {
+    dateOfBirth: string; // YYYY-MM-DD
+    qualification: string;
+    specialization: string;
+    experience: string;
+    biography: string;
+    certificateUrls: string[];
+}
+
+export interface TeacherProfileData {
     id: string;
-    teacherId: string;
-    qualifications: string[];
-    teachingSubjects: string[];
-    yearsOfExperience: number;
-    certifications: TeacherCertification[];
-    bio: string;
-    hourlyRate: number;
+    dateOfBirth: string;
+    qualification: string;
+    specialization: string;
+    experience: string;
+    biography: string;
     rating: number;
-    totalStudents: number;
-    completedSessions: number;
-    createdExams: number;
-    linkedInProfile?: string;
-    portfolio?: string;
-    teachingPhilosophy?: string;
-    preferredLocation: string;
-    availabilityStatus: 'available' | 'busy' | 'unavailable';
+    certificateUrls: string[];
+    isVerified: boolean;
 }
 
-export interface TeacherCertification {
-    id: string;
-    name: string;
-    issuer: string;
-    issueDate: string;
-    expiryDate?: string;
-    verificationUrl?: string;
+export interface UnverifiedTeacherProfile {
+    id: string; // User ID
+    email: string;
+    firstName: string;
+    lastName: string;
+    imgUrl: string;
+    dob: string;
+    roles: string[];
+    teacherProfile: TeacherProfileData;
 }
 
+// Helper interface for statistics (giữ lại cho UI dashboard nếu cần)
 export interface TeacherStat {
     label: string;
     value: number | string;
     icon: string;
     color: string;
-}
-
-// Edit profile form for teacher
-export interface TeacherEditProfileRequest {
-    firstName: string;
-    lastName: string;
-    dob: string;
-    qualifications: string[];
-    teachingSubjects: string[];
-    yearsOfExperience: number;
-    bio: string;
-    hourlyRate?: number;
-    preferredLocation: string;
-    linkedInProfile?: string;
-    portfolio?: string;
-    teachingPhilosophy?: string;
 }

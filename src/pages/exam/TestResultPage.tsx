@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiInfo, FiLoader } from 'react-icons/fi';
+import { Modal, Input, Button } from 'antd';
 import Sidebar from '~/components/exam/SideBar';
 import ResultSummary from '~/components/test-result/ResultSummary';
 import AdvancedReport from '~/components/test-result/AdvancedReport';
@@ -11,9 +12,11 @@ const TestResultPage: React.FC = () => {
     const [isAdvancedUnlocked, setIsAdvancedUnlocked] = useState(true);
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
+    const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [reviewReason, setReviewReason] = useState('');
 
     const { submissionId } = useParams<{ submissionId: string }>();
-    const { fetchAttemptResult, rateAttempt, loading, attemptResultDetail } = useExamAttempt();
+    const { fetchAttemptResult, rateAttempt, requestReview, loading, attemptResultDetail } = useExamAttempt();
 
     const testType = submissionId?.split('-')[2];
     const isPracticeTest = testType === 'mcq' || testType === 'frq';
@@ -49,6 +52,30 @@ const TestResultPage: React.FC = () => {
         setIsAdvancedUnlocked(true);
     };
 
+    const handleReviewRequest = () => {
+        setIsReviewModalOpen(true);
+    };
+
+    const handleSubmitReviewRequest = async () => {
+        if (!submissionId || !reviewReason.trim()) {
+            toast.error('Please provide a reason for review request');
+            return;
+        }
+
+        try {
+            await requestReview(submissionId, { reason: reviewReason.trim() });
+            setIsReviewModalOpen(false);
+            setReviewReason('');
+        } catch (err) {
+            console.error('Failed to submit review request:', err);
+        }
+    };
+
+    const handleCancelReviewRequest = () => {
+        setIsReviewModalOpen(false);
+        setReviewReason('');
+    };
+
     if (loading) {
         return (
             <div className="bg-slate-50 py-12">
@@ -82,7 +109,11 @@ const TestResultPage: React.FC = () => {
 
                 <div className="flex flex-col md:flex-row gap-8 items-start">
                     <div className="w-full md:w-2/d lg:w-3/4 space-y-8">
-                        <ResultSummary isPractice={isPracticeTest} attemptResultDetail={attemptResultDetail} />
+                        <ResultSummary
+                            isPractice={isPracticeTest}
+                            attemptResultDetail={attemptResultDetail}
+                            onReviewRequest={handleReviewRequest}
+                        />
 
                         <div className="bg-white p-6 rounded-lg shadow border border-gray-300">
                             <h3 className="font-bold text-xl mb-4">Answering Review</h3>
@@ -146,6 +177,27 @@ const TestResultPage: React.FC = () => {
 
                 </div>
             </main>
+            {/* Review Request Modal */}
+            <Modal
+                title="Yêu cầu phúc khảo"
+                visible={isReviewModalOpen}
+                onCancel={handleCancelReviewRequest}
+                footer={[
+                    <Button key="back" onClick={handleCancelReviewRequest}>
+                        Hủy
+                    </Button>,
+                    <Button key="submit" type="primary" loading={loading} onClick={handleSubmitReviewRequest}>
+                        Gửi Yêu Cầu
+                    </Button>,
+                ]}
+            >
+                <Input.TextArea
+                    rows={4}
+                    placeholder="Vui lòng nhập lý do bạn muốn phúc khảo..."
+                    value={reviewReason}
+                    onChange={(e) => setReviewReason(e.target.value)}
+                />
+            </Modal>
         </div>
     );
 };

@@ -1,63 +1,20 @@
 import React, { useState } from "react";
-import { Card, Tag, Button, Spin, Badge, Modal, Row, Col, Statistic } from "antd";
-import { EditOutlined, LockOutlined, EnvironmentOutlined, FileTextOutlined } from "@ant-design/icons";
+import { Card, Button, Spin, Badge, Modal } from "antd";
+import { EditOutlined, LockOutlined, FileTextOutlined, UserAddOutlined } from "@ant-design/icons";
 import { useAuth } from "~/hooks/useAuth";
 import { getCurrentUserApi } from "~/services/authService";
 import { toast } from "~/components/common/Toast";
-import type { TeacherProfile, TeacherStat } from "~/types/teacherProfile";
 import TeacherChangePasswordForm from "./TeacherChangePasswordForm";
 import EditTeacherProfileForm from "./EditTeacherProfileForm";
 import AvatarUpload from "~/components/students/profile/AvatarUpload";
 
-// Mock teacher profile data
-const mockTeacherProfile: TeacherProfile = {
-    id: "tp1",
-    teacherId: "teacher1",
-    qualifications: ["Bachelor of Education", "Master of Teaching"],
-    teachingSubjects: ["AP Calculus BC", "AP Physics C", "SAT Math", "ACT Math"],
-    yearsOfExperience: 8,
-    certifications: [
-        {
-            id: "cert1",
-            name: "Advanced Placement Calculus Certified",
-            issuer: "College Board",
-            issueDate: "2023-09-01",
-            expiryDate: "2026-09-01"
-        },
-        {
-            id: "cert2",
-            name: "SAT Math Specialist",
-            issuer: "College Board",
-            issueDate: "2022-03-15"
-        }
-    ],
-    bio: "Experienced AP and SAT math tutor with 8 years of experience. Passionate about helping students achieve their academic goals and develop confidence in mathematics.",
-    hourlyRate: 50,
-    rating: 4.8,
-    totalStudents: 125,
-    completedSessions: 480,
-    createdExams: 45,
-    linkedInProfile: "https://linkedin.com/in/johnsmith-teacher",
-    portfolio: "https://johnsmith-teaching.com",
-    teachingPhilosophy: "Every student has the potential to excel when provided with the right tools and support. I believe in personalized learning approaches and building strong problem-solving skills.",
-    preferredLocation: "Online/Virtual",
-    availabilityStatus: "available"
-};
 
 const TeacherProfileDashboard: React.FC = () => {
-    const { user, loading: authLoading, logout } = useAuth();
-    const [editProfileModalVisible, setEditProfileModalVisible] = useState(false);
-    const [changePasswordModalVisible, setChangePasswordModalVisible] = useState(false);
+  const { user, loading: authLoading, logout } = useAuth();
+  const [editProfileModalVisible, setEditProfileModalVisible] = useState(false);
+  const [changePasswordModalVisible, setChangePasswordModalVisible] = useState(false);
 
-    // Stats for teacher dashboard
-    const teacherStats: Omit<TeacherStat, 'icon'>[] = [
-        { label: "Total Students", value: mockTeacherProfile.totalStudents, color: "#1890ff" },
-        { label: "Completed Sessions", value: mockTeacherProfile.completedSessions, color: "#52c41a" },
-        { label: "Created Exams", value: mockTeacherProfile.createdExams, color: "#722ed1" },
-        { label: "Average Rating", value: `${mockTeacherProfile.rating}/5`, color: "#faad14" },
-        { label: "Hourly Rate", value: `$${mockTeacherProfile.hourlyRate}`, color: "#13c2c2" },
-        { label: "Experience", value: `${mockTeacherProfile.yearsOfExperience} years`, color: "#eb2f96" },
-    ];
+  const profile = user?.teacherProfile;
 
   // Function to refresh user data from API and update localStorage
   const refreshUser = async () => {
@@ -105,7 +62,7 @@ const TeacherProfileDashboard: React.FC = () => {
       <div className="p-6 max-w-7xl mx-auto grid gap-6">
         {/* Header với thông tin cơ bản */}
         <Card className="mb-6 shadow-sm">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AvatarUpload />
             <Card title="Thông tin cá nhân" className="shadow-sm">
               <div className="space-y-3">
@@ -123,39 +80,36 @@ const TeacherProfileDashboard: React.FC = () => {
                 </div>
                 <div className="flex gap-3">
                   <span className="text-gray-600">Ngày sinh:</span>
-                  <span>🎂 {user.dob ? new Date(user.dob).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                  <span>🎂 {user.teacherProfile && user.teacherProfile.dateOfBirth ? new Date(user.teacherProfile.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}</span>
                 </div>
                 <div className="flex gap-3">
                   <span className="text-gray-600">Token:</span>
                   <span className="font-medium text-green-600">{user.tokenBalance}</span>
                 </div>
 
-                <div className="flex gap-3">
-                  <span className="text-gray-600">Địa điểm:</span>
-                  <span className="flex items-center gap-1">
-                    <EnvironmentOutlined className="w-3 h-3" />
-                    {mockTeacherProfile.preferredLocation}
-                  </span>
-                </div>
-                <div className="flex gap-3">
-                  <span className="text-gray-600">Trạng thái:</span>
-                  <Badge
-                    status={mockTeacherProfile.availabilityStatus === 'available' ? 'success' :
-                           mockTeacherProfile.availabilityStatus === 'busy' ? 'warning' : 'error'}
-                    text={mockTeacherProfile.availabilityStatus}
-                  />
-                </div>
+                {profile && (
+                  <>
+                    <div className="flex gap-3">
+                      <span className="text-gray-600">Rating:</span>
+                      <Badge count={`${profile.rating}/5`} style={{ backgroundColor: '#52c41a' }} />
+                    </div>
+                    <div className="flex gap-3">
+                      <span className="text-gray-600">Trạng thái xác thực:</span>
+                      <Badge color={profile.isVerified ? 'green' : 'orange'} text={profile.isVerified ? 'Đã xác thực' : 'Chờ xác thực'} />
+                    </div>
+                  </>
+                )}
 
                 {/* Action buttons */}
                 <div className="pt-4 border-t border-gray-200">
                   <div className="flex gap-2 flex-wrap">
                     <Button
                       type="primary"
-                      icon={<EditOutlined />}
+                      icon={profile ? <EditOutlined /> : <UserAddOutlined />}
                       onClick={() => setEditProfileModalVisible(true)}
                       size="small"
                     >
-                      Chỉnh sửa thông tin
+                      {profile ? 'Chỉnh sửa thông tin giáo viên' : 'Tạo hồ sơ giáo viên'}
                     </Button>
                     <Button
                       icon={<LockOutlined />}
@@ -168,114 +122,74 @@ const TeacherProfileDashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </Card>
-
-            {/* Quick Stats */}
-            <Card title="Thống kê tổng quan" className="shadow-sm">
-              <Row gutter={[16, 16]}>
-                {teacherStats.map((stat, index) => (
-                  <Col xs={24} sm={12} key={index}>
-                    <Card size="small" className="text-center">
-                      <Statistic
-                        title={stat.label}
-                        value={stat.value}
-                        valueStyle={{ color: stat.color, fontSize: '16px', fontWeight: 'bold' }}
-                        className="text-sm"
-                      />
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
-            </Card>
+            </Card>       
           </div>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Thông tin chuyên môn */}
-          <Card title={
-            <div className="flex items-center gap-2">
-              <EditOutlined className="text-blue-500" />
-              Thông tin chuyên môn
-            </div>
-          } className="shadow-sm">
-            <div className="space-y-4">
-              <div>
-                <div className="font-medium text-sm text-gray-700 mb-2">Môn học dạy</div>
-                <div className="flex flex-wrap gap-1">
-                  {mockTeacherProfile.teachingSubjects.map((subject, index) => (
-                    <Tag key={index} color="blue">{subject}</Tag>
-                  ))}
+        {profile && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Thông tin chuyên môn */}
+            <Card title={
+              <div className="flex items-center gap-2">
+                <EditOutlined className="text-blue-500" />
+                Thông tin chuyên môn
+              </div>
+            } className="shadow-sm">
+              <div className="space-y-4">
+                <div>
+                  <div className="font-medium text-sm text-gray-700 mb-2">Lĩnh vực chuyên môn</div>
+                  <p className="text-sm">{profile?.specialization || 'Chưa cập nhật'}</p>
                 </div>
-              </div>
 
-              <div className="border-t pt-4">
-                <div className="font-medium text-sm text-gray-700 mb-2">Trình độ học vấn</div>
-                <div className="space-y-1">
-                  {mockTeacherProfile.qualifications.map((qual, index) => (
-                    <div key={index} className="text-sm">🎓 {qual}</div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <div className="font-medium text-sm text-gray-700 mb-2">Chứng chỉ</div>
-                <div className="space-y-2">
-                  {mockTeacherProfile.certifications.map((cert, index) => (
-                    <div key={index} className="text-xs p-2 bg-gray-50 rounded">
-                      <div className="font-medium">{cert.name}</div>
-                      <div className="text-gray-600">{cert.issuer} • {cert.issueDate}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Giới thiệu */}
-          <Card title={
-            <div className="flex items-center gap-2">
-              <FileTextOutlined className="text-green-500" />
-              Giới thiệu về tôi
-            </div>
-          } className="shadow-sm">
-            <div className="space-y-4">
-              <div>
-                <div className="font-medium text-sm text-gray-700 mb-2">Giới thiệu</div>
-                <p className="text-sm text-gray-600 leading-relaxed">{mockTeacherProfile.bio}</p>
-              </div>
-
-              {mockTeacherProfile.teachingPhilosophy && (
                 <div className="border-t pt-4">
-                  <div className="font-medium text-sm text-gray-700 mb-2">Triết lý dạy học</div>
-                  <p className="text-sm text-gray-600 leading-relaxed">{mockTeacherProfile.teachingPhilosophy}</p>
-                </div>
-              )}
-
-              {(mockTeacherProfile.linkedInProfile || mockTeacherProfile.portfolio) && (
-                <div className="border-t pt-4">
-                  <div className="font-medium text-sm text-gray-700 mb-2">Liên kết</div>
-                  <div className="space-y-1 text-sm">
-                    {mockTeacherProfile.linkedInProfile && (
-                      <a href={mockTeacherProfile.linkedInProfile} target="_blank" rel="noopener noreferrer"
-                         className="text-blue-600 hover:underline">LinkedIn Profile</a>
-                    )}
-                    {mockTeacherProfile.portfolio && (
-                      <a href={mockTeacherProfile.portfolio} target="_blank" rel="noopener noreferrer"
-                         className="text-blue-600 hover:underline ml-3">Portfolio Website</a>
-                    )}
+                  <div className="font-medium text-sm text-gray-700 mb-2">Trình độ học vấn</div>
+                  <div className="space-y-1">
+                    <div className="text-sm">🎓 {profile?.qualification || 'Chưa cập nhật'}</div>
                   </div>
                 </div>
-              )}
-            </div>
-          </Card>
-        </div>
+
+                <div className="border-t pt-4">
+                  <div className="font-medium text-sm text-gray-700 mb-2">Kinh nghiệm</div>
+                  <p className="text-sm">{profile?.experience || 'Chưa cập nhật'}</p>
+                </div>
+
+                {profile?.certificateUrls && profile.certificateUrls.length > 0 && (
+                  <div className="border-t pt-4">
+                    <div className="font-medium text-sm text-gray-700 mb-2">Chứng chỉ</div>
+                    <div className="space-y-1">
+                      {profile.certificateUrls.map((url, index) => (
+                        <a key={index} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline block text-sm">
+                          Chứng chỉ {index + 1}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* Giới thiệu */}
+            <Card title={
+              <div className="flex items-center gap-2">
+                <FileTextOutlined className="text-green-500" />
+                Giới thiệu về tôi
+              </div>
+            } className="shadow-sm">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-600 leading-relaxed">{profile?.biography || 'Chưa cập nhật'}</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
 
         {/* Modals */}
         <Modal
           title={
             <div className="flex items-center gap-2">
-              <EditOutlined className="text-blue-500" />
-              Chỉnh sửa thông tin giáo viên
+              {profile ? <EditOutlined className="text-blue-500" /> : <UserAddOutlined className="text-green-500" />}
+              {profile ? 'Chỉnh sửa thông tin giáo viên' : 'Tạo hồ sơ giáo viên'}
             </div>
           }
           open={editProfileModalVisible}
@@ -285,9 +199,11 @@ const TeacherProfileDashboard: React.FC = () => {
           destroyOnClose
         >
           <EditTeacherProfileForm
+            currentUser={user}
+            mode={profile ? 'update' : 'create'}
             onSuccess={async () => {
               setEditProfileModalVisible(false);
-              await refreshUser();
+              await refreshUser();             
             }}
             onCancel={() => setEditProfileModalVisible(false)}
           />

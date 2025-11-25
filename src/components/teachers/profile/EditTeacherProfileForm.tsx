@@ -1,109 +1,83 @@
-import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Select, InputNumber, message, DatePicker, Card } from 'antd';
+import React, { useEffect } from 'react';
+import { Form, Input, Button, message, DatePicker, Card } from 'antd';
 import {
   UserOutlined,
   BookOutlined,
-  GlobalOutlined,
   PlusOutlined,
   DeleteOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { useTeacherProfile } from '~/hooks/useTeacherProfile';
+import type { User } from '~/types/auth';
+import type { TeacherProfilePayload } from '~/types/teacherProfile';
 
-const { Option } = Select;
+interface TeacherProfileFormValues {
+  dateOfBirth: dayjs.Dayjs;
+  qualification: string;
+  specialization: string;
+  experience: string;
+  biography: string;
+  certificateUrls: string[];
+}
+
 const { TextArea } = Input;
 
 interface EditTeacherProfileFormProps {
+  currentUser: User;
+  mode: 'create' | 'update';
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-const EditTeacherProfileForm: React.FC<EditTeacherProfileFormProps> = ({ onSuccess, onCancel }) => {
+const EditTeacherProfileForm: React.FC<EditTeacherProfileFormProps> = ({ currentUser, mode, onSuccess, onCancel }) => {
   const [form] = Form.useForm();
-  const [qualifications, setQualifications] = useState<string[]>(['']);
-  const [loading, setLoading] = useState(false);
+  const { updateProfile, createProfile, loading } = useTeacherProfile();
 
-  // Available subjects for teaching
-  const subjectOptions = [
-    "Mathematics", "Physics", "Chemistry", "Biology",
-    "English", "History", "Computer Science", "Art",
-    "Music", "Programming", "Design", "Language",
-    "Economics", "Psychology", "Calculus", "Statistics"
-  ];
-
-  // // Preferred location options
-  // const locationOptions = [
-  //   { label: "Online/Virtual", value: "Online/Virtual" },
-  //   { label: "In-person", value: "In-person" },
-  //   { label: "Both", value: "Both" }
-  // ];
-
-  // Load current profile data (mock for now)
+  // Load current profile data if updating
   useEffect(() => {
-    // This would normally load from API
-    const mockProfileData = {
-      firstName: 'John',
-      lastName: 'Smith',
-      dob: dayjs('1985-05-15'),
-      teachingSubjects: ['Mathematics', 'Physics'],
-      yearsOfExperience: 8,
-      hourlyRate: 50,
-      preferredLocation: 'Online/Virtual',
-      bio: 'Experienced AP and SAT math tutor with 8 years of experience.',
-      linkedInProfile: 'https://linkedin.com/in/johnsmith-teacher',
-      portfolio: 'https://johnsmith-teaching.com',
-      teachingPhilosophy: 'Every student has the potential to excel when provided with the right tools and support.'
+    if (mode === 'update' && currentUser && currentUser.teacherProfile) {
+      const { teacherProfile } = currentUser;
+      const profileForForm = {
+        dateOfBirth: teacherProfile.dateOfBirth ? dayjs(teacherProfile.dateOfBirth) : undefined,
+        qualification: teacherProfile.qualification,
+        specialization: teacherProfile.specialization,
+        experience: teacherProfile.experience,
+        biography: teacherProfile.biography,
+        certificateUrls: teacherProfile.certificateUrls || [],
+      };
+      form.setFieldsValue(profileForForm);
+    } else if (mode === 'create') {
+      form.resetFields();
+    }
+  }, [currentUser, mode, form]);
+
+  const handleSubmit = async (values: TeacherProfileFormValues) => {
+    const payload: TeacherProfilePayload = {
+      dateOfBirth: values.dateOfBirth.format('YYYY-MM-DD'),
+      qualification: values.qualification,
+      specialization: values.specialization,
+      experience: values.experience,
+      biography: values.biography,
+      certificateUrls: values.certificateUrls,
     };
 
-    form.setFieldsValue(mockProfileData);
-    setQualifications(['Bachelor of Education', 'Master of Teaching']);
-  }, [form]);
-
-  // Handle qualifications dynamically
-  const addQualification = () => {
-    setQualifications([...qualifications, '']);
-  };
-
-  const removeQualification = (index: number) => {
-    if (qualifications.length > 1) {
-      const newQuals = qualifications.filter((_, i) => i !== index);
-      setQualifications(newQuals);
-    }
-  };
-
-  const updateQualification = (index: number, value: string) => {
-    const newQuals = [...qualifications];
-    newQuals[index] = value;
-    setQualifications(newQuals);
-  };
-
-  const validateUrl = (_: unknown, value: string) => {
-    if (!value || value === '') return Promise.resolve();
-    const urlPattern = /^https?:\/\/.+/;
-    if (!urlPattern.test(value)) {
-      return Promise.reject('Please enter a valid URL (https://...)');
-    }
-    return Promise.resolve();
-  };
-
-  const handleSubmit = async (values: Record<string, unknown> & { dob: dayjs.Dayjs }) => {
-    setLoading(true);
     try {
-      const submitData = {
-        ...values,
-        qualifications: qualifications.filter(q => q.trim() !== ''),
-        dob: values.dob.format('YYYY-MM-DD')
-      };
-
-      // Here you would submit to API
-      console.log('Submitting teacher profile:', submitData);
-
-      message.success("Teacher profile updated successfully!");
-      if (onSuccess) onSuccess();
+      let result;
+      if (mode === 'create') {
+        result = await createProfile(payload);
+      } else {
+        if (!currentUser.teacherProfile) {
+          message.error("No teacher profile found to update.");
+          return;
+        }
+        result = await updateProfile(currentUser.teacherProfile.id, payload);
+      }
+      if (result) {
+        message.success(mode === 'create' ? 'Profile created successfully!' : 'Profile updated successfully!');
+        if (onSuccess) onSuccess();
+      }
     } catch (error) {
-      console.error("Error updating teacher profile:", error);
-      message.error("Failed to update profile. Please try again.");
-    } finally {
-      setLoading(false);
+      console.error('Failed to save profile:', error);
     }
   };
 
@@ -122,37 +96,15 @@ const EditTeacherProfileForm: React.FC<EditTeacherProfileFormProps> = ({ onSucce
             title={
               <div className="flex items-center gap-2">
                 <UserOutlined className="text-blue-500" />
-                Personal Information
+                Basic Information
               </div>
             }
             className="shadow-sm"
           >
             <div className="space-y-4">
               <Form.Item
-                label="First Name *"
-                name="firstName"
-                rules={[
-                  { required: true, message: 'Please enter your first name!' },
-                  { min: 2, max: 50, message: 'First name must be 2-50 characters' }
-                ]}
-              >
-                <Input placeholder="Enter first name" />
-              </Form.Item>
-
-              <Form.Item
-                label="Last Name *"
-                name="lastName"
-                rules={[
-                  { required: true, message: 'Please enter your last name!' },
-                  { min: 2, max: 50, message: 'Last name must be 2-50 characters' }
-                ]}
-              >
-                <Input placeholder="Enter last name" />
-              </Form.Item>
-
-              <Form.Item
                 label="Date of Birth *"
-                name="dob"
+                name="dateOfBirth"
                 rules={[{ required: true, message: 'Please select your date of birth!' }]}
               >
                 <DatePicker
@@ -167,19 +119,16 @@ const EditTeacherProfileForm: React.FC<EditTeacherProfileFormProps> = ({ onSucce
                 />
               </Form.Item>
 
-              {/* <Form.Item
-                label="Preferred Location *"
-                name="preferredLocation"
-                rules={[{ required: true, message: 'Please select your preferred location!' }]}
+              <Form.Item
+                label="Qualification *"
+                name="qualification"
+                rules={[
+                  { required: true, message: 'Please enter your qualification!' },
+                  { min: 2, max: 200, message: 'Qualification must be 2-200 characters' }
+                ]}
               >
-                <Select placeholder="Select preferred location">
-                  {locationOptions.map(option => (
-                    <Option key={option.value} value={option.value}>
-                      {option.label}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item> */}
+                <Input placeholder="e.g. Bachelor of Science in Mathematics" />
+              </Form.Item>
             </div>
           </Card>
 
@@ -195,195 +144,107 @@ const EditTeacherProfileForm: React.FC<EditTeacherProfileFormProps> = ({ onSucce
           >
             <div className="space-y-4">
               <Form.Item
-                label="Subjects You Teach *"
-                name="teachingSubjects"
+                label="Specialization *"
+                name="specialization"
                 rules={[
-                  { required: true, message: 'Please select at least one subject!' },
-                  { type: 'array', min: 1, message: 'Please select at least one subject!' }
+                  { required: true, message: 'Please enter your specialization!' },
+                  { min: 2, max: 200, message: 'Specialization must be 2-200 characters' }
                 ]}
               >
-                <Select
-                  mode="multiple"
-                  placeholder="Select subjects you teach"
-                  style={{ width: '100%' }}
-                >
-                  {subjectOptions.map(subject => (
-                    <Option key={subject} value={subject}>
-                      {subject}
-                    </Option>
-                  ))}
-                </Select>
+                <Input placeholder="e.g. Mathematics, Physics, Calculus" />
               </Form.Item>
 
               <Form.Item
-                label="Years of Experience *"
-                name="yearsOfExperience"
+                label="Experience *"
+                name="experience"
                 rules={[
-                  { required: true, message: 'Please enter your years of experience!' },
-                  { type: 'number', min: 0, max: 50, message: 'Experience must be 0-50 years' }
+                  { required: true, message: 'Please enter your experience!' },
+                  { min: 2, max: 100, message: 'Experience must be 2-100 characters' }
                 ]}
               >
-                <InputNumber
-                  placeholder="Enter years of experience"
-                  min={0}
-                  max={50}
-                  className="w-full"
-                />
-              </Form.Item>
-
-              <Form.Item
-                label="Hourly Rate (USD) *"
-                name="hourlyRate"
-                rules={[
-                  { required: true, message: 'Please enter your hourly rate!' },
-                  { type: 'number', message: 'Please enter a valid number!' }
-                ]}
-              >
-                <InputNumber
-                  placeholder="Enter hourly rate"
-                  min={10}
-                  max={200}
-                  formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  // parser={value => Number((value as string)?.replace(/\$\s?|(,*)/g, ''))}
-                  className="w-full"
-                />
+                <Input placeholder="e.g. 5 years teaching AP Calculus" />
               </Form.Item>
             </div>
           </Card>
         </div>
 
-        {/* Qualifications Section */}
-        <Card
-          title={
-            <div className="flex items-center gap-2">
-              <BookOutlined className="text-purple-500" />
-              Educational Qualifications
-            </div>
-          }
-          className="shadow-sm"
-        >
-          <div className="space-y-3">
-            {qualifications.map((qualification, index) => (
-              <div key={index} className="flex gap-2 items-center">
-                <Input
-                  placeholder={`Qualification ${index + 1}`}
-                  value={qualification}
-                  onChange={(e) => updateQualification(index, e.target.value)}
-                  className="flex-1"
-                />
-                {qualifications.length > 1 && (
-                  <Button
-                    type="text"
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={() => removeQualification(index)}
-                    size="small"
-                  />
-                )}
-              </div>
-            ))}
-            <Button
-              type="dashed"
-              onClick={addQualification}
-              className="w-full mt-2"
-              icon={<PlusOutlined />}
-            >
-              Add Qualification
-            </Button>
-          </div>
-        </Card>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Bio Section */}
+        <div className='flex flex-col gap-6'>
+          {/* Biography Section */}
           <Card
             title={
               <div className="flex items-center gap-2">
                 <UserOutlined className="text-indigo-500" />
-                Personal Bio
+                Biography
               </div>
             }
             className="shadow-sm"
           >
             <Form.Item
               label="Biography *"
-              name="bio"
+              name="biography"
               rules={[
                 { required: true, message: 'Please enter your biography!' },
-                { min: 50, max: 500, message: 'Bio must be 50-500 characters' }
+                { min: 50, max: 1000, message: 'Biography must be 50-1000 characters' }
               ]}
             >
               <TextArea
-                placeholder="Tell students about yourself, your experience, and what makes you a great tutor..."
+                placeholder="Tell students about yourself, your teaching experience, and what makes you a great tutor..."
                 rows={6}
-                showCount
-                maxLength={500}
-              />
-            </Form.Item>
-
-            <Form.Item
-              label="Teaching Philosophy"
-              name="teachingPhilosophy"
-              rules={[
-                { min: 50, max: 1000, message: 'Teaching philosophy must be 50-1000 characters' }
-              ]}
-            >
-              <TextArea
-                placeholder="Share your teaching philosophy and approach to tutoring..."
-                rows={4}
                 showCount
                 maxLength={1000}
               />
             </Form.Item>
           </Card>
 
-          {/* Online Presence Section */}
+          {/* Certificates Section */}
           <Card
             title={
               <div className="flex items-center gap-2">
-                <GlobalOutlined className="text-teal-500" />
-                Online Presence (Optional)
+                <BookOutlined className="text-purple-500" />
+                Certificates
               </div>
             }
             className="shadow-sm"
           >
-            <div className="space-y-4">
-              <Form.Item
-                label="LinkedIn Profile"
-                name="linkedInProfile"
-                rules={[{ validator: validateUrl }]}
-              >
-                <Input
-                  placeholder="https://linkedin.com/in/yourprofile"
-                  prefix={<GlobalOutlined className="text-gray-400" />}
-                />
-              </Form.Item>
-
-              <Form.Item
-                label="Portfolio Website"
-                name="portfolio"
-                rules={[{ validator: validateUrl }]}
-              >
-                <Input
-                  placeholder="https://yourportfolio.com"
-                  prefix={<GlobalOutlined className="text-gray-400" />}
-                />
-              </Form.Item>
-
-              <div className="text-sm text-gray-500 mt-4 p-3 bg-gray-50 rounded">
-                <p className="font-medium mb-1">💡 Pro Tip:</p>
-                <p>Add links to your professional profiles to build trust with students and showcase your expertise.</p>
-              </div>
-            </div>
+            <Form.List name="certificateUrls">
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map((field, index) => (
+                    <Form.Item
+                      {...field}
+                      label={index === 0 ? "Certificate URLs" : ""}
+                      key={field.key}
+                      rules={[
+                        { type: 'url', message: 'Please enter a valid URL!' },
+                        { required: true, message: 'Please enter the certificate URL!' }
+                      ]}
+                    >
+                      <Input
+                        placeholder="https://example.com/certificate.pdf"
+                        addonAfter={
+                          <Button type="text" onClick={() => remove(field.name)} icon={<DeleteOutlined />} />
+                        }
+                      />
+                    </Form.Item>
+                  ))}
+                  <Form.Item>
+                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                      Add Certificate URL
+                    </Button>
+                  </Form.Item>
+                </>
+              )}
+            </Form.List>
           </Card>
         </div>
 
         {/* Form Actions */}
-        <div className="flex justify-end gap-3 pt-6 border-t">
+        <div className="flex justify-end gap-3 pt-6">
           <Button onClick={onCancel} disabled={loading}>
             Cancel
           </Button>
           <Button type="primary" htmlType="submit" loading={loading}>
-            Update Teacher Profile
+            {mode === 'create' ? 'Create Teacher Profile' : 'Update Teacher Profile'}
           </Button>
         </div>
       </Form>
