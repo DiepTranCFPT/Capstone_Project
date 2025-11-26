@@ -55,7 +55,7 @@ const ParentService = {
      */
     updateParentProfile: (
         data: { occupation: string }
-    ): Promise<AxiosResponse<ApiResponse<any>>> => {
+    ): Promise<AxiosResponse<ApiResponse<string>>> => {
         return axiosInstance.put("/parents/me", data);
     },
 };

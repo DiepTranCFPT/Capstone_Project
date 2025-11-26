@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { FRQ } from '~/types/question';
 import { useAuth } from '~/hooks/useAuth';
 import { Button } from 'antd';
@@ -20,6 +20,7 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
     const isInitialMountRef = useRef(true);
     const prevSavedAnswerRef = useRef<string | undefined>(savedAnswer);
     const isSyncingRef = useRef(false);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     // Determine the card mode based on subject
     const getCardMode = () => {
@@ -38,6 +39,51 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
     };
 
     const cardMode = getCardMode();
+
+    // Function to insert text at cursor position
+    const insertTextAtCursor = useCallback((textToInsert: string) => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const startPos = textarea.selectionStart;
+        const endPos = textarea.selectionEnd;
+        const beforeText = answerText.substring(0, startPos);
+        const afterText = answerText.substring(endPos);
+
+        const newText = beforeText + textToInsert + afterText;
+        setAnswerText(newText);
+
+        // Set cursor position after inserted text
+        setTimeout(() => {
+            textarea.focus();
+            const newCursorPos = startPos + textToInsert.length;
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
+        }, 0);
+    }, [answerText]);
+
+    // Keyboard shortcuts handler
+    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // Căn bậc 2: Ctrl + R
+        if (e.ctrlKey && !e.shiftKey && e.key === 'r') {
+            e.preventDefault();
+            insertTextAtCursor('\\sqrt{}');
+        }
+        // Tập số thực: Ctrl + Shift + R
+        else if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+            e.preventDefault();
+            insertTextAtCursor('\\mathbb{R}');
+        }
+        // Tập số nguyên: Ctrl + Shift + N
+        else if (e.ctrlKey && e.shiftKey && e.key === 'N') {
+            e.preventDefault();
+            insertTextAtCursor('\\mathbb{N}');
+        }
+        // Tích phân: Ctrl + I
+        else if (e.ctrlKey && !e.shiftKey && e.key === 'i') {
+            e.preventDefault();
+            insertTextAtCursor('\\int f(x) \\, dx');
+        }
+    }, [insertTextAtCursor]);
 
     // Sync answerText when savedAnswer prop changes (e.g., when loaded from localStorage)
     useEffect(() => {
@@ -134,6 +180,7 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
                     <div className="text-xs text-blue-700 space-y-1">
                         <div>• Nhấn <kbd className="bg-blue-100 px-1 rounded">Enter</kbd> để xuống dòng</div>
                         <div>• Sử dụng ký hiệu: <code className="bg-blue-100 px-1 rounded">^</code> cho lũy thừa, <code className="bg-blue-100 px-1 rounded">_</code> cho chỉ số dưới</div>
+                        <div>• Phím tắt: <kbd className="bg-blue-100 px-1 rounded">Ctrl+R</kbd> căn bậc 2, <kbd className="bg-blue-100 px-1 rounded">Ctrl+Shift+R</kbd> tập ℝ, <kbd className="bg-blue-100 px-1 rounded">Ctrl+Shift+N</kbd> tập ℕ, <kbd className="bg-blue-100 px-1 rounded">Ctrl+I</kbd> tích phân</div>
                         <div>• Ví dụ: <code className="bg-blue-100 px-1 rounded">x^2 + 2x + 1 = 0</code> hoặc <code className="bg-blue-100 px-1 rounded">H_2O</code></div>
                     </div>
                 </div>
@@ -178,12 +225,14 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
                         </button>
                     </div>
                     <textarea
+                        ref={textareaRef}
                         rows={6}
                         value={answerText}
                         onChange={(e) => {
                             // Allow line breaks by treating Enter key normally
                             handleTextChange(e);
                         }}
+                        onKeyDown={handleKeyDown}
                         className="w-full p-3 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 font-mono text-sm resize-vertical"
                         placeholder={`Ví dụ hoàn chỉnh:\nx = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}
 
@@ -237,9 +286,11 @@ x^2 + 2x + 1 = 0`}
                             Đáp án của bạn
                         </h3>
                         <textarea
+                            ref={textareaRef}
                             rows={12}
                             value={answerText}
                             onChange={handleTextChange}
+                            onKeyDown={handleKeyDown}
                             className="w-full p-3 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 resize-none h-64"
                             placeholder="Nhập đáp án của bạn ở đây..."
                         />
@@ -264,9 +315,11 @@ x^2 + 2x + 1 = 0`}
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <h3 className="font-semibold text-gray-800 mb-4">{questionNumber}. {question.text}</h3>
             <textarea
+                ref={textareaRef}
                 rows={6}
                 value={answerText}
                 onChange={handleTextChange}
+                onKeyDown={handleKeyDown}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
                 placeholder="Type your answer here..."
             ></textarea>

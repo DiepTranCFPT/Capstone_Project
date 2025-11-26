@@ -14,10 +14,9 @@ export const useStudent = () => {
             const response = await StudentService.updateStudentProfile(data);
             toast.success("Cập nhật thông tin thành công!");
             return response.data;
-        } catch (err: any) {
-            const errorMessage = err.response?.data?.message || "Cập nhật thông tin thất bại";
-            setError(errorMessage);
-            toast.error(errorMessage);
+        } catch (err) {
+            setError("Cập nhật thông tin thất bại");
+            toast.error("Cập nhật thông tin thất bại");
             throw err;
         } finally {
             setLoading(false);
