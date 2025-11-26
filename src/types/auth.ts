@@ -1,4 +1,5 @@
 import type { TeacherProfileData } from "./teacherProfile";
+import type { StudentProfile, ParentProfile } from "./user";
 
 export interface User {
     id: string;
@@ -10,6 +11,8 @@ export interface User {
     role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'ACADEMIC_ADVISOR' | 'PARENT';
     tokenBalance: number;
     teacherProfile?: TeacherProfileData;
+    studentProfile?: StudentProfile;
+    parentProfile?: ParentProfile;
 };
 
 export interface LoginApiResponse {
