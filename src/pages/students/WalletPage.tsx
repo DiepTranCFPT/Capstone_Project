@@ -127,18 +127,18 @@ const WalletPage = () => {
             <div className="space-y-5">
               <label className="block text-sm font-semibold text-slate-600">
                 Số tiền muốn nạp
-                <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <div className="flex-1 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-2xl font-bold text-slate-900 shadow-inner">
-                    {formatAmount(amount || 0)}
-                  </div>
+                <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <input
                     type="number"
                     min={10000}
                     value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
-                    className="rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-700 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-700 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-100 sm:w-2/3 lg:w-1/2"
                     placeholder="Nhập số tiền (VNĐ)"
                   />
+                  <div className="min-w-[140px] rounded-2xl border border-slate-200 bg-white px-5 py-3 text-2xl font-bold text-slate-900 shadow-inner">
+                    {formatAmount(amount || 0)}
+                  </div>
                 </div>
               </label>
 
