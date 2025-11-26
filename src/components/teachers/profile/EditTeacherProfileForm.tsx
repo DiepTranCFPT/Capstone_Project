@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Form, Input, Button, message, DatePicker, Card } from 'antd';
+import { Form, Input, Button, message, Card, DatePicker } from 'antd';
 import {
   UserOutlined,
   BookOutlined,
@@ -53,7 +53,7 @@ const EditTeacherProfileForm: React.FC<EditTeacherProfileFormProps> = ({ current
 
   const handleSubmit = async (values: TeacherProfileFormValues) => {
     const payload: TeacherProfilePayload = {
-      dateOfBirth: values.dateOfBirth.format('YYYY-MM-DD'),
+      dateOfBirth: values.dateOfBirth ? values.dateOfBirth.format('YYYY-MM-DD') : (currentUser.dob ? (typeof currentUser.dob === 'string' ? currentUser.dob : currentUser.dob.toISOString().split('T')[0]) : '2000-01-01'),
       qualification: values.qualification,
       specialization: values.specialization,
       experience: values.experience,
@@ -118,17 +118,6 @@ const EditTeacherProfileForm: React.FC<EditTeacherProfileFormProps> = ({ current
                   }}
                 />
               </Form.Item>
-
-              <Form.Item
-                label="Qualification *"
-                name="qualification"
-                rules={[
-                  { required: true, message: 'Please enter your qualification!' },
-                  { min: 2, max: 200, message: 'Qualification must be 2-200 characters' }
-                ]}
-              >
-                <Input placeholder="e.g. Bachelor of Science in Mathematics" />
-              </Form.Item>
             </div>
           </Card>
 
@@ -143,6 +132,17 @@ const EditTeacherProfileForm: React.FC<EditTeacherProfileFormProps> = ({ current
             className="shadow-sm"
           >
             <div className="space-y-4">
+              <Form.Item
+                label="Qualification *"
+                name="qualification"
+                rules={[
+                  { required: true, message: 'Please enter your qualification!' },
+                  { min: 2, max: 200, message: 'Qualification must be 2-200 characters' }
+                ]}
+              >
+                <Input placeholder="e.g. Bachelor of Science in Mathematics" />
+              </Form.Item>
+
               <Form.Item
                 label="Specialization *"
                 name="specialization"
