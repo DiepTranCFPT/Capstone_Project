@@ -29,8 +29,9 @@ const LoadingPage: React.FC = () => {
             <span className="text-teal-500"> chỉ còn chờ bạn!</span>
           </h1>
           <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto">
-            Chúng tôi đang tải dữ liệu học tập, bài giảng và trải nghiệm tương tác
-            tốt nhất. Đừng tắt trang nhé – việc này chỉ mất vài giây.
+            Chúc mừng bạn đã nạp thành công vào hệ thống học tập AP LMS! Chúng tôi đang
+            đồng bộ số dư ví và kích hoạt các tính năng cần thiết để bạn tiếp tục trải
+            nghiệm liền mạch.
           </p>
         </div>
 
