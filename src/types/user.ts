@@ -7,11 +7,37 @@ export interface User {
   firstName: string;
   lastName: string;
   imgUrl?: string;
-  dob?: string | Date;  
+  dob?: string | Date;
   roles: string[];
   active: boolean;
   permissions?: Permission[];
   teacherProfile?: TeacherProfileData;
+  studentProfile?: StudentProfile;
+  parentProfile?: ParentProfile;
+}
+
+export interface StudentProfile {
+  id: string;
+  schoolName: string;
+  emergencyContact: string;
+  parentPhone: string;
+}
+
+export interface UpdateStudentProfileRequest {
+  schoolName: string;
+  parentPhone: string;
+  emergencyContact: string;
+}
+
+export interface UpdateStudentProfileResponse {
+  code: number;
+  message: string;
+  data: StudentProfile;
+}
+
+export interface ParentProfile {
+  id: string;
+  occupation: string;
 }
 
 export interface UserPaginationData {

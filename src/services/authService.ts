@@ -648,6 +648,8 @@ export const getCurrentUserApi = async (): Promise<AuthResponse> => {
             role: mapRolesToUserRole(roles),
             tokenBalance: userData.tokenBalance || 0,
             teacherProfile: userData.teacherProfile,
+            studentProfile: userData.studentProfile,
+            parentProfile: userData.parentProfile,
         };
 
         return { user, token: '' }; // Token is already available from login

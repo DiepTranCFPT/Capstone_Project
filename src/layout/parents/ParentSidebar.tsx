@@ -43,15 +43,15 @@ const ParentSidebar: React.FC = () => {
 
             {/* Profile */}
             {user && (
-                <div className={"p-4 border-b border-gray-200 flex flex-row items-center" + (collapsed ? " justify-center" : "")}>
+                <Link to="/parent/profile" className={"p-4 border-b border-gray-200 flex flex-row items-center hover:bg-gray-50 transition-colors cursor-pointer" + (collapsed ? " justify-center" : "")}>
                     <Avatar size={collapsed ? 32 : 40} src={user.imgUrl} />
                     {!collapsed && (
                         <div className='flex flex-col px-2'>
-                            <p className="font-semibold">{user.firstName} {user.lastName}</p>
+                            <p className="font-semibold text-gray-800">{user.firstName} {user.lastName}</p>
                             <p className="text-xs text-gray-500">{user.email}</p>
                         </div>
                     )}
-                </div>
+                </Link>
             )}
 
             {/* Menu */}

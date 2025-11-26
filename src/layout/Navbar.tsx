@@ -128,7 +128,7 @@ const Navbar: React.FC = () => {
               {/* Menu Items */}
               <div className="py-1">
                 <Link
-                  to="/student/dashboard"
+                  to={user?.role === "PARENT" ? "/parent/profile" : "/student/dashboard"}
                   className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-all duration-300 hover:scale-105 rounded-md mx-2"
                   onClick={() => setShowModal(false)}
                 >

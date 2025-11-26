@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { BarChartOutlined, UsergroupAddOutlined, AimOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { BarChartOutlined, UsergroupAddOutlined, AimOutlined, CheckCircleOutlined, RobotOutlined, SendOutlined } from '@ant-design/icons';
 import type { AttemptResultDetail } from '~/types/examAttempt';
+import { useAiExamAsk } from '~/hooks/useAiExamAsk';
+import { useAuth } from '~/hooks/useAuth';
+import ReactMarkdown from 'react-markdown';
 
 interface QuestionDetail {
     question: string;
@@ -22,15 +25,35 @@ const cleanAnswerContent = (content: string | null | undefined): string => {
 const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) => {
     const [showModal, setShowModal] = useState(false);
     const [modalContent, setModalContent] = useState<{ type: 'ai' | 'advisor'; question: QuestionDetail | null }>({ type: 'ai', question: null });
+    const [studentQuestion, setStudentQuestion] = useState('');
+
+    const { user } = useAuth();
+    const { askAi, response: aiResponse, isLoading: isAiLoading, error: aiError, clearResponse } = useAiExamAsk();
 
     const openModal = (type: 'ai' | 'advisor', question: QuestionDetail) => {
         setModalContent({ type, question });
         setShowModal(true);
+        setStudentQuestion('');
+        clearResponse();
     };
 
     const closeModal = () => {
         setShowModal(false);
         setModalContent({ type: 'ai', question: null });
+        setStudentQuestion('');
+        clearResponse();
+    };
+
+    const handleAskAiSubmit = async () => {
+        if (!modalContent.question || !attemptResultDetail || !user) return;
+
+        await askAi({
+            attemptId: attemptResultDetail.attemptId,
+            questionContent: modalContent.question.question,
+            studentAnswer: modalContent.question.userAnswer,
+            studentAsking: studentQuestion,
+            doneBy: user.email,
+        });
     };
 
     // CẬP NHẬT: Tính toán performanceByTopic dựa trên `studentAnswer.score`
@@ -94,7 +117,7 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
             const correctAnswer = q.studentAnswer?.correctAnswer?.content
                 ? cleanAnswerContent(q.studentAnswer.correctAnswer.content) // Làm sạch text
                 : (q.question.type === 'frq' ? 'FRQ - Check with instructor' : 'Unknown');
-            
+
             // 3. Lấy giải thích
             const explanation = q.studentAnswer?.correctAnswer?.explanation || 'Explanation not available';
 
@@ -110,134 +133,250 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
     return (
         <>
             <div className="space-y-6 animate-fade-in">
-            {/* Performance Analysis */}
-            <div>
-                <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><BarChartOutlined className="mr-2 text-teal-500" />Phân tích hiệu suất theo chủ đề</h4>
-                <div className="space-y-2">
-                    {performanceByTopic.map((item) => (
-                        <div key={item.topic}>
-                            <div className="flex justify-between text-sm font-medium text-gray-600">
-                                <span>{item.topic}</span>
-                                <span>{item.accuracy}%</span>
+                {/* Performance Analysis */}
+                <div>
+                    <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><BarChartOutlined className="mr-2 text-teal-500" />Phân tích hiệu suất theo chủ đề</h4>
+                    <div className="space-y-2">
+                        {performanceByTopic.map((item) => (
+                            <div key={item.topic}>
+                                <div className="flex justify-between text-sm font-medium text-gray-600">
+                                    <span>{item.topic}</span>
+                                    <span>{item.accuracy}%</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div className="bg-teal-500 h-2.5 rounded-full" style={{ width: `${item.accuracy}%` }}></div>
+                                </div>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                <div className="bg-teal-500 h-2.5 rounded-full" style={{ width: `${item.accuracy}%` }}></div>
-                            </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
-            </div>
 
-            {/* Comparison */}
-            <div>
-                <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><UsergroupAddOutlined className="mr-2 text-teal-500" />So sánh kết quả</h4>
-                <p className="text-gray-600">Điểm của bạn so với điểm trung bình của những người dùng khác.</p>
-                <div className="flex items-baseline justify-center gap-4 mt-2 p-4 bg-gray-50 rounded-lg">
-                    <div><span className="text-3xl font-bold text-teal-600">{comparison.userScore.toFixed(1)}%</span><p className="text-sm">Điểm của bạn</p></div>
-                    <div className="text-gray-400">vs</div>
-                    <div><span className="text-3xl font-bold text-gray-500">{comparison.averageScore}%</span><p className="text-sm">Trung bình</p></div>
+                {/* Comparison */}
+                <div>
+                    <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><UsergroupAddOutlined className="mr-2 text-teal-500" />So sánh kết quả</h4>
+                    <p className="text-gray-600">Điểm của bạn so với điểm trung bình của những người dùng khác.</p>
+                    <div className="flex items-baseline justify-center gap-4 mt-2 p-4 bg-gray-50 rounded-lg">
+                        <div><span className="text-3xl font-bold text-teal-600">{comparison.userScore.toFixed(1)}%</span><p className="text-sm">Điểm của bạn</p></div>
+                        <div className="text-gray-400">vs</div>
+                        <div><span className="text-3xl font-bold text-gray-500">{comparison.averageScore}%</span><p className="text-sm">Trung bình</p></div>
+                    </div>
                 </div>
-            </div>
 
-            {/* Suggestions */}
-            <div>
-                <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><AimOutlined className="mr-2 text-teal-500" />Chủ đề cần cải thiện</h4>
-                <ul className="list-disc list-inside space-y-1 text-gray-600">
-                    {suggestions.map((s, i) => <li key={i}>{s}</li>)}
-                </ul>
-            </div>
-            {/* Detailed Answers */}
-            <div>
-                <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><CheckCircleOutlined className="mr-2 text-teal-500" />Đáp án và giải thích chi tiết</h4>
-                <div className="space-y-4">
-                    {detailedAnswers.map((ans, i) => (
-                        <div key={i} className="p-4 border rounded-lg bg-gray-50">
-                            <p className="font-semibold">{i + 1}. {ans.question}</p>
-                            
-                            {/* CẬP NHẬT: Hiển thị "No answer" nếu không có câu trả lời */}
-                            <p className={`text-sm ${ans.userAnswer === 'No answer' ? 'text-gray-500 italic' : (ans.userAnswer === ans.correctAnswer ? 'text-green-600 font-bold' : 'text-red-600 font-bold')}`}>
-                                Bạn chọn: {ans.userAnswer}
-                            </p>
-                            
-                            {/* Chỉ hiển thị đáp án đúng nếu trả lời sai và không phải là "No answer" */}
-                            {ans.userAnswer !== ans.correctAnswer && ans.userAnswer !== 'No answer' && (
-                                <p className="text-sm">Đáp án đúng: <span className="text-green-600 font-bold">{ans.correctAnswer}</span></p>
-                            )}
-                            
-                            {/* Hiển thị đáp án đúng nếu không trả lời */}
-                            {ans.userAnswer === 'No answer' && (
-                                <p className="text-sm">Đáp án đúng: <span className="text-green-600 font-bold">{ans.correctAnswer}</span></p>
-                            )}
-                            
-                            <p className="text-sm mt-2 pt-2 border-t text-gray-700"><em>Giải thích: {ans.explanation}</em></p>
-                            <div className="flex space-x-2 mt-2">
-                                <button
-                                    onClick={() => openModal('ai', ans)}
-                                    className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200"
-                                >
-                                    Hỏi AI
-                                </button>
-                                <button
-                                    onClick={() => openModal('advisor', ans)}
-                                    className="text-xs px-3 py-1 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200"
-                                >
-                                    Hỏi Advisor
-                                </button>
-                            </div>
-                        </div>
-                    ))}
+                {/* Suggestions */}
+                <div>
+                    <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><AimOutlined className="mr-2 text-teal-500" />Chủ đề cần cải thiện</h4>
+                    <ul className="list-disc list-inside space-y-1 text-gray-600">
+                        {suggestions.map((s, i) => <li key={i}>{s}</li>)}
+                    </ul>
                 </div>
-            </div>
-        </div>
-        {showModal && modalContent.question && (
-            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center z-50">
-                <div className="bg-white p-8 rounded-lg shadow-xl max-w-md mx-auto">
-                    <h3 className="text-xl font-bold text-gray-800 mb-4">
-                        {modalContent.type === 'ai' ? 'AI Feedback' : 'Ask Advisor'}
-                    </h3>
-                    <p className="text-gray-700 mb-4">
-                        Question: {modalContent.question.question}
-                    </p>
-                    {modalContent.type === 'ai' ? (
-                        <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                            <p className="font-semibold text-blue-800">AI's Suggestion:</p>
-                            <p className="text-blue-700">This is a placeholder for AI's detailed feedback on the question. It would analyze the user's answer, the correct answer, and the explanation to provide personalized insights.</p>
-                        </div>
-                    ) : (
-                        <div className="mb-4">
-                            <label htmlFor="advisorQuestion" className="block text-sm font-medium text-gray-700 mb-2">Your question for the Advisor:</label>
-                            <textarea
-                                id="advisorQuestion"
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                rows={4}
-                                placeholder="Type your question here..."
-                            ></textarea>
-                        </div>
-                    )}
-                    <div className="flex justify-end space-x-4">
-                        <button
-                            onClick={closeModal}
-                            className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
-                        >
-                            Close
-                        </button>
-                        {modalContent.type === 'advisor' && (
-                            <button
-                                onClick={() => {
-                                    console.log("Sending question to advisor for:", modalContent.question?.question);
-                                    alert("Question sent to advisor!");
-                                    closeModal();
-                                }}
-                                className="px-4 py-2 rounded-lg bg-purple-500 text-white hover:bg-purple-600"
-                            >
-                                Send to Advisor
-                            </button>
-                        )}
+                {/* Detailed Answers */}
+                <div>
+                    <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><CheckCircleOutlined className="mr-2 text-teal-500" />Đáp án và giải thích chi tiết</h4>
+                    <div className="space-y-4">
+                        {detailedAnswers.map((ans, i) => (
+                            <div key={i} className="p-4 border rounded-lg bg-gray-50">
+                                <p className="font-semibold">{i + 1}. {ans.question}</p>
+
+                                {/* CẬP NHẬT: Hiển thị "No answer" nếu không có câu trả lời */}
+                                <p className={`text-sm ${ans.userAnswer === 'No answer' ? 'text-gray-500 italic' : (ans.userAnswer === ans.correctAnswer ? 'text-green-600 font-bold' : 'text-red-600 font-bold')}`}>
+                                    Bạn chọn: {ans.userAnswer}
+                                </p>
+
+                                {/* Chỉ hiển thị đáp án đúng nếu trả lời sai và không phải là "No answer" */}
+                                {ans.userAnswer !== ans.correctAnswer && ans.userAnswer !== 'No answer' && (
+                                    <p className="text-sm">Đáp án đúng: <span className="text-green-600 font-bold">{ans.correctAnswer}</span></p>
+                                )}
+
+                                {/* Hiển thị đáp án đúng nếu không trả lời */}
+                                {ans.userAnswer === 'No answer' && (
+                                    <p className="text-sm">Đáp án đúng: <span className="text-green-600 font-bold">{ans.correctAnswer}</span></p>
+                                )}
+
+                                <p className="text-sm mt-2 pt-2 border-t text-gray-700"><em>Giải thích: {ans.explanation}</em></p>
+                                <div className="flex space-x-2 mt-2">
+                                    <button
+                                        onClick={() => openModal('ai', ans)}
+                                        className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 flex items-center"
+                                    >
+                                        <RobotOutlined className="mr-1" /> Hỏi AI
+                                    </button>
+                                    <button
+                                        onClick={() => openModal('advisor', ans)}
+                                        className="text-xs px-3 py-1 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200"
+                                    >
+                                        Hỏi Advisor
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
-        )}
 
+            {showModal && modalContent.question && (
+                <div className="fixed inset-0 bg-gray-50 bg-opacity-60 backdrop-blur-sm overflow-y-auto h-full w-full flex justify-center items-center z-50 transition-opacity duration-300">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl mx-auto w-full max-h-[85vh] flex flex-col transform transition-all duration-300 scale-100">
+                        {/* Modal Header */}
+                        <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-white to-gray-50 rounded-t-2xl">
+                            <h3 className="text-2xl font-bold text-gray-800 flex items-center">
+                                {modalContent.type === 'ai' ? (
+                                    <>
+                                        <div className="bg-blue-100 p-2 rounded-lg mr-3">
+                                            <RobotOutlined className="text-blue-600 text-xl" />
+                                        </div>
+                                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-teal-500">
+                                            AI Assistant
+                                        </span>
+                                    </>
+                                ) : (
+                                    'Ask Advisor'
+                                )}
+                            </h3>
+                            <button
+                                onClick={closeModal}
+                                className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-100"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-8 overflow-y-auto custom-scrollbar flex-1">
+                            {/* Context Question */}
+                            <div className="mb-8 bg-slate-50 p-6 rounded-xl border border-slate-100 shadow-sm">
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Context Question</p>
+                                <p className="text-gray-700 text-base leading-relaxed font-medium">{modalContent.question.question}</p>
+                            </div>
+
+                            {modalContent.type === 'ai' ? (
+                                <div className="flex flex-col space-y-6">
+                                    {/* Input Section */}
+                                    <div>
+                                        <label htmlFor="aiQuestion" className="block text-sm font-semibold text-gray-700 mb-3">
+                                            What would you like to know?
+                                        </label>
+                                        <div className="relative flex items-center">
+                                            <input
+                                                id="aiQuestion"
+                                                className="w-full pl-5 pr-14 py-4 bg-white border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-50 focus:border-blue-500 transition-all duration-200 shadow-sm text-gray-700 placeholder-gray-400"
+                                                placeholder="Ask for an explanation, hint, or similar example..."
+                                                value={studentQuestion}
+                                                onChange={(e) => setStudentQuestion(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && !isAiLoading) {
+                                                        handleAskAiSubmit();
+                                                    }
+                                                }}
+                                                disabled={isAiLoading}
+                                            />
+                                            <button
+                                                onClick={handleAskAiSubmit}
+                                                disabled={isAiLoading || !studentQuestion.trim()}
+                                                className={`absolute right-2 p-2 rounded-lg transition-all duration-200 ${isAiLoading || !studentQuestion.trim()
+                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                        : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
+                                                    }`}
+                                            >
+                                                {isAiLoading ? (
+                                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                ) : (
+                                                    <SendOutlined className="text-lg" />
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Response Section */}
+                                    {(aiResponse || isAiLoading || aiError) && (
+                                        <div className={`rounded-xl border overflow-hidden transition-all duration-300 ${aiError ? 'bg-red-50 border-red-100' : 'bg-white border-blue-100 shadow-lg ring-1 ring-blue-50'}`}>
+                                            {aiError ? (
+                                                <div className="p-6 flex items-start text-red-600">
+                                                    <span className="mr-3 text-xl">⚠️</span>
+                                                    <div>
+                                                        <p className="font-bold mb-1">Something went wrong</p>
+                                                        <p className="text-sm opacity-90">{aiError}</p>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col">
+                                                    <div className="px-6 py-3 bg-blue-50/50 border-b border-blue-100 flex items-center justify-between">
+                                                        <div className="flex items-center text-blue-700 font-semibold text-sm">
+                                                            <RobotOutlined className="mr-2" />
+                                                            AI Response
+                                                        </div>
+                                                        {isAiLoading && (
+                                                            <span className="flex h-2 w-2">
+                                                                <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-blue-400 opacity-75"></span>
+                                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="p-6 bg-white">
+                                                        <div className="prose prose-blue prose-sm max-w-none text-gray-600 leading-relaxed">
+                                                            <ReactMarkdown
+                                                                components={{
+                                                                    p: ({ node, ...props }) => <p className="mb-3 last:mb-0" {...props} />,
+                                                                    ul: ({ node, ...props }) => <ul className="list-disc list-outside ml-5 mb-3 space-y-1" {...props} />,
+                                                                    ol: ({ node, ...props }) => <ol className="list-decimal list-outside ml-5 mb-3 space-y-1" {...props} />,
+                                                                    li: ({ node, ...props }) => <li className="pl-1" {...props} />,
+                                                                    strong: ({ node, ...props }) => <strong className="font-bold text-gray-800" {...props} />,
+                                                                    code: ({ node, ...props }) => <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-pink-600 border border-gray-200" {...props} />,
+                                                                    blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-blue-200 pl-4 italic text-gray-500 my-4" {...props} />,
+                                                                }}
+                                                            >
+                                                                {aiResponse}
+                                                            </ReactMarkdown>
+                                                            {isAiLoading && (
+                                                                <div className="flex space-x-1 mt-2 h-4 items-center">
+                                                                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                                                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                                                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="mb-4">
+                                    <label htmlFor="advisorQuestion" className="block text-sm font-semibold text-gray-700 mb-2">Your question for the Advisor:</label>
+                                    <textarea
+                                        id="advisorQuestion"
+                                        className="w-full p-4 border border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-50 focus:border-purple-500 transition-all shadow-sm"
+                                        rows={5}
+                                        placeholder="Type your question here..."
+                                    ></textarea>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="px-8 py-5 bg-gray-50 border-t border-gray-100 rounded-b-2xl flex justify-end space-x-3">
+                            <button
+                                onClick={closeModal}
+                                className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-white hover:border-gray-400 hover:shadow-sm transition-all duration-200"
+                            >
+                                Close
+                            </button>
+                            {modalContent.type === 'advisor' && (
+                                <button
+                                    onClick={() => {
+                                        console.log("Sending question to advisor for:", modalContent.question?.question);
+                                        alert("Question sent to advisor!");
+                                        closeModal();
+                                    }}
+                                    className="px-5 py-2.5 rounded-xl bg-purple-600 text-white font-medium hover:bg-purple-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+                                >
+                                    Send to Advisor
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };

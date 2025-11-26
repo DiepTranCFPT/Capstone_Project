@@ -7,11 +7,12 @@ import { toast } from "~/components/common/Toast";
 import TeacherChangePasswordForm from "./TeacherChangePasswordForm";
 import EditTeacherProfileForm from "./EditTeacherProfileForm";
 import AvatarUpload from "~/components/students/profile/AvatarUpload";
-
+import EditProfileForm from "~/components/students/profile/EditProfileForm";
 
 const TeacherProfileDashboard: React.FC = () => {
   const { user, loading: authLoading, logout } = useAuth();
   const [editProfileModalVisible, setEditProfileModalVisible] = useState(false);
+  const [editTeacherProfileModalVisible, setEditTeacherProfileModalVisible] = useState(false);
   const [changePasswordModalVisible, setChangePasswordModalVisible] = useState(false);
 
   const profile = user?.teacherProfile;
@@ -80,7 +81,7 @@ const TeacherProfileDashboard: React.FC = () => {
                 </div>
                 <div className="flex gap-3">
                   <span className="text-gray-600">Ngày sinh:</span>
-                  <span>🎂 {user.teacherProfile && user.teacherProfile.dateOfBirth ? new Date(user.teacherProfile.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                  <span>🎂 {user.dob && user.dob ? new Date(user.dob).toLocaleDateString('vi-VN') : 'N/A'}</span>
                 </div>
                 <div className="flex gap-3">
                   <span className="text-gray-600">Token:</span>
@@ -105,11 +106,11 @@ const TeacherProfileDashboard: React.FC = () => {
                   <div className="flex gap-2 flex-wrap">
                     <Button
                       type="primary"
-                      icon={profile ? <EditOutlined /> : <UserAddOutlined />}
+                      icon={<EditOutlined />}
                       onClick={() => setEditProfileModalVisible(true)}
                       size="small"
                     >
-                      {profile ? 'Chỉnh sửa thông tin giáo viên' : 'Tạo hồ sơ giáo viên'}
+                      Chỉnh sửa thông tin
                     </Button>
                     <Button
                       icon={<LockOutlined />}
@@ -122,11 +123,11 @@ const TeacherProfileDashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </Card>       
+            </Card>
           </div>
         </Card>
 
-        {profile && (
+        {profile ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Thông tin chuyên môn */}
             <Card title={
@@ -165,6 +166,18 @@ const TeacherProfileDashboard: React.FC = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Edit button for Teacher Info */}
+                <div className="pt-4 border-t border-gray-200">
+                  <Button
+                    type="default"
+                    icon={<EditOutlined />}
+                    onClick={() => setEditTeacherProfileModalVisible(true)}
+                    size="small"
+                  >
+                    Chỉnh sửa thông tin chuyên môn
+                  </Button>
+                </div>
               </div>
             </Card>
 
@@ -182,9 +195,42 @@ const TeacherProfileDashboard: React.FC = () => {
               </div>
             </Card>
           </div>
+        ) : (
+          <div className="flex justify-center">
+            <Button
+              type="primary"
+              size="large"
+              icon={<UserAddOutlined />}
+              onClick={() => setEditTeacherProfileModalVisible(true)}
+            >
+              Tạo hồ sơ giáo viên
+            </Button>
+          </div>
         )}
 
         {/* Modals */}
+        <Modal
+          title={
+            <div className="flex items-center gap-2">
+              <EditOutlined className="text-blue-500" />
+              Chỉnh sửa thông tin cá nhân
+            </div>
+          }
+          open={editProfileModalVisible}
+          onCancel={() => setEditProfileModalVisible(false)}
+          footer={null}
+          width={600}
+          destroyOnClose
+        >
+          <EditProfileForm
+            onSuccess={async () => {
+              setEditProfileModalVisible(false);
+              await refreshUser();
+            }}
+            onCancel={() => setEditProfileModalVisible(false)}
+          />
+        </Modal>
+
         <Modal
           title={
             <div className="flex items-center gap-2">
@@ -192,8 +238,8 @@ const TeacherProfileDashboard: React.FC = () => {
               {profile ? 'Chỉnh sửa thông tin giáo viên' : 'Tạo hồ sơ giáo viên'}
             </div>
           }
-          open={editProfileModalVisible}
-          onCancel={() => setEditProfileModalVisible(false)}
+          open={editTeacherProfileModalVisible}
+          onCancel={() => setEditTeacherProfileModalVisible(false)}
           footer={null}
           width={700}
           destroyOnClose
@@ -202,10 +248,10 @@ const TeacherProfileDashboard: React.FC = () => {
             currentUser={user}
             mode={profile ? 'update' : 'create'}
             onSuccess={async () => {
-              setEditProfileModalVisible(false);
-              await refreshUser();             
+              setEditTeacherProfileModalVisible(false);
+              await refreshUser();
             }}
-            onCancel={() => setEditProfileModalVisible(false)}
+            onCancel={() => setEditTeacherProfileModalVisible(false)}
           />
         </Modal>
 

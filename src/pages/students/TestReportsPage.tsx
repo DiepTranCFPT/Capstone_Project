@@ -79,7 +79,7 @@ const TestReportsPage: React.FC = () => {
             title: 'Score',
             dataIndex: 'score',
             key: 'score',
-            render: (score: number) => <Tag color={score >= 80 ? 'green' : 'volcano'}>{score}%</Tag>,
+            render: (score: number) => <Tag color={score >= 80 ? 'green' : 'volcano'}>{score}</Tag>,
         },
         {
             title: 'Start Time',
