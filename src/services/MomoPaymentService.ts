@@ -16,7 +16,14 @@ const MomoPaymentService = {
   createPayment(
     payload: CreatePaymentPayload
   ): Promise<AxiosResponse<ApiResponse<CreatePaymentResponse>>> {
-    return axiosInstance.post(`/payment/momo/create`, payload);
+    const { orderId, requestId, amount, ...rest } = payload;
+    return axiosInstance.post(`/payment/momo/create`, rest, {
+      params: {
+        amount,
+        orderId,
+        requestId,
+      },
+    });
   },
 
   // MoMo gọi về IPN để báo trạng thái thanh toán

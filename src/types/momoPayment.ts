@@ -11,6 +11,10 @@ export interface CreatePaymentResponse {
   payUrl: string;
   orderId?: string;
   requestId?: string;
+  resultCode?: number | string;
+  message?: string;
+  amount?: number;
+  responseTime?: number;
   [key: string]: unknown;
 }
 
