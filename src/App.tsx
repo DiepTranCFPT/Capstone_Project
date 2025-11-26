@@ -89,7 +89,7 @@ import ReportingPage from "./pages/advisor/ReportingPage";
 import ConsultationPage from "./pages/advisor/ConsultationPage";
 import APPathwaysPage from "./pages/advisor/APPathwaysPage";
 import RankingPage from "./pages/ranking/RankingPage";
-import WalletPage from "./pages/generics/wallet/WalletPage";
+import WalletPage from "./components/generic/wallet/WalletPage";
 import AdminDashboardPage from "./pages/admins/AdminDashboardPage";
 import PackagePaymentManagerPage from "./pages/admins/PackagePaymentManagerPage";
 import TeacherAvailabilityPage from "./pages/teachers/TeacherAvailabilityPage";
