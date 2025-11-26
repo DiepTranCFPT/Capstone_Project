@@ -95,6 +95,7 @@ import PackagePaymentManagerPage from "./pages/admins/PackagePaymentManagerPage"
 import TeacherAvailabilityPage from "./pages/teachers/TeacherAvailabilityPage";
 import TeacherProfilePage from "./pages/teachers/TeacherProfilePage";
 import LoadingPage from "./pages/LoadingPage";
+import PaymentResult from "./pages/checkWallet/PaymentResult";
 import MyWalletPage from "./pages/teachers/MyWalletPage";
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -174,6 +175,7 @@ function App() {
           <Route path="/ranking" element={<RankingPage />} />
           <Route path="learning-pathway" element={<LearningPathwayPage />} />
           <Route path="/wallet" element={<WalletPage />} />
+        <Route path="/wallet/result" element={<PaymentResult />} />
         </Route>
 
         {/* Student routes with StudentLayout */}

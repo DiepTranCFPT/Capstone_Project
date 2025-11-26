@@ -1,7 +1,84 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, createSearchParams, useNavigate, useSearchParams } from "react-router-dom";
+import useMomoPayment from "~/hooks/useMomoPayment";
 
 const LoadingPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { ipn } = useMomoPayment();
+  const [verifying, setVerifying] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState(
+    "Đang kiểm tra giao dịch MoMo, vui lòng chờ..."
+  );
+
+  useEffect(() => {
+    const orderId = searchParams.get("orderId");
+    const requestId = searchParams.get("requestId");
+    const transId = searchParams.get("transId");
+    const resultCode = searchParams.get("resultCode");
+
+    if (!orderId || !requestId || !transId || verifying) return;
+
+    const payload = {
+      partnerCode: searchParams.get("partnerCode") || "",
+      orderId,
+      requestId,
+      amount: Number(searchParams.get("amount") || 0),
+      orderInfo: searchParams.get("orderInfo") || "",
+      orderType: searchParams.get("orderType") || "",
+      transId,
+      resultCode: Number(resultCode || 0),
+      message: searchParams.get("message") || "",
+      payType: searchParams.get("payType") || "",
+      responseTime: Number(searchParams.get("responseTime") || 0),
+      extraData: searchParams.get("extraData") || "",
+      signature: searchParams.get("signature") || "",
+    };
+
+    const redirectToResult = (status: "success" | "failed", message: string) => {
+      navigate({
+        pathname: "/wallet/result",
+        search: createSearchParams({
+          status,
+          message,
+          amount: String(payload.amount ?? 0),
+          orderId: payload.orderId,
+          transId: payload.transId,
+          resultCode: String(payload.resultCode ?? ""),
+        }).toString(),
+      });
+    };
+
+    setVerifying(true);
+    setVerificationMessage("Đang xác minh giao dịch với MoMo...");
+
+    void (async () => {
+      try {
+        const response = await ipn(payload);
+        const successCodes = [0, 200, "0", "200"];
+        const isSuccess =
+          successCodes.includes(response?.code as never) ||
+          successCodes.includes(payload.resultCode as never);
+
+        if (isSuccess) {
+          redirectToResult(
+            "success",
+            response?.message || "Thanh toán đã được xác nhận thành công."
+          );
+        } else {
+          redirectToResult(
+            "failed",
+            response?.message || "Không xác thực được giao dịch, vui lòng thử lại."
+          );
+        }
+      } catch {
+        redirectToResult("failed", "Có lỗi xảy ra khi xác minh giao dịch.");
+      } finally {
+        setVerifying(false);
+      }
+    })();
+  }, [ipn, navigate, searchParams, verifying]);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 via-white to-blue-50 px-6 py-16">
       <div className="max-w-5xl w-full flex flex-col items-center text-center space-y-10">
@@ -29,9 +106,9 @@ const LoadingPage: React.FC = () => {
             <span className="text-teal-500"> chỉ còn chờ bạn!</span>
           </h1>
           <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto">
-            Chúc mừng bạn đã nạp thành công vào hệ thống học tập AP LMS! Chúng tôi đang
-            đồng bộ số dư ví và kích hoạt các tính năng cần thiết để bạn tiếp tục trải
-            nghiệm liền mạch.
+            {verifying
+              ? verificationMessage
+              : "Hệ thống đang xử lý yêu cầu nạp tiền và chờ xác nhận từ MoMo. Bạn vui lòng đợi trong giây lát để biết kết quả chính xác."}
           </p>
         </div>
 
