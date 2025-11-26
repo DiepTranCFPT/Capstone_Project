@@ -95,6 +95,7 @@ import PackagePaymentManagerPage from "./pages/admins/PackagePaymentManagerPage"
 import TeacherAvailabilityPage from "./pages/teachers/TeacherAvailabilityPage";
 import TeacherProfilePage from "./pages/teachers/TeacherProfilePage";
 import LoadingPage from "./pages/LoadingPage";
+import MyWalletPage from "./pages/teachers/MyWalletPage";
 // Layout Wrapper for common UI elements
 const Layout = () => (
   <div className="flex flex-col min-h-screen">
@@ -224,6 +225,7 @@ function App() {
           <Route path="availability" element={<TeacherAvailabilityPage />} />
           <Route path="bookings" element={<TeacherBookingRequestsPage />} />
           <Route path="analytics" element={<ClassAnalyticsPage />} />
+          <Route path="wallet" element={<MyWalletPage />} />
         </Route>
 
         {/* Parent routes with ParentLayout */}
