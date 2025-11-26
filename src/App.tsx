@@ -79,6 +79,7 @@ import ParentBillingPage from "./pages/parents/ParentBillingPage";
 import GoogleCallbackPage from "./components/auth/GoogleCallbackPage";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
 import MaterialManagerPage from "./pages/teachers/MaterialManagerPage";
+import ParentProfileDashboard from "./components/parents/profile/ParentProfileDashboard";
 
 // --- Advisor Imports ---
 import AdvisorLayout from "./layout/advisor/AdvisorLayout";
@@ -228,6 +229,7 @@ function App() {
           </ProtectedRoute>}>
           <Route path="dashboard" element={<ParentDashboardPage />} />
           <Route path="notifications" element={<NotificationCenterPage />} />
+          <Route path="profile" element={<ParentProfileDashboard />} />
           <Route path="link-student" element={<LinkStudentPage />} />
           <Route path="student/:studentId" element={<StudentDetailPage />} />
           <Route path="billing" element={<ParentBillingPage />} />
