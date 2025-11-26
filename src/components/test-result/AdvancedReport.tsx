@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { BarChartOutlined, UsergroupAddOutlined, AimOutlined, CheckCircleOutlined, RobotOutlined, SendOutlined } from '@ant-design/icons';
+import {
+    BarChartOutlined,
+    // UsergroupAddOutlined,
+    // AimOutlined,
+    CheckCircleOutlined,
+    RobotOutlined,
+    SendOutlined
+} from '@ant-design/icons';
 import type { AttemptResultDetail } from '~/types/examAttempt';
 import { useAiExamAsk } from '~/hooks/useAiExamAsk';
 import { useAuth } from '~/hooks/useAuth';
@@ -75,17 +82,17 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
     }, [attemptResultDetail]);
 
     // Comparison data
-    const comparison = {
-        userScore: attemptResultDetail?.score || 0,
-        averageScore: 70 // Placeholder
-    };
+    // const comparison = {
+    //     userScore: attemptResultDetail?.score || 0,
+    //     averageScore: 70 // Placeholder
+    // };
 
     // Suggestions
-    const suggestions = [
-        "Consider elaborating on the historical context.",
-        "Your conclusion could be stronger.",
-        "Check for minor grammatical errors in the second paragraph.",
-    ];
+    // const suggestions = [
+    //     "Consider elaborating on the historical context.",
+    //     "Your conclusion could be stronger.",
+    //     "Check for minor grammatical errors in the second paragraph.",
+    // ];
 
     // CẬP NHẬT: Tính toán detailedAnswers dựa trên `studentAnswer`
     const detailedAnswers = React.useMemo(() => {
@@ -152,7 +159,7 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
                 </div>
 
                 {/* Comparison */}
-                <div>
+                {/* <div>
                     <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><UsergroupAddOutlined className="mr-2 text-teal-500" />So sánh kết quả</h4>
                     <p className="text-gray-600">Điểm của bạn so với điểm trung bình của những người dùng khác.</p>
                     <div className="flex items-baseline justify-center gap-4 mt-2 p-4 bg-gray-50 rounded-lg">
@@ -160,15 +167,15 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
                         <div className="text-gray-400">vs</div>
                         <div><span className="text-3xl font-bold text-gray-500">{comparison.averageScore}%</span><p className="text-sm">Trung bình</p></div>
                     </div>
-                </div>
+                </div> */}
 
                 {/* Suggestions */}
-                <div>
+                {/* <div>
                     <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><AimOutlined className="mr-2 text-teal-500" />Chủ đề cần cải thiện</h4>
                     <ul className="list-disc list-inside space-y-1 text-gray-600">
                         {suggestions.map((s, i) => <li key={i}>{s}</li>)}
                     </ul>
-                </div>
+                </div> */}
                 {/* Detailed Answers */}
                 <div>
                     <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><CheckCircleOutlined className="mr-2 text-teal-500" />Đáp án và giải thích chi tiết</h4>
@@ -273,8 +280,8 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
                                                 onClick={handleAskAiSubmit}
                                                 disabled={isAiLoading || !studentQuestion.trim()}
                                                 className={`absolute right-2 p-2 rounded-lg transition-all duration-200 ${isAiLoading || !studentQuestion.trim()
-                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                        : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
+                                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                    : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
                                                     }`}
                                             >
                                                 {isAiLoading ? (
@@ -315,13 +322,13 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
                                                         <div className="prose prose-blue prose-sm max-w-none text-gray-600 leading-relaxed">
                                                             <ReactMarkdown
                                                                 components={{
-                                                                    p: ({ node, ...props }) => <p className="mb-3 last:mb-0" {...props} />,
-                                                                    ul: ({ node, ...props }) => <ul className="list-disc list-outside ml-5 mb-3 space-y-1" {...props} />,
-                                                                    ol: ({ node, ...props }) => <ol className="list-decimal list-outside ml-5 mb-3 space-y-1" {...props} />,
-                                                                    li: ({ node, ...props }) => <li className="pl-1" {...props} />,
-                                                                    strong: ({ node, ...props }) => <strong className="font-bold text-gray-800" {...props} />,
-                                                                    code: ({ node, ...props }) => <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-pink-600 border border-gray-200" {...props} />,
-                                                                    blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-blue-200 pl-4 italic text-gray-500 my-4" {...props} />,
+                                                                    p: ({ ...props }) => <p className="mb-3 last:mb-0" {...props} />,
+                                                                    ul: ({ ...props }) => <ul className="list-disc list-outside ml-5 mb-3 space-y-1" {...props} />,
+                                                                    ol: ({ ...props }) => <ol className="list-decimal list-outside ml-5 mb-3 space-y-1" {...props} />,
+                                                                    li: ({ ...props }) => <li className="pl-1" {...props} />,
+                                                                    strong: ({ ...props }) => <strong className="font-bold text-gray-800" {...props} />,
+                                                                    code: ({ ...props }) => <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-pink-600 border border-gray-200" {...props} />,
+                                                                    blockquote: ({ ...props }) => <blockquote className="border-l-4 border-blue-200 pl-4 italic text-gray-500 my-4" {...props} />,
                                                                 }}
                                                             >
                                                                 {aiResponse}

@@ -11,8 +11,15 @@ interface ResultSummaryProps {
 const ResultSummary: React.FC<ResultSummaryProps> = ({ isPractice, attemptResultDetail, onReviewRequest }) => {
      const totalQuestions = attemptResultDetail?.questions.length || 0;
     
-    // CẬP NHẬT: Tính toán số câu đúng dựa trên `studentAnswer.score`
-    const correct = attemptResultDetail?.questions.filter(q => q.studentAnswer && q.studentAnswer.score > 0).length || 0;
+    // CẬP NHẬT: Tính toán số câu đúng dựa trên so sánh selectedAnswerId với correctAnswer.id hoặc score > 0
+    const correct = attemptResultDetail?.questions.filter(q => {
+        if (!q.studentAnswer) return false;
+        if (q.studentAnswer.selectedAnswerId) {
+            return q.studentAnswer.selectedAnswerId === q.studentAnswer.correctAnswer?.id;
+        } else {
+            return q.studentAnswer.score && q.studentAnswer.score > 0;
+        }
+    }).length || 0;
     
     const incorrect = totalQuestions - correct;
     const accuracy = totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0;
@@ -20,6 +27,22 @@ const ResultSummary: React.FC<ResultSummaryProps> = ({ isPractice, attemptResult
 
     return (
         <div className="bg-white p-6 rounded-lg shadow border border-gray-300">
+            {/* Warning for PENDING_GRADING status */}
+            {attemptResultDetail?.status === 'PENDING_GRADING' && (
+                <div className="mb-6 p-4 rounded-lg bg-orange-50 border border-orange-200 text-orange-800">
+                    <div className="flex items-center">
+                        <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+                        </svg>
+                        <div>
+                            <h4 className="font-semibold">This is not the final result</h4>
+                            <p className="text-sm mt-1">Your exam is still being graded for FRQ questions. Results will be updated once grading is complete.</p>
+                            <p className="text-sm mt-1"><strong>Note:</strong> Đây chưa phải là kết quả cuối cùng, bài thi vẫn đang trong quá trình chấm phần tự luận</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex justify-between items-center mb-4">
                 <div>
                     <p className="text-gray-600">
