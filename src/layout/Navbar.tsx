@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "~/hooks/useAuth";
-import { FaSignOutAlt } from "react-icons/fa";
+import { FaSignOutAlt, FaMoneyBillWave } from "react-icons/fa";
 import { IoPersonCircleOutline } from "react-icons/io5";
 
 const Navbar: React.FC = () => {
@@ -10,6 +10,7 @@ const Navbar: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const toggleModal = () => {
     setShowModal(!showModal);
@@ -80,6 +81,14 @@ const Navbar: React.FC = () => {
 
       {/* Actions */}
       <div className="flex items-center gap-4">
+        <button
+          type="button"
+          title="Ví thanh toán"
+          onClick={() => navigate("/wallet")}
+          className="w-11 h-11 flex items-center justify-center rounded-full border border-teal-100 text-teal-500 hover:bg-teal-50 hover:scale-105 transition-all duration-300 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
+        >
+          <FaMoneyBillWave className="w-5 h-5" />
+        </button>
         {!initialLoading && !isAuthenticated ? (
           <>
             <Link
