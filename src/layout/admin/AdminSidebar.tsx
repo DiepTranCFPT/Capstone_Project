@@ -91,7 +91,7 @@ export default function AdminSidebar() {
     >
       <div
         className={`${!collapsed
-            ? "flex justify-between items-center border-b"
+          ? "flex justify-between items-center border-b border-gray-200"
             : "flex items-center"
           }`}
       >
@@ -112,8 +112,8 @@ export default function AdminSidebar() {
 
       <div
         className={`${!collapsed
-            ? "px-4 py-3 border-b flex items-center gap-3"
-            : "px-4 py-3 border-b flex items-center justify-center"
+            ? "px-4 py-3 border-b border-gray-200 flex items-center gap-3"
+            : "px-4 py-3 border-b border-gray-200 flex items-center justify-center"
           }`}
       >
         <Link to="/admin/profile">

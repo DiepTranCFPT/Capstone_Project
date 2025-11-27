@@ -63,3 +63,26 @@ export interface UserQueryParams {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }
+
+export interface UserDashboardParams {
+  keyword?: string;
+  role?: string;
+  isVerified?: boolean;
+  isLocked?: boolean;
+  pageNo?: number;
+  pageSize?: number;
+  sorts?: string[];
+}
+
+export interface UserDashboardResponse {
+  code: number;
+  message: string;
+  data: {
+    pageNo: number;
+    pageSize: number;
+    totalPage: number;
+    totalElement: number;
+    sortBy: string[];
+    items: User[];
+  };
+}
