@@ -1,11 +1,12 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Empty, List, Modal, Spin, Typography, Button, Form, Input, Popconfirm, Tooltip, message, Upload } from "antd";
 import type { UploadFile } from "antd";
 import { EditOutlined, DeleteOutlined, EyeOutlined, UploadOutlined } from "@ant-design/icons";
 import LessonService from "~/services/LessonService";
 import FileContentService from "~/services/fileContentService";
 import type { LearningMaterial } from "~/types/learningMaterial";
-import type { Lesson, LessonVideoAsset } from "~/types/lesson";
+import type { Lesson } from "~/types/lesson";
+import useLessonPreview from "~/hooks/useLessonPreview";
 
 export interface LessonFormValues {
   name: string;
@@ -58,108 +59,19 @@ const LessonModal: React.FC<LessonModalProps> = ({
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletingLessonId, setDeletingLessonId] = useState<string | null>(null);
-  const [previewLesson, setPreviewLesson] = useState<Lesson | null>(null);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [loadingLessonDetail, setLoadingLessonDetail] = useState(false);
-  const [loadingPreviewDetail, setLoadingPreviewDetail] = useState(false);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [videoFileList, setVideoFileList] = useState<UploadFile[]>([]);
   const [pdfOpening, setPdfOpening] = useState(false);
-  const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
-  const [previewVideoLoading, setPreviewVideoLoading] = useState(false);
-  const previewVideoCache = useRef<Record<string, string>>({});
-  const openPreviewModal = async (lesson: Lesson) => {
-    setPreviewLesson(lesson);
-    setIsPreviewOpen(true);
-    try {
-      setLoadingPreviewDetail(true);
-      const response = await LessonService.getById(lesson.id);
-      const detail = response.data.data ?? lesson;
-      setPreviewLesson(detail);
-      await loadPreviewVideo(detail);
-    } catch (error) {
-      console.error("Fetch preview detail error:", error);
-      message.error("Không thể tải chi tiết bài học.");
-      await loadPreviewVideo(lesson);
-    } finally {
-      setLoadingPreviewDetail(false);
-    }
-  };
-
-  const closePreviewModal = () => {
-    setIsPreviewOpen(false);
-    setPreviewLesson(null);
-    setPreviewVideoUrl(null);
-  };
-
-  const resolveVideoReference = (lesson: Lesson | null): string | null => {
-    if (!lesson) return null;
-    return lesson.video ?? lesson.url ?? lesson.file ?? null;
-  };
-
-  const loadPreviewVideo = async (lesson: Lesson | null) => {
-    const reference = resolveVideoReference(lesson);
-    if (!reference) {
-      setPreviewVideoUrl(null);
-      return;
-    }
-    if (/^https?:\/\//i.test(reference)) {
-      setPreviewVideoUrl(reference);
-      return;
-    }
-    if (!/^VIDEO_/i.test(reference)) {
-      setPreviewVideoUrl(reference);
-      return;
-    }
-
-    const cached = previewVideoCache.current[reference];
-    if (cached) {
-      setPreviewVideoUrl(cached);
-      return;
-    }
-
-    try {
-      setPreviewVideoLoading(true);
-      const res = await LessonService.getVideos(reference);
-      const payload =
-        res.data && typeof res.data === "object" && "data" in res.data
-          ? (res.data as { data: unknown }).data
-          : res.data;
-      const matched = Array.isArray(payload)
-        ? payload.find(
-            (video) =>
-              video.id === reference ||
-              video.name === reference ||
-              video.nameFile === reference
-          )
-        : payload;
-      if (typeof matched === "string") {
-        previewVideoCache.current[reference] = matched;
-        setPreviewVideoUrl(matched);
-        return;
-      }
-
-      const matchedAsset = matched as LessonVideoAsset | undefined;
-      const assetUrl =
-        matchedAsset?.url ||
-        matchedAsset?.videoUrl ||
-        matchedAsset?.streamUrl ||
-        matchedAsset?.downloadUrl;
-      if (assetUrl) {
-        previewVideoCache.current[reference] = assetUrl;
-        setPreviewVideoUrl(assetUrl);
-      } else {
-        setPreviewVideoUrl(null);
-        message.error("Không tìm thấy video bài học.");
-      }
-    } catch (error) {
-      console.error("Load video asset error:", error);
-      message.error("Không tải được video bài học.");
-      setPreviewVideoUrl(null);
-    } finally {
-      setPreviewVideoLoading(false);
-    }
-  };
+  const {
+    previewLesson,
+    isPreviewOpen,
+    loadingPreviewDetail,
+    previewVideoUrl,
+    previewVideoLoading,
+    openPreview,
+    closePreview,
+  } = useLessonPreview();
 
   const renderPreviewContent = () => {
     if (!previewLesson) {
@@ -460,7 +372,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
                           type="text"
                           size="small"
                           icon={<EyeOutlined />}
-                          onClick={() => openPreviewModal(lesson)}
+                          onClick={() => openPreview(lesson)}
                           aria-label="Xem bài học"
                         />
                       </Tooltip>
@@ -584,11 +496,11 @@ const LessonModal: React.FC<LessonModalProps> = ({
         title={previewLesson ? previewLesson.name ?? previewLesson.title : "Lesson preview"}
         open={isPreviewOpen}
         footer={[
-          <Button key="close" onClick={closePreviewModal}>
+          <Button key="close" onClick={closePreview}>
             Close
           </Button>,
         ]}
-        onCancel={closePreviewModal}
+        onCancel={closePreview}
         width={900}
         destroyOnClose
       >
