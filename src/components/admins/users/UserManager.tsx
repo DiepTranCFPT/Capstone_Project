@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   Table,
   Button,
@@ -11,10 +11,12 @@ import {
   Card,
   Popconfirm,
   Tabs,
+  message,
 } from "antd";
 import { SearchOutlined, PlusOutlined } from "@ant-design/icons";
 import { RefreshCcw, Trash2, Shield } from "lucide-react";
-import { useUsers } from "~/hooks/useUsers";
+import { useAdminUsers } from "~/hooks/useAdminUsers";
+import UserService from "~/services/userService";
 import type { User } from "~/types/user";
 import type { ColumnsType } from "antd/es/table";
 import UserFilter from "./UserFilter";
@@ -29,41 +31,36 @@ const UserManagement: React.FC = () => {
     loading,
     total,
     pageNo,
-    search,
+    pageSize,
+    keyword,
+    role,
+    isVerified,
+    isLocked,
     setPageNo,
-    setSearch,
+    setKeyword,
+    setRole,
+    setIsVerified,
+    setIsLocked,
     fetchUsers,
-    handleDeleteUser,
-  } = useUsers();
+  } = useAdminUsers();
 
-  const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [permissionModalVisible, setPermissionModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  const filteredData = useMemo(() => {
-    return users.filter((user) => {
-      const matchesSearch =
-        user.firstName?.toLowerCase().includes(search.toLowerCase()) ||
-        user.lastName?.toLowerCase().includes(search.toLowerCase()) ||
-        user.email?.toLowerCase().includes(search.toLowerCase());
-
-      const matchesRole =
-        roleFilter === "all" ||
-        (Array.isArray(user.roles) && user.roles.includes(roleFilter));
-
-      const matchesStatus =
-        statusFilter === "all" ||
-        (statusFilter === "active" ? user.active : !user.active);
-
-      return matchesSearch && matchesRole && matchesStatus;
-    });
-  }, [users, search, roleFilter, statusFilter]);
-
-  const uniqueRoles = useMemo(() => {
-    const allRoles = users.flatMap((u) => u.roles || []);
-    return Array.from(new Set(allRoles));
-  }, [users]);
+  const handleDeleteUser = async (id: string) => {
+    try {
+      const res = await UserService.deleteUser(id);
+      if (res && res.code === 1000) {
+        message.success("Đã xóa người dùng");
+        fetchUsers();
+      } else {
+        message.error(res?.message || "Không thể xóa người dùng");
+      }
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      message.error("Xóa người dùng thất bại");
+    }
+  };
 
   const columns: ColumnsType<User> = [
     {
@@ -117,9 +114,8 @@ const UserManagement: React.FC = () => {
           >
             <div className="flex items-center">
               <div
-                className={`w-2 h-2 rounded-full mr-2 ${
-                  active ? "bg-green-400" : "bg-red-400"
-                }`}
+                className={`w-2 h-2 rounded-full mr-2 ${active ? "bg-green-400" : "bg-red-400"
+                  }`}
               />
               {active ? "Hoạt động" : "Ngưng hoạt động"}
             </div>
@@ -182,8 +178,8 @@ const UserManagement: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <Input.Search
               placeholder="Tìm kiếm theo tên hoặc email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
               onSearch={() => fetchUsers()}
               allowClear
               className="max-w-md"
@@ -211,28 +207,29 @@ const UserManagement: React.FC = () => {
         </div>
 
         <UserFilter
-          roleFilter={roleFilter}
-          statusFilter={statusFilter}
-          search={search}
-          setRoleFilter={setRoleFilter}
-          setStatusFilter={setStatusFilter}
-          setSearch={setSearch}
-          uniqueRoles={uniqueRoles}
+          keyword={keyword}
+          role={role}
+          isVerified={isVerified}
+          isLocked={isLocked}
+          setKeyword={setKeyword}
+          setRole={setRole}
+          setIsVerified={setIsVerified}
+          setIsLocked={setIsLocked}
+          onRefresh={fetchUsers}
           total={total}
-          filteredCount={filteredData.length}
         />
 
         <div className="bg-white rounded-lg border border-gray-200">
           <Table
             rowKey="id"
             columns={columns}
-            dataSource={filteredData}
+            dataSource={users}
             loading={loading}
             pagination={{
-              current: pageNo,
-              pageSize: 10,
-              total: filteredData.length,
-              onChange: (p) => setPageNo(p),
+              current: pageNo + 1, // API is 0-indexed, Antd is 1-indexed
+              pageSize: pageSize,
+              total: total,
+              onChange: (p) => setPageNo(p - 1),
               showSizeChanger: true,
               showQuickJumper: true,
               showTotal: (total, range) =>
