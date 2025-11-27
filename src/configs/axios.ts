@@ -13,7 +13,7 @@ const axiosInstance = axios.create({
         'Accept': 'application/json',
     },
     withCredentials: true,
-    timeout: 30000,
+    // timeout: 30000,
 });
 
 // Public axios instance without authentication (for public endpoints)

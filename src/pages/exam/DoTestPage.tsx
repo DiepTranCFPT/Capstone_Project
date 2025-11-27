@@ -264,7 +264,7 @@ const DoTestPage: React.FC = () => {
                 setShowConFirmed(false);
                 // Clear all exam progress after successful submission
                 clearExamProgress();
-                navigate(`/test-result/${activeExamData.examAttemptId}`);
+                navigate(`/exam-test`);
             } else {
                 // If submission failed, close modal anyway to prevent getting stuck
                 setShowConFirmed(false);

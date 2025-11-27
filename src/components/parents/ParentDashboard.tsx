@@ -66,7 +66,11 @@ const ParentDashboard: React.FC = () => {
             >
               <Row gutter={16}>
                 <Col span={12}>
-                  <Progress type="circle" percent={Math.round(child.averageScore)} />
+                  <Progress
+                    type="circle"
+                    percent={Number(child.averageScore.toFixed(1))}
+                    format={(percent) => `${percent}%`}
+                  />
                   <Text className="text-center block mt-2">Average Score</Text>
                 </Col>
                 <Col span={12}>
