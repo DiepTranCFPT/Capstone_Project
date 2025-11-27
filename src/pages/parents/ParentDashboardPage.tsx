@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Row, Col, Card, Statistic } from 'antd';
 import { ArrowUpOutlined, UserOutlined } from '@ant-design/icons';
 import ParentDashboard from '~/components/parents/ParentDashboard';
 import { useParent } from '~/hooks/useParent';
 
 const ParentDashboardPage: React.FC = () => {
-  const { children } = useParent();
+  const { children, fetchChildren } = useParent();
+
+  useEffect(() => {
+    fetchChildren();
+  }, [fetchChildren]);
 
   // Calculate statistics from children data
   const totalChildren = children.length;

@@ -143,11 +143,26 @@ export const useExamAttempt = () => {
       setLoading(true);
       setError(null);
       try {
+        // Chạy subscribe API ngầm (không đợi kết quả)
+        ExamAttemptService.subscribe(attemptId)
+          .then((subscribeRes) => {
+            console.log('subscribe completed', subscribeRes);
+            if (subscribeRes.data.code === 0 || subscribeRes.data.code === 1000) {
+              toast.success("Kết quả chi tiết đã sẵn sàng! Vào xem ngay.");
+              setAttemptResultDetail(subscribeRes.data.data);
+            }
+          })
+          .catch((err) => {
+            console.error('Subscribe failed:', err);
+            toast.error("Không thể tải kết quả chi tiết. Vui lòng thử lại sau.");
+          });
+
+        // Submit API chạy ngay không cần đợi subscribe
         const res = await ExamAttemptService.submit(attemptId, payload);
         if (res.data.code === 0 || res.data.code === 1000) {
           setSubmissionResult(res.data.data);
           setActiveAttempt(null); // Xóa bài thi đang làm
-          toast.success("Nộp bài thành công!");
+          toast.success("Nộp bài thành công!, đợi thống báo kết quả chi tiết.");
           return res.data.data;
         } else {
           throw new Error(res.data.message || "Không thể nộp bài");
@@ -335,10 +350,10 @@ export const useExamAttemptHistory = () => {
   const [error, setError] = useState<string | null>(null);
   const [sorts, setSorts] = useState<string[]>(["startTime_desc"]);
 
-  if(!sorts) {
+  if (!sorts) {
     setSorts(["startTime_desc"]);
   }
-  
+
   const handleError = (err: unknown, defaultMessage: string) => {
     setLoading(false);
     const e = err as { response?: { data?: ApiResponse<unknown> } } & Error;
