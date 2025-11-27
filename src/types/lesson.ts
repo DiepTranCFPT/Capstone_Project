@@ -6,6 +6,7 @@ export interface Lesson {
     name?: string;
     file?: string;
     url?: string;
+    video?: string;
     description?: string;
     learningMaterialId: string;
     order?: number; // Thứ tự hiển thị trong learning material
@@ -29,5 +30,14 @@ export interface Lesson {
     total: number; // Tổng số item
     page: number; // Trang hiện tại
     limit: number; // Số item mỗi trang
+  }
+
+  export interface LessonVideoAsset {
+    id: string;
+    name: string;
+    url: string;
+    thumbnail?: string;
+    duration?: number;
+    [key: string]: unknown;
   }
   

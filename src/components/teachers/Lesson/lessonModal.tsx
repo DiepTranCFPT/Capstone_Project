@@ -10,14 +10,15 @@ import type { Lesson } from "~/types/lesson";
 export interface LessonFormValues {
   name: string;
   file?: File | string | null;
-  url?: string;
+  video?: File | string | null;
   description?: string;
+  url?: string;
 }
 
 interface LessonFormFields {
   name: string;
   file?: UploadFile[];
-  url?: string;
+  video?: UploadFile[];
   description?: string;
 }
 
@@ -32,6 +33,8 @@ interface LessonModalProps {
   onDeleteLesson?: (lessonId: string) => Promise<void> | void;
   creating?: boolean;
 }
+
+const VIDEO_PLACEHOLDER_URL = "uploaded_video";
 
 const LessonModal: React.FC<LessonModalProps> = ({
   open,
@@ -60,19 +63,23 @@ const LessonModal: React.FC<LessonModalProps> = ({
   const [loadingLessonDetail, setLoadingLessonDetail] = useState(false);
   const [loadingPreviewDetail, setLoadingPreviewDetail] = useState(false);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [videoFileList, setVideoFileList] = useState<UploadFile[]>([]);
   const [pdfOpening, setPdfOpening] = useState(false);
+  const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
+  const [previewVideoLoading, setPreviewVideoLoading] = useState(false);
   const openPreviewModal = async (lesson: Lesson) => {
     setPreviewLesson(lesson);
     setIsPreviewOpen(true);
     try {
       setLoadingPreviewDetail(true);
       const response = await LessonService.getById(lesson.id);
-      if (response.data.data) {
-        setPreviewLesson(response.data.data);
-      }
+      const detail = response.data.data ?? lesson;
+      setPreviewLesson(detail);
+      await loadPreviewVideo(detail);
     } catch (error) {
       console.error("Fetch preview detail error:", error);
       message.error("Không thể tải chi tiết bài học.");
+      await loadPreviewVideo(lesson);
     } finally {
       setLoadingPreviewDetail(false);
     }
@@ -81,13 +88,16 @@ const LessonModal: React.FC<LessonModalProps> = ({
   const closePreviewModal = () => {
     setIsPreviewOpen(false);
     setPreviewLesson(null);
+    if (previewVideoUrl?.startsWith("blob:")) {
+      window.URL.revokeObjectURL(previewVideoUrl);
+    }
+    setPreviewVideoUrl(null);
   };
 
-const getEmbeddedUrl = (lesson: Lesson): string | null => {
-    const rawUrl = lesson.url ?? lesson.file ?? "";
-    if (!rawUrl) return null;
+const getEmbeddedUrl = (sourceUrl?: string | null): string | null => {
+    if (!sourceUrl) return null;
     try {
-      const url = new URL(rawUrl);
+      const url = new URL(sourceUrl);
       const host = url.hostname;
       if (host.includes("youtube.com")) {
         const videoId = url.searchParams.get("v");
@@ -101,9 +111,42 @@ const getEmbeddedUrl = (lesson: Lesson): string | null => {
           return `https://www.youtube.com/embed/${pathId}`;
         }
       }
-      return rawUrl;
+      return sourceUrl;
     } catch {
-      return rawUrl;
+      return sourceUrl;
+    }
+  };
+
+  const resolveVideoReference = (lesson: Lesson | null): string | null => {
+    if (!lesson) return null;
+    return lesson.video ?? lesson.url ?? lesson.file ?? null;
+  };
+
+  const loadPreviewVideo = async (lesson: Lesson | null) => {
+    const reference = resolveVideoReference(lesson);
+    if (!reference) {
+      setPreviewVideoUrl(null);
+      return;
+    }
+    if (/^https?:\/\//i.test(reference)) {
+      setPreviewVideoUrl(reference);
+      return;
+    }
+    if (!/^VIDEO_/i.test(reference)) {
+      setPreviewVideoUrl(reference);
+      return;
+    }
+    try {
+      setPreviewVideoLoading(true);
+      const res = await LessonService.getVideoAsset(reference);
+      const blobUrl = window.URL.createObjectURL(res.data);
+      setPreviewVideoUrl(blobUrl);
+    } catch (error) {
+      console.error("Load video asset error:", error);
+      message.error("Không tải được video bài học.");
+      setPreviewVideoUrl(null);
+    } finally {
+      setPreviewVideoLoading(false);
     }
   };
 
@@ -115,7 +158,7 @@ const getEmbeddedUrl = (lesson: Lesson): string | null => {
         </div>
       );
     }
-    const embedUrl = getEmbeddedUrl(previewLesson);
+    const embedUrl = getEmbeddedUrl(previewVideoUrl ?? resolveVideoReference(previewLesson));
     const hasPdf = Boolean(previewLesson.file);
     const pdfName = previewLesson.file ? extractFileName(previewLesson.file) : "";
 
@@ -125,7 +168,7 @@ const getEmbeddedUrl = (lesson: Lesson): string | null => {
           {previewLesson.name ?? previewLesson.title ?? "Lesson"}
         </Typography.Title>
         <div className="rounded-xl overflow-hidden bg-black">
-          {loadingPreviewDetail ? (
+          {(loadingPreviewDetail || previewVideoLoading) ? (
             <div className="text-white text-center py-16">Đang tải nội dung...</div>
           ) : embedUrl ? (
             <iframe
@@ -215,11 +258,12 @@ const getEmbeddedUrl = (lesson: Lesson): string | null => {
     const initialValues: LessonFormFields = {
       name: nextValues?.name ?? "",
       description: nextValues?.description,
-      url: nextValues?.url ?? "",
       file: nextValues?.file ?? [],
+      video: nextValues?.video ?? [],
     };
     form.setFieldsValue(initialValues);
     setFileList(initialValues.file ?? []);
+    setVideoFileList(initialValues.video ?? []);
   };
 
   const openCreateModal = () => {
@@ -229,7 +273,7 @@ const getEmbeddedUrl = (lesson: Lesson): string | null => {
     resetFormState({
       name: `Lesson ${lessons.length + 1}`,
       file: [],
-      url: "",
+      video: [],
     });
     setFormMode("create");
     setEditingLesson(null);
@@ -246,21 +290,23 @@ const getEmbeddedUrl = (lesson: Lesson): string | null => {
       const detail = response.data.data ?? lesson;
       setEditingLesson(detail);
       const initialFileList = buildInitialUploadList(detail.file);
+      const initialVideoList = buildInitialUploadList(detail.video ?? detail.url);
       resetFormState({
         name: detail.name ?? detail.title ?? "",
         description: detail.description ?? "",
-        url: detail.url ?? "",
         file: initialFileList,
+        video: initialVideoList,
       });
     } catch (error) {
       console.error("Fetch lesson detail error:", error);
       message.error("Không thể tải thông tin bài học. Vui lòng thử lại.");
       const fallbackFileList = buildInitialUploadList(lesson.file);
+      const fallbackVideoList = buildInitialUploadList(lesson.video ?? lesson.url);
       resetFormState({
         name: lesson.name ?? lesson.title ?? "",
         description: lesson.description ?? "",
-        url: lesson.url ?? "",
         file: fallbackFileList,
+        video: fallbackVideoList,
       });
     } finally {
       setLoadingLessonDetail(false);
@@ -277,11 +323,17 @@ const getEmbeddedUrl = (lesson: Lesson): string | null => {
     const latestList = newFileList.slice(-1);
     setFileList(latestList);
     form.setFieldsValue({ file: latestList });
-    if (latestList.length > 0 || (form.getFieldValue("url") as string)?.trim()) {
-      form.setFields([
-        { name: "file", errors: [] },
-        { name: "url", errors: [] },
-      ]);
+    if (latestList.length > 0) {
+      form.setFields([{ name: "file", errors: [] }]);
+    }
+  };
+
+  const handleVideoUploadChange = ({ fileList: newFileList }: { fileList: UploadFile[] }) => {
+    const latestList = newFileList.slice(-1);
+    setVideoFileList(latestList);
+    form.setFieldsValue({ video: latestList });
+    if (latestList.length > 0) {
+      form.setFields([{ name: "video", errors: [] }]);
     }
   };
 
@@ -312,14 +364,14 @@ const getEmbeddedUrl = (lesson: Lesson): string | null => {
         name: values.name,
         description: values.description,
         file: normalizeFileValue(values.file),
-        url: values.url?.trim() ? values.url.trim() : undefined,
+        video: normalizeFileValue(values.video),
+        url: editingLesson?.url ?? VIDEO_PLACEHOLDER_URL,
       };
 
-      // Kiểm tra ít nhất một trong hai (file hoặc url) phải có
-      if (!payload.file && !payload.url) {
+      // Yêu cầu bắt buộc phải có video
+      if (!payload.video) {
         form.setFields([
-          { name: "file", errors: ["Vui lòng tải video hoặc chọn tài liệu PDF"] },
-          { name: "url", errors: ["Vui lòng tải video hoặc chọn tài liệu PDF"] },
+          { name: "video", errors: ["Vui lòng tải video bài giảng"] },
         ]);
         return;
       }
@@ -473,21 +525,25 @@ const getEmbeddedUrl = (lesson: Lesson): string | null => {
           </Form.Item>
 
           <Form.Item
-            label="Video URL"
-            name="url"
-            help="Nhập đường dẫn video (YouTube, Vimeo, ...)"
+            label="Video bài giảng"
+            required
+            name="video"
+            help="Tải lên video bài học (mp4, webm, ...)"
           >
-            <Input
-              placeholder="https://..."
-              onChange={(e) => {
-                if (e.target.value) {
-                  form.setFields([
-                    { name: "file", errors: [] },
-                    { name: "url", errors: [] },
-                  ]);
-                }
+            <Upload
+              multiple={false}
+              maxCount={1}
+              accept="video/*"
+              beforeUpload={() => false}
+              fileList={videoFileList}
+              onChange={handleVideoUploadChange}
+              onRemove={() => {
+                setVideoFileList([]);
+                form.setFieldsValue({ video: [] });
               }}
-            />
+            >
+              <Button icon={<UploadOutlined />}>Chọn video</Button>
+            </Upload>
           </Form.Item>
 
           <Form.Item
