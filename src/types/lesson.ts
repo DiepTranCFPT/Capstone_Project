@@ -32,10 +32,14 @@ export interface Lesson {
     limit: number; // Số item mỗi trang
   }
 
-  export interface LessonVideoAsset {
-    id: string;
-    name: string;
-    url: string;
+export interface LessonVideoAsset {
+    id?: string;
+    name?: string;
+    nameFile?: string;
+    url?: string;
+    videoUrl?: string;
+    streamUrl?: string;
+    downloadUrl?: string;
     thumbnail?: string;
     duration?: number;
     [key: string]: unknown;

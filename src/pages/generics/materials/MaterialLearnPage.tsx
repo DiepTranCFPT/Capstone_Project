@@ -1,46 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, message } from "antd";
 import { useMaterialDetail } from "~/hooks/useMaterialDetail";
 import { useLesson } from "~/hooks/useLesson";
-import type { Lesson } from "~/types/lesson";
+import type { Lesson, LessonVideoAsset } from "~/types/lesson";
 import FileContentService from "~/services/fileContentService";
-
-// Hàm chuyển đổi YouTube URL thành embed URL
-const getYouTubeEmbedUrl = (url: string): string | null => {
-  if (!url) return null;
-  
-  // Kiểm tra và chuyển đổi các định dạng YouTube URL
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-    /youtube\.com\/watch\?.*v=([^&\n?#]+)/,
-  ];
-  
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match && match[1]) {
-      return `https://www.youtube.com/embed/${match[1]}`;
-    }
-  }
-  
-  // Nếu đã là embed URL, trả về nguyên
-  if (url.includes('youtube.com/embed/')) {
-    return url;
-  }
-  
-  return null;
-};
-
-const isVideoFile = (url: string): boolean => {
-  if (!url) return false;
-  const lowerUrl = url.split("?")[0].toLowerCase();
-  const videoExtensions = [".mp4", ".mov", ".webm", ".mkv", ".avi", ".ogg"];
-  return videoExtensions.some((ext) => lowerUrl.endsWith(ext));
-};
-
-const isVideoSource = (url: string): boolean => {
-  return Boolean(getYouTubeEmbedUrl(url) || isVideoFile(url));
-};
+import LessonService from "~/services/LessonService";
 
 const MaterialLearnPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,6 +16,10 @@ const MaterialLearnPage: React.FC = () => {
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [activeTab, setActiveTab] = useState("about");
   const [openingFile, setOpeningFile] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoLoading, setVideoLoading] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const videoCache = useRef<Record<string, string>>({});
   const handleOpenPdf = async () => {
     if (!selectedLesson?.file) {
       message.warning("Không có tài liệu để xem.");
@@ -93,6 +62,84 @@ const MaterialLearnPage: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  const lessonVideoRef = useMemo(() => {
+    if (!selectedLesson) return null;
+    return selectedLesson.video ?? selectedLesson.url ?? null;
+  }, [selectedLesson]);
+
+  useEffect(() => {
+    const loadVideo = async () => {
+      if (!lessonVideoRef) {
+        setVideoUrl(null);
+        setVideoError(null);
+        return;
+      }
+
+      if (/^https?:\/\//i.test(lessonVideoRef)) {
+        setVideoUrl(lessonVideoRef);
+        setVideoError(null);
+        return;
+      }
+
+      if (!/^VIDEO_/i.test(lessonVideoRef)) {
+        setVideoUrl(lessonVideoRef);
+        setVideoError(null);
+        return;
+      }
+
+      const cached = videoCache.current[lessonVideoRef];
+      if (cached) {
+        setVideoUrl(cached);
+        setVideoError(null);
+        return;
+      }
+
+      try {
+        setVideoLoading(true);
+        setVideoError(null);
+        const res = await LessonService.getVideos(lessonVideoRef);
+        const payload =
+          res.data && typeof res.data === "object" && "data" in res.data
+            ? (res.data as { data: unknown }).data
+            : res.data;
+        const matched = Array.isArray(payload)
+          ? payload.find(
+              (video) =>
+                video.id === lessonVideoRef ||
+                video.name === lessonVideoRef ||
+                video.nameFile === lessonVideoRef
+            )
+          : payload;
+        if (typeof matched === "string") {
+          videoCache.current[lessonVideoRef] = matched;
+          setVideoUrl(matched);
+          return;
+        }
+        const matchedAsset = matched as LessonVideoAsset | undefined;
+        const assetUrl =
+          matchedAsset?.url ||
+          matchedAsset?.videoUrl ||
+          matchedAsset?.streamUrl ||
+          matchedAsset?.downloadUrl;
+        if (assetUrl) {
+          videoCache.current[lessonVideoRef] = assetUrl;
+          setVideoUrl(assetUrl);
+        } else {
+          setVideoUrl(null);
+          setVideoError("Không tìm thấy video.");
+        }
+      } catch (error) {
+        console.error("Load lesson video failed:", error);
+        setVideoUrl(null);
+        setVideoError("Không tải được video. Vui lòng thử lại sau.");
+      } finally {
+        setVideoLoading(false);
+      }
+    };
+
+    void loadVideo();
+  }, [lessonVideoRef]);
 
   if (materialLoading) {
     return (
@@ -145,34 +192,32 @@ const MaterialLearnPage: React.FC = () => {
               <>
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                   {(() => {
-                    const urlIsVideo = selectedLesson.url ? isVideoSource(selectedLesson.url) : false;
-                    const videoSource = urlIsVideo ? selectedLesson.url || "" : "";
-                    const embedUrl = videoSource ? getYouTubeEmbedUrl(videoSource) : null;
-                    if (videoSource && embedUrl) {
+                    if (videoLoading) {
                       return (
-                        <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-                          <iframe
-                            src={embedUrl}
-                            title={selectedLesson.title || selectedLesson.name || "Bài học"}
-                            className="absolute top-0 left-0 w-full h-full"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          />
+                        <div className="bg-gray-900 aspect-video flex items-center justify-center text-white">
+                          Đang tải video...
                         </div>
                       );
                     }
 
-                    if (videoSource && !embedUrl) {
+                    if (videoError) {
                       return (
-                        <div className="bg-gray-900 aspect-video flex items-center justify-center">
-                          <a
-                            href={videoSource}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                        <div className="bg-gray-900 aspect-video flex items-center justify-center text-white px-6 text-center">
+                          {videoError}
+                        </div>
+                      );
+                    }
+
+                    if (videoUrl) {
+                      return (
+                        <div className="bg-black aspect-video flex items-center justify-center">
+                          <video
+                            controls
+                            className="w-full h-full"
+                            src={videoUrl}
                           >
-                            Mở nội dung bài học
-                          </a>
+                            Trình duyệt của bạn không hỗ trợ video.
+                          </video>
                         </div>
                       );
                     }

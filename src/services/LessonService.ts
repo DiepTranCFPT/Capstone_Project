@@ -1,7 +1,7 @@
 import axiosInstance from "~/configs/axios";
 import type { AxiosResponse } from "axios";
 import type { ApiResponse } from "~/types/api";
-import type { Lesson, LessonQuery, PageInfo, LessonVideoAsset } from "~/types/lesson";
+import type { Lesson, LessonQuery, PageInfo } from "~/types/lesson";
 
 type LessonPayload = Partial<Omit<Lesson, "file" | "url" | "video">> & {
   file?: string | File | null;
@@ -82,13 +82,9 @@ const LessonService = {
     return axiosInstance.get(`/lessons/by-learning-material/${learningMaterialId}`);
   },
 
-  getVideos(): Promise<AxiosResponse<ApiResponse<LessonVideoAsset[]>>> {
-    return axiosInstance.get(`/videos`);
-  },
-
-  getVideoAsset(videoId: string): Promise<AxiosResponse<Blob>> {
-    return axiosInstance.get(`/videos/${videoId}`, {
-      responseType: "blob",
+  getVideos(nameFile?: string): Promise<AxiosResponse<unknown>> {
+    return axiosInstance.get(`/videos`, {
+      params: nameFile ? { nameFile } : undefined,
     });
   },
 };
