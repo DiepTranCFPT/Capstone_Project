@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
-import { FiArrowUpRight, FiTrendingUp } from "react-icons/fi";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FiArrowDownRight, FiArrowUpRight, FiTrendingUp } from "react-icons/fi";
 import { FaWallet } from "react-icons/fa";
 import { toast } from "~/components/common/Toast";
 import { useAuth } from "~/hooks/useAuth";
 import useMomoPayment from "~/hooks/useMomoPayment";
-import type { CreatePaymentResponse } from "~/types/momoPayment";
+import MomoPaymentService from "~/services/MomoPaymentService";
+import type { CreatePaymentResponse, TransactionResponse } from "~/types/momoPayment";
 
 const quickAmounts = [200_000, 500_000, 1_000_000, 2_000_000];
 
@@ -20,6 +21,10 @@ const WalletPage = () => {
   const { createPayment, loading, error } = useMomoPayment();
   const [amount, setAmount] = useState<number>(500_000);
   const [note, setNote] = useState<string>("Nạp AP Wallet");
+  const [transactions, setTransactions] = useState<TransactionResponse[]>([]);
+  const [txLoading, setTxLoading] = useState(false);
+  const [txError, setTxError] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState(0);
 
   const displayName = user ? `${user.firstName} ${user.lastName}` : "bạn";
   const formattedBalance = useMemo(
@@ -28,8 +33,8 @@ const WalletPage = () => {
         style: "currency",
         currency: "VND",
         maximumFractionDigits: 0,
-      }).format(12_450_000),
-    []
+      }).format(walletBalance),
+    [walletBalance]
   );
 
   const formatAmount = (value: number) =>
@@ -40,6 +45,103 @@ const WalletPage = () => {
     }).format(value);
 
   const generateId = () => `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
+  const formatDate = (value?: string) => {
+    if (!value) return "Không xác định";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return new Intl.DateTimeFormat("vi-VN", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(date);
+  };
+
+  const loadTransactions = useCallback(async () => {
+    if (!user?.id) {
+      setTransactions([]);
+      setWalletBalance(0);
+      return;
+    }
+    try {
+      setTxLoading(true);
+      setTxError(null);
+      const [txRes, paymentRes] = await Promise.all([
+        MomoPaymentService.getTransactions(),
+        MomoPaymentService.getPaymentbyUser(),
+      ]);
+      const transactionList = Array.isArray(txRes.data) ? txRes.data : [];
+
+      const sortedTransactions = [...transactionList].sort((a, b) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime;
+      });
+      setTransactions(sortedTransactions);
+
+      const summaryPayload = paymentRes.data;
+      const summaryData = summaryPayload?.data;
+
+      const extractedBalance = (() => {
+        if (typeof summaryData === "number") return summaryData;
+        if (summaryData && typeof summaryData === "object") {
+          const dataObj = summaryData as Record<string, unknown>;
+          const candidateKeys = ["balance", "availableBalance", "walletBalance", "totalAmount", "amount"];
+          for (const key of candidateKeys) {
+            const value = dataObj[key];
+            if (typeof value === "number") {
+              return value;
+            }
+          }
+        }
+
+        const latestBalance =
+          sortedTransactions.find((tx) => typeof tx.balanceAfter === "number")?.balanceAfter ?? 0;
+        return latestBalance;
+      })();
+
+      setWalletBalance(extractedBalance);
+    } catch (err) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      setTxError(axiosError.response?.data?.message || "Không tải được lịch sử giao dịch.");
+    } finally {
+      setTxLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    void loadTransactions();
+  }, [loadTransactions]);
+
+  const scrollToHistory = () => {
+    const el = document.getElementById("wallet-history");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const renderTxIcon = (type: string) => {
+    const isDeposit = /deposit|topup|ap_wallet|credit/i.test(type);
+    const baseClass = "rounded-2xl p-3";
+    return (
+      <span
+        className={`${baseClass} ${
+          isDeposit ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"
+        }`}
+      >
+        {isDeposit ? <FiArrowUpRight /> : <FiArrowDownRight />}
+      </span>
+    );
+  };
+
+  const statusStyles = (status: string) => {
+    if (/success|thành công|completed/i.test(status)) {
+      return "bg-emerald-50 text-emerald-600";
+    }
+    if (/pending|processing|đang xử lý/i.test(status)) {
+      return "bg-amber-50 text-amber-600";
+    }
+    return "bg-slate-100 text-slate-500";
+  };
 
   const handleSubmit = async () => {
     if (!amount || amount < 1_000) {
@@ -127,13 +229,13 @@ const WalletPage = () => {
             <div className="space-y-5">
               <label className="block text-sm font-semibold text-slate-600">
                 Số tiền muốn nạp
-                <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                   <input
                     type="number"
                     min={10000}
                     value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-700 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-100 sm:w-2/3 lg:w-1/2"
+                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-700 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-100 sm:max-w-md"
                     placeholder="Nhập số tiền (VNĐ)"
                   />
                   <div className="min-w-[140px] rounded-2xl border border-slate-200 bg-white px-5 py-3 text-2xl font-bold text-slate-900 shadow-inner">
@@ -185,7 +287,11 @@ const WalletPage = () => {
                 >
                   {loading ? "Đang xử lý..." : "Nạp tiền ngay"} <FiArrowUpRight />
                 </button>
-                <button className="rounded-full border border-slate-200 px-6 py-3 text-sm font-semibold text-slate-600 transition hover:border-teal-200 hover:text-teal-500">
+                <button
+                  type="button"
+                  onClick={scrollToHistory}
+                  className="rounded-full border border-slate-200 px-6 py-3 text-sm font-semibold text-slate-600 transition hover:border-teal-200 hover:text-teal-500"
+                >
                   Lịch sử giao dịch
                 </button>
               </div>
@@ -233,6 +339,91 @@ const WalletPage = () => {
               <p className="mt-2 text-sm text-slate-400">{card.desc}</p>
             </div>
           ))}
+        </div>
+
+        {/* Transactions */}
+        <div
+          id="wallet-history"
+          className="rounded-3xl border border-slate-100 bg-white/90 p-6 shadow-lg shadow-teal-50/80"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-teal-500 uppercase tracking-widest">
+                Lịch sử giao dịch
+              </p>
+              <h2 className="text-2xl font-bold text-slate-900">Hoạt động gần đây</h2>
+            </div>
+            <button
+              type="button"
+              onClick={loadTransactions}
+              disabled={txLoading}
+              className="inline-flex items-center gap-2 rounded-full border border-teal-100 px-5 py-2 text-sm font-semibold text-teal-600 transition hover:border-teal-200 hover:text-teal-700 disabled:opacity-60"
+            >
+              {txLoading ? "Đang tải..." : "Tải lại"}
+            </button>
+          </div>
+
+          {txError && (
+            <div className="mt-4 rounded-2xl border border-red-100 bg-red-50/70 px-4 py-3 text-sm text-red-600">
+              {txError}
+            </div>
+          )}
+
+          <div className="mt-6 divide-y divide-slate-100">
+            {txLoading && transactions.length === 0
+              ? Array.from({ length: 4 }).map((_, idx) => (
+                  <div key={`skeleton-${idx}`} className="flex animate-pulse items-center gap-4 py-4">
+                    <div className="h-12 w-12 rounded-2xl bg-slate-100" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 w-1/3 rounded bg-slate-100" />
+                      <div className="h-3 w-2/4 rounded bg-slate-100" />
+                    </div>
+                    <div className="h-4 w-20 rounded bg-slate-100" />
+                  </div>
+                ))
+              : null}
+
+            {!txLoading && transactions.length === 0 && (
+              <div className="py-8 text-center text-sm text-slate-500">
+                Chưa có giao dịch nào. Hãy nạp tiền để bắt đầu nhé!
+              </div>
+            )}
+
+            {transactions.map((tx) => (
+              <div key={tx.id} className="flex flex-wrap items-center gap-4 py-4">
+                <div className="flex flex-1 items-center gap-4">
+                  {renderTxIcon(tx.type || "")}
+                  <div>
+                    <p className="font-semibold text-slate-800">
+                      {tx.description || tx.type?.replace(/_/g, " ") || "Giao dịch"}
+                    </p>
+                    <p className="text-sm text-slate-400">
+                      {formatDate(tx.createdAt)}
+                      {tx.transId ? ` · Mã giao dịch: ${tx.transId}` : ""}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p
+                    className={`text-lg font-bold ${
+                      /deposit|topup|ap_wallet|credit/i.test(tx.type || "")
+                        ? "text-emerald-600"
+                        : "text-slate-700"
+                    }`}
+                  >
+                    {formatAmount(tx.amount)}
+                  </p>
+                  <span
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyles(
+                      tx.status || ""
+                    )}`}
+                  >
+                    {tx.status || "Không xác định"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>

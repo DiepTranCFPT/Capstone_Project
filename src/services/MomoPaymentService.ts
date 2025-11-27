@@ -9,10 +9,12 @@ import type {
   IpnResponse,
   RedirectParams,
   RedirectResponse,
+  TransactionResponse, // Bỏ TransactionParams vì không dùng nữa
+  WalletBalanceSummary,
 } from "~/types/momoPayment";
 
 const MomoPaymentService = {
-  // Tạo payment request → backend trả link thanh toán MoMo
+  // 1. Tạo payment request -> backend trả link thanh toán MoMo
   createPayment(
     payload: CreatePaymentPayload
   ): Promise<AxiosResponse<ApiResponse<CreatePaymentResponse>>> {
@@ -26,19 +28,26 @@ const MomoPaymentService = {
     });
   },
 
-  // MoMo gọi về IPN để báo trạng thái thanh toán
-  // FE thường không dùng, nhưng mình vẫn viết theo mẫu
+  // 2. MoMo gọi về IPN để báo trạng thái thanh toán
   ipn(payload: IpnPayload): Promise<AxiosResponse<ApiResponse<IpnResponse>>> {
     return axiosInstance.post(`/payment/momo/ipn`, payload);
   },
 
-  // Redirect sau khi user thanh toán xong
-  // FE thường dùng GET để kiểm tra kết quả
+  // 3. Redirect sau khi user thanh toán xong (Kiểm tra kết quả)
   redirect(
     params: RedirectParams
   ): Promise<AxiosResponse<ApiResponse<RedirectResponse>>> {
     return axiosInstance.get(`/payment/momo/redirect`, { params });
   },
+
+  // API: GET /api/transactions: backend trả thẳng mảng không bọc ApiResponse
+  getTransactions(): Promise<AxiosResponse<TransactionResponse[]>> {
+    return axiosInstance.get(`/api/transactions`);
+  },
+
+  getPaymentbyUser(): Promise<AxiosResponse<ApiResponse<WalletBalanceSummary>>> {
+    return axiosInstance.get(`/payments/by-user`);
+  },
 };
 
-export default MomoPaymentService;
+export default MomoPaymentService; 

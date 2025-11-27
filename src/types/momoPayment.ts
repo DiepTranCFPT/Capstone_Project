@@ -1,4 +1,3 @@
-// Types cho create payment
 export interface CreatePaymentPayload {
   amount: number;
   orderId?: string;
@@ -18,7 +17,6 @@ export interface CreatePaymentResponse {
   [key: string]: unknown;
 }
 
-// Types cho IPN (Instant Payment Notification)
 export interface IpnPayload {
   partnerCode?: string;
   orderId?: string;
@@ -41,7 +39,6 @@ export interface IpnResponse {
   [key: string]: unknown;
 }
 
-// Types cho redirect
 export interface RedirectParams {
   partnerCode?: string;
   orderId?: string;
@@ -68,3 +65,36 @@ export interface RedirectResponse {
   [key: string]: unknown;
 }
 
+export interface TransactionParams {
+  page?: number;
+  size?: number;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+  type?: string;
+  keyword?: string;
+  [key: string]: unknown;
+}
+
+export interface TransactionResponse {
+  id: number | string;
+  amount: number;
+  type: string;
+  status: string;
+  description?: string;
+  createdAt?: string;
+  transId?: string;
+  balanceAfter?: number;
+  [key: string]: unknown;
+}
+
+export type WalletBalanceSummary =
+  | number
+  | {
+      balance?: number;
+      availableBalance?: number;
+      totalAmount?: number;
+      amount?: number;
+      walletBalance?: number;
+      [key: string]: unknown;
+    };
