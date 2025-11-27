@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { Empty, List, Modal, Spin, Typography, Button, Form, Input, Popconfirm, Tooltip, message, Upload } from "antd";
 import type { UploadFile } from "antd";
 import { EditOutlined, DeleteOutlined, EyeOutlined, UploadOutlined } from "@ant-design/icons";
 import LessonService from "~/services/LessonService";
 import FileContentService from "~/services/fileContentService";
 import type { LearningMaterial } from "~/types/learningMaterial";
-import type { Lesson } from "~/types/lesson";
+import type { Lesson, LessonVideoAsset } from "~/types/lesson";
 
 export interface LessonFormValues {
   name: string;
@@ -67,6 +67,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
   const [pdfOpening, setPdfOpening] = useState(false);
   const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
   const [previewVideoLoading, setPreviewVideoLoading] = useState(false);
+  const previewVideoCache = useRef<Record<string, string>>({});
   const openPreviewModal = async (lesson: Lesson) => {
     setPreviewLesson(lesson);
     setIsPreviewOpen(true);
@@ -88,33 +89,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
   const closePreviewModal = () => {
     setIsPreviewOpen(false);
     setPreviewLesson(null);
-    if (previewVideoUrl?.startsWith("blob:")) {
-      window.URL.revokeObjectURL(previewVideoUrl);
-    }
     setPreviewVideoUrl(null);
-  };
-
-const getEmbeddedUrl = (sourceUrl?: string | null): string | null => {
-    if (!sourceUrl) return null;
-    try {
-      const url = new URL(sourceUrl);
-      const host = url.hostname;
-      if (host.includes("youtube.com")) {
-        const videoId = url.searchParams.get("v");
-        if (videoId) {
-          return `https://www.youtube.com/embed/${videoId}`;
-        }
-      }
-      if (host.includes("youtu.be")) {
-        const pathId = url.pathname.replace("/", "");
-        if (pathId) {
-          return `https://www.youtube.com/embed/${pathId}`;
-        }
-      }
-      return sourceUrl;
-    } catch {
-      return sourceUrl;
-    }
   };
 
   const resolveVideoReference = (lesson: Lesson | null): string | null => {
@@ -136,11 +111,47 @@ const getEmbeddedUrl = (sourceUrl?: string | null): string | null => {
       setPreviewVideoUrl(reference);
       return;
     }
+
+    const cached = previewVideoCache.current[reference];
+    if (cached) {
+      setPreviewVideoUrl(cached);
+      return;
+    }
+
     try {
       setPreviewVideoLoading(true);
-      const res = await LessonService.getVideoAsset(reference);
-      const blobUrl = window.URL.createObjectURL(res.data);
-      setPreviewVideoUrl(blobUrl);
+      const res = await LessonService.getVideos(reference);
+      const payload =
+        res.data && typeof res.data === "object" && "data" in res.data
+          ? (res.data as { data: unknown }).data
+          : res.data;
+      const matched = Array.isArray(payload)
+        ? payload.find(
+            (video) =>
+              video.id === reference ||
+              video.name === reference ||
+              video.nameFile === reference
+          )
+        : payload;
+      if (typeof matched === "string") {
+        previewVideoCache.current[reference] = matched;
+        setPreviewVideoUrl(matched);
+        return;
+      }
+
+      const matchedAsset = matched as LessonVideoAsset | undefined;
+      const assetUrl =
+        matchedAsset?.url ||
+        matchedAsset?.videoUrl ||
+        matchedAsset?.streamUrl ||
+        matchedAsset?.downloadUrl;
+      if (assetUrl) {
+        previewVideoCache.current[reference] = assetUrl;
+        setPreviewVideoUrl(assetUrl);
+      } else {
+        setPreviewVideoUrl(null);
+        message.error("Không tìm thấy video bài học.");
+      }
     } catch (error) {
       console.error("Load video asset error:", error);
       message.error("Không tải được video bài học.");
@@ -158,7 +169,6 @@ const getEmbeddedUrl = (sourceUrl?: string | null): string | null => {
         </div>
       );
     }
-    const embedUrl = getEmbeddedUrl(previewVideoUrl ?? resolveVideoReference(previewLesson));
     const hasPdf = Boolean(previewLesson.file);
     const pdfName = previewLesson.file ? extractFileName(previewLesson.file) : "";
 
@@ -170,13 +180,14 @@ const getEmbeddedUrl = (sourceUrl?: string | null): string | null => {
         <div className="rounded-xl overflow-hidden bg-black">
           {(loadingPreviewDetail || previewVideoLoading) ? (
             <div className="text-white text-center py-16">Đang tải nội dung...</div>
-          ) : embedUrl ? (
-            <iframe
-              title={previewLesson.name ?? previewLesson.title ?? "Lesson preview"}
-              src={embedUrl}
-              className="w-full aspect-video"
-              allowFullScreen
-            />
+          ) : previewVideoUrl ? (
+            <video
+              controls
+              className="w-full h-full aspect-video"
+              src={previewVideoUrl}
+            >
+              Trình duyệt của bạn không hỗ trợ video.
+            </video>
           ) : (
             <div className="text-white text-center py-16">
               Không có video để hiển thị.
