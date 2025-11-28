@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { FRQ } from '~/types/question';
-import { useAuth } from '~/hooks/useAuth';
-import { Button } from 'antd';
-import { FaRobot } from 'react-icons/fa';
 import { BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 
@@ -14,8 +11,6 @@ interface FRQCardProps {
 }
 
 const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer, onAnswerChange }) => {
-    const { spendTokens } = useAuth();
-    const [isAnalyzed, setIsAnalyzed] = useState(false);
     const [answerText, setAnswerText] = useState(savedAnswer || '');
     const isInitialMountRef = useRef(true);
     const prevSavedAnswerRef = useRef<string | undefined>(savedAnswer);
@@ -27,7 +22,7 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
         const subjectName = question.subject;
         //update subject names as needed
         const mathScienceSubjects = ["Mathematics", "Physics", "Chemistry"];
-        const historyEnglishSubjects = ["History", "English Language"];
+        const historyEnglishSubjects = ["History", "AP English Language"];
 
         if (mathScienceSubjects.includes(subjectName)) {
             return "latex";
@@ -140,12 +135,6 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
         }
     }, [answerText, questionNumber, onAnswerChange]); // Remove savedAnswer from deps to avoid array size changes
 
-    const handleAnalyze = () => {
-        spendTokens(1);
-        setIsAnalyzed(true);
-        // Here you would typically make an API call to your AI service
-    };
-
     const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setAnswerText(e.target.value);
     };
@@ -251,27 +240,60 @@ x^2 + 2x + 1 = 0`}
                         </div>
                     </div>
                 </div>
-
-                <div className="mt-4">
-                    <Button
-                        icon={<FaRobot />}
-                        onClick={handleAnalyze}
-                        disabled={isAnalyzed}
-                        className="flex items-center"
-                    >
-                        {isAnalyzed ? 'Analyzed' : 'Phân tích với AI (1 Token)'}
-                    </Button>
-                </div>
             </div>
         );
     }
 
+    // State for split screen width (percentage of left panel)
+    const [leftPanelWidth, setLeftPanelWidth] = useState(50);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const isResizingRef = useRef(false);
+
+    // Handle mouse events for resizing
+    const startResizing = useCallback(() => {
+        isResizingRef.current = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+    }, []);
+
+    const stopResizing = useCallback(() => {
+        isResizingRef.current = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+    }, []);
+
+    const resize = useCallback((e: MouseEvent) => {
+        if (isResizingRef.current && containerRef.current) {
+            const containerRect = containerRef.current.getBoundingClientRect();
+            const newLeftWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+            // Limit width between 20% and 80%
+            if (newLeftWidth >= 20 && newLeftWidth <= 80) {
+                setLeftPanelWidth(newLeftWidth);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        window.addEventListener('mousemove', resize);
+        window.addEventListener('mouseup', stopResizing);
+        return () => {
+            window.removeEventListener('mousemove', resize);
+            window.removeEventListener('mouseup', stopResizing);
+        };
+    }, [resize, stopResizing]);
+
     if (cardMode === "splitscreen") {
         return (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div className="grid grid-cols-2 h-96">
+            <div
+                ref={containerRef}
+                className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+            >
+                <div className="flex min-h-[24rem]">
                     {/* Left panel - Question and sources */}
-                    <div className="bg-teal-50/50 p-6 border-r border-gray-200 overflow-y-auto">
+                    <div
+                        style={{ width: `${leftPanelWidth}%` }}
+                        className="bg-teal-50/50 p-6 border-r border-gray-200 overflow-hidden"
+                    >
                         <h3 className="font-semibold text-gray-800 mb-4 text-lg">
                             {questionNumber}. Câu hỏi
                         </h3>
@@ -280,8 +302,19 @@ x^2 + 2x + 1 = 0`}
                         </div>
                     </div>
 
+                    {/* Resize Handle */}
+                    <div
+                        className="w-1 bg-gray-200 hover:bg-teal-400 cursor-col-resize flex items-center justify-center transition-colors"
+                        onMouseDown={startResizing}
+                    >
+                        <div className="w-0.5 h-8 bg-gray-400 rounded-full" />
+                    </div>
+
                     {/* Right panel - Answer input */}
-                    <div className="p-6 overflow-y-auto">
+                    <div
+                        style={{ width: `${100 - leftPanelWidth}%` }}
+                        className="p-6 overflow-hidden"
+                    >
                         <h3 className="font-semibold text-gray-800 mb-4 text-lg">
                             Đáp án của bạn
                         </h3>
@@ -291,19 +324,9 @@ x^2 + 2x + 1 = 0`}
                             value={answerText}
                             onChange={handleTextChange}
                             onKeyDown={handleKeyDown}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 resize-none h-64"
+                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 resize-vertical min-h-[16rem]"
                             placeholder="Nhập đáp án của bạn ở đây..."
                         />
-                        <div className="mt-4">
-                            <Button
-                                icon={<FaRobot />}
-                                onClick={handleAnalyze}
-                                disabled={isAnalyzed}
-                                className="flex items-center"
-                            >
-                                {isAnalyzed ? 'Analyzed' : 'Phân tích với AI (1 Token)'}
-                            </Button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -320,19 +343,10 @@ x^2 + 2x + 1 = 0`}
                 value={answerText}
                 onChange={handleTextChange}
                 onKeyDown={handleKeyDown}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 resize"
                 placeholder="Type your answer here..."
             ></textarea>
-            <div className="mt-4">
-                <Button
-                    icon={<FaRobot />}
-                    onClick={handleAnalyze}
-                    disabled={isAnalyzed}
-                    className="flex items-center"
-                >
-                    {isAnalyzed ? 'Analyzed' : 'Phân tích với AI (1 Token)'}
-                </Button>
-            </div>
+
         </div>
     );
 };

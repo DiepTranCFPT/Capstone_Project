@@ -5,7 +5,8 @@ import {
     // AimOutlined,
     CheckCircleOutlined,
     RobotOutlined,
-    SendOutlined
+    SendOutlined,
+    FileTextOutlined
 } from '@ant-design/icons';
 import type { AttemptResultDetail } from '~/types/examAttempt';
 import { useAiExamAsk } from '~/hooks/useAiExamAsk';
@@ -157,6 +158,37 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
                         ))}
                     </div>
                 </div>
+
+                {/* AI Review & Summary */}
+                {attemptResultDetail?.comment && (
+                    <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-xl p-6 border border-blue-100 shadow-md">
+                        <h4 className="text-lg font-bold text-gray-800 flex items-center mb-4">
+                            <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-2 rounded-lg mr-3 shadow-sm">
+                                <FileTextOutlined className="text-white text-xl" />
+                            </div>
+                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+                                Nhận xét và Tóm tắt từ AI
+                            </span>
+                        </h4>
+                        <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 shadow-sm border border-blue-100">
+                            <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
+                                <ReactMarkdown
+                                    components={{
+                                        p: ({ ...props }) => <p className="mb-3 last:mb-0" {...props} />,
+                                        ul: ({ ...props }) => <ul className="list-disc list-outside ml-5 mb-3 space-y-1" {...props} />,
+                                        ol: ({ ...props }) => <ol className="list-decimal list-outside ml-5 mb-3 space-y-1" {...props} />,
+                                        li: ({ ...props }) => <li className="pl-1" {...props} />,
+                                        strong: ({ ...props }) => <strong className="font-bold text-gray-800" {...props} />,
+                                        em: ({ ...props }) => <em className="italic text-gray-600" {...props} />,
+                                        code: ({ ...props }) => <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-purple-600 border border-gray-200" {...props} />,
+                                    }}
+                                >
+                                    {attemptResultDetail.comment}
+                                </ReactMarkdown>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Comparison */}
                 {/* <div>
