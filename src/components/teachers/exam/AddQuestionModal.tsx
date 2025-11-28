@@ -31,7 +31,7 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
   editingQuestion,
 }) => {
   const { subjects, loading: subjectsLoading, fetchSubjects } = useSubjects();
-  const { topics, loading: topicsLoading } = useQuestionTopics();
+  const { topics, loading: topicsLoading, fetchTopicsBySubject } = useQuestionTopics();
 
   const difficultyOptions = useMemo(
     () => [
@@ -87,11 +87,18 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
     return options;
   }, [topics, formData.topic]);
 
-  
+
 
   useEffect(() => {
     fetchSubjects({ pageNo: 0, pageSize: 1000 });
   }, [fetchSubjects]);
+
+  // Fetch topics when subject is selected
+  useEffect(() => {
+    if (formData.subject) {
+      fetchTopicsBySubject(formData.subject);
+    }
+  }, [formData.subject, fetchTopicsBySubject]);
 
   useEffect(() => {
     if (!open) {
@@ -165,7 +172,7 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
       message.warning("Please enter question text");
       return;
     }
-    
+
     if (!formData.subject.trim()) {
       message.warning("Please select a subject");
       return;
