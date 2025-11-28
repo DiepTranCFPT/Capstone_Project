@@ -50,7 +50,7 @@ axiosInstance.interceptors.response.use(
             localStorage.removeItem('user');
 
             // Log the authentication failure
-            console.error('Authentication failed - token expired or invalid');
+            // console.error('Authentication failed - token expired or invalid');
 
             // Redirect to login page
             // window.location.href = '/auth';

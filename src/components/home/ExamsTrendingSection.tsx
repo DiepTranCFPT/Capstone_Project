@@ -1,6 +1,7 @@
 import React from "react";
 import { useBrowseExamTemplates } from "~/hooks/useExamBrowser";
 import { PiExam } from "react-icons/pi";
+import { useNavigate } from "react-router-dom";
 
 const ExamsTrendingSection: React.FC = () => {
   const { templates, loading } = useBrowseExamTemplates({
@@ -8,6 +9,11 @@ const ExamsTrendingSection: React.FC = () => {
     pageSize: 3,
     minRating: 4 // Get highly rated exams for trending section
   });
+  const navigate = useNavigate();
+  const handleExamClick = () => {
+    // Navigate to exam details page
+    navigate(`/exam-test`);
+  };
 
   if (loading) {
     return (
@@ -141,7 +147,9 @@ const ExamsTrendingSection: React.FC = () => {
                   </div>
 
                   {/* Action Button */}
-                  <button className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 text-white px-6 py-3 rounded-lg text-sm font-bold hover:from-teal-500 hover:to-emerald-600 transition-all duration-300 shadow-md hover:shadow-lg">
+                  <button 
+                  onClick={() => handleExamClick()}  
+                  className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 text-white px-6 py-3 rounded-lg text-sm font-bold hover:from-teal-500 hover:to-emerald-600 transition-all duration-300 shadow-md hover:shadow-lg">
                     Explore Exam Now
                   </button>
                 </div>

@@ -28,7 +28,7 @@ export const useBrowseExamTemplates = (
     const apiMessage = e.response?.data?.message;
     const message = apiMessage || e.message || defaultMessage;
     setError(message);
-    toast.error(message);
+    // toast.error(message);
     return message;
   };
 
@@ -54,7 +54,7 @@ export const useBrowseExamTemplates = (
           throw new Error(res.data.message || "Failed to fetch browse templates");
         }
       } catch (err) {
-        handleError(err, "Không thể tải danh sách khuôn mẫu");
+        handleError(err, "Failed to fetch browse templates");
       } finally {
         setLoading(false);
       }

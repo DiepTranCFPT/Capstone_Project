@@ -157,15 +157,7 @@ const GradeSubmissionPage: React.FC = () => {
                             />
                         </div>
 
-                        <div className="space-y-3">
-                            <Button
-                                type="dashed"
-                                icon={<RobotOutlined />}
-                                block
-                                onClick={() => setShowAISuggession(!showAISuggestion)}
-                            >
-                                {showAISuggestion ? 'Hide' : 'Show'} AI Grading Support
-                            </Button>
+                        <div className="space-y-3">                          
                             <Button type="primary" block size="large" onClick={handleFinishGrading}>
                                 Finish Grading
                             </Button>

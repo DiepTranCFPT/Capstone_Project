@@ -116,13 +116,13 @@ export default function AdminSidebar() {
             : "px-4 py-3 border-b border-gray-200 flex items-center justify-center"
           }`}
       >
-        <Link to="/admin/profile">
+        {/* <Link to="/admin/profile"> */}
           <Avatar
             size={collapsed ? 32 : 40}
             src={adminUser?.imgUrl || "https://i.pravatar.cc/150?u=admin"}
             className="cursor-pointer"
           />
-        </Link>
+        {/* </Link> */}
         {!collapsed && (
           <div>
             <div className="text-sm font-semibold">

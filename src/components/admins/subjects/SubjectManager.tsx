@@ -126,13 +126,6 @@ const SubjectManager: React.FC = () => {
 
   const columns: ColumnsType<Subject> = [
     {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-      width: 80,
-      render: (id) => <span className="text-gray-700 font-medium">{id}</span>,
-    },
-    {
       title: "Name",
       dataIndex: "name",
       key: "name",

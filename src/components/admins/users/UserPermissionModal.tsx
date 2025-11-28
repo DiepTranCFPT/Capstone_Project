@@ -103,7 +103,7 @@ const UserPermissionModal: React.FC<UserPermissionModalProps> = ({
       title={
         <div className="flex items-center gap-2">
           <UserOutlined />
-          <span>Quản lý quyền của {user.firstName} {user.lastName}</span>
+          <span>Manage Permissions for {user.firstName} {user.lastName}</span>
         </div>
       }
       open={visible}
@@ -118,7 +118,7 @@ const UserPermissionModal: React.FC<UserPermissionModalProps> = ({
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle className="text-green-500" />
             <Title level={5} className="mb-0">
-              Quyền hiện tại
+              Current Permissions
             </Title>
           </div>
           {isLoadingUserPermissions ? (
@@ -135,7 +135,7 @@ const UserPermissionModal: React.FC<UserPermissionModalProps> = ({
               ))}
             </div>
           ) : (
-            <Text type="secondary">Người dùng chưa có quyền nào.</Text>
+            <Text type="secondary">User has no permissions.</Text>
           )}
         </Card>
 
@@ -145,11 +145,11 @@ const UserPermissionModal: React.FC<UserPermissionModalProps> = ({
         <div className="mb-4">
           <Title level={5} className="mb-3 flex items-center gap-2">
             <Shield />
-            Quản lý quyền
+            Permission Management
           </Title>
 
           <div className="mb-4">
-            <Text strong>Chọn quyền để gán/thu hồi:</Text>
+            <Text strong>Select permissions to assign/revoke:</Text>
             <div className="mt-2">
               <Checkbox.Group
                 value={selectedPermissions}
@@ -171,7 +171,7 @@ const UserPermissionModal: React.FC<UserPermissionModalProps> = ({
                             {permission.name}
                             {isAssigned && (
                               <Tag color="green" className="text-xs">
-                                Đã gán
+                                Assigned
                               </Tag>
                             )}
                           </div>
@@ -193,7 +193,7 @@ const UserPermissionModal: React.FC<UserPermissionModalProps> = ({
               loading={loading}
               className="bg-green-600 hover:bg-green-700"
             >
-              Gán quyền ({selectedPermissions.length})
+              Assign ({selectedPermissions.length})
             </Button>
             <Button
               danger
@@ -201,7 +201,7 @@ const UserPermissionModal: React.FC<UserPermissionModalProps> = ({
               disabled={selectedPermissions.length === 0}
               loading={loading}
             >
-              Thu hồi quyền ({selectedPermissions.length})
+              Revoke ({selectedPermissions.length})
             </Button>
           </div>
         </div>
@@ -211,7 +211,7 @@ const UserPermissionModal: React.FC<UserPermissionModalProps> = ({
         {/* Action Buttons */}
         <div className="flex justify-end">
           <Space>
-            <Button onClick={handleCancel}>Đóng</Button>
+            <Button onClick={handleCancel}>Close</Button>
           </Space>
         </div>
       </div>

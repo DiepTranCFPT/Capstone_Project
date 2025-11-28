@@ -8,41 +8,42 @@ const { Title, Text } = Typography;
 
 const columns = [
     {
-        title: 'Học sinh',
+        title: 'Student',
         dataIndex: 'doneBy',
         key: 'doneBy',
         render: (text: string) => <Text strong>{text}</Text>,
     },
     {
-        title: 'ID Bài thi',
-        dataIndex: 'examId',
-        key: 'examId',
-    },
-    {
-        title: 'Thời gian nộp',
+        title: 'Time submitted',
         dataIndex: 'endTime',
         key: 'endTime',
         render: (date: string) => new Date(date).toLocaleString(),
     },
     {
-        title: 'Điểm hiện tại',
+        title: 'Current score',
         dataIndex: 'score',
         key: 'score',
         render: (score: number) => <Tag color={score >= 50 ? "green" : "volcano"}>{score.toFixed(2)}</Tag>,
     },
     {
+        title: 'Status',
+        dataIndex: 'status',
+        key: 'status',
+        render: (text: string) => <Tag color={text === 'pending' ? 'blue' : 'green'}>{text}</Tag>,
+    },
+    {
         title: 'Rating',
         dataIndex: 'rating',
         key: 'rating',
-        render: (rating: number) => <Tag>{rating} sao</Tag>,
+        render: (rating: number) => <Tag color={rating >= 5 ? "green" : "volcano"}>{rating || 0} sao</Tag>,
     },
     {
-        title: 'Hành động',
+        title: 'Action',
         key: 'action',
         render: (_: ReviewQueueItem, record: ReviewQueueItem) => (
             <Link to={`/teacher/grading/${record.attemptId}?mode=review`}>
                 <Button type="primary">
-                    Chấm ngay
+                    Review now
                 </Button>
             </Link>
         ),
@@ -66,13 +67,13 @@ const TeacherReviewQueuePage: React.FC = () => {
     }
 
     if (error) {
-        return <Alert message="Lỗi" description="Không thể tải danh sách yêu cầu phúc khảo." type="error" showIcon />;
+        return <Alert message="Error" description="Failed to load review queue." type="error" showIcon />;
     }
 
     return (
         <div style={{ padding: '24px' }}>
-            <Title level={2}>Danh sách chờ phúc khảo</Title>
-            <Text type="secondary">Đây là danh sách các bài thi học sinh yêu cầu chấm lại.</Text>
+            <Title level={2}>Review queue</Title>
+            <Text type="secondary">This is the list of exams that students have requested to be regraded.</Text>
             
             <Table
                 columns={columns}

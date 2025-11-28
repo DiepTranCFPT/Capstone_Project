@@ -37,8 +37,8 @@ const ExamDetailsPage: React.FC = () => {
     } : null;
 
     const tabs = [
-        { key: 'practice', label: 'Luyện Tập' },
-        { key: 'fullTest', label: 'Thi Thử' },
+        { key: 'practice', label: 'Practice' },
+        { key: 'fullTest', label: 'Full Test' },
         // { key: 'comment', label: 'Comment' },
     ];
 
