@@ -147,9 +147,15 @@ export const useExamAttempt = () => {
         ExamAttemptService.subscribe(attemptId)
           .then((subscribeRes) => {
             console.log('subscribe completed', subscribeRes);
-            if (subscribeRes.data.code === 0 || subscribeRes.data.code === 1000) {
-              toast.success("Kết quả chi tiết đã sẵn sàng! Vào xem ngay.");
-              setAttemptResultDetail(subscribeRes.data.data);
+            // Response structure: { data: { attemptId, examId, score, ... } }
+            if (subscribeRes.data) {
+              toast.success("Kết quả chi tiết đã sẵn sàng! Nhấn để xem ngay.", {
+                onClick: () => {
+                  window.location.href = `/test-result/${attemptId}`;
+                },
+                style: { cursor: 'pointer' }
+              });
+              setAttemptResultDetail(subscribeRes.data as unknown as AttemptResultDetail);
             }
           })
           .catch((err) => {
@@ -226,11 +232,13 @@ export const useExamAttempt = () => {
     setError(null);
     try {
       const res = await ExamAttemptService.subscribe(attemptId);
-      if (res.data.code === 0 || res.data.code === 1000) {
-        setAttemptResultDetail(res.data.data);
-        return res.data.data;
+      // Response structure: { data: { attemptId, examId, score, ... } }
+      if (res.data) {
+        toast.success("Kết quả chi tiết đã được tải thành công!");
+        setAttemptResultDetail(res.data as unknown as AttemptResultDetail);
+        return res.data as unknown as AttemptResultDetail;
       } else {
-        throw new Error(res.data.message || "Không thể tải kết quả chi tiết");
+        throw new Error("Không thể tải kết quả chi tiết");
       }
     } catch (err) {
       handleError(err, "Không thể tải kết quả chi tiết");
