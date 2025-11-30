@@ -1,7 +1,7 @@
 // src/hooks/useTeacherWallet.ts
 import { useState, useEffect, useCallback } from "react";
 import MomoPaymentService from "~/services/MomoPaymentService";
-import type { TransactionResponse, WalletBalanceSummary } from "~/types/momoPayment";
+import type { TransactionResponse, PaymentObject } from "~/types/momoPayment";
 
 interface TransactionDisplay {
   id: string;
@@ -16,18 +16,6 @@ interface WalletSummary {
   availableBalance: number;
   monthlyIncome: number;
   pendingAmount: number;
-}
-
-interface PaymentObject {
-  id: string;
-  paymentNumber?: string;
-  userId?: string;
-  amount: number;
-  status: string;
-  description?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
-  [key: string]: unknown;
 }
 
 const formatCurrency = (amount: number): string => {
@@ -110,7 +98,7 @@ const transformTransaction = (transaction: TransactionResponse): TransactionDisp
 
 const calculateWalletSummary = (
   transactions: TransactionResponse[],
-  balanceData: WalletBalanceSummary
+  availableBalance: number
 ): WalletSummary => {
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -136,20 +124,6 @@ const calculateWalletSummary = (
       return status.includes("PENDING") || status.includes("DANG_XU_LY") || status.includes("CHO");
     })
     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-  // Lấy số dư khả dụng từ API
-  let availableBalance = 0;
-  if (typeof balanceData === "number") {
-    availableBalance = balanceData;
-  } else if (typeof balanceData === "object" && balanceData !== null) {
-    availableBalance =
-      balanceData.availableBalance ||
-      balanceData.balance ||
-      balanceData.walletBalance ||
-      balanceData.amount ||
-      balanceData.totalAmount ||
-      0;
-  }
 
   return {
     availableBalance,
@@ -182,32 +156,17 @@ export const useTeacherWallet = () => {
       
       // Xử lý response từ API by-user
       // API trả về: { code: 1000, message: "Successfully", data: Array<PaymentObject> }
-      // Mỗi PaymentObject có: { id, amount, status, ... }
-      let balanceData: WalletBalanceSummary = 0;
+      // Tính tổng amount của các payment có status "Active"
+      let balanceData: number = 0;
       
-      if (balanceRes?.data?.data) {
-        const apiData = balanceRes.data.data;
-        
-        // Trường hợp 1: data là array các payment objects
-        if (Array.isArray(apiData)) {
-          // Tính tổng amount của các payment có status "Active"
-          const activePayments = apiData.filter(
-            (payment: PaymentObject) => payment?.status?.toUpperCase() === 'ACTIVE'
-          );
-          const totalAmount = activePayments.reduce(
-            (sum: number, payment: PaymentObject) => sum + (Number(payment?.amount) || 0),
-            0
-          );
-          balanceData = totalAmount;
-        }
-        // Trường hợp 2: data là number
-        else if (typeof apiData === 'number') {
-          balanceData = apiData;
-        }
-        // Trường hợp 3: data là object với các field như availableBalance, balance, etc.
-        else if (typeof apiData === 'object' && apiData !== null) {
-          balanceData = apiData as WalletBalanceSummary;
-        }
+      if (balanceRes?.data?.data && Array.isArray(balanceRes.data.data)) {
+        const activePayments = balanceRes.data.data.filter(
+          (payment: PaymentObject) => payment?.status?.toUpperCase() === 'ACTIVE'
+        );
+        balanceData = activePayments.reduce(
+          (sum: number, payment: PaymentObject) => sum + (Number(payment?.amount) || 0),
+          0
+        );
       }
 
       const transformedTransactions = transactionsData.map(transformTransaction);

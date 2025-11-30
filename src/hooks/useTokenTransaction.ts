@@ -151,7 +151,12 @@ export const useTokenTransaction = () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await TokenTransactionService.createPaymentMethod(payload);
+        // Map PaymentMethodPayload sang format mà API yêu cầu
+        const apiPayload = {
+          bankingNumber: (payload.bankAccount || payload.bankingNumber || "") as string,
+          nameBanking: (payload.bankName || payload.nameBanking || "") as string,
+        };
+        const res = await TokenTransactionService.createPaymentMethod(apiPayload);
         return res.data;
       } catch (err: unknown) {
         const message = getErrorMessage(err, "Đã xảy ra lỗi khi tạo phương thức thanh toán.");

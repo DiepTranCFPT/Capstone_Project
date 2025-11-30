@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   FiTrendingUp,
   FiArrowUpRight,
@@ -7,6 +8,8 @@ import {
   FiLoader,
 } from "react-icons/fi";
 import { useTeacherWallet } from "~/hooks/useTeacherWallet";
+import AddPaymentMethodModal from "~/components/teachers/wallet/AddPaymentMethodModal";
+import WithdrawMoneyModal from "~/components/teachers/wallet/WithdrawMoneyModal";
 
 const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat("vi-VN", {
@@ -16,7 +19,9 @@ const formatCurrency = (amount: number): string => {
 };
 
 const MyWalletPage = () => {
-  const { loading, error, transactions, walletSummary } = useTeacherWallet();
+  const { loading, error, transactions, walletSummary, refetch } = useTeacherWallet();
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [isAddPaymentMethodModalOpen, setIsAddPaymentMethodModalOpen] = useState(false);
 
   const summaryCards = [
     {
@@ -54,7 +59,16 @@ const MyWalletPage = () => {
             <button className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-white">
               <FiCopy /> Sao kê
             </button>
-            <button className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-200 hover:bg-emerald-600">
+            <button
+              onClick={() => setIsAddPaymentMethodModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-white"
+            >
+              <FiArrowUpRight /> Thêm tài khoản
+            </button>
+            <button
+              onClick={() => setIsWithdrawModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-200 hover:bg-emerald-600"
+            >
               <FiArrowUpRight /> Yêu cầu rút tiền
             </button>
           </div>
@@ -172,6 +186,25 @@ const MyWalletPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Add Payment Method Modal */}
+      <AddPaymentMethodModal
+        isOpen={isAddPaymentMethodModalOpen}
+        onClose={() => setIsAddPaymentMethodModalOpen(false)}
+        onSuccess={() => {
+          refetch(); // Refresh wallet data after successful payment method creation
+        }}
+      />
+
+      {/* Withdraw Money Modal */}
+      <WithdrawMoneyModal
+        isOpen={isWithdrawModalOpen}
+        onClose={() => setIsWithdrawModalOpen(false)}
+        onSuccess={() => {
+          refetch(); // Refresh wallet data after successful withdrawal request
+        }}
+        availableBalance={walletSummary.availableBalance}
+      />
     </section>
   );
 };
