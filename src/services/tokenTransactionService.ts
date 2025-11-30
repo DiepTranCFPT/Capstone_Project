@@ -9,7 +9,6 @@ import type {
   ConfirmWithdrawalResponse,
   WithdrawRequest,
   PaymentMethod,
-  PaymentMethodPayload,
 } from "~/types/tokenTransaction";
 
 const TokenTransactionService = {
@@ -48,10 +47,16 @@ const TokenTransactionService = {
 
   // POST /api/payment-method
   // Tạo phương thức thanh toán mới
+  // API yêu cầu query params: bankingNumber và nameBanking
   createPaymentMethod(
-    payload: PaymentMethodPayload
+    payload: { bankingNumber: string; nameBanking: string }
   ): Promise<AxiosResponse<ApiResponse<PaymentMethod>>> {
-    return axiosInstance.post(`/api/payment-method`, payload);
+    return axiosInstance.post(`/api/payment-method`, null, {
+      params: {
+        bankingNumber: payload.bankingNumber,
+        nameBanking: payload.nameBanking,
+      },
+    });
   },
 };
 

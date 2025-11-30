@@ -98,3 +98,15 @@ export type WalletBalanceSummary =
       walletBalance?: number;
       [key: string]: unknown;
     };
+
+export interface PaymentObject {
+  id: string;
+  paymentNumber?: string;
+  userId?: string;
+  amount: number;
+  status: string;
+  description?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: unknown;
+}

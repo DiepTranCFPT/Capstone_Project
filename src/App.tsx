@@ -93,7 +93,7 @@ import APPathwaysPage from "./pages/advisor/APPathwaysPage";
 import RankingPage from "./pages/ranking/RankingPage";
 import WalletPage from "./pages/students/WalletPage";
 import AdminDashboardPage from "./pages/admins/AdminDashboardPage";
-import PackagePaymentManagerPage from "./pages/admins/PackagePaymentManagerPage";
+import TokenPaymentManagerPage from "./pages/admins/TokenPaymentManagerPage";
 import TeacherAvailabilityPage from "./pages/teachers/TeacherAvailabilityPage";
 import TeacherProfilePage from "./pages/teachers/TeacherProfilePage";
 import LoadingPage from "./pages/LoadingPage";
@@ -152,7 +152,7 @@ function App() {
             element={<CertificatesRankingManagerPage />}
           />
           <Route path="users" element={<UserManagerPage />} />
-          <Route path="subscriptions" element={<PackagePaymentManagerPage />} />
+          <Route path="subscriptions" element={<TokenPaymentManagerPage />} />
           <Route path="subjects" element={<SubjectManagerPage />} />
         </Route>
 
