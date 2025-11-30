@@ -76,10 +76,10 @@ const FullTestTabContent: React.FC<{ examId: string | undefined }> = ({ examId }
                     {isStartingExam ? (
                         <>
                             <FiLoader className="animate-spin" size={16} />
-                            Đang tải...
+                            Loading...
                         </>
                     ) : (
-                        'Vào Thi'
+                        'Start Exam'
                     )}
                 </button>
             )}

@@ -128,7 +128,7 @@ const ExamDetailsPage: React.FC = () => {
                         </div>
 
                         {/* Comment Section */}
-                        <CommentSection />
+                        {/* <CommentSection /> */}
                     </div>
 
                     {/* Right Sidebar */}
