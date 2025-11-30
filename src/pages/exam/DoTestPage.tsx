@@ -4,9 +4,12 @@ import { Tabs } from 'antd';
 import Timer from '~/components/do-test/Timer';
 import QuestionCard from '~/components/do-test/QuestionCard';
 import FRQCard from '~/components/do-test/FRQCard';
+import ProctoringStatus from '~/components/do-test/ProctoringStatus';
+import ProctoringRulesModal from '~/components/do-test/ProctoringRulesModal';
 import { useExamAttempt } from '~/hooks/useExamAttempt';
 import { useEnhancedExamPersistence } from '~/hooks/useEnhancedExamPersistence';
 import { useExamUnloadWarning } from '~/hooks/useExamUnloadWarning';
+import { useExamProctoring } from '~/hooks/useExamProctoring';
 import type { ExamSubmissionAnswer, ActiveExamQuestion, ExamAnswer } from '~/types/test';
 
 
@@ -14,6 +17,10 @@ const DoTestPage: React.FC = () => {
     const { examId, attemptId } = useParams<{ examId?: string, testType?: 'full' | 'mcq' | 'frq', attemptId?: string }>();
     const navigate = useNavigate();
     const { submitAttempt, loading, error } = useExamAttempt();
+
+    // Proctoring state
+    const [showProctoringRules, setShowProctoringRules] = useState(false);
+    const [proctoringAccepted, setProctoringAccepted] = useState(false);
 
     // Enhanced exam persistence hooks with dual-save mechanism
     const {
@@ -35,6 +42,29 @@ const DoTestPage: React.FC = () => {
     const [isCancel, setIsCancel] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isManualSyncing, setIsManualSyncing] = useState(false);
+
+    // Proctoring hook with auto-submit callback
+    const {
+        violationCounts,
+        totalViolations,
+        isFullscreen,
+        isProctoringActive,
+        startProctoring,
+        stopProctoring,
+        // getProctoringMetadata,
+    } = useExamProctoring(
+        {
+            enableTabDetection: true,
+            enableCopyBlock: true,
+            enableFullscreenMode: true,
+            strictFullscreen: true,
+            maxViolations: 4,
+        },
+        () => {
+            // Auto-submit callback when max violations reached
+            handleSubmit();
+        }
+    );
 
     // Check for stored attempt data from useExamAttempt - memoize to prevent recreation
     const currentActiveExam = useMemo(() => {
@@ -224,6 +254,17 @@ const DoTestPage: React.FC = () => {
         }
     }, [activeExamData, autoSaveCallback, startAutoSave, stopAutoSave]);
 
+    // Show proctoring rules modal when exam loads
+    useEffect(() => {
+        if (activeExamData && !proctoringAccepted && !showProctoringRules) {
+            // Delay to show modal after exam content is loaded
+            const timer = setTimeout(() => {
+                setShowProctoringRules(true);
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [activeExamData, proctoringAccepted, showProctoringRules]);
+
     // Manual sync function
     const handleManualSync = useCallback(async () => {
         if (!activeExamData?.examAttemptId || isManualSyncing) return;
@@ -245,6 +286,11 @@ const DoTestPage: React.FC = () => {
 
         setIsSubmitting(true);
 
+        // Stop proctoring before submission
+        if (isProctoringActive) {
+            stopProctoring();
+        }
+
         // Prepare answers using stored answer data
         const submissionAnswers: ExamSubmissionAnswer[] = sortedQuestions.map((q: ActiveExamQuestion) => {
             const answerData = answers[q.examQuestionId];
@@ -254,6 +300,10 @@ const DoTestPage: React.FC = () => {
                 frqAnswerText: answerData?.frqAnswerText || null
             };
         });
+
+        // Get proctoring metadata
+        // const proctoringMetadata = getProctoringMetadata();
+        // console.log('Proctoring Metadata:', proctoringMetadata);
 
         try {
             const result = await submitAttempt(activeExamData.examAttemptId, { answers: submissionAnswers });
@@ -280,6 +330,11 @@ const DoTestPage: React.FC = () => {
         setShowConFirmed(false);
         clearExamProgress();
 
+        // Stop proctoring
+        if (isProctoringActive) {
+            stopProctoring();
+        }
+
         // Check if this is a combo test (has attemptId param)
         if (attemptId) {
             navigate('/exam-test');
@@ -303,7 +358,7 @@ const DoTestPage: React.FC = () => {
     const handleAnswerChange = useCallback((examQuestionId: string, hasAnswer: boolean, answerData?: { selectedAnswerId?: string; frqAnswerText?: string }) => {
         setAnswers(prev => {
             const currentAnswer = prev[examQuestionId];
-            
+
             if (answerData) {
                 const isDifferent =
                     currentAnswer?.selectedAnswerId !== answerData.selectedAnswerId ||
@@ -407,6 +462,15 @@ const DoTestPage: React.FC = () => {
                     <div className="h-1 w-16 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full"></div>
                 </div>
 
+                {/* Proctoring Status */}
+                <ProctoringStatus
+                    isActive={isProctoringActive}
+                    isFullscreen={isFullscreen}
+                    violationCounts={violationCounts}
+                    totalViolations={totalViolations}
+                    maxViolations={4}
+                />
+
                 <div className="bg-teal-50/60 rounded-xl p-4 mb-6 border border-teal-200/50">
                     <div className="flex items-center justify-between">
                         <span className="font-semibold text-gray-700">⏱️ Time left:</span>
@@ -417,7 +481,7 @@ const DoTestPage: React.FC = () => {
                             onTimeChange={setRemainingTime}
                         />
                     </div>
-                    
+
                     {/* Auto-save indicator */}
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-teal-200/30">
                         <span className="text-sm text-gray-600">💾 Auto save:</span>
@@ -654,6 +718,20 @@ const DoTestPage: React.FC = () => {
                     ) : null}
                 </div>
             </main>
+
+            {/* Proctoring Rules Modal */}
+            <ProctoringRulesModal
+                visible={showProctoringRules}
+                onAccept={() => {
+                    setShowProctoringRules(false);
+                    setProctoringAccepted(true);
+                    startProctoring();
+                }}
+                onReject={() => {
+                    setShowProctoringRules(false);
+                    handleCancel();
+                }}
+            />
 
             {showConFirmed && (
                 <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center">
