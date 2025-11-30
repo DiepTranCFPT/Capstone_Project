@@ -15,6 +15,7 @@ export interface LearningMaterial {
   thumbnail?: string;
   fileImage?: string;
   uploader?: string;
+  price?: number;
 }
 export interface LearningMaterialQuery {
   pageNo?: number;

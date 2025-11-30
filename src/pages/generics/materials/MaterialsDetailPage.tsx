@@ -93,7 +93,7 @@ const MaterialsDetailPage: React.FC = () => {
               topic: material.typeName,
               subject: material.subjectName,
               free: material.price === 0,
-              price: (material as unknown as { price?: number }).price,
+              price: material.price,
               image: material.thumbnail,
               thumbnail: material.thumbnail,
               fileImage: (material as unknown as { fileImage?: string }).fileImage,
