@@ -22,8 +22,18 @@ const MaterialCard: React.FC<{ material: Material }> = ({ material }) => {
         Lesson {material.lessons} • Student {material.students} • View {material.views}
       </p>
       <div className="flex justify-between items-center mt-2">
-        <span className="text-sm font-semibold">
-          {material.free ? "Free" : `$${material.price}`}
+        <span className={`text-sm font-semibold ${(material.price === 0 || material.free) ? "text-green-600" : ""}`}>
+          {(() => {
+            const price = material.price ?? 0;
+            if (price === 0 || material.free) {
+              return "Free";
+            }
+            return new Intl.NumberFormat("vi-VN", {
+              style: "currency",
+              currency: "VND",
+              maximumFractionDigits: 0,
+            }).format(price);
+          })()}
         </span>
         <Link
           to={`/materials/${material.id}`}
