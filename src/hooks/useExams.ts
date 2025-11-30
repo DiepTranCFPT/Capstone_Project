@@ -42,7 +42,7 @@ import { toast } from "~/components/common/Toast";
             throw new Error(res.data.message || "Failed to fetch templates");
           }
         } catch (err) {
-          handleError(err, "Không thể tải danh sách khuôn mẫu");
+          handleError(err, "Failed to load templates");
         } finally {
           setLoading(false);
         }
@@ -59,7 +59,7 @@ import { toast } from "~/components/common/Toast";
             throw new Error(res.data.message || "Failed to fetch template details");
           }
         } catch (err) {
-          handleError(err, "Không thể tải chi tiết khuôn mẫu");
+          handleError(err, "Failed to load template details");
         } finally {
           setLoading(false);
         }
@@ -72,7 +72,7 @@ import { toast } from "~/components/common/Toast";
           try {
             const res = await ExamTemplateService.createTemplate(data);
             if (res.data.code === 0 || res.data.code === 1000) {
-              toast.success("Tạo khuôn mẫu thành công!");
+              toast.success("Create template successfully!");
               // Cập nhật lại danh sách (hoặc có thể điều hướng)
               fetchAllTemplates(); 
               return res.data.data; // Trả về template đã tạo
@@ -80,7 +80,7 @@ import { toast } from "~/components/common/Toast";
               throw new Error(res.data.message || "Failed to create template");
             }
           } catch (err) {
-            handleError(err, "Tạo khuôn mẫu thất bại");
+            handleError(err, "Failed to create template");
             throw err;
           } finally {
             setLoading(false);
@@ -96,13 +96,13 @@ import { toast } from "~/components/common/Toast";
           try {
             const res = await ExamTemplateService.updateTemplate(id, data);
             if (res.data.code === 0 || res.data.code === 1000) {
-              toast.success("Cập nhật thông tin thành công!");
+              toast.success("Update template successfully!");
               setCurrentTemplate(res.data.data); // Cập nhật template hiện tại
             } else {
               throw new Error(res.data.message || "Failed to update template");
             }
           } catch (err) {
-            handleError(err, "Cập nhật thất bại");
+            handleError(err, "Failed to update template");
             throw err;
           } finally {
             setLoading(false);
@@ -118,13 +118,13 @@ import { toast } from "~/components/common/Toast";
           try {
             const res = await ExamTemplateService.deleteTemplate(id);
             if (res.data.code === 0 || res.data.code === 1000) {
-              toast.success("Xóa khuôn mẫu thành công!");
+              toast.success("Delete template successfully!");
               setTemplates((prev) => prev.filter((t) => t.id !== id));
             } else {
               throw new Error(res.data.message || "Failed to delete template");
             }
           } catch (err) {
-            handleError(err, "Xóa thất bại");
+            handleError(err, "Failed to delete template");
           } finally {
             setLoading(false);
           }
@@ -140,14 +140,14 @@ import { toast } from "~/components/common/Toast";
           try {
             const res = await ExamTemplateService.addRuleToTemplate(templateId, data);
             if (res.data.code === 0 || res.data.code === 1000) {
-              toast.success("Thêm quy tắc thành công!");
+              toast.success("Add rule successfully!");
               // Tải lại chi tiết template để cập nhật danh sách rules
               fetchTemplateById(templateId);
             } else {
               throw new Error(res.data.message || "Failed to add rule");
             }
           } catch (err) {
-            handleError(err, "Thêm quy tắc thất bại");
+            handleError(err, "Failed to add rule");
           } finally {
             setLoading(false);
           }
@@ -161,13 +161,13 @@ import { toast } from "~/components/common/Toast";
           try {
             const res = await ExamTemplateService.updateRule(ruleId, data);
             if (res.data.code === 0 || res.data.code === 1000) {
-              toast.success("Cập nhật quy tắc thành công!");
+              toast.success("Update rule successfully!");
               fetchTemplateById(templateId); // Tải lại template cha
             } else {
               throw new Error(res.data.message || "Failed to update rule");
             }
           } catch (err) {
-            handleError(err, "Cập nhật quy tắc thất bại");
+            handleError(err, "Failed to update rule");
           } finally {
             setLoading(false);
           }
@@ -181,13 +181,13 @@ import { toast } from "~/components/common/Toast";
           try {
             const res = await ExamTemplateService.deleteRule(ruleId);
             if (res.data.code === 0 || res.data.code === 1000) {
-              toast.success("Xóa quy tắc thành công!");
+              toast.success("Delete rule successfully!");
               fetchTemplateById(templateId); // Tải lại template cha
             } else {
               throw new Error(res.data.message || "Failed to delete rule");
             }
           } catch (err) {
-            handleError(err, "Xóa quy tắc thất bại");
+            handleError(err, "Failed to delete rule");
           } finally {
             setLoading(false);
           }
@@ -265,7 +265,7 @@ import { toast } from "~/components/common/Toast";
             throw new Error(res.data.message || "Failed to fetch exams");
           }
         } catch (err) {
-          handleError(err, "Không thể tải danh sách bài thi");
+          handleError(err, "Failed to fetch exams");
         } finally {
           setLoading(false);
         }
@@ -283,7 +283,7 @@ import { toast } from "~/components/common/Toast";
             throw new Error(res.data.message || "Failed to fetch exam details");
           }
         } catch (err) {
-          handleError(err, "Không thể tải chi tiết bài thi");
+          handleError(err, "Failed to fetch exam details");
         } finally {
           setLoading(false);
         }

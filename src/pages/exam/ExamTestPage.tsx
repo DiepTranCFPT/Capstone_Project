@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ExamCard from '~/components/exam/ExamCard';
-import StatCard from '~/components/exam/StatCard';
 import TokenConfirmationModal from '~/components/common/TokenConfirmationModal';
-import { FiSearch, FiAward, FiUsers, FiClipboard, FiFileText, FiLoader } from 'react-icons/fi';
+import { FiSearch, FiLoader } from 'react-icons/fi';
 import Section from '~/components/exam/Section';
 import { useBrowseExamTemplates } from '~/hooks/useExamBrowser';
 import { useSubjects } from '~/hooks/useSubjects';
@@ -528,13 +527,6 @@ const ExamTestPage: React.FC = () => {
                                 )}
                             </div>
 
-                            {/* Right Side: Stats */}
-                            <aside className="space-y-6">
-                                <StatCard icon={FiAward} value="4521+" label="Full Length Mock Tests" />
-                                <StatCard icon={FiUsers} value="1485+" label="Sectional Tests" />
-                                <StatCard icon={FiClipboard} value="4521+" label="Active Students" />
-                                <StatCard icon={FiFileText} value="4521+" label="Full Length Mock Tests" />
-                            </aside>
                         </div>
                     )}
                 </div>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 // import { useParams, Link } from 'react-router-dom';
 import { FiBookOpen, FiClipboard, FiUsers, FiLoader } from 'react-icons/fi';
-import CommentSection from '~/components/exam/CommentSection';
 import Section from '~/components/exam/Section';
 import { useParams } from 'react-router-dom';
 import PracticeTabContent from '~/components/exam/PracticeTabContent';

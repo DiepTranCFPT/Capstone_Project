@@ -1,11 +1,10 @@
 import { Button, Card, Input, message, Slider, Spin, Alert, Empty, Typography } from "antd";
-import { ArrowLeftOutlined, RobotOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import type React from "react";
 import { useState, useEffect, useMemo } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useExamAttempt } from "~/hooks/useExamAttempt";
 import type { ManualGradeItem } from "~/types/examAttempt";
-import AIGradingSupport from "~/components/teachers/AI/AIGradingSupport";
 
 const { TextArea } = Input;
 
@@ -24,7 +23,6 @@ const GradeSubmissionPage: React.FC = () => {
 
     const [manualGrades, setManualGrades] = useState<ManualGradeItem[]>([]);
     const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
-    const [showAISuggestion, setShowAISuggession] = useState<boolean>(false);
 
     console.log('Raw params:', useParams());
     console.log('Extracted attemptId (from submissionId):', attemptId);
@@ -163,14 +161,7 @@ const GradeSubmissionPage: React.FC = () => {
                             </Button>
                         </div>
                     </Card>
-
-                    {showAISuggestion && activeQuestion.studentAnswer && (
-                        <div className="mt-4">
-                            <AIGradingSupport
-                                studentAnswer={activeQuestion.studentAnswer.frqAnswerText || ''}
-                            />
-                        </div>
-                    )}
+                  
                 </div>
             </div>
         </div>

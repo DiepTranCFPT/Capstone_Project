@@ -107,7 +107,7 @@ export const useOngoingExams = () => {
     if (isResuming) return;
     
     setIsResuming(true);
-    toast.loading('Đang đồng bộ dữ liệu...', { autoClose: 2000 });
+    toast.loading('Syncing data...', { autoClose: 2000 });
 
     try {
       let result: ActiveExam | null = null;
@@ -144,7 +144,7 @@ export const useOngoingExams = () => {
           subjectIds: exam.metadata?.subjectIds
         }));
         
-        toast.success('Đồng bộ thành công! Chuyển đến bài thi...', { autoClose: 1500 });
+        toast.success('Sync successfully! Redirecting to exam...', { autoClose: 1500 });
         
         // Redirect based on exam type
         setTimeout(() => {
@@ -157,7 +157,7 @@ export const useOngoingExams = () => {
       } else {
         // Fallback to old behavior if API fails
         console.warn('API resume failed, falling back to localStorage');
-        toast.warning('Không thể đồng bộ, sử dụng dữ liệu local...', { autoClose: 2000 });
+        // toast.warning('Không thể đồng bộ, sử dụng dữ liệu local...', { autoClose: 2000 });
         
         setTimeout(() => {
           if (exam.examType === 'single') {
@@ -169,7 +169,7 @@ export const useOngoingExams = () => {
       }
     } catch (error) {
       console.error('Error resuming exam:', error);
-      toast.error('Lỗi khi tiếp tục bài thi', { autoClose: 3000 });
+      toast.error('Error when resuming exam', { autoClose: 3000 });
       
       // Fallback to old behavior
       setTimeout(() => {
@@ -191,7 +191,7 @@ export const useOngoingExams = () => {
     const exams = checkOngoingExams();
     if (exams.length > 0) {
       toast.info(
-        `Bạn có ${exams.length} bài thi đang làm chưa hoàn thành. Xem ngay!`,
+        `You have ${exams.length} exams in progress. Check now!`,
         {
           autoClose: 8000,
           onClick: () => {

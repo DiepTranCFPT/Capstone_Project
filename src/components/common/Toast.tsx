@@ -85,20 +85,20 @@ export const toast = {
 // Vietnamese messages for authentication
 export const authMessages = {
   login: {
-    success: 'Đăng nhập thành công!',
-    error: 'Đăng nhập thất bại. Vui lòng kiểm tra email và mật khẩu.',
-    invalidCredentials: 'Email hoặc mật khẩu không đúng.',
-    loading: 'Đang đăng nhập...',
+    success: 'Login successfully!',
+    error: 'Login failed. Please check your email and password.',
+    invalidCredentials: 'Email or password is incorrect.',
+    loading: 'Logging in...',
   },
   register: {
-    success: 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.',
-    error: 'Đăng ký thất bại. Vui lòng thử lại.',
-    emailVerification: 'Vui lòng kiểm tra email để xác thực tài khoản.',
-    loading: 'Đang đăng ký...',
+    success: 'Register successfully! Please check your email to verify your account.',
+    error: 'Register failed. Please try again.',
+    emailVerification: 'Please check your email to verify your account.',
+    loading: 'Registering...',
   },
   common: {
-    networkError: 'Lỗi kết nối mạng. Vui lòng thử lại.',
-    serverError: 'Lỗi máy chủ. Vui lòng thử lại sau.',
-    unexpectedError: 'Có lỗi xảy ra. Vui lòng thử lại.',
+    networkError: 'Network error. Please try again.',
+    serverError: 'Server error. Please try again later.',
+    unexpectedError: 'An error occurred. Please try again.',
   },
 };

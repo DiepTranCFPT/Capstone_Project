@@ -166,11 +166,9 @@ const CreateExamPage: React.FC = () => {
       const newRules = [...rules];
       newRules[editingRuleIndex] = { ...ruleForm };
       setRules(newRules);
-      toast.success('Rule updated successfully');
     } else {
       // Add new rule
       setRules([...rules, { ...ruleForm }]);
-      toast.success('Rule added successfully');
     }
 
     resetRuleForm();
@@ -186,7 +184,6 @@ const CreateExamPage: React.FC = () => {
   const handleDeleteRule = (index: number) => {
     const newRules = rules.filter((_, i) => i !== index);
     setRules(newRules);
-    toast.success('Rule deleted successfully');
   };
 
   const handleSaveTemplate = async () => {
@@ -237,7 +234,6 @@ const CreateExamPage: React.FC = () => {
         };
 
         await updateTemplateDetails(examId, updateData);
-        toast.success('Template updated successfully!');
         navigate('/teacher/templates');
       } else {
         // Create new template
@@ -267,8 +263,6 @@ const CreateExamPage: React.FC = () => {
         setDurationError('');
         setPassingScoreError('');
         setRulesError('');
-
-        toast.success('Template created successfully!');
       }
     } catch (error) {
       console.error('Save template error:', error);

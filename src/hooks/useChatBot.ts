@@ -23,7 +23,7 @@ export const useChatBot = (isAuthenticated: boolean) => {
       setTimeout(() => {
         const errorMessage: ChatMessage = {
           id: uuidv4(),
-          text: 'Bạn cần đăng nhập để sử dụng chatbot.',
+          text: 'You need to login to use chatbot.',
           sender: 'bot',
         };
         setMessages((prevMessages) => [...prevMessages, errorMessage]);
