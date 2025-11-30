@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 // import { useParams, Link } from 'react-router-dom';
 import { FiBookOpen, FiClipboard, FiUsers, FiLoader } from 'react-icons/fi';
-import CommentSection from '~/components/exam/CommentSection';
 import Section from '~/components/exam/Section';
 import { useParams } from 'react-router-dom';
 import PracticeTabContent from '~/components/exam/PracticeTabContent';
@@ -37,8 +36,8 @@ const ExamDetailsPage: React.FC = () => {
     } : null;
 
     const tabs = [
-        { key: 'practice', label: 'Luyện Tập' },
-        { key: 'fullTest', label: 'Thi Thử' },
+        { key: 'practice', label: 'Practice' },
+        { key: 'fullTest', label: 'Full Test' },
         // { key: 'comment', label: 'Comment' },
     ];
 
@@ -128,7 +127,7 @@ const ExamDetailsPage: React.FC = () => {
                         </div>
 
                         {/* Comment Section */}
-                        <CommentSection />
+                        {/* <CommentSection /> */}
                     </div>
 
                     {/* Right Sidebar */}

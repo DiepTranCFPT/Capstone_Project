@@ -89,6 +89,8 @@ export interface AttemptResultDetail {
   startTime: string;
   endTime: string;
   rating: number;
+  doneBy: string;
+  comment?: string;
   questions: AttemptResultQuestion[];
 }
 

@@ -5,7 +5,8 @@ import {
     // AimOutlined,
     CheckCircleOutlined,
     RobotOutlined,
-    SendOutlined
+    SendOutlined,
+    FileTextOutlined
 } from '@ant-design/icons';
 import type { AttemptResultDetail } from '~/types/examAttempt';
 import { useAiExamAsk } from '~/hooks/useAiExamAsk';
@@ -81,19 +82,6 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
         }));
     }, [attemptResultDetail]);
 
-    // Comparison data
-    // const comparison = {
-    //     userScore: attemptResultDetail?.score || 0,
-    //     averageScore: 70 // Placeholder
-    // };
-
-    // Suggestions
-    // const suggestions = [
-    //     "Consider elaborating on the historical context.",
-    //     "Your conclusion could be stronger.",
-    //     "Check for minor grammatical errors in the second paragraph.",
-    // ];
-
     // CẬP NHẬT: Tính toán detailedAnswers dựa trên `studentAnswer`
     const detailedAnswers = React.useMemo(() => {
         if (!attemptResultDetail?.questions) return [];
@@ -142,7 +130,7 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
             <div className="space-y-6 animate-fade-in">
                 {/* Performance Analysis */}
                 <div>
-                    <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><BarChartOutlined className="mr-2 text-teal-500" />Phân tích hiệu suất theo chủ đề</h4>
+                    <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><BarChartOutlined className="mr-2 text-teal-500" />Performance Analysis by Topic</h4>
                     <div className="space-y-2">
                         {performanceByTopic.map((item) => (
                             <div key={item.topic}>
@@ -158,27 +146,40 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
                     </div>
                 </div>
 
-                {/* Comparison */}
-                {/* <div>
-                    <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><UsergroupAddOutlined className="mr-2 text-teal-500" />So sánh kết quả</h4>
-                    <p className="text-gray-600">Điểm của bạn so với điểm trung bình của những người dùng khác.</p>
-                    <div className="flex items-baseline justify-center gap-4 mt-2 p-4 bg-gray-50 rounded-lg">
-                        <div><span className="text-3xl font-bold text-teal-600">{comparison.userScore.toFixed(1)}%</span><p className="text-sm">Điểm của bạn</p></div>
-                        <div className="text-gray-400">vs</div>
-                        <div><span className="text-3xl font-bold text-gray-500">{comparison.averageScore}%</span><p className="text-sm">Trung bình</p></div>
+                {/* AI Review & Summary */}
+                {attemptResultDetail?.comment && (
+                    <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-xl p-6 border border-blue-100 shadow-md">
+                        <h4 className="text-lg font-bold text-gray-800 flex items-center mb-4">
+                            <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-2 rounded-lg mr-3 shadow-sm">
+                                <FileTextOutlined className="text-white text-xl" />
+                            </div>
+                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+                                AI Review & Summary
+                            </span>
+                        </h4>
+                        <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 shadow-sm border border-blue-100">
+                            <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
+                                <ReactMarkdown
+                                    components={{
+                                        p: ({ ...props }) => <p className="mb-3 last:mb-0" {...props} />,
+                                        ul: ({ ...props }) => <ul className="list-disc list-outside ml-5 mb-3 space-y-1" {...props} />,
+                                        ol: ({ ...props }) => <ol className="list-decimal list-outside ml-5 mb-3 space-y-1" {...props} />,
+                                        li: ({ ...props }) => <li className="pl-1" {...props} />,
+                                        strong: ({ ...props }) => <strong className="font-bold text-gray-800" {...props} />,
+                                        em: ({ ...props }) => <em className="italic text-gray-600" {...props} />,
+                                        code: ({ ...props }) => <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-purple-600 border border-gray-200" {...props} />,
+                                    }}
+                                >
+                                    {attemptResultDetail.comment}
+                                </ReactMarkdown>
+                            </div>
+                        </div>
                     </div>
-                </div> */}
+                )}
 
-                {/* Suggestions */}
-                {/* <div>
-                    <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><AimOutlined className="mr-2 text-teal-500" />Chủ đề cần cải thiện</h4>
-                    <ul className="list-disc list-inside space-y-1 text-gray-600">
-                        {suggestions.map((s, i) => <li key={i}>{s}</li>)}
-                    </ul>
-                </div> */}
                 {/* Detailed Answers */}
                 <div>
-                    <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><CheckCircleOutlined className="mr-2 text-teal-500" />Đáp án và giải thích chi tiết</h4>
+                    <h4 className="text-lg font-bold text-gray-800 flex items-center mb-3"><CheckCircleOutlined className="mr-2 text-teal-500" />Detailed Answers</h4>
                     <div className="space-y-4">
                         {detailedAnswers.map((ans, i) => (
                             <div key={i} className="p-4 border rounded-lg bg-gray-50">
@@ -186,32 +187,32 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
 
                                 {/* CẬP NHẬT: Hiển thị "No answer" nếu không có câu trả lời */}
                                 <p className={`text-sm ${ans.userAnswer === 'No answer' ? 'text-gray-500 italic' : (ans.userAnswer === ans.correctAnswer ? 'text-green-600 font-bold' : 'text-red-600 font-bold')}`}>
-                                    Bạn chọn: {ans.userAnswer}
+                                    Your answer: {ans.userAnswer}
                                 </p>
 
                                 {/* Chỉ hiển thị đáp án đúng nếu trả lời sai và không phải là "No answer" */}
                                 {ans.userAnswer !== ans.correctAnswer && ans.userAnswer !== 'No answer' && (
-                                    <p className="text-sm">Đáp án đúng: <span className="text-green-600 font-bold">{ans.correctAnswer}</span></p>
+                                    <p className="text-sm">Correct answer: <span className="text-green-600 font-bold">{ans.correctAnswer}</span></p>
                                 )}
 
                                 {/* Hiển thị đáp án đúng nếu không trả lời */}
                                 {ans.userAnswer === 'No answer' && (
-                                    <p className="text-sm">Đáp án đúng: <span className="text-green-600 font-bold">{ans.correctAnswer}</span></p>
+                                    <p className="text-sm">Correct answer: <span className="text-green-600 font-bold">{ans.correctAnswer}</span></p>
                                 )}
 
-                                <p className="text-sm mt-2 pt-2 border-t text-gray-700"><em>Giải thích: {ans.explanation}</em></p>
+                                <p className="text-sm mt-2 pt-2 border-t text-gray-700"><em>Explanation: {ans.explanation}</em></p>
                                 <div className="flex space-x-2 mt-2">
                                     <button
                                         onClick={() => openModal('ai', ans)}
                                         className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 flex items-center"
                                     >
-                                        <RobotOutlined className="mr-1" /> Hỏi AI
+                                        <RobotOutlined className="mr-1" /> Ask AI
                                     </button>
                                     <button
                                         onClick={() => openModal('advisor', ans)}
                                         className="text-xs px-3 py-1 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200"
                                     >
-                                        Hỏi Advisor
+                                        Ask Advisor
                                     </button>
                                 </div>
                             </div>

@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ExamCard from '~/components/exam/ExamCard';
-import StatCard from '~/components/exam/StatCard';
 import TokenConfirmationModal from '~/components/common/TokenConfirmationModal';
-import { FiSearch, FiAward, FiUsers, FiClipboard, FiFileText, FiLoader } from 'react-icons/fi';
+import { FiSearch, FiLoader } from 'react-icons/fi';
 import Section from '~/components/exam/Section';
 import { useBrowseExamTemplates } from '~/hooks/useExamBrowser';
 import { useSubjects } from '~/hooks/useSubjects';
@@ -215,16 +214,16 @@ const ExamTestPage: React.FC = () => {
                     <div className="text-center py-20">
                         <div className="text-6xl mb-6">🔒</div>
                         <h3 className="text-3xl font-bold text-gray-800 mb-4">
-                            Vui lòng đăng nhập để xem
+                            Please login to view
                         </h3>
                         <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                            Bạn cần đăng nhập để truy cập vào các bài thi và tính năng của hệ thống.
+                            You need to login to access exams and features of the system.
                         </p>
                         <button
                             onClick={() => window.location.href = '/auth'}
                             className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
                         >
-                            Đăng nhập
+                            Login
                         </button>
                     </div>
                 </main>
@@ -252,7 +251,7 @@ const ExamTestPage: React.FC = () => {
                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                         } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
                                 >
-                                    Thi Lẻ
+                                    Individual Exam
                                 </button>
                                 <button
                                     onClick={() => setActiveMainTab('combined')}
@@ -261,7 +260,7 @@ const ExamTestPage: React.FC = () => {
                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                         } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
                                 >
-                                    Thi Tổ hợp
+                                    Combined Exam
                                 </button>
                             </nav>
                         </div>
@@ -352,7 +351,7 @@ const ExamTestPage: React.FC = () => {
                                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
                                         >
-                                            Tự Chọn
+                                            Self Selected
                                         </button>
                                         <button
                                             onClick={() => setActiveSubTab('platformSelected')}
@@ -361,16 +360,16 @@ const ExamTestPage: React.FC = () => {
                                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
                                         >
-                                            Nền Tảng Chọn
+                                            Platform Selected
                                         </button>
                                     </nav>
                                 </div>
 
                                 {activeSubTab === 'selfSelected' && (
                                     <div className="space-y-6">
-                                        <h3 className="text-2xl font-semibold text-gray-700">Tự Chọn (Self-Selected)</h3>
+                                        <h3 className="text-2xl font-semibold text-gray-700">Self Selected</h3>
                                         <div className="mb-4">
-                                            <h4 className="text-lg font-semibold mb-2">Chọn môn học (Select subjects)</h4>
+                                            <h4 className="text-lg font-semibold mb-2">Select subjects</h4>
                                             {subjectsLoading ? (
                                                 <div className="flex justify-center items-center py-4">
                                                     <FiLoader className="animate-spin text-teal-500" size={20} />
@@ -439,7 +438,7 @@ const ExamTestPage: React.FC = () => {
                                                 {isStartingCombinedTest ? (
                                                     <>
                                                         <FiLoader className="animate-spin" size={16} />
-                                                        Đang tải...
+                                                        Loading...
                                                     </>
                                                 ) : (
                                                     'Start Combined Test'
@@ -451,9 +450,9 @@ const ExamTestPage: React.FC = () => {
 
                                 {activeSubTab === 'platformSelected' && (
                                     <div className="space-y-6">
-                                        <h3 className="text-2xl font-semibold text-gray-700">Nền Tảng Chọn (Platform Selected)</h3>
+                                        <h3 className="text-2xl font-semibold text-gray-700">Platform Selected</h3>
                                         <div className="mb-4">
-                                            <h4 className="text-lg font-semibold mb-2">Chọn môn học (Select subjects)</h4>
+                                            <h4 className="text-lg font-semibold mb-2">Select subjects</h4>
                                             {subjectsLoading ? (
                                                 <div className="flex justify-center items-center py-4">
                                                     <FiLoader className="animate-spin text-teal-500" size={20} />
@@ -484,10 +483,10 @@ const ExamTestPage: React.FC = () => {
                                                 {isStartingPlatformTest ? (
                                                     <>
                                                         <FiLoader className="animate-spin" size={16} />
-                                                        Đang tải...
+                                                        Loading...
                                                     </>
                                                 ) : (
-                                                    'Bắt đầu Thi Tổ hợp'
+                                                    'Start Platform Combined Exam'
                                                 )}
                                             </button>
                                         </div>
@@ -528,13 +527,6 @@ const ExamTestPage: React.FC = () => {
                                 )}
                             </div>
 
-                            {/* Right Side: Stats */}
-                            <aside className="space-y-6">
-                                <StatCard icon={FiAward} value="4521+" label="Full Length Mock Tests" />
-                                <StatCard icon={FiUsers} value="1485+" label="Sectional Tests" />
-                                <StatCard icon={FiClipboard} value="4521+" label="Active Students" />
-                                <StatCard icon={FiFileText} value="4521+" label="Full Length Mock Tests" />
-                            </aside>
                         </div>
                     )}
                 </div>

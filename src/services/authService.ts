@@ -13,7 +13,7 @@ import axiosInstance, { publicAxios } from "../configs/axios";
 import axios from "axios";
 const API_URL = import.meta.env.VITE_API_URL;
 // Helper function to decode JWT token
-const decodeJWT = (token: string): JwtPayload | null => {
+export const decodeJWT = (token: string): JwtPayload | null => {
     try {
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');

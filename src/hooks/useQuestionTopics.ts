@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { message } from "antd";
-import QuestionService from "~/services/QuestionService";
-import type { QuestionTopic} from "~/types/questionTopic";
+import QuestionTopicService from "~/services/questionTopicService";
+import type { QuestionTopic } from "~/types/questionTopic";
 import type { PageInfo } from "~/types/pagination";
+import type { QuestionTopicPayload } from "~/services/questionTopicService";
+import { toast } from "~/components/common/Toast";
 
 export const useQuestionTopics = () => {
   const [topics, setTopics] = useState<QuestionTopic[]>([]);
@@ -11,16 +12,17 @@ export const useQuestionTopics = () => {
   );
   const [loading, setLoading] = useState(false);
 
+  // Lấy tất cả Topic (có phân trang)
   const fetchTopics = useCallback(
     async (params?: { pageNo?: number; pageSize?: number; keyword?: string }) => {
       try {
         setLoading(true);
-        const res = await QuestionService.getAllTopics(params);
+        const res = await QuestionTopicService.getAll(params);
         console.log("[useQuestionTopics] Full API Response:", res);
         console.log("[useQuestionTopics] Response.data:", res.data);
-        
+
         let list: QuestionTopic[] = [];
-        
+
         // Handle different response formats
         // Case 1: Direct array response
         if (Array.isArray(res.data)) {
@@ -58,19 +60,125 @@ export const useQuestionTopics = () => {
         } else {
           console.warn("[useQuestionTopics] Unexpected response format:", res.data);
         }
-        
+
         console.log("[useQuestionTopics] Final topics list:", list);
         setTopics(list);
+        return list;
       } catch (error) {
         // Ensure topics is always an array even on error
         setTopics([]);
-        message.error("Không thể tải danh sách chủ đề câu hỏi!");
+        toast.error("Không thể tải danh sách chủ đề câu hỏi!");
         console.error("[useQuestionTopics] Error:", error);
+        throw error;
       } finally {
         setLoading(false);
       }
     },
     []
+  );
+
+  // Lấy Topic của giáo viên đang đăng nhập
+  const fetchMyTopics = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await QuestionTopicService.getMyTopics();
+      const list = res.data?.data || res.data || [];
+      setTopics(list);
+      return list;
+    } catch (error) {
+      setTopics([]);
+      toast.error("Không thể tải chủ đề câu hỏi của bạn!");
+      console.error("[useQuestionTopics] fetchMyTopics Error:", error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Lấy Topic theo SubjectId
+  const fetchTopicsBySubject = useCallback(async (subjectId: string) => {
+    try {
+      setLoading(true);
+      const res = await QuestionTopicService.getBySubjectId(subjectId);
+      const list = res.data?.data || res.data || [];
+      setTopics(list);
+      return list;
+    } catch (error) {
+      setTopics([]);
+      toast.error("Không thể tải chủ đề câu hỏi theo môn học!");
+      console.error("[useQuestionTopics] fetchTopicsBySubject Error:", error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Tạo Topic mới
+  const createTopic = useCallback(
+    async (data: QuestionTopicPayload | Record<string, unknown>) => {
+      try {
+        setLoading(true);
+        const res = await QuestionTopicService.create(data);
+        const newTopic = res.data?.data || res.data;
+        toast.success("Tạo chủ đề câu hỏi thành công!");
+        // Refresh topics list
+        await fetchTopics();
+        return newTopic;
+      } catch (error) {
+        toast.error("Không thể tạo chủ đề câu hỏi!");
+        console.error("[useQuestionTopics] createTopic Error:", error);
+        throw error;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchTopics]
+  );
+
+  // Cập nhật Topic
+  const updateTopic = useCallback(
+    async (
+      topicId: string,
+      data: Partial<QuestionTopic> | Record<string, unknown>
+    ) => {
+      try {
+        setLoading(true);
+        const res = await QuestionTopicService.update(topicId, data);
+        const updatedTopic = res.data?.data || res.data;
+        toast.success("Cập nhật chủ đề câu hỏi thành công!");
+        // Refresh topics list
+        await fetchTopics();
+        return updatedTopic;
+      } catch (error) {
+        toast.error("Không thể cập nhật chủ đề câu hỏi!");
+        console.error("[useQuestionTopics] updateTopic Error:", error);
+        throw error;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchTopics]
+  );
+
+  // Xóa Topic
+  const deleteTopic = useCallback(
+    async (topicId: string) => {
+      try {
+        setLoading(true);
+        const res = await QuestionTopicService.delete(topicId);
+        toast.success("Xóa chủ đề câu hỏi thành công!");
+        // Refresh topics list
+        await fetchTopics();
+        return res.data?.data || res.data;
+      } catch (error) {
+        toast.error("Không thể xóa chủ đề câu hỏi!");
+        console.error("[useQuestionTopics] deleteTopic Error:", error);
+        throw error;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchTopics]
   );
 
   useEffect(() => {
@@ -82,6 +190,11 @@ export const useQuestionTopics = () => {
     pageInfo,
     loading,
     fetchTopics,
+    fetchMyTopics,
+    fetchTopicsBySubject,
+    createTopic,
+    updateTopic,
+    deleteTopic,
   };
 };
 

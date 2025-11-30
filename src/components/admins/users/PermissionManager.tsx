@@ -85,7 +85,7 @@ const PermissionManager: React.FC = () => {
 
   const columns: ColumnsType<Permission> = [
     {
-      title: 'Tên quyền',
+      title: 'Permission Name',
       dataIndex: 'name',
       key: 'name',
       render: (name: string) => (
@@ -93,7 +93,7 @@ const PermissionManager: React.FC = () => {
       ),
     },
     {
-      title: 'Mô tả',
+      title: 'Description',
       dataIndex: 'description',
       key: 'description',
       render: (description: string) => (
@@ -101,16 +101,16 @@ const PermissionManager: React.FC = () => {
       ),
     },
     {
-      title: 'Hành động',
+      title: 'Action',
       key: 'actions',
       align: 'center',
       render: (_: unknown, record: Permission) => (
         <Popconfirm
-          title="Xóa quyền?"
+          title="Delete permission?"
           description={`Bạn có chắc muốn xóa quyền "${record.name}"?`}
           onConfirm={() => handleDeletePermission(record.name)}
-          okText="Xóa"
-          cancelText="Hủy"
+          okText="Delete"
+          cancelText="Cancel"
         >
           <button className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition">
             <Trash2 className="w-4 h-4" />
@@ -157,10 +157,10 @@ const PermissionManager: React.FC = () => {
         <div className="mb-3">
           <Title level={3} className="mb-1 text-gray-900 flex items-center gap-2">
             <Shield className="w-5 h-5" />
-            Quản lý quyền
+            Permission Management
           </Title>
           <p className="text-gray-600 text-sm">
-            Quản lý danh sách các quyền trong hệ thống
+            Manage list of permissions in the system
           </p>
         </div>
 
@@ -174,13 +174,13 @@ const PermissionManager: React.FC = () => {
             prefix={<SearchOutlined className="text-gray-400" />}
           />
           <Space>
-            <Tooltip title="Làm mới">
+            <Tooltip title="Refresh">
               <Button
                 icon={<RefreshCcw className="w-4 h-4" />}
                 onClick={fetchPermissions}
                 className="border-gray-200"
               >
-                Làm mới
+                Refresh
               </Button>
             </Tooltip>
             <Button
@@ -189,7 +189,7 @@ const PermissionManager: React.FC = () => {
               onClick={() => setIsCreateModalVisible(true)}
               className="bg-blue-600 hover:bg-blue-700 border-0 shadow-sm px-4 h-9"
             >
-              Thêm quyền
+              Add Permission
             </Button>
           </Space>
         </div>
@@ -230,10 +230,10 @@ const PermissionManager: React.FC = () => {
         <div className="mb-3">
           <Title level={3} className="mb-1 text-gray-900 flex items-center gap-2">
             <Users className="w-5 h-5" />
-            Quyền theo vai trò
+            Role Permissions
           </Title>
           <p className="text-gray-600 text-sm">
-            Gán và thu hồi quyền cho các vai trò trong hệ thống
+            Assign and revoke permissions for roles in the system
           </p>
         </div>
 
@@ -241,10 +241,10 @@ const PermissionManager: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Chọn vai trò
+                Select Role
               </label>
               <Select
-                placeholder="Chọn vai trò để xem quyền"
+                placeholder="Select role to view permissions"
                 value={selectedRole}
                 onChange={handleRoleChange}
                 className="w-full"
@@ -269,7 +269,7 @@ const PermissionManager: React.FC = () => {
                   loading={loading}
                   className="bg-green-600 hover:bg-green-700"
                 >
-                  Gán quyền
+                  Assign Permissions
                 </Button>
                 <Button
                   danger
@@ -277,7 +277,7 @@ const PermissionManager: React.FC = () => {
                   disabled={selectedPermissions.length === 0}
                   loading={loading}
                 >
-                  Thu hồi quyền
+                  Revoke Permissions
                 </Button>
               </div>
             )}
@@ -289,7 +289,7 @@ const PermissionManager: React.FC = () => {
             <Divider />
             <div className="mb-4">
               <Title level={4} className="mb-3">
-                Quyền hiện tại của vai trò: <Tag color="blue">{selectedRole}</Tag>
+                Current Permissions of Role: <Tag color="blue">{selectedRole}</Tag>
               </Title>
               <div className="bg-gray-50 p-4 rounded-lg">
                 {rolePermissions.length > 0 ? (
@@ -301,7 +301,7 @@ const PermissionManager: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500">Vai trò này chưa có quyền nào.</p>
+                  <p className="text-gray-500">This role has no permissions.</p>
                 )}
               </div>
             </div>
@@ -309,7 +309,7 @@ const PermissionManager: React.FC = () => {
             <Divider />
             <div className="mb-4">
               <Title level={4} className="mb-3">
-                Chọn quyền để gán/thu hồi
+                Select Permissions to Assign/Revoke
               </Title>
               <Checkbox.Group
                 value={selectedPermissions}
@@ -346,7 +346,7 @@ const PermissionManager: React.FC = () => {
             label: (
               <span className="flex items-center gap-2">
                 <Shield className="w-4 h-4" />
-                Quyền
+                Permissions
               </span>
             ),
             children: permissionsTab,
@@ -356,7 +356,7 @@ const PermissionManager: React.FC = () => {
             label: (
               <span className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                Quyền theo vai trò
+                Role Permissions
               </span>
             ),
             children: rolePermissionsTab,
@@ -366,7 +366,7 @@ const PermissionManager: React.FC = () => {
 
       {/* Create Permission Modal */}
       <Modal
-        title="Thêm quyền mới"
+        title="Add New Permission"
         open={isCreateModalVisible}
         onCancel={() => {
           setIsCreateModalVisible(false);
@@ -382,26 +382,26 @@ const PermissionManager: React.FC = () => {
           className="mt-4"
         >
           <Form.Item
-            label="Tên quyền"
+            label="Permission Name"
             name="name"
             rules={[
-              { required: true, message: 'Vui lòng nhập tên quyền' },
-              { min: 2, message: 'Tên quyền phải có ít nhất 2 ký tự' },
+              { required: true, message: 'Please enter permission name' },
+              { min: 2, message: 'Permission name must be at least 2 characters' },
             ]}
           >
-            <Input placeholder="Nhập tên quyền" />
+            <Input placeholder="Enter permission name" />
           </Form.Item>
 
           <Form.Item
-            label="Mô tả"
+            label="Description"
             name="description"
             rules={[
-              { required: true, message: 'Vui lòng nhập mô tả' },
-              { min: 5, message: 'Mô tả phải có ít nhất 5 ký tự' },
+              { required: true, message: 'Please enter description' },
+              { min: 5, message: 'Description must be at least 5 characters' },
             ]}
           >
             <Input.TextArea
-              placeholder="Nhập mô tả cho quyền"
+              placeholder="Enter description"
               rows={3}
             />
           </Form.Item>
@@ -414,7 +414,7 @@ const PermissionManager: React.FC = () => {
                   createForm.resetFields();
                 }}
               >
-                Hủy
+                Cancel
               </Button>
               <Button
                 type="primary"
@@ -422,7 +422,7 @@ const PermissionManager: React.FC = () => {
                 loading={loading}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                Thêm quyền
+                Add Permission
               </Button>
             </Space>
           </Form.Item>

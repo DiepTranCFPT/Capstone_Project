@@ -11,7 +11,6 @@ import {
   Card,
   Popconfirm,
   Tabs,
-  message,
 } from "antd";
 import { SearchOutlined, PlusOutlined } from "@ant-design/icons";
 import { RefreshCcw, Trash2, Shield } from "lucide-react";
@@ -22,6 +21,7 @@ import type { ColumnsType } from "antd/es/table";
 import UserFilter from "./UserFilter";
 import PermissionManager from "./PermissionManager";
 import UserPermissionModal from "./UserPermissionModal";
+import { toast } from "~/components/common/Toast";
 
 const { Title } = Typography;
 
@@ -51,20 +51,20 @@ const UserManagement: React.FC = () => {
     try {
       const res = await UserService.deleteUser(id);
       if (res && res.code === 1000) {
-        message.success("Đã xóa người dùng");
+        toast.success("Deleted user successfully");
         fetchUsers();
       } else {
-        message.error(res?.message || "Không thể xóa người dùng");
+        toast.error(res?.message || "Failed to delete user");
       }
     } catch (error) {
       console.error("Failed to delete user:", error);
-      message.error("Xóa người dùng thất bại");
+      toast.error("Failed to delete user");
     }
   };
 
   const columns: ColumnsType<User> = [
     {
-      title: "Người dùng",
+      title: "User",
       key: "name",
       render: (_: unknown, record: User) => (
         <div className="flex items-center gap-3">
@@ -83,7 +83,7 @@ const UserManagement: React.FC = () => {
       ),
     },
     {
-      title: "Vai trò",
+      title: "Role",
       dataIndex: "roles",
       key: "roles",
       render: (roles: unknown) => {
@@ -102,7 +102,7 @@ const UserManagement: React.FC = () => {
       },
     },
     {
-      title: "Trạng thái",
+      title: "Status",
       key: "status",
       align: "center",
       render: (_: unknown, record: User & { active?: boolean }) => {
@@ -117,25 +117,25 @@ const UserManagement: React.FC = () => {
                 className={`w-2 h-2 rounded-full mr-2 ${active ? "bg-green-400" : "bg-red-400"
                   }`}
               />
-              {active ? "Hoạt động" : "Ngưng hoạt động"}
+              {active ? "Active" : "Inactive"}
             </div>
           </Tag>
         );
       },
     },
     {
-      title: "Ngày sinh",
+      title: "Birthday",
       dataIndex: "dob",
       key: "dob",
       render: (dob: string) => (dob ? new Date(dob).toLocaleDateString() : "-"),
     },
     {
-      title: "Hành động",
+      title: "Action",
       key: "actions",
       align: "center",
       render: (_: unknown, record: User) => (
         <Space size="small">
-          <Tooltip title="Quản lý quyền">
+          <Tooltip title="Manage Permissions">
             <button
               className="p-2 text-blue-500 hover:bg-blue-100 rounded-lg transition"
               onClick={() => {
@@ -147,11 +147,11 @@ const UserManagement: React.FC = () => {
             </button>
           </Tooltip>
           <Popconfirm
-            title="Xóa người dùng?"
-            description={`Bạn có chắc muốn xóa ${record.firstName} ${record.lastName}?`}
+            title="Delete User?"
+            description={`Are you sure you want to delete ${record.firstName} ${record.lastName}?`}
             onConfirm={() => handleDeleteUser(record.id)}
-            okText="Xóa"
-            cancelText="Hủy"
+            okText="Delete"
+            cancelText="Cancel"
           >
             <button className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition">
               <Trash2 className="w-4 h-4" />
@@ -168,16 +168,16 @@ const UserManagement: React.FC = () => {
         <div className="mb-4">
           <div className="mb-3">
             <Title level={3} className="mb-1 text-gray-900">
-              Quản lý người dùng
+              User Management
             </Title>
             <p className="text-gray-600 text-sm">
-              Quản lý danh sách người dùng trong hệ thống
+              Manage the list of users in the system
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <Input.Search
-              placeholder="Tìm kiếm theo tên hoặc email..."
+              placeholder="Search by name or email..."
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               onSearch={() => fetchUsers()}
@@ -186,13 +186,13 @@ const UserManagement: React.FC = () => {
               prefix={<SearchOutlined className="text-gray-400" />}
             />
             <Space>
-              <Tooltip title="Làm mới">
+              <Tooltip title="Refresh">
                 <Button
                   icon={<RefreshCcw className="w-4 h-4" />}
                   onClick={fetchUsers}
                   className="border-gray-200"
                 >
-                  Làm mới
+                  Refresh
                 </Button>
               </Tooltip>
               <Button
@@ -200,7 +200,7 @@ const UserManagement: React.FC = () => {
                 icon={<PlusOutlined />}
                 className="bg-blue-600 hover:bg-blue-700 border-0 shadow-sm px-4 h-9"
               >
-                Thêm người dùng
+                Add User
               </Button>
             </Space>
           </div>
@@ -233,7 +233,7 @@ const UserManagement: React.FC = () => {
               showSizeChanger: true,
               showQuickJumper: true,
               showTotal: (total, range) =>
-                `${range[0]}-${range[1]} / ${total} người dùng`,
+                `${range[0]}-${range[1]} / ${total} users`,
               size: "small",
             }}
             rowClassName="hover:bg-gray-50 transition-colors duration-200"
@@ -251,10 +251,10 @@ const UserManagement: React.FC = () => {
       <div className="p-4">
         <div className="mb-6">
           <Title level={2} className="mb-1 text-gray-900">
-            Quản lý hệ thống
+            System Management
           </Title>
           <p className="text-gray-600 text-sm">
-            Quản lý người dùng và quyền trong hệ thống
+            Manage users and permissions in the system
           </p>
         </div>
 
@@ -265,12 +265,12 @@ const UserManagement: React.FC = () => {
           items={[
             {
               key: "users",
-              label: "Người dùng",
+              label: "User",
               children: userManagementTab,
             },
             {
               key: "permissions",
-              label: "Quyền",
+              label: "Permission",
               children: <PermissionManager />,
             },
           ]}

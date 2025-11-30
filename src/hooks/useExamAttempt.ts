@@ -71,10 +71,10 @@ export const useExamAttempt = () => {
           setActiveAttempt(res.data.data);
           return res.data.data;
         } else {
-          throw new Error(res.data.message || "Không thể bắt đầu bài thi");
+          throw new Error(res.data.message || "Failed to start single exam");
         }
       } catch (err) {
-        handleError(err, "Không thể bắt đầu bài thi");
+        handleError(err, "Failed to start single exam");
         return null;
       } finally {
         setLoading(false);
@@ -96,10 +96,10 @@ export const useExamAttempt = () => {
           setActiveAttempt(res.data.data);
           return res.data.data;
         } else {
-          throw new Error(res.data.message || "Không thể bắt đầu bài thi tổ hợp");
+          throw new Error(res.data.message || "Failed to start combo exam");
         }
       } catch (err) {
-        handleError(err, "Không thể bắt đầu bài thi tổ hợp");
+        handleError(err, "Failed to start combo exam");
         return null;
       } finally {
         setLoading(false);
@@ -121,12 +121,10 @@ export const useExamAttempt = () => {
           setActiveAttempt(res.data.data);
           return res.data.data;
         } else {
-          throw new Error(
-            res.data.message || "Không thể bắt đầu bài thi ngẫu nhiên"
-          );
+          throw new Error(res.data.message || "Failed to start random combo exam");
         }
       } catch (err) {
-        handleError(err, "Không thể bắt đầu bài thi ngẫu nhiên");
+        handleError(err, "Failed to start random combo exam");
         return null;
       } finally {
         setLoading(false);
@@ -146,10 +144,8 @@ export const useExamAttempt = () => {
         // Chạy subscribe API ngầm (không đợi kết quả)
         ExamAttemptService.subscribe(attemptId)
           .then((subscribeRes) => {
-            console.log('subscribe completed', subscribeRes);
-            // Response structure: { data: { attemptId, examId, score, ... } }
             if (subscribeRes.data) {
-              toast.success("Kết quả chi tiết đã sẵn sàng! Nhấn để xem ngay.", {
+              toast.success("Result details are ready! Click to view now.", {
                 onClick: () => {
                   window.location.href = `/test-result/${attemptId}`;
                 },
@@ -160,7 +156,7 @@ export const useExamAttempt = () => {
           })
           .catch((err) => {
             console.error('Subscribe failed:', err);
-            toast.error("Không thể tải kết quả chi tiết. Vui lòng thử lại sau.");
+            toast.error("Failed to load attempt result. Please try again later.");
           });
 
         // Submit API chạy ngay không cần đợi subscribe
@@ -168,13 +164,13 @@ export const useExamAttempt = () => {
         if (res.data.code === 0 || res.data.code === 1000) {
           setSubmissionResult(res.data.data);
           setActiveAttempt(null); // Xóa bài thi đang làm
-          toast.success("Nộp bài thành công!, đợi thống báo kết quả chi tiết.");
+          toast.success("Submit successfully! Waiting for result details.");
           return res.data.data;
         } else {
-          throw new Error(res.data.message || "Không thể nộp bài");
+          throw new Error(res.data.message || "Failed to submit attempt");
         }
       } catch (err) {
-        const errorMessage = handleError(err, "Không thể nộp bài");
+        const errorMessage = handleError(err, "Failed to submit attempt");
         throw new Error(errorMessage);
       } finally {
         setLoading(false);
@@ -192,9 +188,9 @@ export const useExamAttempt = () => {
       setError(null);
       try {
         await ExamAttemptService.rate(attemptId, payload);
-        toast.success("Đánh giá của bạn đã được gửi!");
+        toast.success("Your rating has been submitted!");
       } catch (err) {
-        handleError(err, "Không thể gửi đánh giá");
+        handleError(err, "Failed to rate attempt");
       } finally {
         setLoading(false);
       }
@@ -214,10 +210,10 @@ export const useExamAttempt = () => {
         setAttemptResultDetail(res.data.data);
         return res.data.data;
       } else {
-        throw new Error(res.data.message || "Không thể tải kết quả chi tiết");
+        throw new Error(res.data.message || "Failed to load attempt result");
       }
     } catch (err) {
-      handleError(err, "Không thể tải kết quả chi tiết");
+      handleError(err, "Failed to load attempt result");
       return null;
     } finally {
       setLoading(false);
@@ -234,14 +230,14 @@ export const useExamAttempt = () => {
       const res = await ExamAttemptService.subscribe(attemptId);
       // Response structure: { data: { attemptId, examId, score, ... } }
       if (res.data) {
-        toast.success("Kết quả chi tiết đã được tải thành công!");
+        toast.success(" Result details are ready!");
         setAttemptResultDetail(res.data as unknown as AttemptResultDetail);
         return res.data as unknown as AttemptResultDetail;
       } else {
-        throw new Error("Không thể tải kết quả chi tiết");
+        throw new Error("Failed to load attempt result");
       }
     } catch (err) {
-      handleError(err, "Không thể tải kết quả chi tiết");
+      handleError(err, "Failed to load attempt result");
       return null;
     } finally {
       setLoading(false);
@@ -287,15 +283,15 @@ export const useExamAttempt = () => {
       try {
         const res = await ExamAttemptService.manualGrade(attemptId, payload);
         if (res.data.code === 0 || res.data.code === 1000) {
-          toast.success("Đã lưu điểm chấm thành công!");
+          toast.success("Grade saved successfully!");
           // Cập nhật lại chi tiết kết quả nếu đang xem
           // setAttemptResultDetail(res.data.data); 
           return res.data.data;
         } else {
-          throw new Error(res.data.message || "Không thể lưu điểm chấm");
+          throw new Error(res.data.message || "Failed to save grade");
         }
       } catch (err) {
-        handleError(err, "Không thể lưu điểm chấm");
+        handleError(err, "Failed to save grade");
         throw err;
       } finally {
         setLoading(false);
@@ -314,13 +310,13 @@ export const useExamAttempt = () => {
       try {
         const res = await ExamAttemptService.requestReview(attemptId, payload);
         if (res.data.code === 0 || res.data.code === 1000) {
-          toast.success("Đã gửi yêu cầu phúc khảo thành công!");
+          toast.success("Request review successfully!");
           return true;
         } else {
-          throw new Error(res.data.message || "Không thể gửi yêu cầu phúc khảo");
+          throw new Error(res.data.message || "Failed to request review");
         }
       } catch (err) {
-        handleError(err, "Không thể gửi yêu cầu phúc khảo");
+        handleError(err, "Failed to request review");
         return false;
       } finally {
         setLoading(false);
@@ -395,10 +391,10 @@ export const useExamAttemptHistory = () => {
             setPageInfo(null);
           }
         } else {
-          throw new Error(res.data.message || "Không thể tải lịch sử thi");
+          throw new Error(res.data.message || "Failed to load history");
         }
       } catch (err) {
-        handleError(err, "Không thể tải lịch sử thi");
+        handleError(err, "Failed to load history");
       } finally {
         setLoading(false);
       }
@@ -465,7 +461,7 @@ export const useTeacherReviewQueue = () => {
           throw new Error(res.data.message || "Failed to fetch review queue");
         }
       } catch (err) {
-        handleError(err, "Không thể tải danh sách chờ chấm điểm");
+        handleError(err, "Failed to fetch review queue");
       } finally {
         setLoading(false);
       }

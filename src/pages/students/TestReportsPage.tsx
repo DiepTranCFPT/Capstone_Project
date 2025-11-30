@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Table, Tag, Button, Modal, Spin, Select } from 'antd';
-import { EyeOutlined, FileTextOutlined } from '@ant-design/icons';
+import { Table, Tag, Button, Select } from 'antd';
+import { FileTextOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { useExamAttemptHistory, useExamAttempt } from '~/hooks/useExamAttempt';
-import ResultSummary from '~/components/test-result/ResultSummary';
+import { useExamAttemptHistory } from '~/hooks/useExamAttempt';
 
 interface HistoryRecord {
     attemptId: string;
@@ -18,8 +17,6 @@ interface HistoryRecord {
 const TestReportsPage: React.FC = () => {
     const navigate = useNavigate();
     const { history, loading: historyLoading, pageInfo, handlePageChange, setSorts } = useExamAttemptHistory();
-    const { subscribeAttemptResult, attemptResultDetail, loading: resultLoading } = useExamAttempt();
-    const [resultModalVisible, setResultModalVisible] = useState(false);
     const [currentSort, setCurrentSort] = useState('startTime_desc');
 
     const sortOptions = [
@@ -49,16 +46,6 @@ const TestReportsPage: React.FC = () => {
             }
         });
     }, [history, currentSort]);
-
-    const handleViewResults = async (record: HistoryRecord) => {
-        const attemptId = record.attemptId;
-        if (!attemptId) {
-            console.error('Attempt ID is undefined for record:', record);
-            return;
-        }
-        await subscribeAttemptResult(attemptId);
-        setResultModalVisible(true);
-    };
 
     const handleViewDetails = (record: HistoryRecord) => {
         const attemptId = record.attemptId;
@@ -97,16 +84,7 @@ const TestReportsPage: React.FC = () => {
             title: 'Action',
             key: 'action',
             render: (_: unknown, record: HistoryRecord) => (
-                <div className="flex gap-2">
-                    <Button
-                        icon={<EyeOutlined />}
-                        type="primary"
-                        onClick={() => handleViewResults(record)}
-                        loading={resultLoading}
-                        size="small"
-                    >
-                        View Results
-                    </Button>
+                <div className="flex gap-2">                   
                     <Button
                         icon={<FileTextOutlined />}
                         onClick={() => handleViewDetails(record)}
@@ -145,27 +123,6 @@ const TestReportsPage: React.FC = () => {
                     },
                 }}
             />
-
-            <Modal
-                title="Exam Results"
-                open={resultModalVisible}
-                onCancel={() => setResultModalVisible(false)}
-                footer={null}
-                width={800}
-                destroyOnClose
-            >
-                {resultLoading ? (
-                    <div className="text-center py-8">
-                        <Spin size="large" />
-                        <p className="mt-4">Loading results...</p>
-                    </div>
-                ) : (
-                    <ResultSummary
-                        isPractice={false}
-                        attemptResultDetail={attemptResultDetail}
-                    />
-                )}
-            </Modal>
         </div>
     );
 };

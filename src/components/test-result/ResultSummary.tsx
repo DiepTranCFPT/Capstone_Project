@@ -64,9 +64,9 @@ const ResultSummary: React.FC<ResultSummaryProps> = ({ isPractice, attemptResult
                         onClick={onReviewRequest}
                         className="bg-blue-500 text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-600"
                     >
-                        Yêu cầu chấm lại
+                        Request Review
                     </button>
-                    <button className="bg-orange-500 text-white font-bold px-6 py-2 rounded-lg hover:bg-orange-600">Retake</button>
+                    {/* <button className="bg-orange-500 text-white font-bold px-6 py-2 rounded-lg hover:bg-orange-600">Retake</button> */}
                 </div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center border-t border-gray-300 pt-4">

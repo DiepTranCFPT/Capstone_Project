@@ -4,9 +4,12 @@ import { Tabs } from 'antd';
 import Timer from '~/components/do-test/Timer';
 import QuestionCard from '~/components/do-test/QuestionCard';
 import FRQCard from '~/components/do-test/FRQCard';
+import ProctoringStatus from '~/components/do-test/ProctoringStatus';
+import ProctoringRulesModal from '~/components/do-test/ProctoringRulesModal';
 import { useExamAttempt } from '~/hooks/useExamAttempt';
 import { useEnhancedExamPersistence } from '~/hooks/useEnhancedExamPersistence';
 import { useExamUnloadWarning } from '~/hooks/useExamUnloadWarning';
+import { useExamProctoring } from '~/hooks/useExamProctoring';
 import type { ExamSubmissionAnswer, ActiveExamQuestion, ExamAnswer } from '~/types/test';
 
 
@@ -14,6 +17,10 @@ const DoTestPage: React.FC = () => {
     const { examId, attemptId } = useParams<{ examId?: string, testType?: 'full' | 'mcq' | 'frq', attemptId?: string }>();
     const navigate = useNavigate();
     const { submitAttempt, loading, error } = useExamAttempt();
+
+    // Proctoring state
+    const [showProctoringRules, setShowProctoringRules] = useState(false);
+    const [proctoringAccepted, setProctoringAccepted] = useState(false);
 
     // Enhanced exam persistence hooks with dual-save mechanism
     const {
@@ -35,6 +42,29 @@ const DoTestPage: React.FC = () => {
     const [isCancel, setIsCancel] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isManualSyncing, setIsManualSyncing] = useState(false);
+
+    // Proctoring hook with auto-submit callback
+    const {
+        violationCounts,
+        totalViolations,
+        isFullscreen,
+        isProctoringActive,
+        startProctoring,
+        stopProctoring,
+        // getProctoringMetadata,
+    } = useExamProctoring(
+        {
+            enableTabDetection: true,
+            enableCopyBlock: true,
+            enableFullscreenMode: true,
+            strictFullscreen: true,
+            maxViolations: 4,
+        },
+        () => {
+            // Auto-submit callback when max violations reached
+            handleSubmit();
+        }
+    );
 
     // Check for stored attempt data from useExamAttempt - memoize to prevent recreation
     const currentActiveExam = useMemo(() => {
@@ -128,13 +158,11 @@ const DoTestPage: React.FC = () => {
                     frqAnswerText: question.savedAnswer.frqAnswerText || undefined
                 };
                 answeredSet.add(question.examQuestionId);
-                console.log('🔄 Found mobile savedAnswer:', question.examQuestionId);
             }
         });
 
         // 🎯 If there are API answers (mobile->web), use them
         if (Object.keys(apiAnswers).length > 0) {
-            console.log('📱 Loading answers from mobile cross-device continuation');
             setAnswers(apiAnswers);
             setAnsweredQuestions(answeredSet);
 
@@ -226,6 +254,17 @@ const DoTestPage: React.FC = () => {
         }
     }, [activeExamData, autoSaveCallback, startAutoSave, stopAutoSave]);
 
+    // Show proctoring rules modal when exam loads
+    useEffect(() => {
+        if (activeExamData && !proctoringAccepted && !showProctoringRules) {
+            // Delay to show modal after exam content is loaded
+            const timer = setTimeout(() => {
+                setShowProctoringRules(true);
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [activeExamData, proctoringAccepted, showProctoringRules]);
+
     // Manual sync function
     const handleManualSync = useCallback(async () => {
         if (!activeExamData?.examAttemptId || isManualSyncing) return;
@@ -247,6 +286,11 @@ const DoTestPage: React.FC = () => {
 
         setIsSubmitting(true);
 
+        // Stop proctoring before submission
+        if (isProctoringActive) {
+            stopProctoring();
+        }
+
         // Prepare answers using stored answer data
         const submissionAnswers: ExamSubmissionAnswer[] = sortedQuestions.map((q: ActiveExamQuestion) => {
             const answerData = answers[q.examQuestionId];
@@ -256,6 +300,10 @@ const DoTestPage: React.FC = () => {
                 frqAnswerText: answerData?.frqAnswerText || null
             };
         });
+
+        // Get proctoring metadata
+        // const proctoringMetadata = getProctoringMetadata();
+        // console.log('Proctoring Metadata:', proctoringMetadata);
 
         try {
             const result = await submitAttempt(activeExamData.examAttemptId, { answers: submissionAnswers });
@@ -282,6 +330,11 @@ const DoTestPage: React.FC = () => {
         setShowConFirmed(false);
         clearExamProgress();
 
+        // Stop proctoring
+        if (isProctoringActive) {
+            stopProctoring();
+        }
+
         // Check if this is a combo test (has attemptId param)
         if (attemptId) {
             navigate('/exam-test');
@@ -305,7 +358,7 @@ const DoTestPage: React.FC = () => {
     const handleAnswerChange = useCallback((examQuestionId: string, hasAnswer: boolean, answerData?: { selectedAnswerId?: string; frqAnswerText?: string }) => {
         setAnswers(prev => {
             const currentAnswer = prev[examQuestionId];
-            
+
             if (answerData) {
                 const isDifferent =
                     currentAnswer?.selectedAnswerId !== answerData.selectedAnswerId ||
@@ -362,28 +415,28 @@ const DoTestPage: React.FC = () => {
     const getSyncStatusInfo = () => {
         if (syncStatus.isSyncing) {
             return {
-                text: 'Đang đồng bộ...',
+                text: 'Saving...',
                 color: 'text-blue-600',
                 icon: '🔄'
             };
         }
         if (syncStatus.syncError) {
             return {
-                text: 'Lỗi đồng bộ',
+                text: 'Saving failed',
                 color: 'text-red-600',
                 icon: '⚠️'
             };
         }
         if (syncStatus.hasUnsyncedChanges) {
             return {
-                text: 'Có thay đổi chưa đồng bộ',
+                text: 'Unsaved changes',
                 color: 'text-orange-600',
                 icon: '⏳'
             };
         }
         if (syncStatus.lastSyncTime) {
             return {
-                text: `Đã đồng bộ: ${new Date(syncStatus.lastSyncTime).toLocaleTimeString('vi-VN', {
+                text: `Last saved: ${new Date(syncStatus.lastSyncTime).toLocaleTimeString('vi-VN', {
                     hour: '2-digit',
                     minute: '2-digit'
                 })}`,
@@ -392,7 +445,7 @@ const DoTestPage: React.FC = () => {
             };
         }
         return {
-            text: 'Chưa đồng bộ',
+            text: 'Unsaved',
             color: 'text-gray-500',
             icon: '📱'
         };
@@ -409,9 +462,18 @@ const DoTestPage: React.FC = () => {
                     <div className="h-1 w-16 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full"></div>
                 </div>
 
+                {/* Proctoring Status */}
+                <ProctoringStatus
+                    isActive={isProctoringActive}
+                    isFullscreen={isFullscreen}
+                    violationCounts={violationCounts}
+                    totalViolations={totalViolations}
+                    maxViolations={4}
+                />
+
                 <div className="bg-teal-50/60 rounded-xl p-4 mb-6 border border-teal-200/50">
                     <div className="flex items-center justify-between">
-                        <span className="font-semibold text-gray-700">⏱️ Thời gian còn lại:</span>
+                        <span className="font-semibold text-gray-700">⏱️ Time left:</span>
                         <Timer
                             initialMinutes={activeExamData?.durationInMinute || 60}
                             onTimeUp={handleSubmit}
@@ -419,15 +481,15 @@ const DoTestPage: React.FC = () => {
                             onTimeChange={setRemainingTime}
                         />
                     </div>
-                    
+
                     {/* Auto-save indicator */}
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-teal-200/30">
-                        <span className="text-sm text-gray-600">💾 Tự động lưu:</span>
+                        <span className="text-sm text-gray-600">💾 Auto save:</span>
                         <div className="flex items-center gap-2">
                             {lastSavedTime && Date.now() - lastSavedTime < 2000 ? (
                                 <div className="flex items-center gap-1 text-xs text-teal-600 font-medium">
                                     <div className="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></div>
-                                    Đang lưu...
+                                    Saving...
                                 </div>
                             ) : lastSavedTime ? (
                                 <span className="text-xs text-gray-500">
@@ -437,14 +499,14 @@ const DoTestPage: React.FC = () => {
                                     })}
                                 </span>
                             ) : (
-                                <span className="text-xs text-gray-400">Chưa lưu</span>
+                                <span className="text-xs text-gray-400">Unsaved</span>
                             )}
                         </div>
                     </div>
 
                     {/* Server sync indicator */}
                     <div className="flex items-center justify-between mt-2 pt-2 border-t border-teal-200/30">
-                        <span className="text-sm text-gray-600">☁️ Đồng bộ server:</span>
+                        <span className="text-sm text-gray-600">☁️ Sync server:</span>
                         <div className="flex items-center gap-2">
                             <span className={`text-xs ${syncStatusInfo.color} flex items-center gap-1`}>
                                 <span>{syncStatusInfo.icon}</span>
@@ -463,12 +525,12 @@ const DoTestPage: React.FC = () => {
                             {isManualSyncing ? (
                                 <>
                                     <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
-                                    Đang sync...
+                                    Syncing...
                                 </>
                             ) : (
                                 <>
                                     <span>🔄</span>
-                                    Sync ngay
+                                    Sync now
                                 </>
                             )}
                         </button>
@@ -478,9 +540,9 @@ const DoTestPage: React.FC = () => {
                 {/* Progress Bar */}
                 <div className="bg-white/60 rounded-xl p-4 mb-6 border border-teal-200/50">
                     <div className="flex items-center justify-between mb-3">
-                        <span className="font-semibold text-gray-700">📊 Tiến độ</span>
+                        <span className="font-semibold text-gray-700">📊 Progress</span>
                         <span className="text-sm text-gray-600">
-                            {answeredQuestions.size}/{totalQuestions} câu
+                            {answeredQuestions.size}/{totalQuestions} questions
                         </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
@@ -493,7 +555,7 @@ const DoTestPage: React.FC = () => {
                     </div>
                     <div className="text-center">
                         <span className="text-xs text-gray-500">
-                            {totalQuestions > 0 ? Math.round((answeredQuestions.size / totalQuestions) * 100) : 0}% hoàn thành
+                            {totalQuestions > 0 ? Math.round((answeredQuestions.size / totalQuestions) * 100) : 0}% completed
                         </span>
                     </div>
                 </div>
@@ -502,7 +564,7 @@ const DoTestPage: React.FC = () => {
                     <div className="bg-white/60 rounded-xl p-4 mb-6 border border-teal-200/50">
                         <h3 className="font-bold text-gray-800 mb-4 flex items-center">
                             <span className="mr-2">📋</span>
-                            Câu hỏi ({totalQuestions})
+                            Questions ({totalQuestions})
                         </h3>
                         <div className="grid grid-cols-5 gap-2">
                             {sortedQuestions.map((q: ActiveExamQuestion, index: number) => (
@@ -525,13 +587,13 @@ const DoTestPage: React.FC = () => {
                         onClick={handleConfirmSubmit}
                         className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-4 rounded-xl transition-all duration-200 border border-teal-500/60 hover:border-teal-400 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                     >
-                        Nộp bài
+                        Submit
                     </button>
                     <button
                         onClick={handleConfirmCancel}
                         className="w-full bg-red-500 hover:to-red-700 text-white font-bold py-4 rounded-xl transition-all duration-200 border border-red-400/60 hover:border-red-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                     >
-                        Hủy
+                        Cancel
                     </button>
                 </div>
             </aside>
@@ -543,17 +605,17 @@ const DoTestPage: React.FC = () => {
                         <div className="text-center py-20">
                             <div className="text-6xl mb-6">⏳</div>
                             <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                                Đang tải bài thi...
+                                Loading...
                             </h3>
                             <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                                Vui lòng đợi trong giây lát để chúng tôi tải bài thi.
+                                Please wait while we load the exam.
                             </p>
                         </div>
                     ) : error ? (
                         <div className="text-center py-20">
                             <div className="text-6xl mb-6">❌</div>
                             <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                                Lỗi tải bài thi
+                                Error loading exam
                             </h3>
                             <p className="text-gray-600 mb-8 max-w-md mx-auto">
                                 {error}
@@ -562,7 +624,7 @@ const DoTestPage: React.FC = () => {
                                 onClick={() => window.location.reload()}
                                 className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
                             >
-                                Thử lại
+                                Try again
                             </button>
                         </div>
                     ) : activeExamData ? (
@@ -657,6 +719,20 @@ const DoTestPage: React.FC = () => {
                 </div>
             </main>
 
+            {/* Proctoring Rules Modal */}
+            <ProctoringRulesModal
+                visible={showProctoringRules}
+                onAccept={() => {
+                    setShowProctoringRules(false);
+                    setProctoringAccepted(true);
+                    startProctoring();
+                }}
+                onReject={() => {
+                    setShowProctoringRules(false);
+                    handleCancel();
+                }}
+            />
+
             {showConFirmed && (
                 <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center">
                     <div className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-teal-200/50 max-w-md mx-4">
@@ -668,12 +744,12 @@ const DoTestPage: React.FC = () => {
                                 </span>
                             </div>
                             <h3 className="text-xl font-bold text-gray-800 mb-3">
-                                {isSubmit ? 'Xác nhận nộp bài' : 'Xác nhận hủy'}
+                                {isSubmit ? 'Confirm Submit' : 'Confirm Cancel'}
                             </h3>
                             <p className="text-gray-600 mb-6 leading-relaxed">
                                 {isSubmit
-                                    ? 'Bạn có chắc chắn muốn nộp bài? Hành động này không thể hoàn tác.'
-                                    : 'Bạn có chắc chắn muốn hủy bài thi? Tất cả tiến độ sẽ bị mất.'
+                                    ? 'Are you sure you want to submit the exam? This action cannot be undone.'
+                                    : 'Are you sure you want to cancel the exam? All progress will be lost.'
                                 }
                             </p>
                             <div className="flex gap-3 justify-center">
@@ -681,7 +757,7 @@ const DoTestPage: React.FC = () => {
                                     onClick={() => setShowConFirmed(false)}
                                     className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-all duration-200 border border-gray-300 hover:border-gray-400 shadow-sm hover:shadow-md"
                                 >
-                                    Hủy bỏ
+                                    Cancel
                                 </button>
 
                                 {isCancel ? (
@@ -689,7 +765,7 @@ const DoTestPage: React.FC = () => {
                                         onClick={handleCancel}
                                         className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium rounded-lg transition-all duration-200 border border-red-400/60 hover:border-red-300 shadow-lg hover:shadow-xl"
                                     >
-                                        Xác nhận hủy
+                                        Confirm Cancel
                                     </button>
                                 ) : (
                                     <button
@@ -697,7 +773,7 @@ const DoTestPage: React.FC = () => {
                                         disabled={isSubmitting}
                                         className="px-6 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-medium rounded-lg transition-all duration-200 border border-teal-500/60 hover:border-teal-400 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        {isSubmitting ? 'Đang nộp...' : 'Xác nhận nộp'}
+                                        {isSubmitting ? 'Submitting...' : 'Confirm Submit'}
                                     </button>
                                 )}
                             </div>

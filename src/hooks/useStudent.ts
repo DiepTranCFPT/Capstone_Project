@@ -12,11 +12,11 @@ export const useStudent = () => {
         setError(null);
         try {
             const response = await StudentService.updateStudentProfile(data);
-            toast.success("Cập nhật thông tin thành công!");
+            toast.success("Update profile successfully!");
             return response.data;
         } catch (err) {
-            setError("Cập nhật thông tin thất bại");
-            toast.error("Cập nhật thông tin thất bại");
+            setError("Update profile failed");
+            toast.error("Update profile failed");
             throw err;
         } finally {
             setLoading(false);

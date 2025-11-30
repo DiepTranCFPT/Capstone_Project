@@ -18,7 +18,6 @@ const InstructorSection: React.FC = () => {
 
         if (response.code === 0 || response.code === 1000) {
           setInstructors(response.data.items.filter((user) => user.roles.includes("TEACHER")));
-          console.log('Instructors',instructors);
         }
       } catch (error) {
         console.error("Failed to fetch instructors", error);

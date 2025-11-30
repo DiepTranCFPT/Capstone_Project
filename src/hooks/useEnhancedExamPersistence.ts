@@ -246,9 +246,9 @@ export const useEnhancedExamPersistence = () => {
   ) => {
     const success = await saveToServer(attemptId, answers, answeredQuestions);
     if (success) {
-      toast.success('Đã đồng bộ tiến độ lên server thành công!');
+      toast.success('Sync exam progress to server successfully!');
     } else {
-      toast.error('Không thể đồng bộ tiến độ. Vui lòng thử lại.');
+      toast.error('Failed to sync exam progress. Please try again.');
     }
     return success;
   }, [saveToServer, toast]);

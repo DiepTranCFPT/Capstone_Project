@@ -29,16 +29,16 @@ const AdminDashboardPage: React.FC = () => {
     if (!stats) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <Empty description="Không có dữ liệu thống kê" />
+                <Empty description="No data available" />
             </div>
         );
     }
 
     // Prepare data for user distribution pie chart - always show all categories even if zero
     const userDistributionData = [
-        { name: 'Học sinh', value: stats.totalStudents },
-        { name: 'Giáo viên', value: stats.totalTeachers },
-        { name: 'Phụ huynh', value: stats.totalParents },
+        { name: 'Student', value: stats.totalStudents },
+        { name: 'Teacher', value: stats.totalTeachers },
+        { name: 'Parent', value: stats.totalParents },
     ];
 
     // Check if chartData is available
@@ -47,91 +47,91 @@ const AdminDashboardPage: React.FC = () => {
     // Prepare data for line chart (user growth over time) - show default data if empty
     const userGrowthData = hasChartData ? stats.chartData.map(item => ({
         date: new Date(item.date).toLocaleDateString('vi-VN', { month: 'short', day: 'numeric' }),
-        'Tổng người dùng': item.totalUsers,
-        'Học sinh': item.totalStudents,
-        'Giáo viên': item.totalTeachers,
-        'Phụ huynh': item.totalParents,
+        'Total Users': item.totalUsers,
+        'Students': item.totalStudents,
+        'Teachers': item.totalTeachers,
+        'Parents': item.totalParents,
     })) : [
         {
-            date: 'Hôm nay',
-            'Tổng người dùng': 0,
-            'Học sinh': 0,
-            'Giáo viên': 0,
-            'Phụ huynh': 0,
+            date: 'Today',
+            'Total Users': 0,
+            'Students': 0,
+            'Teachers': 0,
+            'Parents': 0,
         }
     ];
 
     // Prepare data for bar chart (daily metrics) - show default data if empty
     const dailyMetricsData = hasChartData ? stats.chartData.map(item => ({
         date: new Date(item.date).toLocaleDateString('vi-VN', { month: 'short', day: 'numeric' }),
-        'Học sinh mới': item.newStudents,
-        'Giáo viên mới': item.newTeachers,
-        'Người dùng hoạt động': item.dailyActiveUsers,
+        'New Students': item.newStudents,
+        'New Teachers': item.newTeachers,
+        'Active Users': item.dailyActiveUsers,
     })) : [
         {
-            date: 'Hôm nay',
-            'Học sinh mới': 0,
-            'Giáo viên mới': 0,
-            'Người dùng hoạt động': 0,
+            date: 'Today',
+            'New Students': 0,
+            'New Teachers': 0,
+            'Active Users': 0,
         }
     ];
 
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">Tổng quan Admin</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-6">Admin Dashboard</h1>
 
             {/* Key Metrics Cards */}
             <Row gutter={[16, 16]} className="mb-6">
                 <Col xs={24} sm={12} lg={6}>
                     <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
-                            title={<span className="text-gray-600 font-medium">Tổng người dùng</span>}
+                            title={<span className="text-gray-600 font-medium">Total Users</span>}
                             value={stats.totalUsers}
                             prefix={<UserOutlined className="text-blue-500" />}
                             valueStyle={{ color: '#3b82f6', fontSize: '28px', fontWeight: 'bold' }}
                         />
                         <div className="text-xs text-gray-500 mt-2 flex items-center">
                             <ArrowUpOutlined className="mr-1 text-green-500" />
-                            Tất cả người dùng trong hệ thống
+                            All users in the system
                         </div>
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
                     <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
-                            title={<span className="text-gray-600 font-medium">Học sinh</span>}
+                            title={<span className="text-gray-600 font-medium">Students</span>}
                             value={stats.totalStudents}
                             prefix={<TeamOutlined className="text-green-500" />}
                             valueStyle={{ color: '#10b981', fontSize: '28px', fontWeight: 'bold' }}
                         />
                         <div className="text-xs text-gray-500 mt-2">
-                            {((stats.totalStudents / stats.totalUsers) * 100).toFixed(1)}% tổng người dùng
+                            {((stats.totalStudents / stats.totalUsers) * 100).toFixed(1)}% of total users
                         </div>
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
                     <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
-                            title={<span className="text-gray-600 font-medium">Giáo viên</span>}
+                            title={<span className="text-gray-600 font-medium">Teachers</span>}
                             value={stats.totalTeachers}
                             prefix={<SolutionOutlined className="text-orange-500" />}
                             valueStyle={{ color: '#f59e0b', fontSize: '28px', fontWeight: 'bold' }}
                         />
                         <div className="text-xs text-gray-500 mt-2">
-                            {((stats.totalTeachers / stats.totalUsers) * 100).toFixed(1)}% tổng người dùng
+                            {((stats.totalTeachers / stats.totalUsers) * 100).toFixed(1)}% of total users
                         </div>
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
                     <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
-                            title={<span className="text-gray-600 font-medium">Phụ huynh</span>}
+                            title={<span className="text-gray-600 font-medium">Parents</span>}
                             value={stats.totalParents}
                             prefix={<UsergroupAddOutlined className="text-purple-500" />}
                             valueStyle={{ color: '#8b5cf6', fontSize: '28px', fontWeight: 'bold' }}
                         />
                         <div className="text-xs text-gray-500 mt-2">
-                            {((stats.totalParents / stats.totalUsers) * 100).toFixed(1)}% tổng người dùng
+                            {((stats.totalParents / stats.totalUsers) * 100).toFixed(1)}% of total users
                         </div>
                     </Card>
                 </Col>
@@ -140,7 +140,7 @@ const AdminDashboardPage: React.FC = () => {
             {/* Charts Section */}
             <Row gutter={[16, 16]} className="mb-6">
                 <Col xs={24} lg={15}>
-                    <Card title="Xu hướng tăng trưởng người dùng" className="shadow-sm h-full">
+                    <Card title="User Growth" className="shadow-sm h-full">
                         <div style={{ height: 400 }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={userGrowthData}>
@@ -164,7 +164,7 @@ const AdminDashboardPage: React.FC = () => {
                                     <Legend />
                                     <Line
                                         type="monotone"
-                                        dataKey="Tổng người dùng"
+                                        dataKey="Total Users"
                                         stroke="#3b82f6"
                                         strokeWidth={3}
                                         dot={{ fill: '#3b82f6', r: 4 }}
@@ -172,21 +172,21 @@ const AdminDashboardPage: React.FC = () => {
                                     />
                                     <Line
                                         type="monotone"
-                                        dataKey="Học sinh"
+                                        dataKey="Students"
                                         stroke="#10b981"
                                         strokeWidth={2}
                                         dot={{ fill: '#10b981', r: 3 }}
                                     />
                                     <Line
                                         type="monotone"
-                                        dataKey="Giáo viên"
+                                        dataKey="Teachers"
                                         stroke="#f59e0b"
                                         strokeWidth={2}
                                         dot={{ fill: '#f59e0b', r: 3 }}
                                     />
                                     <Line
                                         type="monotone"
-                                        dataKey="Phụ huynh"
+                                        dataKey="Parents"
                                         stroke="#8b5cf6"
                                         strokeWidth={2}
                                         dot={{ fill: '#8b5cf6', r: 3 }}
@@ -197,7 +197,7 @@ const AdminDashboardPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={24} lg={9}>
-                    <Card title="Phân bố người dùng" className="shadow-sm h-full">
+                    <Card title="User Distribution" className="shadow-sm h-full">
                         <div style={{ height: 400 }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
@@ -239,7 +239,7 @@ const AdminDashboardPage: React.FC = () => {
             {/* Daily Metrics Bar Chart */}
             <Row gutter={[16, 16]}>
                 <Col xs={24}>
-                    <Card title="Hoạt động hàng ngày" className="shadow-sm">
+                    <Card title="Daily Metrics" className="shadow-sm">
                         <div style={{ height: 400 }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={dailyMetricsData}>
@@ -261,9 +261,9 @@ const AdminDashboardPage: React.FC = () => {
                                         }}
                                     />
                                     <Legend />
-                                    <Bar dataKey="Học sinh mới" fill="#10b981" radius={[8, 8, 0, 0]} />
-                                    <Bar dataKey="Giáo viên mới" fill="#f59e0b" radius={[8, 8, 0, 0]} />
-                                    <Bar dataKey="Người dùng hoạt động" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                                    <Bar dataKey="Students" fill="#10b981" radius={[8, 8, 0, 0]} />
+                                    <Bar dataKey="Teachers" fill="#f59e0b" radius={[8, 8, 0, 0]} />
+                                    <Bar dataKey="Parents" fill="#3b82f6" radius={[8, 8, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { forgotPasswordApi, loginApi, registerApi, changePasswordApi, verifyEmailApi, verifyOtpApi, refreshTokenApi, googleLoginApi, getCurrentUserApi } from "../services/authService";
+import { forgotPasswordApi, loginApi, registerApi, changePasswordApi, verifyEmailApi, verifyOtpApi, refreshTokenApi, googleLoginApi, getCurrentUserApi, decodeJWT } from "../services/authService";
 import type { User, AuthResponse, ChangePasswordRequest } from "../types/auth";
 import { AuthContext } from "./AuthContext";
 import { toast } from "../components/common/Toast";
@@ -9,8 +9,8 @@ interface AuthProviderProps {
     children: React.ReactNode;
 }
 
-// Đặt khoảng thời gian làm mới token là 30 phút
-const REFRESH_INTERVAL = 30 * 60 * 1000;
+// Refresh token 5 minutes before expiration
+const REFRESH_BUFFER = 5 * 60 * 1000;
 
 const AuthProvider = ({ children }: AuthProviderProps) => {
     const [user, setUser] = useState<User | null>(null);
@@ -125,6 +125,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         console.log('Forcing logout due to authentication failure');
         logout();
         toast.error('Session expired. Please login again.');
+        window.location.href = '/auth';
     }, [logout]);
 
 
@@ -141,32 +142,69 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     }, [handleAuthResponse]);
 
     // Hook useEffect để tự động làm mới token định kỳ
+    // Hook useEffect để tự động làm mới token dựa trên thời gian hết hạn
     useEffect(() => {
-        let interval: NodeJS.Timeout | undefined;
+        let refreshTimeout: NodeJS.Timeout | undefined;
 
-        const handlePeriodicRefresh = async () => {
+        const scheduleRefresh = async () => {
             const currentToken = localStorage.getItem('token');
-            if (currentToken && currentToken !== 'undefined') {
+            if (!currentToken || currentToken === 'undefined') return;
+
+            const decoded = decodeJWT(currentToken);
+            if (!decoded || !decoded.exp) {
+                console.warn("Cannot decode token or missing exp claim. Fallback to manual refresh or logout.");
+                return;
+            }
+
+            const expiresAt = decoded.exp * 1000;
+            const timeUntilRefresh = expiresAt - Date.now() - REFRESH_BUFFER;
+
+            // console.log(`Token expires at ${new Date(expiresAt).toLocaleTimeString()}. Scheduling refresh in ${Math.ceil(timeUntilRefresh / 60000)} minutes.`);
+
+            if (timeUntilRefresh <= 0) {
+                // Token is about to expire or already expired (within buffer), refresh immediately
+                console.log("Token is close to expiry. Refreshing now...");
                 try {
-                    console.log(`[${new Date().toLocaleTimeString()}] Automatically refreshing token...`);
                     await refreshToken(currentToken);
                 } catch (error) {
-                    console.error('Periodic token refresh failed. Logging out.', error);
+                    console.error("Immediate token refresh failed:", error);
                     forceLogout();
                 }
+            } else {
+                // Schedule refresh
+                refreshTimeout = setTimeout(async () => {
+                    console.log("Executing scheduled token refresh...");
+                    try {
+                        // Get the latest token from storage just in case
+                        const latestToken = localStorage.getItem('token');
+                        if (latestToken) {
+                            await refreshToken(latestToken);
+                        }
+                    } catch (error) {
+                        console.error("Scheduled token refresh failed:", error);
+                        forceLogout();
+                    }
+                }, timeUntilRefresh);
+            }
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && isAuthenticated) {
+                console.log("App became visible. Checking token status...");
+                // Clear existing timeout and reschedule/refresh immediately if needed
+                if (refreshTimeout) clearTimeout(refreshTimeout);
+                scheduleRefresh();
             }
         };
 
         if (isAuthenticated) {
-            console.log(`Setting up automatic token refresh every ${REFRESH_INTERVAL / 60000} minutes.`);
-            interval = setInterval(handlePeriodicRefresh, REFRESH_INTERVAL);
+            scheduleRefresh();
+            document.addEventListener('visibilitychange', handleVisibilityChange);
         }
 
         return () => {
-            if (interval) {
-                console.log('Clearing automatic token refresh interval.');
-                clearInterval(interval);
-            }
+            if (refreshTimeout) clearTimeout(refreshTimeout);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [isAuthenticated, refreshToken, forceLogout]);
 

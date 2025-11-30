@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
-import { message } from "antd";
 import type { User, UserDashboardParams } from "~/types/user";
 import DashboardService from "~/services/dashboardService";
+import { toast } from "~/components/common/Toast";
 
 export const useAdminUsers = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -37,8 +37,8 @@ export const useAdminUsers = () => {
         } catch (error) {
             const err = error as unknown as { message?: string; response?: { status?: number; data?: unknown } };
             console.error("Failed to fetch admin users:", err);
-            message.error(
-                `Không tải được danh sách người dùng${err.response?.status ? ` (HTTP ${err.response.status})` : ""}`
+            toast.error(
+                `Failed to load admin users${err.response?.status ? ` (HTTP ${err.response.status})` : ""}`
             );
         } finally {
             setLoading(false);

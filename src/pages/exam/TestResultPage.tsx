@@ -170,7 +170,7 @@ const TestResultPage: React.FC = () => {
                         )}
 
                         {/* Rating and Comment Section */}
-                        {!submittedRating && (attemptResultDetail && attemptResultDetail.rating === 0) && (
+                        {!submittedRating && (attemptResultDetail && attemptResultDetail.rating === null) && (
                             <div className="bg-white p-6 rounded-lg shadow border border-gray-300">
                                 <h3 className="font-bold text-xl mb-4">Rate and Comment</h3>
                                 <div className="flex items-center mb-4">

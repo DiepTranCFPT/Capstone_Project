@@ -49,7 +49,7 @@ export const useMyExamTemplates = () => {
           throw new Error(res.data.message || "Failed to fetch my templates");
         }
       } catch (err) {
-        handleError(err, "Không thể tải danh sách khuôn mẫu của tôi");
+        handleError(err, "Failed to fetch my templates");
       } finally {
         setLoading(false);
       }
