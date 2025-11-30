@@ -14,6 +14,7 @@ import {
 import { useAuth } from '~/hooks/useAuth';
 import { Avatar, Button } from 'antd';
 import { FileAddOutlined, MenuFoldOutlined, MenuUnfoldOutlined, TagsOutlined } from '@ant-design/icons';
+import { IoCheckmarkCircle } from "react-icons/io5";
 
 const teacherMenu = [
     { label: "Dashboard", path: "/teacher/dashboard", icon: <FaTachometerAlt /> },
@@ -63,7 +64,15 @@ const TeacherSidebar: React.FC = () => {
                 <div className={"p-4 border-b border-gray-200 flex flex-row items-center hover:cursor-pointer" + (collapsed ? " justify-center" : "")}
                     onClick={() => handleProfileClick()}
                 >
-                    <Avatar size={collapsed ? 32 : 40} src={user.imgUrl || undefined} />
+                    <div className="relative">
+                        <Avatar size={collapsed ? 32 : 40} src={user.imgUrl || undefined} />
+                        {user.teacherProfile?.isVerified && (
+                            <IoCheckmarkCircle
+                                className="absolute -bottom-0.5 -right-0.5 text-green-500 bg-white rounded-full"
+                                style={{ fontSize: collapsed ? 12 : 16 }}
+                            />
+                        )}
+                    </div>
                     {!collapsed && (
                         <div className='flex flex-col px-2'>
                             <p className="font-semibold">{user.firstName}</p>
