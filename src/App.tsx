@@ -74,6 +74,7 @@ import ParentLayout from "./layout/parents/ParentLayout";
 import ParentDashboardPage from "./pages/parents/ParentDashboardPage";
 import NotificationCenterPage from "./pages/parents/NotificationCenterPage";
 import LinkStudentPage from "./pages/parents/LinkStudentPage";
+import ChildrenListPage from "./pages/parents/ChildrenListPage";
 import StudentDetailPage from "./pages/parents/StudentDetailPage";
 import ParentBillingPage from "./pages/parents/ParentBillingPage";
 import GoogleCallbackPage from "./components/auth/GoogleCallbackPage";
@@ -239,6 +240,7 @@ function App() {
           <Route path="notifications" element={<NotificationCenterPage />} />
           <Route path="profile" element={<ParentProfileDashboard />} />
           <Route path="link-student" element={<LinkStudentPage />} />
+          <Route path="children" element={<ChildrenListPage />} />
           <Route path="student/:studentId" element={<StudentDetailPage />} />
           <Route path="billing" element={<ParentBillingPage />} />
         </Route>

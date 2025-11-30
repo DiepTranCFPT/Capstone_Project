@@ -5,7 +5,8 @@ import {
     FaUserPlus,
     FaFileInvoiceDollar,
     FaSignOutAlt,
-    FaBell
+    FaBell,
+    FaUsers
 } from 'react-icons/fa';
 import { useAuth } from '~/hooks/useAuth';
 import { useNotifications } from '~/hooks/useNotifications';
@@ -16,6 +17,7 @@ const parentMenu = [
     { label: "Dashboard", path: "/parent/dashboard", icon: <FaTachometerAlt /> },
     { label: "Notifications", path: "/parent/notifications", icon: <FaBell /> },
     { label: "Link Student", path: "/parent/link-student", icon: <FaUserPlus /> },
+    { label: "List of children", path: "/parent/children", icon: <FaUsers /> },
     { label: "Billing", path: "/parent/billing", icon: <FaFileInvoiceDollar /> },
 ];
 
