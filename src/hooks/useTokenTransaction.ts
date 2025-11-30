@@ -6,6 +6,8 @@ import type {
   ConfirmWithdrawalPayload,
   ConfirmWithdrawalResponse,
   WithdrawRequest,
+  PaymentMethod,
+  PaymentMethodPayload,
 } from "~/types/tokenTransaction";
 import type { ApiResponse } from "~/types/api";
 
@@ -45,6 +47,7 @@ export const useTokenTransaction = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [withdrawRequests, setWithdrawRequests] = useState<WithdrawRequest[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
 
   // Tạo yêu cầu rút tiền
   const withdraw = useCallback(
@@ -118,13 +121,59 @@ export const useTokenTransaction = () => {
     []
   );
 
+  // Lấy danh sách phương thức thanh toán
+  const fetchPaymentMethods = useCallback(async (): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await TokenTransactionService.getPaymentMethods();
+      const responseData = res.data?.data;
+      
+      if (Array.isArray(responseData)) {
+        setPaymentMethods(responseData);
+      } else {
+        setPaymentMethods([]);
+      }
+    } catch (err: unknown) {
+      const message = getErrorMessage(err, "Đã xảy ra lỗi khi lấy danh sách phương thức thanh toán.");
+      setError(message);
+      setPaymentMethods([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Tạo phương thức thanh toán mới
+  const createPaymentMethod = useCallback(
+    async (
+      payload: PaymentMethodPayload
+    ): Promise<ApiResponse<PaymentMethod> | null> => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await TokenTransactionService.createPaymentMethod(payload);
+        return res.data;
+      } catch (err: unknown) {
+        const message = getErrorMessage(err, "Đã xảy ra lỗi khi tạo phương thức thanh toán.");
+        setError(message);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   return {
     loading,
     error,
     withdrawRequests,
+    paymentMethods,
     withdraw,
     confirmWithdrawal,
     fetchWithdrawRequests,
+    fetchPaymentMethods,
+    createPaymentMethod,
   };
 };
 

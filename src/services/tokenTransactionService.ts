@@ -8,6 +8,8 @@ import type {
   ConfirmWithdrawalPayload,
   ConfirmWithdrawalResponse,
   WithdrawRequest,
+  PaymentMethod,
+  PaymentMethodPayload,
 } from "~/types/tokenTransaction";
 
 const TokenTransactionService = {
@@ -36,6 +38,20 @@ const TokenTransactionService = {
     [key: string]: unknown;
   }): Promise<AxiosResponse<ApiResponse<WithdrawRequest[]>>> {
     return axiosInstance.get(`/api/admin/withdraw-requests`, { params });
+  },
+
+  // GET /api/payment-method
+  // Lấy danh sách phương thức thanh toán
+  getPaymentMethods(): Promise<AxiosResponse<ApiResponse<PaymentMethod[]>>> {
+    return axiosInstance.get(`/api/payment-method`);
+  },
+
+  // POST /api/payment-method
+  // Tạo phương thức thanh toán mới
+  createPaymentMethod(
+    payload: PaymentMethodPayload
+  ): Promise<AxiosResponse<ApiResponse<PaymentMethod>>> {
+    return axiosInstance.post(`/api/payment-method`, payload);
   },
 };
 

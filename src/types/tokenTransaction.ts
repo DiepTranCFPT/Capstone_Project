@@ -50,3 +50,25 @@ export interface WithdrawRequest {
   [key: string]: unknown;
 }
 
+// Payment Method types
+export interface PaymentMethod {
+  id?: string;
+  type?: string; // 'BANK', 'MOMO', etc.
+  bankName?: string;
+  bankAccount?: string;
+  accountHolderName?: string;
+  isDefault?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: unknown;
+}
+
+export interface PaymentMethodPayload {
+  type?: string;
+  bankName?: string;
+  bankAccount?: string;
+  accountHolderName?: string;
+  isDefault?: boolean;
+  [key: string]: unknown;
+}
+
