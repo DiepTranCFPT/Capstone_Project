@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Table,
   Button,
@@ -25,8 +25,10 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import type { TokenData } from "~/types/token";
 import type { PaymentData } from "~/types/token";
+import type { WithdrawRequest } from "~/types/tokenTransaction";
 import { tokens } from "~/data/tokens";
 import { payments } from "~/data/payments";
+import { useTokenTransaction } from "~/hooks/useTokenTransaction";
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
@@ -44,6 +46,39 @@ const TokenPaymentManager: React.FC = () => {
   const [paymentData, setPaymentData] = useState(payments);
   const [searchPaymentText, setSearchPaymentText] = useState("");
   const [statusPaymentFilter, setStatusPaymentFilter] = useState<string>("all");
+
+  // Withdraw Requests - using API
+  const { withdrawRequests, loading: withdrawLoading, fetchWithdrawRequests } = useTokenTransaction();
+  const [searchWithdrawText, setSearchWithdrawText] = useState("");
+  const [statusWithdrawFilter, setStatusWithdrawFilter] = useState<string>("all");
+  const [filteredWithdrawRequests, setFilteredWithdrawRequests] = useState<WithdrawRequest[]>([]);
+
+  // Fetch withdraw requests on mount
+  useEffect(() => {
+    fetchWithdrawRequests({ pageNo: 0, pageSize: 100 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Filter withdraw requests
+  useEffect(() => {
+    let filtered = withdrawRequests;
+    
+    if (searchWithdrawText) {
+      filtered = filtered.filter(request =>
+        request.id?.toLowerCase().includes(searchWithdrawText.toLowerCase()) ||
+        request.bankAccount?.toLowerCase().includes(searchWithdrawText.toLowerCase()) ||
+        request.bankName?.toLowerCase().includes(searchWithdrawText.toLowerCase()) ||
+        request.accountHolderName?.toLowerCase().includes(searchWithdrawText.toLowerCase()) ||
+        request.amount?.toString().includes(searchWithdrawText)
+      );
+    }
+    
+    if (statusWithdrawFilter !== "all") {
+      filtered = filtered.filter(request => request.status === statusWithdrawFilter);
+    }
+    
+    setFilteredWithdrawRequests(filtered);
+  }, [withdrawRequests, searchWithdrawText, statusWithdrawFilter]);
 
   // Token handlers
   const handleTokenSearch = (value: string) => {
@@ -128,6 +163,22 @@ const TokenPaymentManager: React.FC = () => {
     setPaymentData(filtered);
   };
 
+  // Withdraw Request handlers
+  const handleWithdrawSearch = (value: string) => {
+    setSearchWithdrawText(value);
+  };
+
+  const handleWithdrawStatusFilter = (value: string) => {
+    setStatusWithdrawFilter(value);
+  };
+
+  const formatPrice = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(amount);
+  };
+
   const tokenColumns: ColumnsType<TokenData> = [
     {
       title: "ID",
@@ -181,6 +232,82 @@ const TokenPaymentManager: React.FC = () => {
           </Tooltip>
         </Space>
       ),
+    },
+  ];
+
+  const withdrawRequestColumns: ColumnsType<WithdrawRequest> = [
+    {
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+      width: 150,
+      render: (text) => <span className="text-xs font-mono">{text}</span>,
+    },
+    {
+      title: "User ID",
+      dataIndex: "userId",
+      key: "userId",
+      width: 150,
+      render: (text) => <span className="font-medium">{text || "N/A"}</span>,
+    },
+    {
+      title: "Amount",
+      dataIndex: "amount",
+      key: "amount",
+      width: 150,
+      render: (amount) => (
+        <span className="font-bold text-green-600">
+          {amount ? formatPrice(amount) : "N/A"}
+        </span>
+      ),
+    },
+    {
+      title: "Bank Name",
+      dataIndex: "bankName",
+      key: "bankName",
+      width: 150,
+      render: (text) => <span>{text || "N/A"}</span>,
+    },
+    {
+      title: "Bank Account",
+      dataIndex: "bankAccount",
+      key: "bankAccount",
+      width: 150,
+      render: (text) => <span className="font-mono text-sm">{text || "N/A"}</span>,
+    },
+    {
+      title: "Account Holder",
+      dataIndex: "accountHolderName",
+      key: "accountHolderName",
+      width: 150,
+      render: (text) => <span>{text || "N/A"}</span>,
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      width: 120,
+      render: (status) => {
+        const colorMap: Record<string, string> = {
+          PENDING: "orange",
+          APPROVED: "blue",
+          COMPLETED: "success",
+          REJECTED: "error",
+          CANCELLED: "default",
+        };
+        return (
+          <Tag color={colorMap[status as string] || "default"}>
+            {status || "N/A"}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Created At",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      width: 150,
+      render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : "N/A",
     },
   ];
 
@@ -322,23 +449,30 @@ const TokenPaymentManager: React.FC = () => {
             />
           </TabPane>
 
-          <TabPane tab="Payments" key="2">
-            {/* Payment Header */}
+          <TabPane tab="Withdraw Requests" key="2">
+            {/* Withdraw Request Header */}
             <div className="mb-4">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <Input.Search
-                  placeholder="Search payments..."
-                  value={searchPaymentText}
-                  onChange={(e) => setSearchPaymentText(e.target.value)}
-                  onSearch={handlePaymentSearch}
+                  placeholder="Search withdraw requests..."
+                  value={searchWithdrawText}
+                  onChange={(e) => setSearchWithdrawText(e.target.value)}
+                  onSearch={handleWithdrawSearch}
                   allowClear
                   className="max-w-md"
                   prefix={<SearchOutlined className="text-gray-400" />}
                 />
+                <Button
+                  type="default"
+                  onClick={() => fetchWithdrawRequests({ pageNo: 0, pageSize: 100 })}
+                  className="whitespace-nowrap"
+                >
+                  Refresh
+                </Button>
               </div>
             </div>
 
-            {/* Payment Filter */}
+            {/* Withdraw Request Filter */}
             <div className="flex flex-wrap gap-3 mb-4">
               <div className="flex items-center gap-2">
                 <FilterOutlined className="text-gray-400" />
@@ -346,24 +480,25 @@ const TokenPaymentManager: React.FC = () => {
               </div>
               <Select
                 placeholder="Status"
-                value={statusPaymentFilter}
-                onChange={handlePaymentStatusFilter}
+                value={statusWithdrawFilter}
+                onChange={handleWithdrawStatusFilter}
                 className="min-w-32"
                 options={[
                   { label: "All Status", value: "all" },
-                  { label: "Success", value: "Success" },
-                  { label: "Pending", value: "Pending" },
-                  { label: "Failed", value: "Failed" }
+                  { label: "Pending", value: "PENDING" },
+                  { label: "Approved", value: "APPROVED" },
+                  { label: "Completed", value: "COMPLETED" },
+                  { label: "Rejected", value: "REJECTED" },
+                  { label: "Cancelled", value: "CANCELLED" }
                 ]}
               />
-              {(statusPaymentFilter !== "all" || searchPaymentText) && (
+              {(statusWithdrawFilter !== "all" || searchWithdrawText) && (
                 <Button
                   type="text"
                   size="small"
                   onClick={() => {
-                    setSearchPaymentText("");
-                    setStatusPaymentFilter("all");
-                    setPaymentData(payments);
+                    setSearchWithdrawText("");
+                    setStatusWithdrawFilter("all");
                   }}
                   className="text-red-600 hover:bg-red-50 hover:text-red-700"
                 >
@@ -372,17 +507,18 @@ const TokenPaymentManager: React.FC = () => {
               )}
             </div>
 
-            {/* Payment Table */}
+            {/* Withdraw Request Table */}
             <Table
-              columns={paymentColumns}
-              dataSource={paymentData}
+              columns={withdrawRequestColumns}
+              dataSource={filteredWithdrawRequests}
               rowKey="id"
+              loading={withdrawLoading}
               pagination={{
                 pageSize: 10,
                 showSizeChanger: true,
                 showQuickJumper: true,
                 showTotal: (total, range) =>
-                  `${range[0]}-${range[1]} of ${total} payments`,
+                  `${range[0]}-${range[1]} of ${total} withdraw requests`,
               }}
               rowClassName="hover:bg-gray-50 transition-colors duration-200"
               className="bg-white rounded-lg border border-gray-200 overflow-x-auto"
