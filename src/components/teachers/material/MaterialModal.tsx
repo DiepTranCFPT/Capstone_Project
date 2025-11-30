@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Form, Input, Modal, Select, Switch, Upload, message } from "antd";
+import { Form, Input, Modal, Select, Switch, Upload, message, Button, InputNumber } from "antd";
 import type { UploadFile } from "antd";
 import type { Subject } from "~/types/subject";
 import type { LearningMaterial } from "~/types/learningMaterial";
@@ -10,7 +10,10 @@ export interface MaterialFormValues
   typeId: string;
   subjectId: string;
   isPublic: boolean;
+  price?: number;
 }
+
+const quickPriceAmounts = [0, 50_000, 100_000, 200_000, 500_000];
 
 interface MaterialModalProps {
   open: boolean;
@@ -35,11 +38,23 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
 }) => {
   const [form] = Form.useForm<MaterialFormValues>();
   const [thumbnailList, setThumbnailList] = useState<UploadFile[]>([]);
+  const price = Form.useWatch("price", form) ?? 0;
+
+  const formatAmount = (value: number) =>
+    new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      maximumFractionDigits: 0,
+    }).format(value);
 
   useEffect(() => {
     if (open) {
       form.resetFields();
-      form.setFieldsValue({ isPublic: true } as Partial<MaterialFormValues>);
+      form.setFieldsValue({ 
+        isPublic: true,
+        contentUrl: "https://example.com/material-content", // Default fake URL
+        price: 0
+      } as Partial<MaterialFormValues>);
       setThumbnailList([]);
     }
   }, [open, form]);
@@ -57,10 +72,12 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
       const formData = new FormData();
       formData.append("title", values.title ?? "");
       formData.append("description", values.description ?? "");
-      formData.append("contentUrl", values.contentUrl ?? "");
+      // Use default fake URL if not provided
+      formData.append("contentUrl", values.contentUrl ?? "https://example.com/material-content");
       formData.append("typeId", values.typeId ?? "");
       formData.append("subjectId", values.subjectId ?? "");
       formData.append("isPublic", String(values.isPublic ?? true));
+      formData.append("price", String(values.price ?? 0));
       formData.append("file", thumbnailFile);
 
       await onSubmit(formData);
@@ -83,7 +100,15 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
       cancelText="Cancel"
       destroyOnClose
     >
-      <Form form={form} layout="vertical" initialValues={{ isPublic: true }}>
+      <Form 
+        form={form} 
+        layout="vertical" 
+        initialValues={{ 
+          isPublic: true,
+          contentUrl: "https://example.com/material-content", // Default fake URL
+          price: 0
+        }}
+      >
         <Form.Item
           label="Title"
           name="title"
@@ -100,15 +125,9 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
           <Input.TextArea placeholder="Enter description" rows={3} />
         </Form.Item>
 
-        <Form.Item
-          label="Content URL"
-          name="contentUrl"
-          rules={[
-            { required: true, message: "Please enter content URL" },
-            { type: "url", message: "Please enter a valid URL" },
-          ]}
-        >
-          <Input placeholder="https://..." />
+        {/* Content URL is hidden and set to default value */}
+        <Form.Item name="contentUrl" hidden>
+          <Input />
         </Form.Item>
 
         <Form.Item label="Thumbnail (Image)" required>
@@ -169,6 +188,48 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
               </Select.Option>
             ))}
           </Select>
+        </Form.Item>
+
+        <Form.Item
+          label="Price (VND)"
+          name="price"
+          rules={[
+            { required: true, message: "Please enter price" },
+            { type: "number", min: 0, message: "Price must be greater than or equal to 0" },
+          ]}
+        >
+          <div className="space-y-3">
+            <div className="flex gap-3 items-center">
+              <InputNumber
+                min={0}
+                value={price}
+                onChange={(value) => form.setFieldsValue({ price: value ?? 0 })}
+                placeholder="Enter price (VND)"
+                className="flex-1"
+                formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                parser={(value) => value?.replace(/\$\s?|(,*)/g, "") as unknown as number}
+              />
+              <div className="min-w-[140px] rounded-lg border border-slate-200 bg-white px-4 py-2 text-lg font-bold text-slate-900">
+                {formatAmount(price)}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {quickPriceAmounts.map((amount) => (
+                <Button
+                  key={amount}
+                  type={price === amount ? "primary" : "default"}
+                  onClick={() => form.setFieldsValue({ price: amount })}
+                  className={
+                    price === amount
+                      ? "border-teal-400 bg-teal-50 text-teal-600"
+                      : "border-slate-200 text-slate-500 hover:border-teal-200 hover:text-teal-500"
+                  }
+                >
+                  {amount === 0 ? "Free" : formatAmount(amount)}
+                </Button>
+              ))}
+            </div>
+          </div>
         </Form.Item>
 
         <Form.Item label="Public" name="isPublic" valuePropName="checked">

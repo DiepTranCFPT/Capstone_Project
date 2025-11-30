@@ -30,6 +30,9 @@ const LearningMaterialService = {
   },
 
   register(learningMaterialId: string): Promise<AxiosResponse<ApiResponse<unknown>>> {
+    // POST request to register for a learning material
+    // According to API docs: POST /learning-materials/register/{learningMaterialId}
+    // Body is optional, sending empty object
     return axiosInstance.post(`/learning-materials/register/${learningMaterialId}`, {});
   },
 
@@ -37,8 +40,8 @@ const LearningMaterialService = {
     return axiosInstance.get(`/learning-materials/search`, { params: { keyword } });
   },
 
-  getRegistered(): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {
-    return axiosInstance.get(`/learning-materials/registered`);
+  getRegistered(params?: LearningMaterialQuery): Promise<AxiosResponse<ApiResponse<PageInfo<LearningMaterial> | LearningMaterial[]>>> {
+    return axiosInstance.get(`/learning-materials/registered`, { params });
   },
 
   getPublic(): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {

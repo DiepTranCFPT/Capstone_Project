@@ -42,10 +42,30 @@ export const useMaterialRegister = () => {
     try {
       setLoading(true);
       setError(null);
+      console.log("📝 Registering material:", learningMaterialId);
       const res = await LearningMaterialService.register(learningMaterialId);
+      console.log("✅ Register API Response:", {
+        status: res.status,
+        data: res.data,
+        fullResponse: res,
+      });
       return res.data.data;
     } catch (err: unknown) {
       console.error("❌ Register material error:", err);
+      const axiosError = err as { 
+        response?: { 
+          data?: { 
+            message?: string;
+            code?: number;
+          };
+          status?: number;
+        } 
+      };
+      console.error("Register error details:", {
+        status: axiosError.response?.status,
+        code: axiosError.response?.data?.code,
+        message: axiosError.response?.data?.message,
+      });
       const message = getErrorMessage(err, "Đã xảy ra lỗi khi đăng ký tài liệu.");
       setError(message);
       throw err;

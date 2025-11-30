@@ -48,6 +48,16 @@ const MaterialTable: React.FC<Props> = ({
     return <Tag>{typeName}</Tag>;
   };
 
+  const formatPrice = (price?: number) => {
+    if (price === undefined || price === null) return "N/A";
+    if (price === 0) return "Free";
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
   const columns: ColumnsType<LearningMaterial> = [
     {
       title: "Image",
@@ -79,6 +89,18 @@ const MaterialTable: React.FC<Props> = ({
       title: "Author",
       dataIndex: "authorName",
       key: "authorName",
+    },
+    {
+      title: "Price",
+      key: "price",
+      render: (_, record) => {
+        const price = (record as unknown as { price?: number }).price;
+        return (
+          <span className={price === 0 ? "text-green-600 font-semibold" : "font-semibold"}>
+            {formatPrice(price)}
+          </span>
+        );
+      },
     },
     {
       title: "Status",
@@ -166,3 +188,4 @@ const MaterialTable: React.FC<Props> = ({
 };
 
 export default MaterialTable;
+

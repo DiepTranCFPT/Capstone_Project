@@ -75,7 +75,7 @@ const MaterialsDetailPage: React.FC = () => {
 
       <div className="max-w-6xl mx-auto px-4 -mt-16">
         <div className="grid grid-cols-1 lg:grid-cols-[1.5fr,1fr] gap-8 items-start">
-          <div className="bg-white rounded-2xl shadow-lg p-8">
+          <div className="bg-white rounded-2xl shadow-xl p-8 lg:p-10">
             <MaterialDetailTab material={{
               id: material.id,
               title: material.title,
@@ -92,8 +92,11 @@ const MaterialsDetailPage: React.FC = () => {
               updatedAt: material.updatedAt,
               topic: material.typeName,
               subject: material.subjectName,
-              free: true,
+              free: material.price === 0,
+              price: (material as unknown as { price?: number }).price,
               image: material.thumbnail,
+              thumbnail: material.thumbnail,
+              fileImage: (material as unknown as { fileImage?: string }).fileImage,
             }} />
           </div>
 

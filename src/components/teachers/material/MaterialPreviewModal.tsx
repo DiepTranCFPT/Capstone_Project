@@ -9,21 +9,28 @@ interface MaterialPreviewModalProps {
 }
 
 const MaterialPreviewModal: React.FC<MaterialPreviewModalProps> = ({ material, open, onClose }) => {
+  const formatPrice = (price?: number) => {
+    if (price === undefined || price === null) return "N/A";
+    if (price === 0) return "Free";
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
+  const materialPrice = material ? (material as unknown as { price?: number }).price : undefined;
+
   return (
     <Modal
       title={material ? `Material • ${material.title}` : "Material Detail"}
       open={open}
       onCancel={onClose}
       footer={[
-        material?.contentUrl ? (
-          <Button key="open" type="primary" href={material.contentUrl} target="_blank">
-            Open Content
-          </Button>
-        ) : null,
         <Button key="close" onClick={onClose}>
           Close
         </Button>,
-      ].filter(Boolean)}
+      ]}
       width={720}
       destroyOnClose
     >
@@ -48,10 +55,10 @@ const MaterialPreviewModal: React.FC<MaterialPreviewModalProps> = ({ material, o
           <Descriptions column={1} bordered size="small">
             <Descriptions.Item label="Type">{material.typeName}</Descriptions.Item>
             <Descriptions.Item label="Subject">{material.subjectName}</Descriptions.Item>
-            <Descriptions.Item label="Content URL">
-              <Typography.Link href={material.contentUrl} target="_blank">
-                {material.contentUrl}
-              </Typography.Link>
+            <Descriptions.Item label="Price">
+              <span className={materialPrice === 0 ? "text-green-600 font-semibold" : "font-semibold"}>
+                {formatPrice(materialPrice)}
+              </span>
             </Descriptions.Item>
             <Descriptions.Item label="Created At">
               {new Date(material.createdAt).toLocaleString()}

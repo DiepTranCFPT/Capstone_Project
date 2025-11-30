@@ -35,7 +35,7 @@ const studentMenu = [
   },
   {
     label: "My Courses",
-    path: "#",
+    path: "/student/my-courses",
     icon: <FaUserGraduate />,
   },
   {

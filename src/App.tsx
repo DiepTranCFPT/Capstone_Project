@@ -33,6 +33,7 @@ import AITutorPage from "./pages/students/AITutorPage";
 import FindTutorPage from "./pages/students/FindTutorPage";
 import TutorDetailPage from "./pages/students/TutorDetailPage";
 import MyBookingsPage from "./pages/students/MyBookingsPage";
+import MyCoursesPage from "./pages/students/MyCoursesPage";
 import QuizBattlePage from "./pages/students/QuizBattlePage";
 
 import TestReportsPage from "./pages/students/TestReportsPage";
@@ -201,6 +202,7 @@ function App() {
           <Route path="find-tutor" element={<FindTutorPage />} />
           <Route path="tutor/:tutorId" element={<TutorDetailPage />} />
           <Route path="my-bookings" element={<MyBookingsPage />} />
+          <Route path="my-courses" element={<MyCoursesPage />} />
           <Route path="quiz-battle" element={<QuizBattlePage />} />
         </Route>
 
