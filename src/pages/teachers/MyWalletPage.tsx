@@ -4,65 +4,40 @@ import {
   FiArrowDownRight,
   FiClock,
   FiCopy,
+  FiLoader,
 } from "react-icons/fi";
+import { useTeacherWallet } from "~/hooks/useTeacherWallet";
 
-const summaryCards = [
-  {
-    label: "Số dư khả dụng",
-    value: "15.450.000đ",
-    hint: "Có thể rút ngay",
-    iconBg: "bg-emerald-100 text-emerald-600",
-  },
-  {
-    label: "Thu nhập tháng này",
-    value: "8.500.000đ",
-    hint: "+15% so với tháng trước",
-    iconBg: "bg-indigo-100 text-indigo-600",
-  },
-  {
-    label: "Đang chờ xử lý",
-    value: "2.000.000đ",
-    hint: "Dự kiến về sau 24h",
-    iconBg: "bg-amber-100 text-amber-600",
-  },
-];
-
-const transactions = [
-  {
-    id: "TXN-001",
-    title: "Yêu cầu rút tiền về VCB",
-    time: "17:30 25/10/2023",
-    amount: "-2.000.000đ",
-    status: "Đang xử lý",
-    type: "withdraw",
-  },
-  {
-    id: "TXN-002",
-    title: "Lương tháng 10/2023",
-    time: "22:00 20/10/2023",
-    amount: "+5.000.000đ",
-    status: "Thành công",
-    type: "income",
-  },
-  {
-    id: "TXN-003",
-    title: "Hoa hồng giới thiệu học viên",
-    time: "16:15 18/10/2023",
-    amount: "+1.500.000đ",
-    status: "Thành công",
-    type: "income",
-  },
-  {
-    id: "TXN-004",
-    title: "Rút tiền về Techcombank",
-    time: "21:20 05/10/2023",
-    amount: "-5.000.000đ",
-    status: "Thành công",
-    type: "withdraw",
-  },
-];
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(amount);
+};
 
 const MyWalletPage = () => {
+  const { loading, error, transactions, walletSummary } = useTeacherWallet();
+
+  const summaryCards = [
+    {
+      label: "Số dư khả dụng",
+      value: formatCurrency(walletSummary.availableBalance),
+      hint: "Có thể rút ngay",
+      iconBg: "bg-emerald-100 text-emerald-600",
+    },
+    {
+      label: "Thu nhập tháng này",
+      value: formatCurrency(walletSummary.monthlyIncome),
+      hint: "Tổng thu nhập trong tháng hiện tại",
+      iconBg: "bg-indigo-100 text-indigo-600",
+    },
+    {
+      label: "Đang chờ xử lý",
+      value: formatCurrency(walletSummary.pendingAmount),
+      hint: "Dự kiến về sau 24h",
+      iconBg: "bg-amber-100 text-amber-600",
+    },
+  ];
   return (
     <section className="min-h-screen bg-slate-50/80 p-6 md:p-10">
       <div className="mx-auto w-full max-w-6xl space-y-10">
@@ -95,29 +70,27 @@ const MyWalletPage = () => {
                   <FiTrendingUp />
                 </span>
               </div>
-              <p className="mt-4 text-3xl font-bold text-slate-900">{card.value}</p>
+              <p className="mt-4 text-3xl font-bold text-slate-900">
+                {loading ? (
+                  <span className="inline-flex items-center gap-2">
+                    <FiLoader className="animate-spin" />
+                    <span className="text-lg">Đang tải...</span>
+                  </span>
+                ) : (
+                  card.value
+                )}
+              </p>
               <p className="mt-1 text-sm text-slate-400">{card.hint}</p>
             </div>
           ))}
         </div>
 
-        {/* AI insight */}
-        <div className="rounded-3xl border border-indigo-100 bg-gradient-to-r from-indigo-50 via-white to-slate-50 p-6 shadow-inner">
-          <div className="flex flex-wrap items-center justify-between gap-6">
-            <div>
-              <p className="text-sm font-semibold text-indigo-500 uppercase tracking-widest">Phân tích AI</p>
-              <h2 className="mt-2 text-2xl font-bold text-slate-900">
-                Nhận gợi ý tài chính dựa trên lịch sử giao dịch
-              </h2>
-              <p className="mt-2 text-slate-500 max-w-2xl">
-                Hệ thống sẽ đề xuất thời điểm rút tiền tối ưu và cảnh báo khi thu nhập giảm bất thường.
-              </p>
-            </div>
-            <button className="rounded-full bg-indigo-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-600">
-              Phân tích ngay
-            </button>
+        {/* Error message */}
+        {error && (
+          <div className="rounded-3xl bg-red-50 border border-red-200 p-4">
+            <p className="text-sm text-red-600">{error}</p>
           </div>
-        </div>
+        )}
 
         {/* Chart placeholder */}
         <div className="rounded-3xl bg-white p-6 shadow-lg">
@@ -150,39 +123,52 @@ const MyWalletPage = () => {
             </button>
           </div>
           <div className="mt-4 divide-y divide-slate-100">
-            {transactions.map((item) => (
-              <div key={item.id} className="flex flex-wrap items-center gap-4 py-4">
-                <div className="flex flex-1 items-center gap-4">
-                  <span
-                    className={`rounded-2xl p-3 ${
-                      item.type === "income" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-                    }`}
-                  >
-                    {item.type === "income" ? <FiArrowUpRight /> : <FiArrowDownRight />}
-                  </span>
-                  <div>
-                    <p className="font-semibold text-slate-800">{item.title}</p>
-                    <p className="text-sm text-slate-400 flex items-center gap-1">
-                      <FiClock /> {item.time} · {item.id}
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex flex-col items-center gap-3">
+                  <FiLoader className="animate-spin text-2xl text-slate-400" />
+                  <p className="text-sm text-slate-400">Đang tải lịch sử giao dịch...</p>
+                </div>
+              </div>
+            ) : transactions.length === 0 ? (
+              <div className="flex items-center justify-center py-12">
+                <p className="text-sm text-slate-400">Chưa có giao dịch nào</p>
+              </div>
+            ) : (
+              transactions.map((item) => (
+                <div key={item.id} className="flex flex-wrap items-center gap-4 py-4">
+                  <div className="flex flex-1 items-center gap-4">
+                    <span
+                      className={`rounded-2xl p-3 ${
+                        item.type === "income" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                      }`}
+                    >
+                      {item.type === "income" ? <FiArrowUpRight /> : <FiArrowDownRight />}
+                    </span>
+                    <div>
+                      <p className="font-semibold text-slate-800">{item.title}</p>
+                      <p className="text-sm text-slate-400 flex items-center gap-1">
+                        <FiClock /> {item.time} · {item.id}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-lg font-bold ${item.type === "income" ? "text-emerald-600" : "text-slate-600"}`}>
+                      {item.amount}
+                    </p>
+                    <p
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                        item.status === "Thành công"
+                          ? "bg-emerald-50 text-emerald-600"
+                          : "bg-amber-50 text-amber-600"
+                      }`}
+                    >
+                      {item.status}
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className={`text-lg font-bold ${item.type === "income" ? "text-emerald-600" : "text-slate-600"}`}>
-                    {item.amount}
-                  </p>
-                  <p
-                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                      item.status === "Thành công"
-                        ? "bg-emerald-50 text-emerald-600"
-                        : "bg-amber-50 text-amber-600"
-                    }`}
-                  >
-                    {item.status}
-                  </p>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
