@@ -1,11 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { Tabs, message, Spin } from "antd";
+import React, { useEffect, useState, useMemo } from "react";
+import { Tabs, message, Spin, Empty, Tag } from "antd";
 import { useNavigate } from "react-router-dom";
 import type { Material } from "~/types/material";
 import { useMaterialRegister } from "~/hooks/useMaterialRegister";
+import { useRegisteredMaterials } from "~/hooks/useRegisteredMaterials";
 import UserService from "~/services/userService";
 import type { User } from "~/types/user";
 import MaterialThumbnail from "~/components/common/MaterialThumbnail";
+import { useLesson } from "~/hooks/useLesson";
+import type { Lesson } from "~/types/lesson";
+import { PlayCircleOutlined, FileTextOutlined, ClockCircleOutlined } from "@ant-design/icons";
 
 interface MaterialDetailTabProps {
   material: Material;
@@ -16,6 +20,54 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
   const navigate = useNavigate();
   const [instructor, setInstructor] = useState<User | null>(null);
   const [loadingInstructor, setLoadingInstructor] = useState(false);
+  const { getLessonsByLearningMaterial, loading: lessonsLoading } = useLesson();
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const { materials: registeredMaterials, refetch: refetchRegisteredMaterials } = useRegisteredMaterials();
+  const [localRegisteredIds, setLocalRegisteredIds] = useState<string[]>(() => {
+    // Initialize from localStorage as backup
+    try {
+      const stored = localStorage.getItem('registeredMaterials');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+  
+  // Helper function to save registered material ID to localStorage (as backup)
+  const saveRegisteredMaterialId = (materialId: string) => {
+    try {
+      if (!localRegisteredIds.includes(materialId)) {
+        const updated = [...localRegisteredIds, materialId];
+        setLocalRegisteredIds(updated);
+        localStorage.setItem('registeredMaterials', JSON.stringify(updated));
+        console.log("✅ Saved material ID to localStorage:", materialId, "Updated list:", updated);
+      } else {
+        console.log("ℹ️ Material ID already in localStorage:", materialId);
+      }
+    } catch (error) {
+      console.error('Failed to save registered material ID to localStorage:', error);
+    }
+  };
+  
+  // Check if this material is already registered
+  // Priority: API response > localStorage (backup)
+  // Use useMemo to ensure it recalculates when dependencies change
+  const isRegistered = useMemo(() => {
+    const isRegisteredFromAPI = registeredMaterials.some((m) => m.id === material.id);
+    const isRegisteredFromStorage = localRegisteredIds.includes(material.id);
+    const result = isRegisteredFromAPI || isRegisteredFromStorage;
+    
+    console.log("🔍 Registration status check:", {
+      materialId: material.id,
+      isRegisteredFromAPI,
+      isRegisteredFromStorage,
+      result,
+      registeredMaterialsCount: registeredMaterials.length,
+      localRegisteredIds: localRegisteredIds,
+    });
+    
+    return result;
+  }, [material.id, registeredMaterials, localRegisteredIds]);
 
   // Fetch thông tin instructor
   useEffect(() => {
@@ -47,15 +99,47 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
     fetchInstructor();
   }, [material.authorId]);
 
+  // Fetch lessons
+  useEffect(() => {
+    if (material?.id) {
+      getLessonsByLearningMaterial(material.id)
+        .then((lessonList) => {
+          const sortedLessons = lessonList.sort((a, b) => (a.order || 0) - (b.order || 0));
+          setLessons(sortedLessons);
+        })
+        .catch((err) => {
+          console.warn("Không thể lấy danh sách bài học:", err);
+          setLessons([]);
+        });
+    }
+  }, [material?.id, getLessonsByLearningMaterial]);
+
   const handleRegister = async () => {
     try {
-      await register(material.id);
+      console.log("🔄 Starting registration for material:", material.id);
+      const result = await register(material.id);
+      console.log("✅ Registration successful, result:", result);
+      
+      // Save to localStorage as backup (in case API GET doesn't work)
+      saveRegisteredMaterialId(material.id);
+      
       message.success("Đăng ký tài liệu thành công!");
+      
+      // Try to refresh registered materials list from API
+      console.log("🔄 Refreshing registered materials list from API...");
+      try {
+        await refetchRegisteredMaterials();
+      } catch (apiError) {
+        console.warn("⚠️ Failed to refresh from API, using localStorage backup:", apiError);
+        // If API fails, we still have localStorage backup
+      }
+      
       // Chuyển đến trang học sau khi đăng ký thành công
       setTimeout(() => {
         navigate(`/materials/${material.id}/learn`);
       }, 1000);
     } catch (err: unknown) {
+      console.log("❌ Registration failed in handleRegister:", err);
       // Kiểm tra nếu đã đăng ký rồi (code 1033)
       if (
         typeof err === "object" &&
@@ -73,13 +157,26 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
           } 
         };
         
-        // Nếu đã đăng ký rồi, chuyển đến trang học luôn
+        // Nếu đã đăng ký rồi, lưu vào localStorage và refresh list
         if (axiosError.response?.data?.code === 1033 || 
             axiosError.response?.data?.message?.includes("already registered")) {
-          message.info("Bạn đã đăng ký khóa học này rồi. Đang chuyển đến trang học...");
-          setTimeout(() => {
-            navigate(`/materials/${material.id}/learn`);
-          }, 500);
+          // Save to localStorage as backup (this will trigger re-render via state update)
+          saveRegisteredMaterialId(material.id);
+          
+          // Try to refresh registered materials list from API
+          console.log("🔄 Material already registered, refreshing list from API...");
+          try {
+            await refetchRegisteredMaterials();
+          } catch (apiError) {
+            console.warn("⚠️ Failed to refresh from API, using localStorage backup:", apiError);
+            // If API fails, we still have localStorage backup
+          }
+          
+          // Show message and let component re-render to show "Continue Learning" button
+          message.info("Bạn đã đăng ký khóa học này rồi.");
+          
+          // Don't navigate immediately - let the button update to "Continue Learning"
+          // The state update from saveRegisteredMaterialId will trigger re-render
           return;
         }
         
@@ -170,13 +267,22 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
                 </div>
                 
                 <div className="pt-4">
-                  <button
-                    onClick={handleRegister}
-                    disabled={loading}
-                    className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white border-0 rounded-xl font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:transform-none"
-                  >
-                    {loading ? "Đang xử lý..." : "Register Now"}
-                  </button>
+                  {isRegistered ? (
+                    <button
+                      onClick={() => navigate(`/materials/${material.id}/learn`)}
+                      className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-0 rounded-xl font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                    >
+                      Continue Learning
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleRegister}
+                      disabled={loading}
+                      className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white border-0 rounded-xl font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:transform-none"
+                    >
+                      {loading ? "Đang xử lý..." : "Register Now"}
+                    </button>
+                  )}
                 </div>
               </div>
             ),
@@ -280,6 +386,81 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
                         Giáo viên
                       </span>
                     </div>
+                  </div>
+                )}
+              </div>
+            ),
+          },
+          {
+            key: "lessons",
+            label: `Lessons (${lessons.length})`,
+            children: (
+              <div>
+                {lessonsLoading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Spin size="large" />
+                  </div>
+                ) : lessons.length === 0 ? (
+                  <Empty
+                    description="Chưa có bài học nào trong khóa học này"
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
+                ) : (
+                  <div className="space-y-3">
+                    {lessons.map((lesson, index) => {
+                      const hasVideo = !!(lesson.video || lesson.url);
+                      const hasFile = !!lesson.file;
+                      const duration = lesson.duration 
+                        ? `${Math.floor(lesson.duration / 60)}:${(lesson.duration % 60).toString().padStart(2, '0')}`
+                        : null;
+
+                      return (
+                        <div
+                          key={lesson.id}
+                          className="group border border-gray-200 rounded-lg p-4 hover:border-teal-300 hover:shadow-md transition-all duration-200 cursor-pointer"
+                          onClick={() => navigate(`/materials/${material.id}/learn?lesson=${lesson.id}`)}
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center border border-teal-200">
+                              <span className="text-teal-700 font-bold text-sm">{index + 1}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-4 mb-2">
+                                <h4 className="text-base font-semibold text-gray-900 group-hover:text-teal-600 transition-colors">
+                                  {lesson.title || lesson.name || `Bài ${index + 1}`}
+                                </h4>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  {hasVideo && (
+                                    <Tag icon={<PlayCircleOutlined />} color="blue">
+                                      Video
+                                    </Tag>
+                                  )}
+                                  {hasFile && (
+                                    <Tag icon={<FileTextOutlined />} color="green">
+                                      File
+                                    </Tag>
+                                  )}
+                                </div>
+                              </div>
+                              {lesson.description && (
+                                <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                                  {lesson.description}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-4 text-xs text-gray-500">
+                                {duration && (
+                                  <span className="flex items-center gap-1">
+                                    <ClockCircleOutlined />
+                                    {duration}
+                                  </span>
+                                )}
+                                <span className="text-gray-400">Click để xem chi tiết</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
