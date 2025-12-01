@@ -1,20 +1,18 @@
 AP-LMS (Advanced Placement Learning Management System)
 
-AP-LMS là nền tảng quản lý học tập trực tuyến toàn diện, được thiết kế chuyên biệt để hỗ trợ học sinh ôn luyện các chứng chỉ Advanced Placement (AP). Hệ thống kết nối Học sinh, Giáo viên, Phụ huynh và Cố vấn học tập trong một môi trường giáo dục tích hợp, hiện đại và thông minh.
+AP-LMS là nền tảng quản lý học tập trực tuyến toàn diện, được thiết kế chuyên biệt để hỗ trợ học sinh ôn luyện các chứng chỉ Advanced Placement (AP). Hệ thống kết nối Học sinh, Giáo viên, Phụ huynh học tập trong một môi trường giáo dục tích hợp, hiện đại và thông minh.
 
 🌟 Tính năng nổi bật
 
 1. Phân quyền người dùng (Role-Based Access)
 
-Hệ thống hỗ trợ 5 vai trò người dùng riêng biệt:
+Hệ thống hỗ trợ 4 vai trò người dùng riêng biệt:
 
 Học sinh (Student): Tham gia khóa học, làm bài thi, xem lộ trình học tập, tương tác với AI Tutor.
 
 Giáo viên (Teacher): Quản lý lớp học, tạo ngân hàng câu hỏi, tạo đề thi, chấm điểm tự luận.
 
 Phụ huynh (Parent): Liên kết tài khoản với con, theo dõi tiến độ học tập và thanh toán học phí.
-
-Cố vấn (Academic Advisor): Tư vấn lộ trình, lên kế hoạch học tập cá nhân hóa cho học sinh.
 
 Quản trị viên (Admin): Quản lý người dùng, duyệt hồ sơ giáo viên, quản lý nội dung hệ thống.
 
