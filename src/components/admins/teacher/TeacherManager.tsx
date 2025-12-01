@@ -10,6 +10,10 @@ import {
   Card,
   Modal,
   Alert,
+  Descriptions,
+  Tag,
+  Divider,
+  Popconfirm,
 } from "antd";
 import {
   SearchOutlined,
@@ -25,6 +29,8 @@ const { Title } = Typography;
 const TeacherManager: React.FC = () => {
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState<UnverifiedTeacherProfile[]>([]);
+  const [isViewModalVisible, setIsViewModalVisible] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<UnverifiedTeacherProfile | null>(null);
   const { unverifiedProfiles, loading, error, fetchUnverifiedProfiles, verifyProfile } = useTeacherProfile();
 
   // Initialize data on component mount
@@ -54,19 +60,21 @@ const TeacherManager: React.FC = () => {
   };
 
   const handleVerifyProfile = async (profileId: string) => {
-    Modal.confirm({
-      title: 'Approve Teacher Profile',
-      content: 'Are you sure you want to approve this teacher profile?',
-      okText: 'Approve',
-      cancelText: 'Cancel',
-      onOk: async () => {
-        const success = await verifyProfile(profileId);
-        if (success) {
-          // Refresh the list after successful verification
-          await fetchUnverifiedProfiles();
-        }
-      },
-    });
+    const success = await verifyProfile(profileId);
+    if (success) {
+      // Refresh the list after successful verification
+      await fetchUnverifiedProfiles();
+    }
+  };
+
+  const handleViewProfile = (profile: UnverifiedTeacherProfile) => {
+    setSelectedProfile(profile);
+    setIsViewModalVisible(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setIsViewModalVisible(false);
+    setSelectedProfile(null);
   };
 
   const columns: ColumnsType<UnverifiedTeacherProfile> = [
@@ -75,7 +83,7 @@ const TeacherManager: React.FC = () => {
       dataIndex: ["firstName", "lastName"],
       key: "name",
       render: (_, record) => (
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-3">
           <Avatar
             src={record.imgUrl}
             size={48}
@@ -134,19 +142,26 @@ const TeacherManager: React.FC = () => {
           <Tooltip title="View Profile">
             <Button
               icon={<EyeOutlined />}
-              onClick={() => console.log("View:", record)}
+              onClick={() => handleViewProfile(record)}
             />
           </Tooltip>
           <Tooltip title="Approve Profile">
-            <Button
-              type="primary"
-              icon={<CheckOutlined />}
-              className="bg-green-600 hover:bg-green-700"
-              onClick={() => handleVerifyProfile(record.teacherProfile.id)}
-              loading={loading}
+            <Popconfirm
+              title="Approve Teacher Profile"
+              description="Are you sure you want to approve this teacher profile?"
+              onConfirm={() => handleVerifyProfile(record.teacherProfile.id)}
+              okText="Approve"
+              cancelText="Cancel"
             >
-              Approve
-            </Button>
+              <Button
+                type="primary"
+                icon={<CheckOutlined />}
+                className="bg-green-600 hover:bg-green-700"
+                loading={loading}
+              >
+                Approve
+              </Button>
+            </Popconfirm>
           </Tooltip>
         </Space>
       ),
@@ -229,6 +244,116 @@ const TeacherManager: React.FC = () => {
           />
         </div>
       </Card>
+
+      {/* View Profile Modal */}
+      <Modal
+        title="Teacher Profile Details"
+        open={isViewModalVisible}
+        onCancel={handleCloseViewModal}
+        footer={[
+          <Button key="close" onClick={handleCloseViewModal}>
+            Close
+          </Button>,
+        ]}
+        width={800}
+        centered
+      >
+        {selectedProfile && (
+          <div className="space-y-6">
+            {/* Profile Header */}
+            <div className="flex items-center gap-3">
+              <Avatar
+                src={selectedProfile.imgUrl}
+                size={80}
+                className="shadow-md border-2 border-gray-200"
+              >
+                {selectedProfile.firstName?.charAt(0)}
+              </Avatar>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">
+                  {selectedProfile.firstName} {selectedProfile.lastName}
+                </h2>
+                <p className="text-gray-600">{selectedProfile.email}</p>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {selectedProfile.roles.map((role) => (
+                    <Tag key={role} color="blue">
+                      {role}
+                    </Tag>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <Divider />
+
+            {/* Basic Information */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Basic Information</h3>
+              <Descriptions bordered column={2} size="small">
+                <Descriptions.Item label="Date of Birth">
+                  {selectedProfile.dob || 'Not provided'}
+                </Descriptions.Item>
+                <Descriptions.Item label="User ID">
+                  {selectedProfile.id}
+                </Descriptions.Item>
+              </Descriptions>
+            </div>
+
+            <Divider />
+
+            {/* Teacher Profile */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Teacher Profile</h3>
+              <Descriptions bordered column={1} size="small">
+                <Descriptions.Item label="Qualification">
+                  {selectedProfile.teacherProfile.qualification || 'Not provided'}
+                </Descriptions.Item>
+                <Descriptions.Item label="Specialization">
+                  {selectedProfile.teacherProfile.specialization || 'Not provided'}
+                </Descriptions.Item>
+                <Descriptions.Item label="Experience">
+                  {selectedProfile.teacherProfile.experience || 'Not provided'}
+                </Descriptions.Item>
+                <Descriptions.Item label="Biography">
+                  {selectedProfile.teacherProfile.biography || 'Not provided'}
+                </Descriptions.Item>
+                <Descriptions.Item label="Rating">
+                  {selectedProfile.teacherProfile.rating ? `${selectedProfile.teacherProfile.rating}/5` : 'Not rated'}
+                </Descriptions.Item>
+                <Descriptions.Item label="Certificates">
+                  {selectedProfile.teacherProfile.certificateUrls?.length > 0
+                    ? `${selectedProfile.teacherProfile.certificateUrls.length} certificate(s) uploaded`
+                    : 'No certificates uploaded'
+                  }
+                  {selectedProfile.teacherProfile.certificateUrls?.length > 0 && (
+                    <div className="mt-2">
+                      <ul className="list-disc list-inside text-sm text-gray-600">
+                        {selectedProfile.teacherProfile.certificateUrls.map((url, index) => (
+                          <li key={index}>
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              Certificate {index + 1}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </Descriptions.Item>
+                <Descriptions.Item label="Verification Status">
+                  <Tag color={selectedProfile.teacherProfile.isVerified ? 'green' : 'orange'}>
+                    {selectedProfile.teacherProfile.isVerified ? 'Verified' : 'Pending Verification'}
+                  </Tag>
+                </Descriptions.Item>
+              </Descriptions>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

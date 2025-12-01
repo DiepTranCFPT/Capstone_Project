@@ -11,6 +11,7 @@ import {
     LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell
 } from 'recharts';
+import type { PieLabelRenderProps } from 'recharts';
 import { useDashboardStats } from '~/hooks/useDashboardStats';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
@@ -21,7 +22,7 @@ const AdminDashboardPage: React.FC = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <Spin size="large" tip="Đang tải dữ liệu dashboard..." />
+                <Spin size="large" />
             </div>
         );
     }
@@ -83,7 +84,7 @@ const AdminDashboardPage: React.FC = () => {
             {/* Key Metrics Cards */}
             <Row gutter={[16, 16]} className="mb-6">
                 <Col xs={24} sm={12} lg={6}>
-                    <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow">
+                    <Card className="shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
                             title={<span className="text-gray-600 font-medium">Total Users</span>}
                             value={stats.totalUsers}
@@ -97,7 +98,7 @@ const AdminDashboardPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow">
+                    <Card className="shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
                             title={<span className="text-gray-600 font-medium">Students</span>}
                             value={stats.totalStudents}
@@ -110,7 +111,7 @@ const AdminDashboardPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow">
+                    <Card className="shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
                             title={<span className="text-gray-600 font-medium">Teachers</span>}
                             value={stats.totalTeachers}
@@ -123,7 +124,7 @@ const AdminDashboardPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow">
+                    <Card className="shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
                             title={<span className="text-gray-600 font-medium">Parents</span>}
                             value={stats.totalParents}
@@ -206,10 +207,10 @@ const AdminDashboardPage: React.FC = () => {
                                         cx="50%"
                                         cy="50%"
                                         labelLine={true}
-                                        label={(entry: any) => {
+                                        label={(entry: PieLabelRenderProps) => {
                                             const total = userDistributionData.reduce((sum, item) => sum + item.value, 0);
                                             if (total === 0) return `${entry.name}: 0%`;
-                                            const percent = (entry.value / total) * 100;
+                                            const percent = ((entry.value as number) / total) * 100;
                                             return `${entry.name}: ${percent.toFixed(0)}%`;
                                         }}
                                         outerRadius={100}
