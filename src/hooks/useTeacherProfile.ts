@@ -34,13 +34,13 @@ export const useTeacherProfile = () => {
             const res = await TeacherProfileService.createProfile(data);
             if (res.data.code === 0 || res.data.code === 1000) {
                 setProfile(res.data.data);
-                toast.success("Tạo hồ sơ giáo viên thành công!");
+                toast.success("Create teacher profile successfully!");
                 return res.data.data;
             } else {
                 throw new Error(res.data.message || "Failed to create profile");
             }
         } catch (err) {
-            handleError(err, "Tạo hồ sơ thất bại");
+            handleError(err, "Failed to create profile");
             return null;
         } finally {
             setLoading(false);
@@ -57,13 +57,13 @@ export const useTeacherProfile = () => {
             const res = await TeacherProfileService.updateMyProfile(id, data);
             if (res.data.code === 0 || res.data.code === 1000) {
                 setProfile(res.data.data);
-                toast.success("Cập nhật hồ sơ thành công!");
+                toast.success("Update profile successfully!");
                 return res.data.data;
             } else {
                 throw new Error(res.data.message || "Failed to update profile");
             }
         } catch (err) {
-            handleError(err, "Cập nhật hồ sơ thất bại");
+            handleError(err, "Failed to update profile");
             return null;
         } finally {
             setLoading(false);
@@ -79,7 +79,7 @@ export const useTeacherProfile = () => {
         try {
             const res = await TeacherProfileService.verifyProfile(id);
             if (res.data.code === 0 || res.data.code === 1000) {
-                toast.success("Đã xác thực hồ sơ giáo viên!");
+                toast.success("Verify teacher profile successfully!");
                 // Cập nhật lại danh sách unverified sau khi verify thành công
                 setUnverifiedProfiles(prev => prev.filter(p => p.teacherProfile.id !== id));
                 return res.data.data;
@@ -87,7 +87,7 @@ export const useTeacherProfile = () => {
                 throw new Error(res.data.message || "Failed to verify profile");
             }
         } catch (err) {
-            handleError(err, "Xác thực hồ sơ thất bại");
+            handleError(err, "Verify teacher profile failed");
             return null;
         } finally {
             setLoading(false);
@@ -119,7 +119,7 @@ export const useTeacherProfile = () => {
                 throw new Error(res.data.message || "Failed to fetch unverified profiles");
             }
         } catch (err) {
-            handleError(err, "Không thể tải danh sách hồ sơ chờ duyệt");
+            handleError(err, "Failed to fetch unverified profiles");
         } finally {
             setLoading(false);
         }

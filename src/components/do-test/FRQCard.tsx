@@ -156,6 +156,44 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
         }
     };
 
+    // State for split screen width (percentage of left panel)
+    const [leftPanelWidth, setLeftPanelWidth] = useState(50);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const isResizingRef = useRef(false);
+
+    // Handle mouse events for resizing
+    const startResizing = useCallback(() => {
+        isResizingRef.current = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+    }, []);
+
+    const stopResizing = useCallback(() => {
+        isResizingRef.current = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+    }, []);
+
+    const resize = useCallback((e: MouseEvent) => {
+        if (isResizingRef.current && containerRef.current) {
+            const containerRect = containerRef.current.getBoundingClientRect();
+            const newLeftWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+            // Limit width between 20% and 80%
+            if (newLeftWidth >= 20 && newLeftWidth <= 80) {
+                setLeftPanelWidth(newLeftWidth);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        window.addEventListener('mousemove', resize);
+        window.addEventListener('mouseup', stopResizing);
+        return () => {
+            window.removeEventListener('mousemove', resize);
+            window.removeEventListener('mouseup', stopResizing);
+        };
+    }, [resize, stopResizing]);
+
     if (cardMode === "latex") {
         return (
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -243,44 +281,6 @@ x^2 + 2x + 1 = 0`}
             </div>
         );
     }
-
-    // State for split screen width (percentage of left panel)
-    const [leftPanelWidth, setLeftPanelWidth] = useState(50);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const isResizingRef = useRef(false);
-
-    // Handle mouse events for resizing
-    const startResizing = useCallback(() => {
-        isResizingRef.current = true;
-        document.body.style.cursor = 'col-resize';
-        document.body.style.userSelect = 'none';
-    }, []);
-
-    const stopResizing = useCallback(() => {
-        isResizingRef.current = false;
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-    }, []);
-
-    const resize = useCallback((e: MouseEvent) => {
-        if (isResizingRef.current && containerRef.current) {
-            const containerRect = containerRef.current.getBoundingClientRect();
-            const newLeftWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
-            // Limit width between 20% and 80%
-            if (newLeftWidth >= 20 && newLeftWidth <= 80) {
-                setLeftPanelWidth(newLeftWidth);
-            }
-        }
-    }, []);
-
-    useEffect(() => {
-        window.addEventListener('mousemove', resize);
-        window.addEventListener('mouseup', stopResizing);
-        return () => {
-            window.removeEventListener('mousemove', resize);
-            window.removeEventListener('mouseup', stopResizing);
-        };
-    }, [resize, stopResizing]);
 
     if (cardMode === "splitscreen") {
         return (

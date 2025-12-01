@@ -39,7 +39,7 @@ const mapRolesToUserRole = (roles: string[]): 'STUDENT' | 'TEACHER' | 'ADMIN' | 
 
 export const loginApi = async (email: string, password: string): Promise<AuthResponse> => {
     try {
-        const response = await axiosInstance.post<LoginApiResponse>('/auth/token', { email, password });
+        const response = await publicAxios.post<LoginApiResponse>('/auth/token', { email, password });
 
         if (response.data.code !== 1000 && response.data.code !== 0) {
             throw new Error(response.data.message || 'Login failed');
