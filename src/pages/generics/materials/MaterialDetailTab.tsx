@@ -99,13 +99,25 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
     fetchInstructor();
   }, [material.authorId]);
 
+  // Helper để sort lesson: ưu tiên field `order`, sau đó đến `createdAt` (bài tạo trước đứng trước)
+  const sortLessons = (lessonList: Lesson[]): Lesson[] => {
+    return [...lessonList].sort((a, b) => {
+      const orderDiff = (a.order || 0) - (b.order || 0);
+      if (orderDiff !== 0) return orderDiff;
+
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return aTime - bTime;
+    });
+  };
+
   // Fetch lessons
   useEffect(() => {
     if (material?.id) {
       getLessonsByLearningMaterial(material.id)
         .then((lessonList) => {
-          const sortedLessons = lessonList.sort((a, b) => (a.order || 0) - (b.order || 0));
-          setLessons(sortedLessons);
+          const sorted = sortLessons(lessonList);
+          setLessons(sorted);
         })
         .catch((err) => {
           console.warn("Không thể lấy danh sách bài học:", err);
