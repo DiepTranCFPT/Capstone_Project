@@ -1,32 +1,46 @@
 import React, { useState, useEffect } from "react";
-import { Table, Button, Tag, Input, Select } from "antd";
+import { Table, Button, Tag, Input, Select, Alert, Popconfirm, message } from "antd";
 import { SearchOutlined, FilterOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import type { WithdrawRequest } from "~/types/tokenTransaction";
-import { useTokenTransaction } from "~/hooks/useTokenTransaction";
+import { useAdminWithdrawRequests } from "~/hooks/useAdminWithdrawRequests";
+import TokenTransactionService from "~/services/tokenTransactionService";
 
 const WithdrawRequestsTab: React.FC = () => {
-  const { withdrawRequests, loading: withdrawLoading, fetchWithdrawRequests } = useTokenTransaction();
+  const {
+    requests: withdrawRequests,
+    loading: withdrawLoading,
+    error: withdrawError,
+    fetchWithdrawRequests,
+  } = useAdminWithdrawRequests();
   const [searchWithdrawText, setSearchWithdrawText] = useState("");
   const [statusWithdrawFilter, setStatusWithdrawFilter] = useState<string>("all");
   const [filteredWithdrawRequests, setFilteredWithdrawRequests] = useState<WithdrawRequest[]>([]);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   // Fetch withdraw requests on mount
   useEffect(() => {
-    fetchWithdrawRequests({ pageNo: 0, pageSize: 100 });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const params: { pageNo: number; pageSize: number; status?: string } = {
+      pageNo: 0,
+      pageSize: 100,
+    };
+    if (statusWithdrawFilter !== "all") {
+      params.status = statusWithdrawFilter;
+    }
+    fetchWithdrawRequests(params);
+  }, [fetchWithdrawRequests, statusWithdrawFilter]);
 
   // Filter withdraw requests
   useEffect(() => {
     let filtered = withdrawRequests;
     
     if (searchWithdrawText) {
+      const keyword = searchWithdrawText.toLowerCase();
       filtered = filtered.filter(request =>
-        request.id?.toLowerCase().includes(searchWithdrawText.toLowerCase()) ||
-        request.bankAccount?.toLowerCase().includes(searchWithdrawText.toLowerCase()) ||
-        request.bankName?.toLowerCase().includes(searchWithdrawText.toLowerCase()) ||
-        request.accountHolderName?.toLowerCase().includes(searchWithdrawText.toLowerCase()) ||
+        request.transactionId?.toLowerCase().includes(keyword) ||
+        request.teacherName?.toLowerCase().includes(keyword) ||
+        request.bankingNumber?.toLowerCase().includes(keyword) ||
+        request.nameBanking?.toLowerCase().includes(keyword) ||
         request.amount?.toString().includes(searchWithdrawText)
       );
     }
@@ -53,19 +67,48 @@ const WithdrawRequestsTab: React.FC = () => {
     }).format(amount);
   };
 
+  const handleMarkAsCompleted = async (record: WithdrawRequest) => {
+    if (!record.transactionId) {
+      message.error("Không tìm thấy transactionId của yêu cầu rút tiền.");
+      return;
+    }
+    try {
+      setConfirmingId(record.transactionId);
+      await TokenTransactionService.confirmWithdrawal({
+        transactionId: record.transactionId,
+        approved: true,
+        adminNote: "Đã chuyển tiền cho giáo viên",
+      });
+      message.success("Đã xác nhận đã chuyển tiền cho giáo viên.");
+      // Reload danh sách theo filter hiện tại
+      await fetchWithdrawRequests({
+        pageNo: 0,
+        pageSize: 100,
+        ...(statusWithdrawFilter !== "all" ? { status: statusWithdrawFilter } : {}),
+      });
+    } catch (error) {
+      // Log chi tiết lỗi để dễ debug, đồng thời tránh lỗi ESLint "no-unused-vars"
+      // Nếu không cần dùng `error`, có thể bỏ hẳn tham số: `catch { ... }`
+      console.error("Xác nhận rút tiền thất bại:", error);
+      message.error("Xác nhận rút tiền thất bại. Vui lòng thử lại.");
+    } finally {
+      setConfirmingId(null);
+    }
+  };
+
   const withdrawRequestColumns: ColumnsType<WithdrawRequest> = [
     {
       title: "ID",
-      dataIndex: "id",
-      key: "id",
-      width: 150,
+      dataIndex: "transactionId",
+      key: "transactionId",
+      width: 220,
       render: (text) => <span className="text-xs font-mono">{text}</span>,
     },
     {
-      title: "User ID",
-      dataIndex: "userId",
-      key: "userId",
-      width: 150,
+      title: "Teacher",
+      dataIndex: "teacherName",
+      key: "teacherName",
+      width: 200,
       render: (text) => <span className="font-medium">{text || "N/A"}</span>,
     },
     {
@@ -81,24 +124,17 @@ const WithdrawRequestsTab: React.FC = () => {
     },
     {
       title: "Bank Name",
-      dataIndex: "bankName",
-      key: "bankName",
+      dataIndex: "nameBanking",
+      key: "nameBanking",
       width: 150,
       render: (text) => <span>{text || "N/A"}</span>,
     },
     {
       title: "Bank Account",
-      dataIndex: "bankAccount",
-      key: "bankAccount",
+      dataIndex: "bankingNumber",
+      key: "bankingNumber",
       width: 150,
       render: (text) => <span className="font-mono text-sm">{text || "N/A"}</span>,
-    },
-    {
-      title: "Account Holder",
-      dataIndex: "accountHolderName",
-      key: "accountHolderName",
-      width: 150,
-      render: (text) => <span>{text || "N/A"}</span>,
     },
     {
       title: "Status",
@@ -106,6 +142,7 @@ const WithdrawRequestsTab: React.FC = () => {
       key: "status",
       width: 120,
       render: (status) => {
+        const normalized = (status as string | undefined)?.toUpperCase() || "";
         const colorMap: Record<string, string> = {
           PENDING: "orange",
           APPROVED: "blue",
@@ -114,7 +151,7 @@ const WithdrawRequestsTab: React.FC = () => {
           CANCELLED: "default",
         };
         return (
-          <Tag color={colorMap[status as string] || "default"}>
+          <Tag color={colorMap[normalized] || "default"}>
             {status || "N/A"}
           </Tag>
         );
@@ -126,6 +163,31 @@ const WithdrawRequestsTab: React.FC = () => {
       key: "createdAt",
       width: 150,
       render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : "N/A",
+    },
+    {
+      title: "Action",
+      key: "action",
+      width: 160,
+      fixed: "right",
+      render: (_, record) => (
+        <Popconfirm
+          title="Xác nhận đã chuyển tiền?"
+          description={`Bạn chắc chắn đã chuyển ${formatPrice(record.amount)} cho ${record.teacherName || "giáo viên này"}?`}
+          okText="Đã chuyển"
+          cancelText="Hủy"
+          onConfirm={() => handleMarkAsCompleted(record)}
+          disabled={record.status?.toUpperCase() !== "PENDING"}
+        >
+          <Button
+            type="primary"
+            size="small"
+            disabled={record.status?.toUpperCase() !== "PENDING"}
+            loading={confirmingId === record.transactionId}
+          >
+            Đã chuyển tiền
+          </Button>
+        </Popconfirm>
+      ),
     },
   ];
 
@@ -145,13 +207,29 @@ const WithdrawRequestsTab: React.FC = () => {
           />
           <Button
             type="default"
-            onClick={() => fetchWithdrawRequests({ pageNo: 0, pageSize: 100 })}
+            onClick={() =>
+              fetchWithdrawRequests({
+                pageNo: 0,
+                pageSize: 100,
+                ...(statusWithdrawFilter !== "all" ? { status: statusWithdrawFilter } : {}),
+              })
+            }
             className="whitespace-nowrap"
           >
             Refresh
           </Button>
         </div>
       </div>
+
+      {withdrawError && (
+        <Alert
+          type="error"
+          message="Không thể tải danh sách yêu cầu rút tiền"
+          description={withdrawError}
+          className="mb-4"
+          showIcon
+        />
+      )}
 
       {/* Withdraw Request Filter */}
       <div className="flex flex-wrap gap-3 mb-4">

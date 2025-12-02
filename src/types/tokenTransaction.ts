@@ -3,10 +3,8 @@
 // Payload cho yêu cầu rút tiền
 export interface WithdrawRequestPayload {
   amount: number;
-  bankAccount?: string;
-  bankName?: string;
-  accountHolderName?: string;
-  note?: string;
+  description?: string;
+  type?: string; // Transaction type, ví dụ: "WITHDRAW"
   [key: string]: unknown;
 }
 
@@ -25,6 +23,8 @@ export interface ConfirmWithdrawalPayload {
   requestId?: string;
   transactionId?: string;
   otp?: string;
+  approved?: boolean;
+  adminNote?: string;
   [key: string]: unknown;
 }
 
@@ -37,14 +37,27 @@ export interface ConfirmWithdrawalResponse {
 }
 
 // Thông tin yêu cầu rút tiền (dùng cho GET danh sách)
+// Khớp với response hiện tại của API /withdraw-requests
+// [
+//   {
+//     "transactionId": "...",
+//     "teacherId": "...",
+//     "teacherName": "Teacher System",
+//     "amount": 1000,
+//     "status": "pending",
+//     "bankingNumber": "098372",
+//     "nameBanking": "Viettinbank",
+//     "createdAt": "2025-12-02"
+//   }
+// ]
 export interface WithdrawRequest {
-  id: string;
-  userId?: string;
+  transactionId: string;
+  teacherId?: string;
+  teacherName?: string;
   amount: number;
   status: string;
-  bankAccount?: string;
-  bankName?: string;
-  accountHolderName?: string;
+  bankingNumber?: string;
+  nameBanking?: string;
   createdAt?: string;
   updatedAt?: string;
   [key: string]: unknown;

@@ -39,6 +39,17 @@ const TokenTransactionService = {
     return axiosInstance.get(`/api/admin/withdraw-requests`, { params });
   },
 
+  // GET /api/admin/withdraw-requests
+  // Admin: lấy danh sách yêu cầu rút tiền kèm filter nâng cao (alias theo yêu cầu)
+  getAdminWithdrawRequests(params?: {
+    pageNo?: number;
+    pageSize?: number;
+    status?: string;
+    [key: string]: unknown;
+  }): Promise<AxiosResponse<ApiResponse<WithdrawRequest[]>>> {
+    return axiosInstance.get(`/api/admin/withdraw-requests`, { params });
+  },
+
   // GET /api/payment-method
   // Lấy danh sách phương thức thanh toán
   getPaymentMethods(): Promise<AxiosResponse<ApiResponse<PaymentMethod[]>>> {
