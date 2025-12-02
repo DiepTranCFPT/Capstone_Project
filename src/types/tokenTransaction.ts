@@ -85,3 +85,25 @@ export interface PaymentMethodPayload {
   [key: string]: unknown;
 }
 
+// Giao dịch token của user (dùng cho GET /api/token-transaction/user)
+export interface UserTokenTransactionTypeInfo {
+  id?: string;
+  name?: string;
+  description?: string;
+  [key: string]: unknown;
+}
+
+export interface UserTokenTransaction {
+  id?: string;
+  amount: number;
+  status?: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  balanceAfter?: number;
+  type?: UserTokenTransactionTypeInfo | null;
+  userId?: string;
+  [key: string]: unknown;
+}
+
+

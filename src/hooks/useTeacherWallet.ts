@@ -1,11 +1,9 @@
 // src/hooks/useTeacherWallet.ts
 import { useState, useEffect, useCallback } from "react";
 import MomoPaymentService from "~/services/MomoPaymentService";
-import type {
-  TransactionResponse,
-  PaymentObject,
-  WalletBalanceSummary,
-} from "~/types/momoPayment";
+import TokenTransactionService from "~/services/tokenTransactionService";
+import type { PaymentObject, WalletBalanceSummary } from "~/types/momoPayment";
+import type { UserTokenTransaction } from "~/types/tokenTransaction";
 
 interface TransactionDisplay {
   id: string;
@@ -45,16 +43,40 @@ const formatDate = (dateString?: string): string => {
   }
 };
 
-const getTransactionType = (type: string, amount: number): "income" | "withdraw" => {
+const getTransactionType = (
+  type: unknown,
+  amount: number
+): "income" | "withdraw" => {
+  // Đảm bảo chỉ gọi toUpperCase khi type là string
+  const typeStr =
+    typeof type === "string" ? type.toUpperCase() : "";
+
   // Nếu type là "DEPOSIT" hoặc "INCOME" hoặc amount > 0 thì là thu nhập
-  if (type?.toUpperCase().includes("DEPOSIT") || type?.toUpperCase().includes("INCOME") || amount > 0) {
+  if (
+    typeStr.includes("DEPOSIT") ||
+    typeStr.includes("INCOME") ||
+    amount > 0
+  ) {
     return "income";
   }
   return "withdraw";
 };
 
-const getTransactionTitle = (transaction: TransactionResponse): string => {
+const getTransactionTitle = (transaction: {
+  description?: string;
+  // type từ Momo (string) hoặc có thể không có nếu là token transaction
+  type?: string;
+}): string => {
   if (transaction.description) {
+    // Ẩn phần "Admin note: ..." nếu có trong description
+    const cleaned = transaction.description
+      .replace(/\s*\|\s*Admin note:.*$/i, "")
+      .trim();
+
+    if (cleaned) {
+      return cleaned;
+    }
+
     return transaction.description;
   }
   const type = transaction.type?.toUpperCase() || "";
@@ -84,24 +106,28 @@ const getStatusText = (status: string): string => {
   return status || "Đang xử lý";
 };
 
-const transformTransaction = (transaction: TransactionResponse): TransactionDisplay => {
-  const type = getTransactionType(transaction.type, transaction.amount);
+const transformUserTokenTransaction = (
+  transaction: UserTokenTransaction
+): TransactionDisplay => {
+  // API token-transaction/user không có type string, nên suy ra bằng amount
+  const type = getTransactionType("", transaction.amount);
   const amount = Math.abs(transaction.amount);
   const formattedAmount = formatCurrency(amount);
-  const amountWithSign = type === "income" ? `+${formattedAmount}` : `-${formattedAmount}`;
+  const amountWithSign =
+    type === "income" ? `+${formattedAmount}` : `-${formattedAmount}`;
 
   return {
-    id: `TXN-${transaction.id}`,
-    title: getTransactionTitle(transaction),
+    id: `TXN-${transaction.id ?? ""}`,
+    title: getTransactionTitle({ description: transaction.description }),
     time: formatDate(transaction.createdAt),
     amount: amountWithSign,
-    status: getStatusText(transaction.status),
+    status: getStatusText(transaction.status || ""),
     type,
   };
 };
 
 const calculateWalletSummary = (
-  transactions: TransactionResponse[],
+  transactions: UserTokenTransaction[],
   availableBalance: number
 ): WalletSummary => {
   const now = new Date();
@@ -191,16 +217,27 @@ export const useTeacherWallet = () => {
       setError(null);
 
       const [transactionsRes, balanceRes] = await Promise.all([
-        MomoPaymentService.getTransactions(),
+        TokenTransactionService.getUserTokenTransactions(),
         MomoPaymentService.getPaymentbyUser(),
       ]);
 
-      const transactionsData = transactionsRes.data || [];
+      // Chuẩn hóa dữ liệu giao dịch từ API /api/token-transaction/user
+      const apiData = transactionsRes.data as
+        | { data?: UserTokenTransaction[] }
+        | UserTokenTransaction[]
+        | undefined;
+
+      const transactionsData: UserTokenTransaction[] = Array.isArray(apiData)
+        ? apiData
+        : apiData?.data || [];
+
       const balanceData = extractAvailableBalance(
         balanceRes?.data?.data as WalletBalanceSummary | PaymentObject[] | undefined
       );
 
-      const transformedTransactions = transactionsData.map(transformTransaction);
+      const transformedTransactions = transactionsData.map(
+        transformUserTokenTransaction
+      );
       setTransactions(transformedTransactions);
 
       const summary = calculateWalletSummary(transactionsData, balanceData);

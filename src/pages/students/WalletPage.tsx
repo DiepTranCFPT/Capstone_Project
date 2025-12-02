@@ -5,7 +5,9 @@ import { toast } from "~/components/common/Toast";
 import { useAuth } from "~/hooks/useAuth";
 import useMomoPayment from "~/hooks/useMomoPayment";
 import MomoPaymentService from "~/services/MomoPaymentService";
+import TokenTransactionService from "~/services/tokenTransactionService";
 import type { CreatePaymentResponse, TransactionResponse } from "~/types/momoPayment";
+import type { UserTokenTransaction } from "~/types/tokenTransaction";
 
 const quickAmounts = [200_000, 500_000, 1_000_000, 2_000_000];
 
@@ -21,7 +23,10 @@ const WalletPage = () => {
   const { createPayment, loading, error } = useMomoPayment();
   const [amount, setAmount] = useState<number>(500_000);
   const [note, setNote] = useState<string>("Top up AP Wallet");
-  const [transactions, setTransactions] = useState<TransactionResponse[]>([]);
+  const [transactions, setTransactions] = useState<
+    (TransactionResponse | UserTokenTransaction)[]
+  >([]);
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
   const [txLoading, setTxLoading] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState(0);
@@ -65,13 +70,33 @@ const WalletPage = () => {
     try {
       setTxLoading(true);
       setTxError(null);
-      const [txRes, paymentRes] = await Promise.all([
+      const [tokenTxRes, momoTxRes, paymentRes] = await Promise.all([
+        TokenTransactionService.getUserTokenTransactions(),
         MomoPaymentService.getTransactions(),
         MomoPaymentService.getPaymentbyUser(),
       ]);
-      const transactionList = Array.isArray(txRes.data) ? txRes.data : [];
 
-      const sortedTransactions = [...transactionList].sort((a, b) => {
+      // Chuẩn hóa dữ liệu giao dịch từ API /api/token-transaction/user
+      const tokenPayload = tokenTxRes.data as
+        | { data?: UserTokenTransaction[] }
+        | UserTokenTransaction[]
+        | undefined;
+
+      const tokenTransactions: UserTokenTransaction[] = Array.isArray(tokenPayload)
+        ? tokenPayload
+        : tokenPayload?.data || [];
+
+      // Dữ liệu từ MoMo /api/transactions: trả thẳng mảng TransactionResponse[]
+      const momoTransactions: TransactionResponse[] = Array.isArray(momoTxRes.data)
+        ? momoTxRes.data
+        : [];
+
+      const combinedTransactions: (TransactionResponse | UserTokenTransaction)[] = [
+        ...tokenTransactions,
+        ...momoTransactions,
+      ];
+
+      const sortedTransactions = [...combinedTransactions].sort((a, b) => {
         const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return bTime - aTime;
@@ -119,8 +144,12 @@ const WalletPage = () => {
     }
   };
 
-  const renderTxIcon = (type: string) => {
-    const isDeposit = /deposit|topup|ap_wallet|credit/i.test(type);
+  const visibleTransactions = showAllTransactions
+    ? transactions
+    : transactions.slice(0, 5);
+
+  const renderTxIcon = (amount: number) => {
+    const isDeposit = amount > 0;
     const baseClass = "rounded-2xl p-3";
     return (
       <span
@@ -353,14 +382,25 @@ const WalletPage = () => {
               </p>
               <h2 className="text-2xl font-bold text-slate-900">Recent Activity</h2>
             </div>
-            <button
-              type="button"
-              onClick={loadTransactions}
-              disabled={txLoading}
-              className="inline-flex items-center gap-2 rounded-full border border-teal-100 px-5 py-2 text-sm font-semibold text-teal-600 transition hover:border-teal-200 hover:text-teal-700 disabled:opacity-60"
-            >
-              {txLoading ? "Loading..." : "Refresh"}
-            </button>
+            <div className="flex items-center gap-3">
+              {transactions.length > 5 && (
+                <button
+                  type="button"
+                  className="text-sm font-semibold text-teal-600 hover:text-teal-700"
+                  onClick={() => setShowAllTransactions((prev) => !prev)}
+                >
+                  {showAllTransactions ? "Show less" : "View all"}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={loadTransactions}
+                disabled={txLoading}
+                className="inline-flex items-center gap-2 rounded-full border border-teal-100 px-5 py-2 text-sm font-semibold text-teal-600 transition hover:border-teal-200 hover:text-teal-700 disabled:opacity-60"
+              >
+                {txLoading ? "Loading..." : "Refresh"}
+              </button>
+            </div>
           </div>
 
           {txError && (
@@ -389,40 +429,40 @@ const WalletPage = () => {
               </div>
             )}
 
-            {transactions.map((tx) => (
-              <div key={tx.id} className="flex flex-wrap items-center gap-4 py-4">
-                <div className="flex flex-1 items-center gap-4">
-                  {renderTxIcon(tx.type || "")}
-                  <div>
-                    <p className="font-semibold text-slate-800">
-                      {tx.description || tx.type?.replace(/_/g, " ") || "Transaction"}
+            {visibleTransactions.map((tx) => {
+              const isIncome = tx.amount > 0;
+              return (
+                <div key={tx.id ?? `${tx.createdAt}-${tx.amount}`} className="flex flex-wrap items-center gap-4 py-4">
+                  <div className="flex flex-1 items-center gap-4">
+                    {renderTxIcon(tx.amount)}
+                    <div>
+                      <p className="font-semibold text-slate-800">
+                        {tx.description || "Transaction"}
+                      </p>
+                      <p className="text-sm text-slate-400">
+                        {formatDate(tx.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p
+                      className={`text-lg font-bold ${
+                        isIncome ? "text-emerald-600" : "text-slate-700"
+                      }`}
+                    >
+                      {formatAmount(Math.abs(tx.amount))}
                     </p>
-                    <p className="text-sm text-slate-400">
-                      {formatDate(tx.createdAt)}
-                      {tx.transId ? ` · Transaction ID: ${tx.transId}` : ""}
-                    </p>
+                    <span
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyles(
+                        tx.status || ""
+                      )}`}
+                    >
+                      {tx.status || "Undefined"}
+                    </span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p
-                    className={`text-lg font-bold ${
-                      /deposit|topup|ap_wallet|credit/i.test(tx.type || "")
-                        ? "text-emerald-600"
-                        : "text-slate-700"
-                    }`}
-                  >
-                    {formatAmount(tx.amount)}
-                  </p>
-                  <span
-                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyles(
-                      tx.status || ""
-                    )}`}
-                  >
-                    {tx.status || "Undefined"}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

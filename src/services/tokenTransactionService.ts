@@ -9,6 +9,7 @@ import type {
   ConfirmWithdrawalResponse,
   WithdrawRequest,
   PaymentMethod,
+  UserTokenTransaction,
 } from "~/types/tokenTransaction";
 
 const TokenTransactionService = {
@@ -68,6 +69,14 @@ const TokenTransactionService = {
         nameBanking: payload.nameBanking,
       },
     });
+  },
+
+  // GET /api/token-transaction/user
+  // Lấy danh sách giao dịch token của user hiện tại
+  getUserTokenTransactions(): Promise<
+    AxiosResponse<ApiResponse<UserTokenTransaction[]>>
+  > {
+    return axiosInstance.get(`/api/token-transaction/user`);
   },
 };
 
