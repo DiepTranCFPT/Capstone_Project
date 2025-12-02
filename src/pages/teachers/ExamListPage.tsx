@@ -81,6 +81,13 @@ const ExamListPage: React.FC = () => {
       render: (score: number) => `${score}%`,
     },
     {
+      title: 'Token Cost',
+      dataIndex: 'tokenCost',
+      key: 'tokenCost',
+      render: (tokenCost: number) => 
+        tokenCost === 0 ? 'Free' : `${tokenCost}`,
+    },
+    {
       title: 'Rules',
       dataIndex: 'rules',
       key: 'rules',

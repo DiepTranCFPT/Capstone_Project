@@ -32,7 +32,7 @@ const ExamTestPage: React.FC = () => {
         status: template.isActive ? 'published' : 'draft',
         createdAt: template.createdAt || new Date().toISOString(),
         updatedAt: template.createdAt || new Date().toISOString(),
-        tokenCost: 10, // Default value
+        tokenCost: template.tokenCost || 0, // Default value
         questions: [],
         teacherName: template.createdBy,
         rating: template.averageRating,
@@ -85,9 +85,15 @@ const ExamTestPage: React.FC = () => {
     };
 
 
-// Removed selectedBlock - now selecting subjects directly
+    // Removed selectedBlock - now selecting subjects directly
 
     const [showTokenConfirmation, setShowTokenConfirmation] = useState(false);
+    const [pendingAction, setPendingAction] = useState<{
+        type: 'single' | 'combined' | 'platform';
+        exam?: Exam;
+        exams?: Exam[];
+        subjects?: string[];
+    } | null>(null);
 
     // Create stable filter object
     const currentFilters = useMemo(() => {
@@ -115,93 +121,117 @@ const ExamTestPage: React.FC = () => {
     }, [currentFilters, applyFilters]);
 
     const handleStartExamClick = async (exam: Exam) => {
-        // Check if there's an existing active attempt for this exam
-        const existingAttemptKey = `exam_attempt_${exam.id}`;
-        const existingAttemptStr = localStorage.getItem(existingAttemptKey);
-        let attempt = null;
-
-        if (existingAttemptStr) {
-            const existingAttempt = JSON.parse(existingAttemptStr);
-            // Check if the attempt still has time remaining
-            const savedProgress = localStorage.getItem('examProgress');
-            if (savedProgress) {
-                const progress = JSON.parse(savedProgress);
-                if (progress.remainingTime > 0 && progress.examId === exam.id) {
-                    // Continue existing attempt
-                    localStorage.setItem('activeExamAttempt', JSON.stringify(existingAttempt));
-                    window.location.href = `/do-test/${exam.id}/full`;
-                    return;
-                }
-            }
-        }
-
-        // Create new attempt for individual exam
-        attempt = await startSingleAttempt({ templateId: exam.id });
-        if (attempt) {
-            // Store attempt data for continuation
-            localStorage.setItem('activeExamAttempt', JSON.stringify(attempt));
-            localStorage.setItem(existingAttemptKey, JSON.stringify(attempt));
-            window.location.href = `/do-test/${exam.id}/full`;
-        }
+        // Show confirmation modal first
+        setPendingAction({ type: 'single', exam });
+        setShowTokenConfirmation(true);
     };
 
     const handleStartCombinedExamClick = async (exams: Exam[]) => {
-        setIsStartingCombinedTest(true);
-
-        // Extract templateIds from selected exams
-        const templateIds = exams.map(exam => exam.id);
-
-        try {
-            // Start the combined attempt
-            const attempt = await startComboAttempt({ templateIds });
-
-            if (attempt) {
-                // Store attempt data in localStorage for DoTestPage to use
-                localStorage.setItem('activeExamAttempt', JSON.stringify(attempt));
-                // Navigate to the combined test page
-                navigation( `/do-test/combo/${attempt.examAttemptId}`);
-            }
-        } catch (error) {
-            console.error('Failed to start combined test:', error);
-            // Handle error - could show toast notification
-        } finally {
-            setIsStartingCombinedTest(false);
-        }
+        // Show confirmation modal first
+        setPendingAction({ type: 'combined', exams });
+        setShowTokenConfirmation(true);
     };
 
     const handleStartPlatformCombinedExamClick = async (selectedSubjects: string[]) => {
-        setIsStartingPlatformTest(true);
-
-        // Extract subjectIds from selected subjects
-        const subjectIds = subjects
-            .filter(subject => selectedSubjects.includes(subject.name))
-            .map(subject => subject.id);
-
-        try {
-            // Start the platform-selected combined attempt
-            const attempt = await startComboRandomAttempt({ subjectIds });
-
-            if (attempt) {
-                // Store attempt data in localStorage for DoTestPage to use
-                localStorage.setItem('activeExamAttempt', JSON.stringify(attempt));
-                // Navigate to the combined test page
-                navigation( `/do-test/combo/${attempt.examAttemptId}`);
-            }
-        } catch (error) {
-            console.error('Failed to start platform combined test:', error);
-            // Handle error - could show toast notification
-        } finally {
-            setIsStartingPlatformTest(false);
-        }
+        // Show confirmation modal first
+        setPendingAction({ type: 'platform', subjects: selectedSubjects });
+        setShowTokenConfirmation(true);
     };
 
 
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         setShowTokenConfirmation(false);
+
+        if (!pendingAction) return;
+
+        // Execute the pending action based on type
+        if (pendingAction.type === 'single' && pendingAction.exam) {
+            const exam = pendingAction.exam;
+            // Check if there's an existing active attempt for this exam
+            const existingAttemptKey = `exam_attempt_${exam.id}`;
+            const existingAttemptStr = localStorage.getItem(existingAttemptKey);
+            let attempt = null;
+
+            if (existingAttemptStr) {
+                const existingAttempt = JSON.parse(existingAttemptStr);
+                // Check if the attempt still has time remaining
+                const savedProgress = localStorage.getItem('examProgress');
+                if (savedProgress) {
+                    const progress = JSON.parse(savedProgress);
+                    if (progress.remainingTime > 0 && progress.examId === exam.id) {
+                        // Continue existing attempt
+                        localStorage.setItem('activeExamAttempt', JSON.stringify(existingAttempt));
+                        window.location.href = `/do-test/${exam.id}/full`;
+                        setPendingAction(null);
+                        return;
+                    }
+                }
+            }
+
+            // Create new attempt for individual exam
+            attempt = await startSingleAttempt({ templateId: exam.id });
+            if (attempt) {
+                // Store attempt data for continuation
+                localStorage.setItem('activeExamAttempt', JSON.stringify(attempt));
+                localStorage.setItem(existingAttemptKey, JSON.stringify(attempt));
+                window.location.href = `/do-test/${exam.id}/full`;
+            }
+        } else if (pendingAction.type === 'combined' && pendingAction.exams) {
+            setIsStartingCombinedTest(true);
+
+            // Extract templateIds from selected exams
+            const templateIds = pendingAction.exams.map(exam => exam.id);
+
+            try {
+                // Start the combined attempt
+                const attempt = await startComboAttempt({ templateIds });
+
+                if (attempt) {
+                    // Store attempt data in localStorage for DoTestPage to use
+                    localStorage.setItem('activeExamAttempt', JSON.stringify(attempt));
+                    // Navigate to the combined test page
+                    navigation(`/do-test/combo/${attempt.examAttemptId}`);
+                }
+            } catch (error) {
+                console.error('Failed to start combined test:', error);
+                // Handle error - could show toast notification
+            } finally {
+                setIsStartingCombinedTest(false);
+            }
+        } else if (pendingAction.type === 'platform' && pendingAction.subjects) {
+            setIsStartingPlatformTest(true);
+
+            // Extract subjectIds from selected subjects
+            const subjectIds = subjects
+                .filter(subject => pendingAction.subjects!.includes(subject.name))
+                .map(subject => subject.id);
+
+            try {
+                // Start the platform-selected combined attempt
+                const attempt = await startComboRandomAttempt({ subjectIds });
+
+                if (attempt) {
+                    // Store attempt data in localStorage for DoTestPage to use
+                    localStorage.setItem('activeExamAttempt', JSON.stringify(attempt));
+                    // Navigate to the combined test page
+                    navigation(`/do-test/combo/${attempt.examAttemptId}`);
+                }
+            } catch (error) {
+                console.error('Failed to start platform combined test:', error);
+                // Handle error - could show toast notification
+            } finally {
+                setIsStartingPlatformTest(false);
+            }
+        }
+
+        setPendingAction(null);
     };
 
-    const handleCancel = () => setShowTokenConfirmation(false);
+    const handleCancel = () => {
+        setShowTokenConfirmation(false);
+        setPendingAction(null);
+    };
 
     if (!isAuthenticated) {
         return (
@@ -532,10 +562,17 @@ const ExamTestPage: React.FC = () => {
                 </div>
             </main>
 
+
             <TokenConfirmationModal
                 isOpen={showTokenConfirmation}
-                exam={null}
-                combinedExam={null}
+                exam={pendingAction?.type === 'single' ? (pendingAction.exam ?? null) : null}
+                combinedExam={
+                    pendingAction?.type === 'combined' && pendingAction.exams
+                        ? { exams: pendingAction.exams, totalCost: pendingAction.exams.reduce((sum, e) => sum + e.tokenCost, 0) }
+                        : pendingAction?.type === 'platform' && pendingAction.subjects
+                            ? { exams: [], totalCost: 0 } // For platform combined, we don't know exact cost until generated
+                            : null
+                }
                 onConfirm={handleConfirm}
                 onCancel={handleCancel}
             />

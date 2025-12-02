@@ -5,6 +5,7 @@ import type { ApiExam } from "~/types/test";
 import { useExams } from "~/hooks/useExams";
 import { useExamAttempt } from "~/hooks/useExamAttempt";
 import { useNavigate } from "react-router-dom";
+import TokenConfirmationModal from '~/components/common/TokenConfirmationModal';
 
 
 const FullTestTabContent: React.FC<{ examId: string | undefined }> = ({ examId }) => {
@@ -12,6 +13,8 @@ const FullTestTabContent: React.FC<{ examId: string | undefined }> = ({ examId }
     const { startSingleAttempt } = useExamAttempt();
     const navigation = useNavigate();
     const [isStartingExam, setIsStartingExam] = useState(false);
+    const [showTokenConfirmation, setShowTokenConfirmation] = useState(false);
+    const [pendingExam, setPendingExam] = useState<ApiExam | null>(null);
     // Fetch exam data when examId changes
     useEffect(() => {
         if (examId) {
@@ -20,19 +23,35 @@ const FullTestTabContent: React.FC<{ examId: string | undefined }> = ({ examId }
     }, [examId, fetchExamById]);
 
     const handleStartExamClick = async (exam: ApiExam) => {
+        // Show confirmation modal first
+        setPendingExam(exam);
+        setShowTokenConfirmation(true);
+    };
+
+    const handleConfirm = async () => {
+        setShowTokenConfirmation(false);
+
+        if (!pendingExam) return;
+
         setIsStartingExam(true);
 
         try {
-            const attempt = await startSingleAttempt({ templateId: exam.id });
+            const attempt = await startSingleAttempt({ templateId: pendingExam.id });
             if (attempt) {
                 // Store attempt data in localStorage for DoTestPage to use
                 localStorage.setItem('activeExamAttempt', JSON.stringify(attempt));
                 // Navigate to test page
-                navigation(`/do-test/${exam.id}/full`);
+                navigation(`/do-test/${pendingExam.id}/full`);
             }
         } finally {
             setIsStartingExam(false);
+            setPendingExam(null);
         }
+    };
+
+    const handleCancel = () => {
+        setShowTokenConfirmation(false);
+        setPendingExam(null);
     };
 
     if (loading) {
@@ -83,6 +102,34 @@ const FullTestTabContent: React.FC<{ examId: string | undefined }> = ({ examId }
                     )}
                 </button>
             )}
+
+            <TokenConfirmationModal
+                isOpen={showTokenConfirmation}
+                exam={pendingExam ? {
+                    id: pendingExam.id,
+                    title: pendingExam.title,
+                    description: pendingExam.description,
+                    duration: pendingExam.duration,
+                    examTypeId: '',
+                    subjectId: pendingExam.subject.id,
+                    teacherId: pendingExam.createdBy,
+                    totalQuestions: pendingExam.rules.reduce((sum, rule) => sum + rule.numberOfQuestions, 0),
+                    maxAttempts: 0,
+                    status: pendingExam.isActive ? 'active' : 'inactive',
+                    createdAt: pendingExam.createdAt || '',
+                    updatedAt: pendingExam.createdAt || '',
+                    tokenCost: pendingExam.tokenCost,
+                    questions: [],
+                    teacherName: pendingExam.createdBy,
+                    rating: pendingExam.averageRating,
+                    subject: pendingExam.subject.name,
+                    attempts: pendingExam.totalTakers,
+                    parts: 1
+                } : null}
+                combinedExam={null}
+                onConfirm={handleConfirm}
+                onCancel={handleCancel}
+            />
         </div>
     );
 };

@@ -58,9 +58,9 @@ const TestReportsPage: React.FC = () => {
 
     const columns = [
         {
-            title: 'Exam ID',
-            dataIndex: 'examId',
-            key: 'examId',
+            title: 'Title',
+            dataIndex: 'title',
+            key: 'title',
         },
         {
             title: 'Score',
@@ -84,7 +84,7 @@ const TestReportsPage: React.FC = () => {
             title: 'Action',
             key: 'action',
             render: (_: unknown, record: HistoryRecord) => (
-                <div className="flex gap-2">                   
+                <div className="flex gap-2">
                     <Button
                         icon={<FileTextOutlined />}
                         onClick={() => handleViewDetails(record)}

@@ -71,6 +71,7 @@ export interface ApiExam {
     numberOfQuestions: number;
     points: number;
   }[];
+  tokenCost: number;
   averageRating: number;
   totalRatings: number;
   totalTakers: number;
@@ -85,6 +86,7 @@ export interface CreateExamPayload {
   questionContents: string[]; // API expects questionContents
   createdByName: string; // Include createdByName
   isActive: boolean;
+  tokenCost: number;
 }
 
 // Đại diện cho 1 quy tắc trong khuôn mẫu
@@ -117,6 +119,7 @@ export interface ExamTemplate {
   createdBy: string;
   createdAt?: string;
   rules: ExamRule[]; // API trả về
+  tokenCost: number;
   averageRating: number;
   totalRatings: number;
   totalTakers: number;
@@ -141,6 +144,7 @@ export interface CreateExamTemplatePayload {
   isActive: boolean;
   subjectId: string; // API của bạn có vẻ dùng subjectNames
   rules: CreateExamRulePayload[];
+  tokenCost: number;
 }
 
 export interface PageInfo<T> {

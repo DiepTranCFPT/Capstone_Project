@@ -248,7 +248,8 @@ import { toast } from "~/components/common/Toast";
         })),
         averageRating: template.averageRating,
         totalRatings: template.totalRatings,
-        totalTakers: template.totalTakers
+        totalTakers: template.totalTakers,
+        tokenCost: template.tokenCost
       });
 
       const fetchAllExams = useCallback(async (params?: { pageNo?: number; pageSize?: number; keyword?: string }) => {

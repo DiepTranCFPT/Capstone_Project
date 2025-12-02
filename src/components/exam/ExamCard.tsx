@@ -8,7 +8,7 @@ interface ExamCardProps {
     onStartExam?: (exam: Exam) => void;
 }
 
-const ExamCard: React.FC<ExamCardProps> = ({ exams }) => {
+const ExamCard: React.FC<ExamCardProps> = ({ exams, onStartExam }) => {
     return (
         <div className="bg-white border border-gray-200 rounded-lg shadow-md p-4 flex flex-col hover:shadow-xl transition-shadow duration-300 h-max">
             <h3 className="text-lg font-bold text-gray-800">{exams.title}</h3>
@@ -21,7 +21,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exams }) => {
                 <span className="flex items-center mr-2">
                     {'⭐'.repeat(Math.floor(exams.rating))} ({exams.rating})
                 </span>
-                <span>- {exams.tokenCost} Token</span>
+                <span>- {exams.tokenCost === 0 ? 'Free' : `${exams.tokenCost} 💰(Tokens)`}</span>
             </div>
 
             <div className="flex items-center text-gray-600 text-xs space-x-4 mb-4">
@@ -50,14 +50,14 @@ const ExamCard: React.FC<ExamCardProps> = ({ exams }) => {
                     className="text-sm font-semibold text-teal-600 px-4 py-2 rounded-lg bg-teal-50 border border-teal-200 hover:bg-teal-100">
                     Xem Chi Tiết
                 </Link>
-                {/* {onStartExam && (
+                {onStartExam && (
                     <button
                         onClick={() => onStartExam(exams)}
-                        className="text-sm font-semibold text-gray-700 px-4 py-2 rounded-lg bg-gray-100 border border-gray-300 hover:bg-gray-200 hover:cursor-pointer"
+                        className="text-sm font-semibold text-white px-4 py-2 rounded-lg bg-teal-500 hover:bg-teal-600 hover:cursor-pointer transition-colors"
                     >
                         Vào Thi
                     </button>
-                )} */}
+                )}
             </div>
         </div>
     );

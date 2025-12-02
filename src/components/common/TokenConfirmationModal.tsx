@@ -23,12 +23,12 @@ const TokenConfirmationModal: React.FC<TokenConfirmationModalProps> = ({
             <div className="bg-white p-8 rounded-lg backdrop-blur-sm shadow-xl max-w-sm mx-auto border border-teal-200/50">
                 <h3 className="text-xl font-bold text-gray-800 mb-4">Confirm Test Start</h3>
                 {exam && (
-                    <p className="text-gray-700 mb-6">
+                    <p className="text-red-500 mb-6">
                         This test, "{exam.title}", costs {exam.tokenCost} tokens. Do you want to continue?
                     </p>
                 )}
                 {combinedExam && (
-                    <p className="text-gray-700 mb-6">
+                    <p className="text-red-500 mb-6">
                         This combined test costs {combinedExam.totalCost} tokens. Do you want to continue?
                     </p>
                 )}

@@ -237,6 +237,11 @@ const ExamDetailsPage: React.FC = () => {
       key: 'points',
     },
     {
+      title: 'Token Cost',
+      dataIndex: 'tokenCost',
+      key: 'tokenCost',
+    },
+    {
       title: 'Actions',
       key: 'actions',
       render: (rule: ExamRule) => (
@@ -297,6 +302,9 @@ const ExamDetailsPage: React.FC = () => {
                 <Tag color={currentTemplate.isActive ? 'green' : 'red'}>
                   {currentTemplate.isActive ? 'Active' : 'Inactive'}
                 </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Token Cost">
+                {currentTemplate.tokenCost === 0 ? 'Free' : `${currentTemplate.tokenCost} 💰`}
               </Descriptions.Item>
               <Descriptions.Item label="Average Rating">
                 ⭐ {currentTemplate.averageRating?.toFixed(1) || 'N/A'}
@@ -365,6 +373,10 @@ const ExamDetailsPage: React.FC = () => {
                 <Tag color={currentTemplate.isActive ? 'green' : 'red'}>
                   {currentTemplate.isActive ? 'Active' : 'Inactive'}
                 </Tag>
+              </div>
+              <div className="flex justify-between">
+                <Text>Token Cost:</Text>
+                <Text strong>{currentTemplate.tokenCost === 0 ? 'Free' : `${currentTemplate.tokenCost} 💰`}</Text>
               </div>
               <div className="flex justify-between">
                 <Text>Average Rating:</Text>

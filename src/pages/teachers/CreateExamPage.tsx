@@ -35,6 +35,7 @@ const CreateExamPage: React.FC = () => {
   const [passingScore, setPassingScore] = useState<number>(70);
   const [isActive, setIsActive] = useState<boolean>(true);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
+  const [tokenCost, setTokenCost] = useState<number>(0);
   const [rules, setRules] = useState<CreateExamRulePayload[]>([]);
 
   // Rule form states
@@ -53,6 +54,7 @@ const CreateExamPage: React.FC = () => {
   const [durationError, setDurationError] = useState<string>('');
   const [passingScoreError, setPassingScoreError] = useState<string>('');
   const [rulesError, setRulesError] = useState<string>('');
+  const [tokenCostError, setTokenCostError] = useState<string>('');
 
   // Load template data when in edit mode
   useEffect(() => {
@@ -70,6 +72,7 @@ const CreateExamPage: React.FC = () => {
       setPassingScore(currentTemplate.passingScore);
       setIsActive(currentTemplate.isActive);
       setSelectedSubjectId(currentTemplate.subject.id);
+      setTokenCost(currentTemplate.tokenCost);
       // Convert ExamRule[] to CreateExamRulePayload[]
       // API returns ExamRule with topicName/difficultyName for the form
       const convertedRules: CreateExamRulePayload[] = currentTemplate.rules.map((rule: ExamRule) => ({
@@ -216,6 +219,10 @@ const CreateExamPage: React.FC = () => {
       setRulesError('At least one rule must be added');
       hasErrors = true;
     }
+    if (tokenCost <= 0) {
+      setTokenCostError('Token cost must be greater than 0');
+      hasErrors = true;
+    }
 
     if (hasErrors) {
       return;
@@ -231,6 +238,7 @@ const CreateExamPage: React.FC = () => {
           passingScore: passingScore,
           isActive: isActive,
           subjectId: selectedSubjectId,
+          tokenCost: tokenCost,
         };
 
         await updateTemplateDetails(examId, updateData);
@@ -245,6 +253,7 @@ const CreateExamPage: React.FC = () => {
           isActive: isActive,
           subjectId: selectedSubjectId,
           rules: rules,
+          tokenCost: tokenCost,
         };
 
         await createNewTemplate(templateData);
@@ -257,6 +266,7 @@ const CreateExamPage: React.FC = () => {
         setIsActive(true);
         setSelectedSubjectId('');
         setRules([]);
+        setTokenCost(0);
 
         // Clear errors
         setTitleError('');
@@ -435,6 +445,20 @@ const CreateExamPage: React.FC = () => {
               {!selectedSubjectId && (
                 <div className="text-red-500 text-sm mt-1">Subject must be selected</div>
               )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Token Cost *</label>
+              <Input
+                type="number"
+                placeholder="0"
+                min={0}
+                value={tokenCost}
+                onChange={(e) => {
+                  setTokenCost(Number(e.target.value));
+                }}
+                status={tokenCostError ? 'error' : ''}
+              />
+              {tokenCostError && <div className="text-red-500 text-sm mt-1">Token cost must be greater than 0</div>}
             </div>
 
             <div className="flex items-center gap-2">
