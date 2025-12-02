@@ -23,6 +23,11 @@ const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
+// Format số với dấu phẩy nhưng không có ký hiệu VND (để dễ xóa trong input)
+const formatNumber = (amount: number): string => {
+  return new Intl.NumberFormat("vi-VN").format(amount);
+};
+
 const WithdrawMoneyModal: React.FC<WithdrawMoneyModalProps> = ({
   isOpen,
   onClose,
@@ -110,9 +115,8 @@ const WithdrawMoneyModal: React.FC<WithdrawMoneyModalProps> = ({
       return;
     }
 
-    const selectedMethod = paymentMethods.find((m) => String(m.id || "") === selectedPaymentMethod);
-    if (!selectedMethod) {
-      setError("Tài khoản ngân hàng không hợp lệ");
+    if (!selectedPaymentMethod) {
+      setError("Vui lòng chọn tài khoản ngân hàng");
       return;
     }
 
@@ -120,10 +124,8 @@ const WithdrawMoneyModal: React.FC<WithdrawMoneyModalProps> = ({
       setLoading(true);
       await TokenTransactionService.withdraw({
         amount: amountNumber,
-        bankAccount: selectedMethod.bankingNumber || selectedMethod.bankAccount,
-        bankName: selectedMethod.nameBanking || selectedMethod.bankName,
-        accountHolderName: selectedMethod.accountHolderName,
-        note: note.trim() || undefined,
+        description: note.trim() || undefined,
+        type: "WITHDRAW", // Thêm transaction type
       });
 
       // Reset form
@@ -137,10 +139,31 @@ const WithdrawMoneyModal: React.FC<WithdrawMoneyModalProps> = ({
         response?: { data?: { message?: string } };
         message?: string;
       };
-      const errorMessage =
-        axiosError.response?.data?.message ||
-        axiosError.message ||
-        "Đã xảy ra lỗi khi tạo yêu cầu rút tiền.";
+      // Xử lý các loại lỗi khác nhau
+      let errorMessage = "Đã xảy ra lỗi khi tạo yêu cầu rút tiền.";
+      
+      if (axiosError.response?.data) {
+        const errorData = axiosError.response.data as { message?: string; error?: string } | string;
+        // Kiểm tra message trong response
+        if (typeof errorData === 'object' && errorData !== null) {
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      } else if (axiosError.message) {
+        errorMessage = axiosError.message;
+      }
+      
+      // Xử lý lỗi "Transaction type not found"
+      if (errorMessage.toLowerCase().includes("transaction type not found") || 
+          errorMessage.toLowerCase().includes("type not found")) {
+        errorMessage = "Loại giao dịch không hợp lệ. Vui lòng thử lại.";
+      }
+      
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -148,8 +171,47 @@ const WithdrawMoneyModal: React.FC<WithdrawMoneyModalProps> = ({
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^\d]/g, "");
-    setAmount(value);
+    // Chỉ lấy số, không format khi đang nhập để dễ xóa
+    const rawValue = e.target.value.replace(/[^\d]/g, "");
+    setAmount(rawValue);
+  };
+
+  const handleAmountBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Khi blur, format lại số với dấu phẩy
+    if (amount) {
+      e.target.value = formatNumber(parseFloat(amount));
+    }
+  };
+
+  const handleAmountFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Khi focus, hiển thị số thô để dễ chỉnh sửa
+    if (amount) {
+      e.target.value = amount;
+    }
+  };
+
+  const handleAmountKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Cho phép tất cả các phím điều hướng, xóa và phím tắt
+    if (
+      e.key === "Backspace" ||
+      e.key === "Delete" ||
+      e.key === "ArrowLeft" ||
+      e.key === "ArrowRight" ||
+      e.key === "ArrowUp" ||
+      e.key === "ArrowDown" ||
+      e.key === "Tab" ||
+      e.key === "Home" ||
+      e.key === "End" ||
+      e.ctrlKey ||
+      e.metaKey ||
+      e.altKey
+    ) {
+      return;
+    }
+    // Chỉ cho phép số
+    if (!/[0-9]/.test(e.key)) {
+      e.preventDefault();
+    }
   };
 
   if (!isOpen) return null;
@@ -247,15 +309,35 @@ const WithdrawMoneyModal: React.FC<WithdrawMoneyModalProps> = ({
             <label htmlFor="amount" className="block text-sm font-semibold text-slate-700 mb-2">
               Số tiền rút (VND) <span className="text-red-500">*</span>
             </label>
-            <input
-              id="amount"
-              type="text"
-              value={amount ? formatCurrency(parseFloat(amount.replace(/[^\d]/g, ""))) : ""}
-              onChange={handleAmountChange}
-              placeholder="Nhập số tiền muốn rút"
-              className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-              disabled={loading || loadingMethods}
-            />
+            <div className="relative">
+              <div className="relative">
+                <input
+                  id="amount"
+                  type="text"
+                  value={amount || ""}
+                  onChange={handleAmountChange}
+                  onKeyDown={handleAmountKeyDown}
+                  onBlur={handleAmountBlur}
+                  onFocus={handleAmountFocus}
+                  placeholder="Nhập số tiền muốn rút"
+                  className="w-full px-4 py-3 pr-12 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  disabled={loading || loadingMethods}
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
+                  ₫
+                </span>
+              </div>
+              {amount && (
+                <button
+                  type="button"
+                  onClick={() => setAmount("")}
+                  className="absolute right-12 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 z-10"
+                  disabled={loading || loadingMethods}
+                >
+                  <FiX className="w-4 h-4" />
+                </button>
+              )}
+            </div>
             <p className="mt-1 text-xs text-slate-500">
               Tối đa: {formatCurrency(availableBalance)}
             </p>

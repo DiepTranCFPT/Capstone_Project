@@ -1,7 +1,11 @@
 // src/hooks/useTeacherWallet.ts
 import { useState, useEffect, useCallback } from "react";
 import MomoPaymentService from "~/services/MomoPaymentService";
-import type { TransactionResponse, PaymentObject } from "~/types/momoPayment";
+import type {
+  TransactionResponse,
+  PaymentObject,
+  WalletBalanceSummary,
+} from "~/types/momoPayment";
 
 interface TransactionDisplay {
   id: string;
@@ -132,6 +136,45 @@ const calculateWalletSummary = (
   };
 };
 
+const extractAvailableBalance = (
+  walletSummaryData: WalletBalanceSummary | PaymentObject[] | undefined
+): number => {
+  if (typeof walletSummaryData === "number") {
+    return walletSummaryData;
+  }
+
+  if (Array.isArray(walletSummaryData)) {
+    const activePayments = walletSummaryData.filter(
+      (payment) => payment?.status?.toUpperCase() === "ACTIVE"
+    );
+    return activePayments.reduce((sum, payment) => sum + (Number(payment?.amount) || 0), 0);
+  }
+
+  if (walletSummaryData && typeof walletSummaryData === "object") {
+    const {
+      availableBalance,
+      balance,
+      walletBalance,
+      totalAmount,
+      amount,
+    } = walletSummaryData as Record<string, number | undefined>;
+
+    const candidates = [availableBalance, balance, walletBalance, totalAmount, amount];
+    for (const value of candidates) {
+      if (value !== undefined && value !== null) {
+        const numericValue = Number(value);
+        if (!Number.isNaN(numericValue)) {
+          return numericValue;
+        }
+      }
+    }
+
+    return 0;
+  }
+
+  return 0;
+};
+
 export const useTeacherWallet = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -153,21 +196,9 @@ export const useTeacherWallet = () => {
       ]);
 
       const transactionsData = transactionsRes.data || [];
-      
-      // Xử lý response từ API by-user
-      // API trả về: { code: 1000, message: "Successfully", data: Array<PaymentObject> }
-      // Tính tổng amount của các payment có status "Active"
-      let balanceData: number = 0;
-      
-      if (balanceRes?.data?.data && Array.isArray(balanceRes.data.data)) {
-        const activePayments = balanceRes.data.data.filter(
-          (payment: PaymentObject) => payment?.status?.toUpperCase() === 'ACTIVE'
-        );
-        balanceData = activePayments.reduce(
-          (sum: number, payment: PaymentObject) => sum + (Number(payment?.amount) || 0),
-          0
-        );
-      }
+      const balanceData = extractAvailableBalance(
+        balanceRes?.data?.data as WalletBalanceSummary | PaymentObject[] | undefined
+      );
 
       const transformedTransactions = transactionsData.map(transformTransaction);
       setTransactions(transformedTransactions);
