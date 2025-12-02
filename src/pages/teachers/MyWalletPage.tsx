@@ -22,6 +22,7 @@ const MyWalletPage = () => {
   const { loading, error, transactions, walletSummary, refetch } = useTeacherWallet();
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isAddPaymentMethodModalOpen, setIsAddPaymentMethodModalOpen] = useState(false);
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
 
   const summaryCards = [
     {
@@ -43,6 +44,10 @@ const MyWalletPage = () => {
       iconBg: "bg-amber-100 text-amber-600",
     },
   ];
+
+  const visibleTransactions = showAllTransactions
+    ? transactions
+    : transactions.slice(0, 5);
   return (
     <section className="min-h-screen bg-slate-50/80 p-6 md:p-10">
       <div className="mx-auto w-full max-w-6xl space-y-10">
@@ -132,9 +137,14 @@ const MyWalletPage = () => {
               <h3 className="text-lg font-semibold text-slate-800">Lịch sử giao dịch</h3>
               <p className="text-sm text-slate-400">Các lệnh rút và thanh toán gần đây</p>
             </div>
-            <button className="text-sm font-semibold text-teal-600 hover:text-teal-700">
-              Xem tất cả
-            </button>
+            {transactions.length > 5 && (
+              <button
+                className="text-sm font-semibold text-teal-600 hover:text-teal-700"
+                onClick={() => setShowAllTransactions((prev) => !prev)}
+              >
+                {showAllTransactions ? "Thu gọn" : "Xem tất cả"}
+              </button>
+            )}
           </div>
           <div className="mt-4 divide-y divide-slate-100">
             {loading ? (
@@ -149,7 +159,7 @@ const MyWalletPage = () => {
                 <p className="text-sm text-slate-400">Chưa có giao dịch nào</p>
               </div>
             ) : (
-              transactions.map((item) => (
+              visibleTransactions.map((item) => (
                 <div key={item.id} className="flex flex-wrap items-center gap-4 py-4">
                   <div className="flex flex-1 items-center gap-4">
                     <span
@@ -162,7 +172,7 @@ const MyWalletPage = () => {
                     <div>
                       <p className="font-semibold text-slate-800">{item.title}</p>
                       <p className="text-sm text-slate-400 flex items-center gap-1">
-                        <FiClock /> {item.time} · {item.id}
+                        <FiClock /> {item.time}
                       </p>
                     </div>
                   </div>
