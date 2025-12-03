@@ -7,7 +7,7 @@ const NewsletterSection: React.FC = () => {
         {/* Left image */}
         <div className="flex-1 flex justify-center">
           <img
-            src="https://placehold.co/633x465"
+            src="/find-best-coures.png"
             alt="course"
             className="rounded-xl shadow-lg"
           />
@@ -17,9 +17,9 @@ const NewsletterSection: React.FC = () => {
         <div className="flex-1 text-white">
           {/* badge */}
           <div className="flex items-center gap-2 bg-white text-black border border-black/20 rounded-full px-4 py-2 w-fit mb-4">
-            <div className="w-7 h-7 bg-slate-300/60 rounded-full flex items-center justify-center">
+            <div className="w-7 h-7 bg-slate-200/60 rounded-full flex items-center justify-center">
               <img
-                src="https://placehold.co/24x25"
+                src="/bell.png"
                 alt="icon"
                 className="w-5 h-5"
               />
@@ -61,7 +61,7 @@ const NewsletterSection: React.FC = () => {
 
       {/* decorations */}
       <img
-        src="https://placehold.co/142x129"
+        src="/req-shape-1.png"
         alt="decoration"
         className="absolute top-8 right-12 w-36 h-32 opacity-80"
       />

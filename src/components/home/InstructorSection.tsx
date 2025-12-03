@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FaChalkboardTeacher } from "react-icons/fa";
 import UserService from "~/services/userService";
 import type { User } from "~/types/user";
@@ -6,12 +7,13 @@ import type { User } from "~/types/user";
 const InstructorSection: React.FC = () => {
   const [instructors, setInstructors] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchInstructors = async () => {
       setLoading(true);
       try {
-        const response = await UserService.getUsers({        
+        const response = await UserService.getUsers({
           pageNo: 0,
           pageSize: 10
         });
@@ -28,6 +30,10 @@ const InstructorSection: React.FC = () => {
 
     fetchInstructors();
   }, []);
+
+  const handleTeacherClick = (teacherId: string) => {
+    navigate(`/teacher-detail/${teacherId}`);
+  };
 
   if (loading) {
     return (
@@ -70,7 +76,8 @@ const InstructorSection: React.FC = () => {
           instructors.map((instructor) => (
             <div
               key={instructor.id}
-              className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100"
+              onClick={() => handleTeacherClick(instructor.id)}
+              className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer transform hover:-translate-y-1"
             >
               {/* Avatar */}
               <div className="w-full h-56 bg-gradient-to-br from-teal-100 to-emerald-100 flex items-center justify-center overflow-hidden">

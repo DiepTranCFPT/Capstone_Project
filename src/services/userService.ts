@@ -31,16 +31,11 @@ const UserService = {
 
   // GET /users/profile: Lấy profile theo ID (thường trả về 1 User)
   async getUserProfile(userId: string): Promise<SingleUserResponse> {
-    // Thử endpoint /users/{userId} trước
     try {
-      const response = await axiosInstance.get<SingleUserResponse>(`/users/${userId}`);
+      const response = await axiosInstance.get<SingleUserResponse>(`/users/${userId}/profile`);
       return response.data;
     } catch (err) {
-      // Nếu lỗi, thử endpoint cũ với query param
-      const response = await axiosInstance.get<SingleUserResponse>("/users/profile", {
-        params: { userId: userId }
-      });
-      return response.data;
+      throw err;
     }
   },
 

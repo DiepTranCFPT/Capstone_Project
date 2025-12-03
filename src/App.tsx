@@ -96,6 +96,8 @@ import AdminDashboardPage from "./pages/admins/AdminDashboardPage";
 import TokenPaymentManagerPage from "./pages/admins/TokenPaymentManagerPage";
 import TeacherAvailabilityPage from "./pages/teachers/TeacherAvailabilityPage";
 import TeacherProfilePage from "./pages/teachers/TeacherProfilePage";
+import TeacherDetailPage from "./pages/teachers/TeacherDetailPage";
+import TeacherRatingsViewPage from "./pages/teachers/TeacherRatingsViewPage";
 import LoadingPage from "./pages/LoadingPage";
 import PaymentResult from "./pages/checkWallet/PaymentResult";
 import MyWalletPage from "./pages/teachers/MyWalletPage";
@@ -177,7 +179,8 @@ function App() {
           <Route path="/ranking" element={<RankingPage />} />
           <Route path="learning-pathway" element={<LearningPathwayPage />} />
           <Route path="/wallet" element={<WalletPage />} />
-        <Route path="/wallet/result" element={<PaymentResult />} />
+          <Route path="/wallet/result" element={<PaymentResult />} />
+          <Route path="/teacher-detail/:teacherId" element={<TeacherDetailPage />} />
         </Route>
 
         {/* Student routes with StudentLayout */}
@@ -230,6 +233,7 @@ function App() {
           <Route path="availability" element={<TeacherAvailabilityPage />} />
           <Route path="bookings" element={<TeacherBookingRequestsPage />} />
           <Route path="analytics" element={<ClassAnalyticsPage />} />
+          <Route path="ratings" element={<TeacherRatingsViewPage />} />
           <Route path="wallet" element={<MyWalletPage />} />
         </Route>
 

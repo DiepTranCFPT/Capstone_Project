@@ -20,9 +20,20 @@ const TeacherRatingService = {
   // GET /api/teacher-ratings/teacher/{teacherId}
   // Lấy tất cả đánh giá của một giáo viên
   getRatingsByTeacher(
-    teacherId: string
-  ): Promise<AxiosResponse<ApiResponse<TeacherRating[]>>> {
-    return axiosInstance.get(`/api/teacher-ratings/teacher/${teacherId}`);
+    teacherId: string,
+    page: number = 0,
+    size: number = 10,
+    sortBy: string = "createdAt",
+    sortDir: string = "DESC"
+  ): Promise<AxiosResponse<ApiResponse<any>>> {
+    return axiosInstance.get(`/api/teacher-ratings/teacher/${teacherId}`, {
+      params: {
+        page,
+        size,
+        sortBy,
+        sortDir,
+      },
+    });
   },
 
   // GET /api/teacher-ratings/teacher/{teacherId}/student/{studentId}

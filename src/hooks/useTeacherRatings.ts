@@ -44,37 +44,58 @@ export const useTeacherRatings = () => {
     null
   );
   const [myRating, setMyRating] = useState<TeacherRating | null>(null);
+  const [totalElements, setTotalElements] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(0);
 
   const fetchRatingsByTeacher = useCallback(
-    async (teacherId: string): Promise<TeacherRating[]> => {
+    async (
+      teacherId: string,
+      page: number = 0,
+      size: number = 10,
+      sortBy: string = "createdAt",
+      sortDir: string = "DESC"
+    ): Promise<TeacherRating[]> => {
       try {
         setLoading(true);
         setError(null);
 
         const response = await TeacherRatingService.getRatingsByTeacher(
-          teacherId
+          teacherId,
+          page,
+          size,
+          sortBy,
+          sortDir
         );
-        const responseData =
-          response.data as ApiResponse<TeacherRating[]> | TeacherRating[];
 
-        const rawData =
-          Array.isArray(responseData) || !responseData
-            ? responseData
-            : (responseData as ApiResponse<TeacherRating[]>).data ??
-              responseData;
+        // Handle paginated response structure
+        const responseData = response.data;
 
-        if (Array.isArray(rawData)) {
-          setRatings(rawData);
-          return rawData;
+        if (responseData && responseData.data) {
+          const paginatedData = responseData.data;
+          const ratingsArray = paginatedData.content || [];
+
+          setRatings(ratingsArray);
+          setTotalElements(paginatedData.totalElements || 0);
+          setTotalPages(paginatedData.totalPages || 0);
+          setCurrentPage(paginatedData.pageable?.pageNumber || page);
+
+          return ratingsArray;
         }
 
         setRatings([]);
+        setTotalElements(0);
+        setTotalPages(0);
+        setCurrentPage(0);
         return [];
       } catch (err) {
         setError(
           getErrorMessage(err, "Không thể tải danh sách đánh giá của giáo viên.")
         );
         setRatings([]);
+        setTotalElements(0);
+        setTotalPages(0);
+        setCurrentPage(0);
         return [];
       } finally {
         setLoading(false);
@@ -98,7 +119,7 @@ export const useTeacherRatings = () => {
           Array.isArray(responseData) || !responseData
             ? responseData
             : (responseData as ApiResponse<TeacherRating[]>).data ??
-              responseData;
+            responseData;
 
         if (Array.isArray(rawData)) {
           setRatings(rawData);
@@ -177,15 +198,15 @@ export const useTeacherRatings = () => {
 
         const responseData =
           response.data as
-            | ApiResponse<TeacherRatingStatistics>
-            | TeacherRatingStatistics
-            | null;
+          | ApiResponse<TeacherRatingStatistics>
+          | TeacherRatingStatistics
+          | null;
 
         const rawData =
           !responseData || ("averageRating" in (responseData as TeacherRatingStatistics))
             ? responseData
             : (responseData as ApiResponse<TeacherRatingStatistics>).data ??
-              null;
+            null;
 
         if (rawData && typeof rawData === "object") {
           setStatistics(rawData as TeacherRatingStatistics);
@@ -221,7 +242,7 @@ export const useTeacherRatings = () => {
           responseData && "rating" in (responseData as TeacherRating)
             ? responseData
             : (responseData as ApiResponse<TeacherRating>).data ??
-              responseData;
+            responseData;
 
         if (rawData && typeof rawData === "object") {
           const rating = rawData as TeacherRating;
@@ -248,6 +269,9 @@ export const useTeacherRatings = () => {
     ratings,
     statistics,
     myRating,
+    totalElements,
+    totalPages,
+    currentPage,
     fetchRatingsByTeacher,
     fetchRatingsByStudent,
     fetchRatingByTeacherAndStudent,
