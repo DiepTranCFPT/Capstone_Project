@@ -154,7 +154,7 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
                                 <FileTextOutlined className="text-white text-xl" />
                             </div>
                             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-                                AI Review & Summary
+                                Review & Summary
                             </span>
                         </h4>
                         <div className="bg-white/80 backdrop-blur-sm rounded-lg p-5 shadow-sm border border-blue-100">

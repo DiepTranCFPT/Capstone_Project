@@ -53,7 +53,7 @@ axiosInstance.interceptors.response.use(
             // console.error('Authentication failed - token expired or invalid');
 
             // Redirect to login page
-            window.location.href = '/auth';
+            // window.location.href = '/auth';
 
             // Return a rejected promise to prevent further processing
             return Promise.reject(error);

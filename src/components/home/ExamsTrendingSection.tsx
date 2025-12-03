@@ -26,7 +26,7 @@ const ExamsTrendingSection: React.FC = () => {
 
 
   return (
-    <div className="w-full bg-zinc-200 relative overflow-hidden py-20">
+    <div className="w-full bg-gradient-to-br from-teal-300 to-emerald-400 relative overflow-hidden py-20">
       {/* background shapes */}
       {/* <img
         src="https://placehold.co/602x527"
@@ -41,11 +41,13 @@ const ExamsTrendingSection: React.FC = () => {
 
       <div className="max-w-6xl mx-auto px-6 relative z-10">
         {/* badge */}
-        <div className="flex items-center gap-2 bg-white border border-black/20 rounded-full px-4 py-2 inline-flex mb-4">
-          <div className="w-7 h-7 bg-slate-300/60 rounded-full flex items-center justify-center">
-            <PiExam />
+        <div className="w-full flex items-center justify-center mb-4">
+          <div className="flex items-center justify-center gap-2 bg-white border border-black/20 rounded-full px-4 py-2 inline-flex">
+            <div className="w-7 h-7 bg-slate-300/60 rounded-full flex items-center justify-center">
+              <PiExam />
+            </div>
+            <span className="text-black text-sm">Trending Exams</span>
           </div>
-          <span className="text-black text-sm">Trending Exams</span>
         </div>
 
         {/* heading + arrows */}
@@ -90,12 +92,12 @@ const ExamsTrendingSection: React.FC = () => {
                 className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col hover:shadow-2xl transition-all duration-300 border border-gray-100"
               >
                 {/* Card Header with gradient background */}
-                <div className="bg-gradient-to-br from-teal-400 to-emerald-500 p-6 text-white">
+                <div className="bg-gray-100 p-6 text-gray-700">
                   <div className="flex items-start justify-between mb-3">
-                    <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold rounded-full">
+                    <span className="inline-block px-3 py-1 bg-gray-100 backdrop-blur-sm text-gray-700 text-xs font-semibold rounded-full">
                       {exam.subject.name}
                     </span>
-                    <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
+                    <div className="flex items-center gap-1 bg-gray-100/20 backdrop-blur-sm px-2 py-1 rounded-full">
                       <svg className="w-4 h-4 text-yellow-300 fill-current" viewBox="0 0 20 20">
                         <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
                       </svg>
@@ -105,6 +107,7 @@ const ExamsTrendingSection: React.FC = () => {
                       <span className="text-xs opacity-80">
                         ({exam.totalRatings})
                       </span>
+                     
                     </div>
                   </div>
                   <h3 className="text-xl font-bold line-clamp-2 min-h-[3.5rem]">
@@ -144,12 +147,20 @@ const ExamsTrendingSection: React.FC = () => {
                       </svg>
                       <span className="text-xs font-semibold text-emerald-600">{exam.passingScore}% pass</span>
                     </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <svg className="w-4 h-4 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-xs opacity-80">
+                        {exam.tokenCost} 💰 (tokens)
+                      </span>
+                    </div>
                   </div>
 
                   {/* Action Button */}
-                  <button 
-                  onClick={() => handleExamClick()}  
-                  className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 text-white px-6 py-3 rounded-lg text-sm font-bold hover:from-teal-500 hover:to-emerald-600 transition-all duration-300 shadow-md hover:shadow-lg">
+                  <button
+                    onClick={() => handleExamClick()}
+                    className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 text-white px-6 py-3 rounded-lg text-sm font-bold hover:from-teal-500 hover:to-emerald-600 transition-all duration-300 shadow-md hover:shadow-lg">
                     Explore Exam Now
                   </button>
                 </div>

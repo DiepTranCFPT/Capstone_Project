@@ -20,6 +20,9 @@ export interface TeacherRating {
   comment?: string;
   createdAt?: string;
   updatedAt?: string;
+  isVerified: boolean;
+  learningMaterialTitle?: string;
+  learningMaterialId?: string;
   [key: string]: unknown;
 }
 

@@ -9,6 +9,7 @@ import {
     FaSignOutAlt,
     FaCalendarAlt,
     FaWallet,
+    FaStar,
     // FaBookOpen,
 } from 'react-icons/fa';
 import { useAuth } from '~/hooks/useAuth';
@@ -24,6 +25,7 @@ const teacherMenu = [
     { label: "Templates", path: "/teacher/templates", icon: <FaClipboardList /> },
     { label: "Create Template", path: "/teacher/create-template", icon: <FileAddOutlined /> },
     { label: "Review Queue", path: "/teacher/review-queue", icon: <FaClipboardList /> },
+    { label: "My Ratings", path: "/teacher/ratings", icon: <FaStar /> },
     { label: "Analytics", path: "/teacher/analytics", icon: <FaChartBar /> },
     // { label: "Tutor Profile", path: "/teacher/tutor-profile", icon: <FaBookOpen /> },
     { label: "My Availability", path: "/teacher/availability", icon: <FaCalendarAlt /> },

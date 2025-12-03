@@ -5,6 +5,8 @@ import { useBrowseExamTemplates } from "~/hooks/useExamBrowser";
 const ExamsSection: React.FC = () => {
   const { templates, loading } = useBrowseExamTemplates({ pageNo: 0, pageSize: 3 });
 
+  const filteredTemplates = templates.filter((template) => template.tokenCost === 0);
+
   if (loading) {
     return (
       <div className="w-full py-16 bg-gradient-to-r from-slate-100 to-white flex items-center justify-center">
@@ -24,7 +26,7 @@ const ExamsSection: React.FC = () => {
 
       {/* Tiêu đề lớn */}
       <h2 className="text-black text-3xl font-bold mb-10 text-center">
-        Explore 150 Free Online Exams
+        Explore Free Online Exams
       </h2>
 
       {/* Danh sách exams */}
@@ -48,7 +50,7 @@ const ExamsSection: React.FC = () => {
             </div>
           </div>
         ) : (
-          templates.map((exam) => (
+            filteredTemplates.map((exam) => (
             <div
               key={exam.id}
               className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 flex flex-col h-full"
