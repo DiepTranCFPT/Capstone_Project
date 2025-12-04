@@ -6,7 +6,7 @@ import type {
   LearningMaterialRatingPayload,
   LearningMaterialRatingStatistics,
 } from "~/types/learningMaterialRating";
-import type { ApiResponse } from "~/types/api";
+import type { ApiResponse, PaginatedResponse } from "~/types/api";
 
 const getErrorMessage = (error: unknown, fallback: string): string => {
   if (typeof error === "object" && error !== null && "response" in error) {
@@ -63,18 +63,12 @@ export const useLearningMaterialRatings = () => {
           sortDir
         );
 
-        const responseData = response.data as
-          | ApiResponse<{
-              content: LearningMaterialRating[];
-              totalElements: number;
-              totalPages: number;
-              pageable?: { pageNumber?: number };
-            }>
-          | null
-          | undefined;
+        const responseData = response.data as ApiResponse<
+          PaginatedResponse<LearningMaterialRating>
+        >;
 
         if (responseData && responseData.data) {
-          const paginatedData = responseData.data;
+          const paginatedData = responseData.data as PaginatedResponse<LearningMaterialRating>;
           const ratingsArray = paginatedData.content || [];
 
           setRatings(ratingsArray);
@@ -117,16 +111,11 @@ export const useLearningMaterialRatings = () => {
 
         const response =
           await LearningMaterialRatingService.getRatingsByStudent(studentId);
-        const responseData =
-          response.data as
-          | ApiResponse<LearningMaterialRating[]>
-          | LearningMaterialRating[];
+        const responseData = response.data as ApiResponse<
+          LearningMaterialRating[]
+        >;
 
-        const rawData =
-          Array.isArray(responseData) || !responseData
-            ? responseData
-            : (responseData as ApiResponse<LearningMaterialRating[]>).data ??
-              responseData;
+        const rawData = responseData.data;
 
         if (Array.isArray(rawData)) {
           setRatings(rawData);
@@ -167,20 +156,13 @@ export const useLearningMaterialRatings = () => {
           );
 
         const responseData =
-          response.data as
-          | ApiResponse<LearningMaterialRating>
-          | LearningMaterialRating
-          | null;
+          response.data as ApiResponse<LearningMaterialRating>;
 
-        const rawData =
-          !responseData || ("rating" in (responseData as LearningMaterialRating))
-            ? responseData
-            : (responseData as ApiResponse<LearningMaterialRating>).data ??
-              null;
+        const rating = responseData.data ?? null;
 
-        if (rawData && typeof rawData === "object") {
-          setMyRating(rawData as LearningMaterialRating);
-          return rawData as LearningMaterialRating;
+        if (rating && typeof rating === "object") {
+          setMyRating(rating as LearningMaterialRating);
+          return rating as LearningMaterialRating;
         }
 
         setMyRating(null);
@@ -215,23 +197,13 @@ export const useLearningMaterialRatings = () => {
           );
 
         const responseData =
-          response.data as
-          | ApiResponse<LearningMaterialRatingStatistics>
-          | LearningMaterialRatingStatistics
-          | null;
+          response.data as ApiResponse<LearningMaterialRatingStatistics>;
 
-        const rawData =
-          !responseData ||
-          ("averageRating" in
-            (responseData as LearningMaterialRatingStatistics))
-            ? responseData
-            : (
-                responseData as ApiResponse<LearningMaterialRatingStatistics>
-              ).data ?? null;
+        const statisticsData = responseData.data ?? null;
 
-        if (rawData && typeof rawData === "object") {
-          setStatistics(rawData as LearningMaterialRatingStatistics);
-          return rawData as LearningMaterialRatingStatistics;
+        if (statisticsData && typeof statisticsData === "object") {
+          setStatistics(statisticsData as LearningMaterialRatingStatistics);
+          return statisticsData as LearningMaterialRatingStatistics;
         }
 
         setStatistics(null);
@@ -263,19 +235,11 @@ export const useLearningMaterialRatings = () => {
         const response =
           await LearningMaterialRatingService.createRating(payload);
         const responseData =
-          response.data as
-          | ApiResponse<LearningMaterialRating>
-          | LearningMaterialRating;
+          response.data as ApiResponse<LearningMaterialRating>;
 
-        const rawData =
-          responseData &&
-          "rating" in (responseData as LearningMaterialRating)
-            ? responseData
-            : (responseData as ApiResponse<LearningMaterialRating>).data ??
-              responseData;
+        const rating = responseData.data;
 
-        if (rawData && typeof rawData === "object") {
-          const rating = rawData as LearningMaterialRating;
+        if (rating && typeof rating === "object") {
           setMyRating(rating);
           return rating;
         }

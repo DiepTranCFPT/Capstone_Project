@@ -1,7 +1,7 @@
 // src/services/learningMaterialRatingService.ts
 import axiosInstance from "~/configs/axios";
 import type { AxiosResponse } from "axios";
-import type { ApiResponse } from "~/types/api";
+import type { ApiResponse, PaginatedResponse } from "~/types/api";
 import type {
   LearningMaterialRating,
   LearningMaterialRatingPayload,
@@ -25,7 +25,7 @@ const LearningMaterialRatingService = {
     size?: number,
     sortBy?: string,
     sortDir?: string
-  ): Promise<AxiosResponse<ApiResponse<any>>> {
+  ): Promise<AxiosResponse<ApiResponse<PaginatedResponse<LearningMaterialRating>>>> {
     return axiosInstance.get(
       `/api/learning-material-ratings/material/${materialId}`,
       {
