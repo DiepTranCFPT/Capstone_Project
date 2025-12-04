@@ -8,6 +8,8 @@ import FileContentService from "~/services/fileContentService";
 import LessonService from "~/services/LessonService";
 import { useAuth } from "~/hooks/useAuth";
 import useTeacherRatings from "~/hooks/useTeacherRatings";
+import useNotes from "~/hooks/useNotes";
+import type { Note } from "~/types/note";
 
 const MaterialLearnPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +25,23 @@ const MaterialLearnPage: React.FC = () => {
   const [videoLoading, setVideoLoading] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
   const videoCache = useRef<Record<string, string>>({});
+
+  // Notes
+  const {
+    loading: notesLoading,
+    error: notesError,
+    notes,
+    fetchNotesByLessonAndUser,
+    createNote,
+    updateNote,
+    deleteNote,
+  } = useNotes();
+  const [noteContent, setNoteContent] = useState<string>("");
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState<string>("");
+  const [noteSubmitting, setNoteSubmitting] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const {
     loading: ratingLoading,
@@ -108,6 +127,35 @@ const MaterialLearnPage: React.FC = () => {
     fetchRatingByTeacherAndStudent(teacherId, studentId);
     fetchStatisticsByTeacher(teacherId);
   }, [material?.authorId, user?.id, fetchRatingByTeacherAndStudent, fetchStatisticsByTeacher]);
+
+  // Load notes khi mở tab Notes và đã có lesson + user
+  useEffect(() => {
+    if (activeTab !== "notes") {
+      setNoteContent("");
+      setEditingNoteId(null);
+      setEditingValue("");
+      return;
+    }
+
+    if (selectedLesson?.id && user?.id) {
+      fetchNotesByLessonAndUser(selectedLesson.id, user.id);
+    }
+  }, [
+    activeTab,
+    selectedLesson?.id,
+    user?.id,
+    fetchNotesByLessonAndUser,
+  ]);
+
+  // Đồng bộ nội dung textarea chính với note đầu tiên (BE giới hạn 1 note / lesson / user)
+  useEffect(() => {
+    if (activeTab !== "notes") return;
+    if (editingNoteId) return;
+    if (notes.length === 0) return;
+
+    const first = notes[0];
+    setNoteContent(String(first.description ?? ""));
+  }, [activeTab, notes, editingNoteId]);
 
   const handleSubmitRating = async () => {
     const teacherId = material?.authorId;
@@ -272,6 +320,93 @@ const MaterialLearnPage: React.FC = () => {
     }, 0);
   };
 
+  const handleSaveNote = async () => {
+    if (!selectedLesson?.id || !user?.id) {
+      message.error("Không xác định được bài học hoặc người dùng.");
+      return;
+    }
+
+    const trimmed = noteContent.trim();
+    if (!trimmed) {
+      message.warning("Nội dung ghi chú không được để trống.");
+      return;
+    }
+
+    setNoteSubmitting(true);
+
+    // BE chỉ cho phép 1 note / lesson / user -> nếu đã có note thì cập nhật thay vì tạo mới
+    const existing = notes[0];
+    if (existing) {
+      const updated = await updateNote(existing.id, { description: trimmed });
+      if (updated) {
+        message.success("Đã cập nhật ghi chú.");
+      }
+      setNoteSubmitting(false);
+      return;
+    }
+
+    const created = await createNote({
+      description: trimmed,
+      lessonId: selectedLesson.id,
+      userId: user.id,
+    });
+
+    if (created) {
+      message.success("Đã lưu ghi chú.");
+      setNoteContent("");
+    }
+    setNoteSubmitting(false);
+  };
+
+  const handleStartEdit = (note: Note) => {
+    setEditingNoteId(note.id);
+    setEditingValue(String(note.description ?? ""));
+  };
+
+  const handleCancelEdit = () => {
+    setEditingNoteId(null);
+    setEditingValue("");
+  };
+
+  const handleUpdateNote = async () => {
+    if (!editingNoteId) return;
+    const trimmed = editingValue.trim();
+    if (!trimmed) {
+      message.warning("Nội dung ghi chú không được để trống.");
+      return;
+    }
+    setNoteSubmitting(true);
+    const result = await updateNote(editingNoteId, { description: trimmed });
+    if (result) {
+      message.success("Đã cập nhật ghi chú.");
+      handleCancelEdit();
+    }
+    setNoteSubmitting(false);
+  };
+
+  const handleDeleteNote = (note: Note) => {
+    setNoteToDelete(note);
+  };
+
+  const confirmDeleteNote = async () => {
+    if (!noteToDelete) return;
+    setDeleteLoading(true);
+    const success = await deleteNote(noteToDelete.id);
+    if (success) {
+      message.success("Đã xoá ghi chú.");
+      if (notes.length <= 1) {
+        setNoteContent("");
+      }
+    }
+    setDeleteLoading(false);
+    setNoteToDelete(null);
+  };
+
+  const cancelDeleteNote = () => {
+    if (deleteLoading) return;
+    setNoteToDelete(null);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header Bar */}
@@ -358,6 +493,7 @@ const MaterialLearnPage: React.FC = () => {
                   <Tabs
                     activeKey={activeTab}
                     onChange={setActiveTab}
+                    tabBarStyle={{ paddingLeft: 24 }}
                     items={[
                       {
                         key: "about",
@@ -394,14 +530,120 @@ const MaterialLearnPage: React.FC = () => {
                         key: "notes",
                         label: "Notes",
                         children: (
-                          <div className="p-6">
-                            <textarea
-                              placeholder="Ghi chú của bạn về bài học này..."
-                              className="w-full h-48 p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                            />
-                            <button className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                              Lưu ghi chú
-                            </button>
+                          <div className="p-6 space-y-4">
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-800 mb-2">
+                                Ghi chú cho bài học này
+                              </label>
+                              <textarea
+                                value={noteContent}
+                                onChange={(e) => setNoteContent(e.target.value)}
+                                placeholder="Tóm tắt ý chính, điều bạn tâm đắc hoặc câu hỏi muốn ghi nhớ..."
+                                className="w-full min-h-[140px] p-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y bg-gray-50"
+                              />
+                              {notesError && (
+                                <p className="mt-1 text-xs text-red-500">
+                                  {notesError}
+                                </p>
+                              )}
+                              <div className="mt-3 flex items-center justify-between">
+                                <p className="text-xs text-gray-500">
+                                  {noteContent.trim().length > 0
+                                    ? `${noteContent.trim().length} ký tự`
+                                    : "Viết vài dòng để lần sau xem lại nhanh hơn."}
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={handleSaveNote}
+                                  disabled={notesLoading || noteSubmitting}
+                                  className="px-4 py-2 bg-blue-600 text-white text-xs md:text-sm rounded-full shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-60"
+                                >
+                                  {noteSubmitting ? "Đang lưu..." : "Lưu ghi chú"}
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="pt-4 border-t border-gray-200">
+                              <h4 className="text-sm font-semibold text-gray-800 mb-2">
+                                Ghi chú đã lưu
+                              </h4>
+                              {notesLoading && notes.length === 0 ? (
+                                <p className="text-sm text-gray-500">
+                                  Đang tải ghi chú...
+                                </p>
+                              ) : notes.length === 0 ? (
+                                <p className="text-sm text-gray-500">
+                                  Chưa có ghi chú nào. Hãy bắt đầu bằng việc ghi lại vài ý quan trọng ở trên.
+                                </p>
+                              ) : (
+                                <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                                  {notes.map((note) => {
+                                    const isEditing = editingNoteId === note.id;
+                                    return (
+                                      <div
+                                        key={note.id}
+                                        className="rounded-lg border border-gray-100 bg-white/60 px-3 py-2"
+                                      >
+                                        {isEditing ? (
+                                          <div className="space-y-2">
+                                            <textarea
+                                              value={editingValue}
+                                              onChange={(e) => setEditingValue(e.target.value)}
+                                              className="w-full min-h-[100px] border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <div className="flex items-center justify-end gap-2 text-xs">
+                                              <button
+                                                type="button"
+                                                onClick={handleCancelEdit}
+                                                className="px-3 py-1 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
+                                                disabled={noteSubmitting}
+                                              >
+                                                Cancel
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={handleUpdateNote}
+                                                disabled={noteSubmitting}
+                                                className="px-3 py-1 rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+                                              >
+                                                {noteSubmitting ? "Saving..." : "Save"}
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <>
+                                            <p className="text-sm text-gray-800 whitespace-pre-line">
+                                              {String(note.description ?? "")}
+                                            </p>
+                                            <div className="mt-2 flex items-center justify-between text-[11px] text-gray-400">
+                                              {note.createdAt && (
+                                                <span>{new Date(note.createdAt).toLocaleString()}</span>
+                                              )}
+                                              <div className="flex items-center gap-3 text-xs">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleStartEdit(note)}
+                                                  className="text-blue-600 hover:underline"
+                                                >
+                                                  Edit
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleDeleteNote(note)}
+                                                  className="text-red-500 hover:underline"
+                                                >
+                                                  Delete
+                                                </button>
+                                              </div>
+                                            </div>
+                                          </>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         ),
                       },
@@ -602,6 +844,27 @@ const MaterialLearnPage: React.FC = () => {
               {ratingLoading ? "Đang gửi..." : "Gửi đánh giá"}
             </button>
           </div>
+        )}
+      </Modal>
+
+      {/* Modal xác nhận xoá ghi chú */}
+      <Modal
+        open={!!noteToDelete}
+        onCancel={cancelDeleteNote}
+        onOk={confirmDeleteNote}
+        okText="Xoá"
+        cancelText="Huỷ"
+        okButtonProps={{ danger: true, loading: deleteLoading }}
+        cancelButtonProps={{ disabled: deleteLoading }}
+        destroyOnClose
+        centered
+        title="Xoá ghi chú"
+      >
+        <p>Bạn có chắc chắn muốn xoá ghi chú này không?</p>
+        {noteToDelete && (
+          <p className="mt-2 rounded bg-gray-50 px-3 py-2 text-sm text-gray-600">
+            {noteToDelete.description}
+          </p>
         )}
       </Modal>
     </div>

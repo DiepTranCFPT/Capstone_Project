@@ -2,8 +2,8 @@
 // Định nghĩa type/interface dùng chung cho API ghi chú (notes)
 
 export interface NotePayload {
-  // Nội dung ghi chú
-  content: string;
+  // Nội dung ghi chú (BE yêu cầu field "description")
+  description: string;
   // Id bài học / lesson mà ghi chú thuộc về
   lessonId: string;
   // Id user tạo ghi chú

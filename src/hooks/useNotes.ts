@@ -28,6 +28,14 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
+const isNotFoundError = (error: unknown): boolean => {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const axiosError = error as { response?: { status?: number } };
+    return axiosError.response?.status === 404;
+  }
+  return false;
+};
+
 export const useNotes = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,8 +47,9 @@ export const useNotes = () => {
       setError(null);
 
       const response = await NoteService.getMyNotes();
-      const responseData = response.data as ApiResponse<Note[]>;
-      const data = responseData.data ?? [];
+      const responseData = response.data as ApiResponse<Note[] | Note | null>;
+      const raw = responseData.data;
+      const data = Array.isArray(raw) ? raw : raw ? [raw] : [];
 
       setNotes(data);
       return data;
@@ -60,12 +69,18 @@ export const useNotes = () => {
         setError(null);
 
         const response = await NoteService.getNotesByLesson(lessonId);
-        const responseData = response.data as ApiResponse<Note[]>;
-        const data = responseData.data ?? [];
+        const responseData = response.data as ApiResponse<Note[] | Note | null>;
+        const raw = responseData.data;
+        const data = Array.isArray(raw) ? raw : raw ? [raw] : [];
 
         setNotes(data);
         return data;
       } catch (err) {
+        if (isNotFoundError(err)) {
+          setNotes([]);
+          setError(null);
+          return [];
+        }
         setError(
           getErrorMessage(err, "Không thể tải danh sách ghi chú cho bài học.")
         );
@@ -88,12 +103,18 @@ export const useNotes = () => {
           lessonId,
           userId
         );
-        const responseData = response.data as ApiResponse<Note[]>;
-        const data = responseData.data ?? [];
+        const responseData = response.data as ApiResponse<Note[] | Note | null>;
+        const raw = responseData.data;
+        const data = Array.isArray(raw) ? raw : raw ? [raw] : [];
 
         setNotes(data);
         return data;
       } catch (err) {
+        if (isNotFoundError(err)) {
+          setNotes([]);
+          setError(null);
+          return [];
+        }
         setError(
           getErrorMessage(
             err,
