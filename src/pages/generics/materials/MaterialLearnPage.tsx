@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Tabs, message, Modal, Rate } from "antd";
+import { message, Modal, Rate } from "antd";
 import { useMaterialDetail } from "~/hooks/useMaterialDetail";
 import { useLesson } from "~/hooks/useLesson";
 import type { Lesson, LessonVideoAsset } from "~/types/lesson";
@@ -8,8 +8,9 @@ import FileContentService from "~/services/fileContentService";
 import LessonService from "~/services/LessonService";
 import { useAuth } from "~/hooks/useAuth";
 import useTeacherRatings from "~/hooks/useTeacherRatings";
-import useNotes from "~/hooks/useNotes";
-import type { Note } from "~/types/note";
+import LessonNotesPanel from "~/components/materials/LessonNotesPanel";
+import LessonDetailsSection from "~/components/materials/LessonDetailsSection";
+import CourseContentSidebar from "~/components/materials/CourseContentSidebar";
 
 const MaterialLearnPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,23 +26,6 @@ const MaterialLearnPage: React.FC = () => {
   const [videoLoading, setVideoLoading] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
   const videoCache = useRef<Record<string, string>>({});
-
-  // Notes
-  const {
-    loading: notesLoading,
-    error: notesError,
-    notes,
-    fetchNotesByLessonAndUser,
-    createNote,
-    updateNote,
-    deleteNote,
-  } = useNotes();
-  const [noteContent, setNoteContent] = useState<string>("");
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-  const [editingValue, setEditingValue] = useState<string>("");
-  const [noteSubmitting, setNoteSubmitting] = useState(false);
-  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const {
     loading: ratingLoading,
@@ -127,35 +111,6 @@ const MaterialLearnPage: React.FC = () => {
     fetchRatingByTeacherAndStudent(teacherId, studentId);
     fetchStatisticsByTeacher(teacherId);
   }, [material?.authorId, user?.id, fetchRatingByTeacherAndStudent, fetchStatisticsByTeacher]);
-
-  // Load notes khi mở tab Notes và đã có lesson + user
-  useEffect(() => {
-    if (activeTab !== "notes") {
-      setNoteContent("");
-      setEditingNoteId(null);
-      setEditingValue("");
-      return;
-    }
-
-    if (selectedLesson?.id && user?.id) {
-      fetchNotesByLessonAndUser(selectedLesson.id, user.id);
-    }
-  }, [
-    activeTab,
-    selectedLesson?.id,
-    user?.id,
-    fetchNotesByLessonAndUser,
-  ]);
-
-  // Đồng bộ nội dung textarea chính với note đầu tiên (BE giới hạn 1 note / lesson / user)
-  useEffect(() => {
-    if (activeTab !== "notes") return;
-    if (editingNoteId) return;
-    if (notes.length === 0) return;
-
-    const first = notes[0];
-    setNoteContent(String(first.description ?? ""));
-  }, [activeTab, notes, editingNoteId]);
 
   const handleSubmitRating = async () => {
     const teacherId = material?.authorId;
@@ -320,93 +275,6 @@ const MaterialLearnPage: React.FC = () => {
     }, 0);
   };
 
-  const handleSaveNote = async () => {
-    if (!selectedLesson?.id || !user?.id) {
-      message.error("Không xác định được bài học hoặc người dùng.");
-      return;
-    }
-
-    const trimmed = noteContent.trim();
-    if (!trimmed) {
-      message.warning("Nội dung ghi chú không được để trống.");
-      return;
-    }
-
-    setNoteSubmitting(true);
-
-    // BE chỉ cho phép 1 note / lesson / user -> nếu đã có note thì cập nhật thay vì tạo mới
-    const existing = notes[0];
-    if (existing) {
-      const updated = await updateNote(existing.id, { description: trimmed });
-      if (updated) {
-        message.success("Đã cập nhật ghi chú.");
-      }
-      setNoteSubmitting(false);
-      return;
-    }
-
-    const created = await createNote({
-      description: trimmed,
-      lessonId: selectedLesson.id,
-      userId: user.id,
-    });
-
-    if (created) {
-      message.success("Đã lưu ghi chú.");
-      setNoteContent("");
-    }
-    setNoteSubmitting(false);
-  };
-
-  const handleStartEdit = (note: Note) => {
-    setEditingNoteId(note.id);
-    setEditingValue(String(note.description ?? ""));
-  };
-
-  const handleCancelEdit = () => {
-    setEditingNoteId(null);
-    setEditingValue("");
-  };
-
-  const handleUpdateNote = async () => {
-    if (!editingNoteId) return;
-    const trimmed = editingValue.trim();
-    if (!trimmed) {
-      message.warning("Nội dung ghi chú không được để trống.");
-      return;
-    }
-    setNoteSubmitting(true);
-    const result = await updateNote(editingNoteId, { description: trimmed });
-    if (result) {
-      message.success("Đã cập nhật ghi chú.");
-      handleCancelEdit();
-    }
-    setNoteSubmitting(false);
-  };
-
-  const handleDeleteNote = (note: Note) => {
-    setNoteToDelete(note);
-  };
-
-  const confirmDeleteNote = async () => {
-    if (!noteToDelete) return;
-    setDeleteLoading(true);
-    const success = await deleteNote(noteToDelete.id);
-    if (success) {
-      message.success("Đã xoá ghi chú.");
-      if (notes.length <= 1) {
-        setNoteContent("");
-      }
-    }
-    setDeleteLoading(false);
-    setNoteToDelete(null);
-  };
-
-  const cancelDeleteNote = () => {
-    if (deleteLoading) return;
-    setNoteToDelete(null);
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header Bar */}
@@ -419,330 +287,41 @@ const MaterialLearnPage: React.FC = () => {
       {/* Main Content */}
       <div className="max-w-[95%] xl:max-w-[1600px] mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left Section - Video Player and Details */}
+          {/* Left Section - Lesson Details */}
           <div className="flex-1 lg:flex-[2.5] space-y-6">
-            {/* Video Player */}
             {selectedLesson ? (
-              <>
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  {(() => {
-                    if (videoLoading) {
-                      return (
-                        <div className="bg-gray-900 aspect-video flex items-center justify-center text-white">
-                          Đang tải video...
-                        </div>
-                      );
-                    }
-
-                    if (videoError) {
-                      return (
-                        <div className="bg-gray-900 aspect-video flex items-center justify-center text-white px-6 text-center">
-                          {videoError}
-                        </div>
-                      );
-                    }
-
-                    if (videoUrl) {
-                      return (
-                        <div className="bg-black aspect-video flex items-center justify-center">
-                          <video
-                            controls
-                            className="w-full h-full"
-                            src={videoUrl}
-                            onEnded={handleVideoEnded}
-                          >
-                            Trình duyệt của bạn không hỗ trợ video.
-                          </video>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="bg-gray-900 aspect-video flex items-center justify-center">
-                        <p className="text-white">Chưa có video</p>
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {!!selectedLesson.file && (
-                  <div className="bg-white rounded-xl shadow-sm p-6 flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-800 font-medium">Tài liệu PDF đính kèm</p>
-                      <p className="text-sm text-gray-500">Nhấn để xem chi tiết nội dung.</p>
-                    </div>
-                    <button
-                      onClick={handleOpenPdf}
-                      disabled={openingFile}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-70"
-                    >
-                      {openingFile ? "Đang mở..." : "Xem PDF"}
-                    </button>
-                  </div>
-                )}
-
-                {/* Lesson Title */}
-                <div className="bg-white rounded-xl shadow-sm p-6">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {selectedLesson.title || selectedLesson.name || "Bài học"}
-                  </h2>
-                </div>
-
-                {/* Tabs */}
-                <div className="bg-white rounded-xl shadow-sm">
-                  <Tabs
-                    activeKey={activeTab}
-                    onChange={setActiveTab}
-                    tabBarStyle={{ paddingLeft: 24 }}
-                    items={[
-                      {
-                        key: "about",
-                        label: "About",
-                        children: (
-                          <div className="p-6">
-                            {selectedLesson.description ? (
-                              <p className="text-gray-700 leading-relaxed">
-                                {selectedLesson.description}
-                              </p>
-                            ) : (
-                              <p className="text-gray-500">Chưa có mô tả cho bài học này.</p>
-                            )}
-                            {selectedLesson.duration && (
-                              <div className="mt-4 pt-4 border-t border-gray-200">
-                                <p className="text-sm text-gray-600">
-                                  <span className="font-medium">Thời lượng:</span> {selectedLesson.duration} phút
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        ),
-                      },
-                      {
-                        key: "transcript",
-                        label: "Transcript",
-                        children: (
-                          <div className="p-6">
-                            <p className="text-gray-500">Transcript sẽ được cập nhật sớm.</p>
-                          </div>
-                        ),
-                      },
-                      {
-                        key: "notes",
-                        label: "Notes",
-                        children: (
-                          <div className="p-6 space-y-4">
-                            <div>
-                              <label className="block text-sm font-semibold text-gray-800 mb-2">
-                                Ghi chú cho bài học này
-                              </label>
-                              <textarea
-                                value={noteContent}
-                                onChange={(e) => setNoteContent(e.target.value)}
-                                placeholder="Tóm tắt ý chính, điều bạn tâm đắc hoặc câu hỏi muốn ghi nhớ..."
-                                className="w-full min-h-[140px] p-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y bg-gray-50"
-                              />
-                              {notesError && (
-                                <p className="mt-1 text-xs text-red-500">
-                                  {notesError}
-                                </p>
-                              )}
-                              <div className="mt-3 flex items-center justify-between">
-                                <p className="text-xs text-gray-500">
-                                  {noteContent.trim().length > 0
-                                    ? `${noteContent.trim().length} ký tự`
-                                    : "Viết vài dòng để lần sau xem lại nhanh hơn."}
-                                </p>
-                                <button
-                                  type="button"
-                                  onClick={handleSaveNote}
-                                  disabled={notesLoading || noteSubmitting}
-                                  className="px-4 py-2 bg-blue-600 text-white text-xs md:text-sm rounded-full shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-60"
-                                >
-                                  {noteSubmitting ? "Đang lưu..." : "Lưu ghi chú"}
-                                </button>
-                              </div>
-                            </div>
-
-                            <div className="pt-4 border-t border-gray-200">
-                              <h4 className="text-sm font-semibold text-gray-800 mb-2">
-                                Ghi chú đã lưu
-                              </h4>
-                              {notesLoading && notes.length === 0 ? (
-                                <p className="text-sm text-gray-500">
-                                  Đang tải ghi chú...
-                                </p>
-                              ) : notes.length === 0 ? (
-                                <p className="text-sm text-gray-500">
-                                  Chưa có ghi chú nào. Hãy bắt đầu bằng việc ghi lại vài ý quan trọng ở trên.
-                                </p>
-                              ) : (
-                                <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-                                  {notes.map((note) => {
-                                    const isEditing = editingNoteId === note.id;
-                                    return (
-                                      <div
-                                        key={note.id}
-                                        className="rounded-lg border border-gray-100 bg-white/60 px-3 py-2"
-                                      >
-                                        {isEditing ? (
-                                          <div className="space-y-2">
-                                            <textarea
-                                              value={editingValue}
-                                              onChange={(e) => setEditingValue(e.target.value)}
-                                              className="w-full min-h-[100px] border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                            <div className="flex items-center justify-end gap-2 text-xs">
-                                              <button
-                                                type="button"
-                                                onClick={handleCancelEdit}
-                                                className="px-3 py-1 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
-                                                disabled={noteSubmitting}
-                                              >
-                                                Cancel
-                                              </button>
-                                              <button
-                                                type="button"
-                                                onClick={handleUpdateNote}
-                                                disabled={noteSubmitting}
-                                                className="px-3 py-1 rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
-                                              >
-                                                {noteSubmitting ? "Saving..." : "Save"}
-                                              </button>
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <>
-                                            <p className="text-sm text-gray-800 whitespace-pre-line">
-                                              {String(note.description ?? "")}
-                                            </p>
-                                            <div className="mt-2 flex items-center justify-between text-[11px] text-gray-400">
-                                              {note.createdAt && (
-                                                <span>{new Date(note.createdAt).toLocaleString()}</span>
-                                              )}
-                                              <div className="flex items-center gap-3 text-xs">
-                                                <button
-                                                  type="button"
-                                                  onClick={() => handleStartEdit(note)}
-                                                  className="text-blue-600 hover:underline"
-                                                >
-                                                  Edit
-                                                </button>
-                                                <button
-                                                  type="button"
-                                                  onClick={() => handleDeleteNote(note)}
-                                                  className="text-red-500 hover:underline"
-                                                >
-                                                  Delete
-                                                </button>
-                                              </div>
-                                            </div>
-                                          </>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ),
-                      },
-                    ]}
+              <LessonDetailsSection
+                lesson={selectedLesson}
+                videoUrl={videoUrl}
+                videoLoading={videoLoading}
+                videoError={videoError}
+                onVideoEnded={handleVideoEnded}
+                onOpenPdf={handleOpenPdf}
+                openingFile={openingFile}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                notesPanel={
+                  <LessonNotesPanel
+                    lesson={selectedLesson}
+                    userId={user?.id}
+                    isActive={activeTab === "notes"}
                   />
-                </div>
-
-              </>
+                }
+              />
             ) : (
               <div className="bg-white rounded-xl shadow-sm p-12 text-center">
                 <p className="text-gray-500 text-lg">Chọn một bài học để bắt đầu</p>
               </div>
             )}
           </div>
+
           {/* Right Section - Course Content */}
-          <div className="bg-white rounded-xl shadow-sm lg:w-96 xl:w-[420px] lg:flex-shrink-0 flex flex-col h-fit lg:max-h-[calc(100vh-120px)]">
-            <div className="p-6 pb-4 border-b border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900">Course Content</h3>
-              <p className="text-xs text-gray-500 mt-1">{sortedLessons.length} bài học</p>
-            </div>
-            
-            {lessonsLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : sortedLessons.length === 0 ? (
-              <div className="text-center py-12 px-6">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                </div>
-                <p className="text-gray-500 text-sm">Chưa có bài giảng nào trong khóa học này.</p>
-              </div>
-            ) : (
-              <div className="flex-1 overflow-y-auto px-2 py-2">
-                {sortedLessons.map((lesson, index) => {
-                  const isSelected = selectedLesson?.id === lesson.id;
-                  return (
-                    <div
-                      key={lesson.id}
-                      onClick={() => setSelectedLesson(lesson)}
-                      className={`group relative p-4 rounded-lg cursor-pointer transition-all duration-200 mb-1 ${
-                        isSelected
-                          ? "bg-blue-50 border-l-4 border-blue-500 shadow-sm"
-                          : "hover:bg-gray-50 hover:shadow-sm border-l-4 border-transparent"
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        {isSelected ? (
-                          <div className="flex-shrink-0 mt-0.5">
-                            <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center shadow-sm">
-                              <svg
-                                className="w-4 h-4 text-white"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                              </svg>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-xs font-semibold text-gray-700 mt-0.5 group-hover:from-gray-200 group-hover:to-gray-300 transition-all">
-                            {index + 1}
-                          </div>
-                        )}
-                        <div className="flex-grow min-w-0">
-                          <h4
-                            className={`font-medium mb-1.5 transition-colors ${
-                              isSelected 
-                                ? "text-blue-700 font-semibold" 
-                                : "text-gray-900 group-hover:text-blue-600"
-                            }`}
-                          >
-                            {lesson.title || lesson.name || `Bài ${index + 1}`}
-                          </h4>
-                          {lesson.duration && (
-                            <div className="flex items-center gap-2">
-                              <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              <p className={`text-xs ${
-                                isSelected ? "text-blue-600" : "text-gray-500"
-                              }`}>
-                                {Math.floor(lesson.duration / 60)}:{(lesson.duration % 60).toString().padStart(2, '0')}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      {isSelected && (
-                        <div className="absolute top-0 right-0 w-1 h-full bg-blue-500 rounded-r-lg"></div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <CourseContentSidebar
+            lessons={sortedLessons}
+            selectedLessonId={selectedLesson?.id}
+            onSelectLesson={(lesson) => setSelectedLesson(lesson)}
+            loading={lessonsLoading}
+          />
         </div>
       </div>
 
@@ -847,26 +426,6 @@ const MaterialLearnPage: React.FC = () => {
         )}
       </Modal>
 
-      {/* Modal xác nhận xoá ghi chú */}
-      <Modal
-        open={!!noteToDelete}
-        onCancel={cancelDeleteNote}
-        onOk={confirmDeleteNote}
-        okText="Xoá"
-        cancelText="Huỷ"
-        okButtonProps={{ danger: true, loading: deleteLoading }}
-        cancelButtonProps={{ disabled: deleteLoading }}
-        destroyOnClose
-        centered
-        title="Xoá ghi chú"
-      >
-        <p>Bạn có chắc chắn muốn xoá ghi chú này không?</p>
-        {noteToDelete && (
-          <p className="mt-2 rounded bg-gray-50 px-3 py-2 text-sm text-gray-600">
-            {noteToDelete.description}
-          </p>
-        )}
-      </Modal>
     </div>
   );
 };
