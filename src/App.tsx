@@ -64,7 +64,6 @@ import QuestionBankPage from "./pages/teachers/QuestionBankPage";
 import CreateExamPage from "./pages/teachers/CreateExamPage";
 import ExamListPage from "./pages/teachers/ExamListPage";
 import TeacherExamDetailsPage from "./pages/teachers/ExamDetailsPage";
-import GradingPage from "./pages/teachers/GradingPage";
 import ClassAnalyticsPage from "./pages/teachers/ClassAnalyticsPage";
 import GradeSubmissionPage from "./pages/teachers/GradeSubmissionPage";
 import TeacherBookingRequestsPage from "./pages/teachers/TeacherBookingRequestsPage";
@@ -223,7 +222,6 @@ function App() {
           <Route path="templates" element={<ExamListPage />} />
           <Route path="template-details/:examId" element={<TeacherExamDetailsPage />} />
           <Route path="edit-template/:examId" element={<CreateExamPage />} />
-          <Route path="grading" element={<GradingPage />} />
           <Route path="review-queue" element={<TeacherReviewQueuePage />} />
           <Route
             path="grading/:submissionId"

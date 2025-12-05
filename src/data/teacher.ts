@@ -71,7 +71,7 @@ export const mockSubmissions: StudentSubmission[] = [
     {
         id: 'sub1',
         student: { id: '1', firstName: 'Nguyen Van A', imgUrl: 'https://i.pravatar.cc/150?img=1' },
-        exam: { id: '1', title: 'Mid-term Physics Exam', duration: 0, parts: 0, totalQuestions: 0 },
+        exam: { id: '1', title: 'Mid-term Physics Exam', duration: 0, totalQuestions: 0 },
         submittedAt: '2025-09-28',
         status: 'pending_grading',
         frqAnswers: [
@@ -85,7 +85,7 @@ export const mockSubmissions: StudentSubmission[] = [
     {
         id: 'sub2',
         student: { id: '2', firstName: 'Tran Thi B', imgUrl: 'https://i.pravatar.cc/150?img=2' },
-        exam: { id: '2', title: 'History Essay', duration: 0, parts: 0, totalQuestions: 0 },
+        exam: { id: '2', title: 'History Essay', duration: 0, totalQuestions: 0 },
         submittedAt: '2025-09-27',
         status: 'pending_grading',
         frqAnswers: [
@@ -99,7 +99,7 @@ export const mockSubmissions: StudentSubmission[] = [
     {
         id: 'sub3',
         student: { id: '3', firstName: 'Le Van C', imgUrl: 'https://i.pravatar.cc/150?img=3' },
-        exam: { id: '1', title: 'Mid-term Physics Exam', duration: 0, parts: 0, totalQuestions: 0 },
+        exam: { id: '1', title: 'Mid-term Physics Exam', duration: 0, totalQuestions: 0 },
         submittedAt: '2025-09-26',
         status: 'graded',
         score: 88,

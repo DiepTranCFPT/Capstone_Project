@@ -69,7 +69,7 @@ const TeacherDashboardPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} md={6}>
-                    <Link to="/teacher/grading">
+                    <Link to="/teacher/review-queue">
                         <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-red-500">
                             <Statistic
                                 title="Pending Grading"
