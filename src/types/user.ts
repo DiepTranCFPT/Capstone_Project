@@ -60,6 +60,7 @@ export interface UserQueryParams {
   pageNo?: number;
   pageSize?: number;
   search?: string;
+  role?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }

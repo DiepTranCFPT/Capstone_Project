@@ -52,7 +52,7 @@ const ExamsTrendingSection: React.FC = () => {
 
         {/* heading + arrows */}
         <div className="flex justify-center items-center mb-10">
-          <h2 className="text-black text-3xl font-bold max-w-xl">
+          <h2 className="text-black text-xl md:text-3xl text-center font-bold max-w-xl">
             Explore New and Trending Online Exams
           </h2>
           {/* <div className="flex gap-4">
@@ -107,7 +107,6 @@ const ExamsTrendingSection: React.FC = () => {
                       <span className="text-xs opacity-80">
                         ({exam.totalRatings})
                       </span>
-                     
                     </div>
                   </div>
                   <h3 className="text-xl font-bold line-clamp-2 min-h-[3.5rem]">

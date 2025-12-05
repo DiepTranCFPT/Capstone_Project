@@ -5,6 +5,7 @@ import { FiSearch, FiLoader } from 'react-icons/fi';
 import Section from '~/components/exam/Section';
 import { useBrowseExamTemplates } from '~/hooks/useExamBrowser';
 import { useSubjects } from '~/hooks/useSubjects';
+import { useTeachers } from '~/hooks/useTeachers';
 import { useExamAttempt } from '~/hooks/useExamAttempt';
 import { useAuth } from '~/hooks/useAuth';
 import type { Exam, ExamTemplate } from '~/types/test';
@@ -15,40 +16,68 @@ import { useNavigate } from 'react-router-dom';
 const ExamTestPage: React.FC = () => {
     const { templates, loading: examsLoading, error: examsError, applyFilters } = useBrowseExamTemplates();
     const { subjects, loading: subjectsLoading } = useSubjects();
+    const { teachers, loading: teachersLoading } = useTeachers();
     const { startSingleAttempt, startComboAttempt, startComboRandomAttempt } = useExamAttempt();
     const { isAuthenticated } = useAuth();
     const navigation = useNavigate();
-    // Convert ExamTemplate to Exam format for compatibility
-    const convertExamTemplateToExam = (template: ExamTemplate): Exam => ({
-        id: template.id,
-        title: template.title,
-        description: template.description,
-        duration: template.duration,
-        examTypeId: '1', // Default value
-        subjectId: template.subject.id,
-        teacherId: template.createdBy, // Use createdBy as teacherId
-        totalQuestions: template.rules?.reduce((sum: number, rule) => sum + rule.numberOfQuestions, 0) || 0,
-        maxAttempts: 3, // Default value
-        status: template.isActive ? 'published' : 'draft',
-        createdAt: template.createdAt || new Date().toISOString(),
-        updatedAt: template.createdAt || new Date().toISOString(),
-        tokenCost: template.tokenCost || 0, // Default value
-        questions: [],
-        teacherName: template.createdBy,
-        rating: template.averageRating,
-        subject: template.subject.name,
-        attempts: template.totalTakers,
-        parts: 1, // Default value
-        category: template.subject.name
-    });
+    // Create a lookup map from teacher email to teacher info
+    const teacherLookup = useMemo(() => {
+        const map = new Map<string, { name: string; imgUrl?: string }>();
+        teachers.forEach(teacher => {
+            map.set(teacher.email, { name: teacher.name, imgUrl: teacher.imgUrl });
+        });
+        return map;
+    }, [teachers]);
 
-    const exams = templates.map(convertExamTemplateToExam);
+    // Convert ExamTemplate to Exam format for compatibility
+    const convertExamTemplateToExam = (template: ExamTemplate): Exam => {
+        // Calculate MCQ and FRQ counts from rules
+        const mcqCount = template.rules?.reduce((sum: number, rule) =>
+            rule.questionType === 'mcq' ? sum + rule.numberOfQuestions : sum, 0) || 0;
+        const frqCount = template.rules?.reduce((sum: number, rule) =>
+            rule.questionType === 'frq' ? sum + rule.numberOfQuestions : sum, 0) || 0;
+
+        // Get teacher info from lookup (createdBy is email)
+        const teacherInfo = teacherLookup.get(template.createdBy);
+
+        return {
+            id: template.id,
+            title: template.title,
+            description: template.description,
+            duration: template.duration,
+            examTypeId: '1', // Default value
+            subjectId: template.subject.id,
+            teacherId: template.createdBy, // Use createdBy as teacherId
+            totalQuestions: template.rules?.reduce((sum: number, rule) => sum + rule.numberOfQuestions, 0) || 0,
+            maxAttempts: 3, // Default value
+            status: template.isActive ? 'Published' : 'Draft',
+            createdAt: template.createdAt || new Date().toISOString(),
+            updatedAt: template.createdAt || new Date().toISOString(),
+            tokenCost: template.tokenCost || 0, // Default value
+            // questions: [],
+            teacherName: teacherInfo?.name || template.createdBy, // Use full name if available
+            teacherAvatarUrl: teacherInfo?.imgUrl, // Teacher's avatar from lookup
+            rating: template.averageRating,
+            subject: template.subject.name,
+            attempts: template.totalTakers,
+            // parts: 1, // Default value
+            category: template.subject.name,
+            mcqCount,
+            frqCount
+        };
+    };
+
+    // Use useMemo to recalculate exams when templates or teacherLookup change
+    const exams = useMemo(() =>
+        templates.map(convertExamTemplateToExam),
+        [templates, teacherLookup]);
 
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [activeMainTab, setActiveMainTab] = useState<'individual' | 'combined'>('individual');
     const [activeSubTab, setActiveSubTab] = useState<'selfSelected' | 'platformSelected'>('selfSelected');
     const [selectedRatingFilter, setSelectedRatingFilter] = useState<string>('');
     const [selectedTeacherFilter, setSelectedTeacherFilter] = useState<string>('');
+    const [searchQuery, setSearchQuery] = useState<string>('');
     const [selectedSubjectsForCombined, setSelectedSubjectsForCombined] = useState<string[]>([]);
     const [selectedExamsForCombined, setSelectedExamsForCombined] = useState<Exam[]>([]);
 
@@ -95,7 +124,7 @@ const ExamTestPage: React.FC = () => {
         subjects?: string[];
     } | null>(null);
 
-    // Create stable filter object
+    // Create stable filter object (for API)
     const currentFilters = useMemo(() => {
         const filters: { subject?: string; minRating?: number; teacherId?: string } = {};
         if (selectedCategory !== "All") {
@@ -109,6 +138,17 @@ const ExamTestPage: React.FC = () => {
         }
         return filters;
     }, [selectedCategory, selectedRatingFilter, selectedTeacherFilter]);
+
+    // Client-side filtering by title only
+    const filteredExams = useMemo(() => {
+        if (!searchQuery.trim()) {
+            return exams;
+        }
+        const query = searchQuery.trim().toLowerCase();
+        return exams.filter(exam =>
+            exam.title.toLowerCase().includes(query)
+        );
+    }, [exams, searchQuery]);
 
     // Apply filters when they change
     const prevFiltersRef = useRef(currentFilters);
@@ -347,24 +387,35 @@ const ExamTestPage: React.FC = () => {
                                         value={selectedTeacherFilter}
                                         onChange={(e) => setSelectedTeacherFilter(e.target.value)}
                                         className="px-5 py-2 text-sm font-medium rounded-full border border-gray-300 bg-white text-gray-700 focus:ring-teal-500 focus:border-teal-500"
+                                        disabled={teachersLoading}
                                     >
-                                        <option value="">All Teachers</option>
-                                        <option value="John Smith">John Smith</option>
-                                        <option value="Jane Smith">Jane Smith</option>
-                                        <option value="Bob Johnson">Bob Johnson</option>
+                                        <option value="">{teachersLoading ? 'Loading teachers...' : 'All Teachers'}</option>
+                                        {teachers.map((teacher) => (
+                                            <option key={teacher.id} value={teacher.id}>
+                                                {teacher.name}
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
                                 {/* Search Bar */}
                                 <div className="relative mb-8">
                                     <input
                                         type="text"
-                                        placeholder="Enter key word to search"
+                                        placeholder="Enter exam title to search"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
                                         className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500"
                                     />
                                     <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                                    <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-teal-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-teal-600 hover:cursor-pointer">
-                                        Search
-                                    </button>
+                                    {searchQuery && (
+                                        <button
+                                            onClick={() => setSearchQuery('')}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
                                 </div>
                             </>
                         )}
@@ -548,9 +599,25 @@ const ExamTestPage: React.FC = () => {
                                             Try Again
                                         </button>
                                     </div>
+                                ) : filteredExams.length === 0 ? (
+                                    <div className="text-center py-12">
+                                        <div className="text-5xl mb-4">🔍</div>
+                                        <h3 className="text-xl font-semibold text-gray-700 mb-2">No exams found</h3>
+                                        <p className="text-gray-500">
+                                            {searchQuery ? `No exams matching "${searchQuery}"` : 'No exams available'}
+                                        </p>
+                                        {searchQuery && (
+                                            <button
+                                                onClick={() => setSearchQuery('')}
+                                                className="mt-4 text-teal-600 hover:text-teal-700 font-medium"
+                                            >
+                                                Clear search
+                                            </button>
+                                        )}
+                                    </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {exams.map((exam: Exam) => (
+                                        {filteredExams.map((exam: Exam) => (
                                             <ExamCard exams={exam} key={exam.id} onStartExam={handleStartExamClick} />
                                         ))}
                                     </div>

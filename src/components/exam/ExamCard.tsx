@@ -1,4 +1,5 @@
 import React from 'react'
+import { FaCoins } from 'react-icons/fa';
 import { FiBook, FiClock, FiFileText } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import type { Exam } from '~/types/test';
@@ -14,30 +15,55 @@ const ExamCard: React.FC<ExamCardProps> = ({ exams, onStartExam }) => {
             <h3 className="text-lg font-bold text-gray-800">{exams.title}</h3>
 
             <div className="flex items-center text-gray-600 text-xs mb-2">
-                <img src="/path/to/placeholder-avatar.png" alt="Teacher Avatar" className="w-5 h-5 rounded-full mr-2" />
+                {exams.teacherAvatarUrl ? (
+                    <img
+                        src={exams.teacherAvatarUrl}
+                        alt={`${exams.teacherName} Avatar`}
+                        className="w-5 h-5 rounded-full mr-2 object-cover"
+                    />
+                ) : (
+                    <div className="w-5 h-5 rounded-full mr-2 bg-teal-100 flex items-center justify-center text-teal-600 text-xs font-semibold">
+                        {exams.teacherName?.charAt(0)?.toUpperCase() || 'T'}
+                    </div>
+                )}
                 <span>{exams.teacherName}</span>
             </div>
             <div className="flex items-center text-gray-600 text-xs mb-4">
                 <span className="flex items-center mr-2">
                     {'⭐'.repeat(Math.floor(exams.rating))} ({exams.rating})
                 </span>
-                <span>- {exams.tokenCost === 0 ? 'Free' : `${exams.tokenCost} 💰(Tokens)`}</span>
+                <span className='flex items-center gap-1 text-yellow-500'>- {exams.tokenCost === 0 ? 'Free' : `${exams.tokenCost}`}<FaCoins />  (Tokens)</span>
+            </div>
+
+            {/* Subject */}
+            <div className="flex items-center justify-center mb-4 w-max">
+                <span className="flex items-center text-xs text-gray-700 font-bold">{exams.subject}</span>
             </div>
 
             <div className="flex items-center text-gray-600 text-xs space-x-4 mb-4">
-                <div className="flex items-center">
+                <div className="flex items-center" title="Multiple Choice Questions">
                     <FiFileText className="mr-1" />
-                    <span>{exams.questions?.length || exams.totalQuestions} Sentences</span>
+                    <span>{exams.mcqCount ?? 0} MCQ</span>
                 </div>
-                <div className="flex items-center">
+                <div className="flex items-center" title="Free Response Questions">
                     <FiBook className="mr-1" />
-                    <span>{exams.questions?.length || exams.totalQuestions} Number</span>
+                    <span>{exams.frqCount ?? 0} FRQ</span>
                 </div>
-                <div className="flex items-center">
+                <div className="flex items-center" title="Duration">
                     <FiClock className="mr-1" />
                     <span>{exams.duration} Min</span>
                 </div>
             </div>
+
+            {/* Descriptons */}
+            <div className="mb-4">
+                <p className="text-xs text-gray-600">{exams.description}</p>
+            </div>
+            {/* Status */}
+            <div className="flex items-center justify-center mb-4 w-max">
+                <span className="flex items-center text-xs text-green-600 font-bold">{exams.status}</span>
+            </div>
+
 
             {/* Giả sử đây là progress bar và nút bấm */}
             <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
@@ -48,14 +74,14 @@ const ExamCard: React.FC<ExamCardProps> = ({ exams, onStartExam }) => {
                 <Link
                     to={`/exam-details/${exams.id}`}
                     className="text-sm font-semibold text-teal-600 px-4 py-2 rounded-lg bg-teal-50 border border-teal-200 hover:bg-teal-100">
-                    Xem Chi Tiết
+                    Details
                 </Link>
                 {onStartExam && (
                     <button
                         onClick={() => onStartExam(exams)}
                         className="text-sm font-semibold text-white px-4 py-2 rounded-lg bg-teal-500 hover:bg-teal-600 hover:cursor-pointer transition-colors"
                     >
-                        Vào Thi
+                        Start Exam
                     </button>
                 )}
             </div>

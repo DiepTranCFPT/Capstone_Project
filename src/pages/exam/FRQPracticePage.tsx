@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft, FiHome } from 'react-icons/fi';
 import FRQCard from '~/components/practice/FRQCard';
 import { usePracticeQuestions } from '~/hooks/usePracticeQuestions';
+import { useExams } from '~/hooks/useExams';
 
 const FRQPracticePage: React.FC = () => {
     const { examId } = useParams<{ examId: string }>();
@@ -11,6 +12,14 @@ const FRQPracticePage: React.FC = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [shuffledQuestions, setShuffledQuestions] = useState<typeof apiQuestions>([]);
 
+    const { currentExam, fetchExamById } = useExams();
+
+    useEffect(() => {
+        if (examId) {
+            fetchExamById(examId);
+        }
+    }, [examId]);
+    
     useEffect(() => {
         // Update shuffled questions when API questions change
         if (apiQuestions.length > 0) {
@@ -89,7 +98,7 @@ const FRQPracticePage: React.FC = () => {
                     {/* Mode indicator */}
                     <div className="flex items-center space-x-4 text-sm">
                         <span className="text-gray-600">Bài học:</span>
-                        <span className="text-emerald-400 font-medium">{examId}</span>
+                        <span className="text-emerald-400 font-medium">{currentExam?.title}</span>
                         <span className="text-gray-600">•</span>
                         <span className="text-gray-600">Loại:</span>
                         <span className="text-purple-400 font-medium">Tự luận (FRQ)</span>

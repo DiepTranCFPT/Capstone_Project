@@ -29,13 +29,16 @@ export interface Exam {
   updatedAt: string; // corresponds to updated_at
   tokenCost: number; // corresponds to token_cost
   // Additional frontend fields not in DB
-  questions: QuestionBankItem[];
+  // questions: QuestionBankItem[];
   teacherName: string;
   rating: number; // 1-5
   subject: string;
   attempts: number;
-  parts: number;
+  // parts: number;
   category?: string;
+  mcqCount?: number; // Number of multiple choice questions
+  frqCount?: number; // Number of free response questions
+  teacherAvatarUrl?: string; // Teacher's avatar URL
 }
 
 export interface CompletedTest {

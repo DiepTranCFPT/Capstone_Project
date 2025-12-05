@@ -13,7 +13,7 @@ export interface Classroom {
 export interface StudentSubmission {
     id: string;
     student: Pick<User, 'id' | 'firstName'| 'imgUrl' >;
-    exam: Pick<Exam, 'id' | 'title' | "duration"  | "parts" | "totalQuestions">;
+    exam: Pick<Exam, 'id' | 'title' | "duration"  | "totalQuestions">;
     submittedAt: string;
     status: 'pending_grading' | 'graded';
     score?: number;

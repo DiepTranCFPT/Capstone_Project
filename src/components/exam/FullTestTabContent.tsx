@@ -119,12 +119,10 @@ const FullTestTabContent: React.FC<{ examId: string | undefined }> = ({ examId }
                     createdAt: pendingExam.createdAt || '',
                     updatedAt: pendingExam.createdAt || '',
                     tokenCost: pendingExam.tokenCost,
-                    questions: [],
                     teacherName: pendingExam.createdBy,
                     rating: pendingExam.averageRating,
                     subject: pendingExam.subject.name,
                     attempts: pendingExam.totalTakers,
-                    parts: 1
                 } : null}
                 combinedExam={null}
                 onConfirm={handleConfirm}
