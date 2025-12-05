@@ -5,15 +5,12 @@ import Section from '~/components/exam/Section';
 import { useParams } from 'react-router-dom';
 import PracticeTabContent from '~/components/exam/PracticeTabContent';
 import FullTestTabContent from '~/components/exam/FullTestTabContent';
-import Sidebar from '~/components/exam/SideBar';
-import { useAuth } from '~/hooks/useAuth';
 import { useExams } from '~/hooks/useExams';
 
 const ExamDetailsPage: React.FC = () => {
     // Lấy ID từ URL, ví dụ: /exam-test/1
     const { examId } = useParams();
     const [activeTab, setActiveTab] = useState<'practice' | 'fullTest'>('practice');
-    const { isAuthenticated } = useAuth();
     const { currentExam, loading, error, fetchExamById } = useExams();
 
     // Fetch exam details when component mounts or examId changes
@@ -101,10 +98,14 @@ const ExamDetailsPage: React.FC = () => {
                         <div className="bg-white border border-gray-200 rounded-lg shadow p-6">
                             <span className="text-xs font-bold text-teal-700 bg-teal-100 px-3 py-1 rounded-full">{examDetails.level}</span>
                             <h1 className="text-3xl font-bold text-gray-800 mt-3">{examDetails.title} – {examDetails.level}</h1>
-                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-gray-600 mt-4">
+                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-gray-600 my-4">
                                 <div className="flex items-center"><FiBookOpen className="mr-2 text-teal-500" /> {examDetails.subject}</div>
                                 <div className="flex items-center"><FiClipboard className="mr-2 text-teal-500" /> {examDetails.sentences} Questions</div>
                                 <div className="flex items-center"><FiUsers className="mr-2 text-teal-500" /> {examDetails.totalTakers} people attempted</div>
+                            </div>
+                            <div className="flex mb-4">
+                                <span className="font-bold text-teal-700">Description:</span>
+                                <div className="flex items-center text-gray-600 ml-2">{examDetails.description}</div>
                             </div>
                             <div className="border-b mt-6 mb-4 border-gray-200">
                                 <nav className="flex space-x-4">
@@ -130,11 +131,6 @@ const ExamDetailsPage: React.FC = () => {
                         {/* <CommentSection /> */}
                     </div>
 
-                    {/* Right Sidebar */}
-                    {isAuthenticated && (
-                        <Sidebar />
-                    )
-                    }
 
                 </div>
             </main>

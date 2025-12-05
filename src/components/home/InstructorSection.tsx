@@ -54,7 +54,7 @@ const InstructorSection: React.FC = () => {
       </div>
 
       {/* Tiêu đề lớn */}
-      <h2 className="text-black text-3xl font-bold mb-10 text-center">
+      <h2 className="text-black text-xl md:text-3xl font-bold mb-10 text-center">
         Meet Our Expert Teachers
       </h2>
 

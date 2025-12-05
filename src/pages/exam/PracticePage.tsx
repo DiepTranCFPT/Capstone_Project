@@ -5,6 +5,7 @@ import FlashCard from '~/components/practice/FlashCard';
 import PracticeQuizCard from '~/components/practice/PracticeQuizCard';
 import FRQCard from '~/components/practice/FRQCard';
 import { usePracticeQuestions } from '~/hooks/usePracticeQuestions';
+import { useExams } from '~/hooks/useExams';
 
 const PracticePage: React.FC = () => {
     const { examId, practiceType, mode } = useParams<{
@@ -19,6 +20,13 @@ const PracticePage: React.FC = () => {
     const [shuffledQuestions, setShuffledQuestions] = useState<typeof apiQuestions>([]);
     const [correctAnswers, setCorrectAnswers] = useState<boolean[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
+    const { currentExam, fetchExamById } = useExams();
+
+    useEffect(() => {
+        if (examId) {
+            fetchExamById(examId);
+        }
+    }, [examId]);
 
     useEffect(() => {
         // Update shuffled questions when API questions change
@@ -126,7 +134,7 @@ const PracticePage: React.FC = () => {
                     {/* Mode indicator */}
                     <div className="flex items-center space-x-4 text-sm">
                         <span className="text-gray-600">Bài học:</span>
-                        <span className="text-emerald-400 font-medium">{examId}</span>
+                        <span className="text-emerald-400 font-medium">{currentExam?.title}</span>
                         <span className="text-gray-600">•</span>
                         <span className="text-gray-600">Loại:</span>
                         <span className="text-blue-400 font-medium capitalize">{practiceType}</span>

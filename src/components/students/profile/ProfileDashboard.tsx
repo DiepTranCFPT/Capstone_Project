@@ -12,6 +12,7 @@ import { useAuth } from "~/hooks/useAuth";
 import { getCurrentUserApi } from "~/services/authService";
 import { toast } from "~/components/common/Toast";
 import { useStudentConnection } from "~/hooks/useStudentConnection";
+import { useWalletBalance } from "~/hooks/useWalletBalance";
 
 const ProfileDashboard: React.FC = () => {
   const { user, loading: authLoading, logout } = useAuth();
@@ -20,6 +21,7 @@ const ProfileDashboard: React.FC = () => {
   const [changePasswordModalVisible, setChangePasswordModalVisible] = useState(false);
   const [connectionCodeModalVisible, setConnectionCodeModalVisible] = useState(false);
   const { connectionCode, loading: connectionLoading, fetchConnectionCode } = useStudentConnection();
+  const { balance: tokenBalance, loading: balanceLoading } = useWalletBalance();
 
   // Use mock data for subjects and test results since they're not in the auth user object
   const profile: UserProfile = mockProfile;
@@ -74,7 +76,7 @@ const ProfileDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="p-6 max-w-6xl mx-auto grid gap-6">
+      <div className="md:p-6 max-w-6xl mx-auto grid gap-6">
         {/* Header đơn giản */}
         <Card className="mb-6 shadow-sm">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -101,7 +103,11 @@ const ProfileDashboard: React.FC = () => {
 
                   <div className="flex gap-3">
                     <span className="text-gray-600">Token:</span>
-                    <span className="font-medium text-green-600">{user.tokenBalance}</span>
+                    {balanceLoading ? (
+                      <Spin size="small" />
+                    ) : (
+                      <span className="font-medium text-green-600">{tokenBalance ?? user.tokenBalance}</span>
+                    )}
                   </div>
 
                   {/* Action buttons */}
