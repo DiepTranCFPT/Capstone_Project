@@ -193,7 +193,7 @@ const TeacherRatingsViewPage: React.FC = () => {
                                             <div className="flex-grow">
                                                 <div className="flex items-center gap-3 mb-2">
                                                     <h4 className="font-semibold text-gray-800">
-                                                        {String(rating.studentName || "Anonymous Student")}
+                                                        {String(rating.userFullName || "Anonymous Student")}
                                                     </h4>
                                                     {rating.isVerified && (
                                                         <span className="flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-medium">
@@ -216,9 +216,13 @@ const TeacherRatingsViewPage: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        {rating.comment && (
+                                        {rating.comment ? (
                                             <p className="text-gray-700 mb-3 leading-relaxed">
                                                 {String(rating.comment)}
+                                            </p>
+                                        ) : (
+                                            <p className="text-gray-700 mb-3 leading-relaxed">
+                                                No comment provided.
                                             </p>
                                         )}
 
