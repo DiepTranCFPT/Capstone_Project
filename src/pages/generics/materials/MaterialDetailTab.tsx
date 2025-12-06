@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import type { Material } from "~/types/material";
 import { useMaterialRegister } from "~/hooks/useMaterialRegister";
 import { useRegisteredMaterials } from "~/hooks/useRegisteredMaterials";
+import { useAuth } from "~/hooks/useAuth";
 import UserService from "~/services/userService";
 import type { User } from "~/types/user";
 import MaterialThumbnail from "~/components/common/MaterialThumbnail";
@@ -18,11 +19,14 @@ interface MaterialDetailTabProps {
 const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
   const { register, loading, error } = useMaterialRegister();
   const navigate = useNavigate();
+  const { user, spendTokens } = useAuth();
   const [instructor, setInstructor] = useState<User | null>(null);
   const [loadingInstructor, setLoadingInstructor] = useState(false);
   const { getLessonsByLearningMaterial, loading: lessonsLoading } = useLesson();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const { materials: registeredMaterials, refetch: refetchRegisteredMaterials } = useRegisteredMaterials();
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
   const [localRegisteredIds, setLocalRegisteredIds] = useState<string[]>(() => {
     // Initialize from localStorage as backup
     try {
@@ -126,33 +130,50 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
     }
   }, [material?.id, getLessonsByLearningMaterial]);
 
-  const handleRegister = async () => {
+  const handleRegister = () => {
+    console.log("🟢 Register button clicked for material:", material.id);
+    setConfirmVisible(true);
+  };
+
+  const handleConfirmRegister = async () => {
+    console.log("🟢 Confirm register clicked for material:", material.id);
+
+    // Chỉ kiểm tra đăng nhập, không tự check/trừ token ở FE
+    if (!user) {
+      message.error("Bạn cần đăng nhập để đăng ký tài liệu.");
+      setConfirmVisible(false);
+      navigate("/auth");
+      return;
+    }
+
     try {
-      console.log("🔄 Starting registration for material:", material.id);
+      setConfirmLoading(true);
+      console.log("🔄 Calling API /learning-materials/register with id:", material.id);
+
       const result = await register(material.id);
-      console.log("✅ Registration successful, result:", result);
-      
-      // Save to localStorage as backup (in case API GET doesn't work)
+      console.log("✅ Registration API successful, result:", result);
+
+      // Lưu local để đồng bộ UI
       saveRegisteredMaterialId(material.id);
-      
+
       message.success("Đăng ký tài liệu thành công!");
-      
-      // Try to refresh registered materials list from API
-      console.log("🔄 Refreshing registered materials list from API...");
+
+      // Thử refetch danh sách đã đăng ký
       try {
         await refetchRegisteredMaterials();
       } catch (apiError) {
-        console.warn("⚠️ Failed to refresh from API, using localStorage backup:", apiError);
-        // If API fails, we still have localStorage backup
+        console.warn("⚠️ Failed to refresh registered materials from API:", apiError);
       }
-      
-      // Chuyển đến trang học sau khi đăng ký thành công
+
+      setConfirmVisible(false);
+
+      // Điều hướng sang trang học
       setTimeout(() => {
         navigate(`/materials/${material.id}/learn`);
-      }, 1000);
+      }, 500);
     } catch (err: unknown) {
-      console.log("❌ Registration failed in handleRegister:", err);
-      // Kiểm tra nếu đã đăng ký rồi (code 1033)
+      console.log("❌ Registration failed in handleConfirmRegister:", err);
+
       if (
         typeof err === "object" &&
         err !== null &&
@@ -169,30 +190,25 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
           } 
         };
         
-        // Nếu đã đăng ký rồi, lưu vào localStorage và refresh list
-        if (axiosError.response?.data?.code === 1033 || 
-            axiosError.response?.data?.message?.includes("already registered")) {
-          // Save to localStorage as backup (this will trigger re-render via state update)
+        // Nếu đã đăng ký rồi
+        if (
+          axiosError.response?.data?.code === 1033 ||
+          axiosError.response?.data?.message?.includes("already registered")
+        ) {
           saveRegisteredMaterialId(material.id);
-          
-          // Try to refresh registered materials list from API
-          console.log("🔄 Material already registered, refreshing list from API...");
+
           try {
             await refetchRegisteredMaterials();
           } catch (apiError) {
-            console.warn("⚠️ Failed to refresh from API, using localStorage backup:", apiError);
-            // If API fails, we still have localStorage backup
+            console.warn("⚠️ Failed to refresh from API after already-registered error:", apiError);
           }
-          
-          // Show message and let component re-render to show "Continue Learning" button
+
           message.info("Bạn đã đăng ký khóa học này rồi.");
-          
-          // Don't navigate immediately - let the button update to "Continue Learning"
-          // The state update from saveRegisteredMaterialId will trigger re-render
+          setConfirmVisible(false);
           return;
         }
-        
-        // Xử lý các lỗi khác
+
+        // Các lỗi khác: để backend quyết định (bao gồm không đủ token)
         let errorMessage = "Đã xảy ra lỗi khi đăng ký tài liệu.";
         if (axiosError.response?.data?.message) {
           errorMessage = axiosError.response.data.message;
@@ -211,6 +227,8 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
       } else {
         message.error("Đã xảy ra lỗi khi đăng ký tài liệu.");
       }
+    } finally {
+      setConfirmLoading(false);
     }
   };
   return (
@@ -485,6 +503,44 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
           },
         ]}
       />
+
+      {/* Custom confirm modal */}
+      {confirmVisible && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              Xác nhận đăng ký tài liệu
+            </h3>
+            <p className="text-sm text-gray-700 mb-5">
+              {material.price && material.price > 0
+                ? `Tài liệu này có giá ${new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                    maximumFractionDigits: 0,
+                  }).format(material.price)}. Số tiền này sẽ được trừ khỏi tài khoản của bạn. Bạn có chắc chắn muốn đăng ký?`
+                : "Bạn có chắc chắn muốn đăng ký tài liệu này?"}
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmVisible(false)}
+                disabled={confirmLoading}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm disabled:opacity-60"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRegister}
+                disabled={confirmLoading}
+                className="px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 text-sm font-semibold disabled:opacity-60"
+              >
+                {confirmLoading ? "Đang xử lý..." : "Xác nhận"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
