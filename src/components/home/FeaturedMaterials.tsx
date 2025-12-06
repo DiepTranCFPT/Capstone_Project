@@ -2,9 +2,11 @@ import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import MaterialThumbnail from "~/components/common/MaterialThumbnail";
 import { usePublicMaterials } from "~/hooks/usePublicMaterials";
+import { useRegisteredMaterials } from "~/hooks/useRegisteredMaterials";
 
 const FeaturedMaterials: React.FC = () => {
   const { materials, loading, error } = usePublicMaterials();
+  const { materials: registeredMaterials } = useRegisteredMaterials();
   const [activeCategory, setActiveCategory] = useState("All Categories");
 
   const categories = useMemo(() => {
@@ -79,7 +81,18 @@ const FeaturedMaterials: React.FC = () => {
         {!loading &&
           !error &&
           displayedMaterials.map((material) => {
-            const priceLabel = material.isPublic ? "Free" : "Premium";
+            const price = material.price ?? 0;
+            const isFree = price === 0 || price === undefined || price === null;
+            const isRegistered = registeredMaterials.some((m) => m.id === material.id);
+            const priceLabel = isRegistered 
+              ? "Đã đăng ký" 
+              : isFree 
+              ? "Free" 
+              : new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                  maximumFractionDigits: 0,
+                }).format(price);
             const thumbnail =
               material.thumbnail || material.fileImage || material.contentUrl || "";
 
@@ -95,8 +108,12 @@ const FeaturedMaterials: React.FC = () => {
                   roundedClass="rounded-[10px]"
                   className="mb-4"
                 />
-                <span className="text-xs font-bold text-teal-700 bg-slate-200 px-3 py-1 rounded-[20px] w-fit">
-                  {priceLabel}
+                <span className={`text-xs font-bold px-3 py-1 rounded-[20px] w-fit ${
+                  isFree 
+                    ? "bg-green-100 text-green-600" 
+                    : "bg-orange-100 text-orange-600"
+                }`}>
+                  {isFree ? "Free" : "TOKEN"}
                 </span>
                 <h3 className="text-sm font-bold mt-3 mb-2 line-clamp-2">{material.title}</h3>
                 <div className="text-[11px] text-black/50 space-y-1 mb-4">
@@ -106,7 +123,9 @@ const FeaturedMaterials: React.FC = () => {
                   {material.authorName && <div>Giảng viên: {material.authorName}</div>}
                 </div>
                 <div className="flex justify-between items-center mt-auto">
-                  <span className="text-[10px] font-semibold">{priceLabel}</span>
+                  <span className={`text-[10px] font-semibold ${isRegistered ? "text-green-600" : ""}`}>
+                    {priceLabel}
+                  </span>
                   <Link
                     to={`/materials/${material.id}`}
                     className="text-[10px] px-3 py-1 border border-black/10 rounded-[10px] hover:bg-gray-100 transition-colors"

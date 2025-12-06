@@ -4,25 +4,60 @@ import { useNavigate } from "react-router-dom";
 import type { Material } from "~/types/material";
 import { useMaterialRegister } from "~/hooks/useMaterialRegister";
 import { useRegisteredMaterials } from "~/hooks/useRegisteredMaterials";
+import { useAuth } from "~/hooks/useAuth";
 import UserService from "~/services/userService";
 import type { User } from "~/types/user";
 import MaterialThumbnail from "~/components/common/MaterialThumbnail";
 import { useLesson } from "~/hooks/useLesson";
 import type { Lesson } from "~/types/lesson";
 import { PlayCircleOutlined, FileTextOutlined, ClockCircleOutlined } from "@ant-design/icons";
+import { useLearningMaterialRatings } from "~/hooks/useLearningMaterialRatings";
+import { FaStar } from "react-icons/fa";
+import type { LearningMaterialRating } from "~/types/learningMaterialRating";
 
 interface MaterialDetailTabProps {
   material: Material;
 }
 
+// Extended rating type với studentName (có thể có từ API)
+interface RatingWithStudentName extends LearningMaterialRating {
+  studentName?: string;
+  userName?: string;
+  userId?: string; // Có thể API trả về userId thay vì studentId
+  student?: {
+    firstName?: string;
+    lastName?: string;
+    id?: string;
+  };
+  user?: {
+    firstName?: string;
+    lastName?: string;
+    id?: string;
+  };
+}
+
 const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
   const { register, loading, error } = useMaterialRegister();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [instructor, setInstructor] = useState<User | null>(null);
   const [loadingInstructor, setLoadingInstructor] = useState(false);
   const { getLessonsByLearningMaterial, loading: lessonsLoading } = useLesson();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const { materials: registeredMaterials, refetch: refetchRegisteredMaterials } = useRegisteredMaterials();
+  const {
+    ratings,
+    statistics,
+    loading: ratingsLoading,
+    error: ratingsError,
+    fetchRatingsByMaterial,
+    fetchStatisticsByMaterial,
+    totalElements,
+    totalPages,
+    currentPage,
+  } = useLearningMaterialRatings();
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
   const [localRegisteredIds, setLocalRegisteredIds] = useState<string[]>(() => {
     // Initialize from localStorage as backup
     try {
@@ -32,6 +67,7 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
       return [];
     }
   });
+  const [studentNames, setStudentNames] = useState<Record<string, string>>({});
   
   // Helper function to save registered material ID to localStorage (as backup)
   const saveRegisteredMaterialId = (materialId: string) => {
@@ -126,33 +162,153 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
     }
   }, [material?.id, getLessonsByLearningMaterial]);
 
-  const handleRegister = async () => {
+  // Fetch ratings và statistics
+  useEffect(() => {
+    if (material?.id) {
+      fetchRatingsByMaterial(material.id, 0, 10, "createdAt", "DESC");
+      fetchStatisticsByMaterial(material.id);
+    }
+  }, [material?.id, fetchRatingsByMaterial, fetchStatisticsByMaterial]);
+
+  // Helper function để render stars
+  const renderStars = (rating: number) => {
+    return (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <FaStar
+            key={star}
+            className={star <= rating ? "text-yellow-400" : "text-gray-300"}
+            size={16}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  // Helper function để lấy tên người đánh giá
+  const getStudentName = (rating: RatingWithStudentName): string => {
+    if (rating.studentName?.trim()) return rating.studentName.trim();
+    if (rating.userName?.trim()) return rating.userName.trim();
+    
+    if (rating.student?.firstName || rating.student?.lastName) {
+      const name = `${rating.student.firstName || ''} ${rating.student.lastName || ''}`.trim();
+      if (name) return name;
+    }
+    
+    if (rating.user?.firstName || rating.user?.lastName) {
+      const name = `${rating.user.firstName || ''} ${rating.user.lastName || ''}`.trim();
+      if (name) return name;
+    }
+    
+    const userId = rating.studentId || rating.userId;
+    if (userId && studentNames[userId]) {
+      return studentNames[userId];
+    }
+    
+    return "Học sinh";
+  };
+
+  // Fetch tên học sinh từ studentId hoặc userId nếu chưa có
+  useEffect(() => {
+    const fetchStudentNames = async () => {
+      if (ratings.length === 0) return;
+      
+      const ratingsToFetch = ratings.filter((rating) => {
+        const ratingWithName = rating as RatingWithStudentName;
+        const userId = rating.studentId || ratingWithName.userId;
+        
+        if (!userId) return false;
+        
+        const hasNameInRating = !!(
+          ratingWithName.studentName ||
+          ratingWithName.userName ||
+          ratingWithName.student?.firstName ||
+          ratingWithName.user?.firstName
+        );
+        
+        return !hasNameInRating && !studentNames[userId];
+      });
+
+      if (ratingsToFetch.length === 0) return;
+
+      const fetchPromises = ratingsToFetch.map(async (rating) => {
+        const ratingWithName = rating as RatingWithStudentName;
+        const userId = rating.studentId || ratingWithName.userId;
+        
+        if (!userId) return;
+        
+        try {
+          const response = await UserService.getUserProfile(userId);
+          
+          if (response?.data) {
+            const fullName = `${response.data.firstName || ''} ${response.data.lastName || ''}`.trim();
+            
+            if (fullName) {
+              setStudentNames((prev) => {
+                if (prev[userId]) return prev;
+                return {
+                  ...prev,
+                  [userId]: fullName,
+                };
+              });
+            }
+          }
+        } catch (err) {
+          // Ignore errors
+        }
+      });
+
+      await Promise.all(fetchPromises);
+    };
+
+    fetchStudentNames();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ratings]);
+
+  const handleRegister = () => {
+    console.log("🟢 Register button clicked for material:", material.id);
+    setConfirmVisible(true);
+  };
+
+  const handleConfirmRegister = async () => {
+    console.log("🟢 Confirm register clicked for material:", material.id);
+
+    // Chỉ kiểm tra đăng nhập, không tự check/trừ token ở FE
+    if (!user) {
+      message.error("Bạn cần đăng nhập để đăng ký tài liệu.");
+      setConfirmVisible(false);
+      navigate("/auth");
+      return;
+    }
+
     try {
-      console.log("🔄 Starting registration for material:", material.id);
+      setConfirmLoading(true);
+      console.log("🔄 Calling API /learning-materials/register with id:", material.id);
+
       const result = await register(material.id);
-      console.log("✅ Registration successful, result:", result);
-      
-      // Save to localStorage as backup (in case API GET doesn't work)
+      console.log("✅ Registration API successful, result:", result);
+
+      // Lưu local để đồng bộ UI
       saveRegisteredMaterialId(material.id);
-      
+
       message.success("Đăng ký tài liệu thành công!");
-      
-      // Try to refresh registered materials list from API
-      console.log("🔄 Refreshing registered materials list from API...");
+
+      // Thử refetch danh sách đã đăng ký
       try {
         await refetchRegisteredMaterials();
       } catch (apiError) {
-        console.warn("⚠️ Failed to refresh from API, using localStorage backup:", apiError);
-        // If API fails, we still have localStorage backup
+        console.warn("⚠️ Failed to refresh registered materials from API:", apiError);
       }
-      
-      // Chuyển đến trang học sau khi đăng ký thành công
+
+      setConfirmVisible(false);
+
+      // Điều hướng sang trang học
       setTimeout(() => {
         navigate(`/materials/${material.id}/learn`);
-      }, 1000);
+      }, 500);
     } catch (err: unknown) {
-      console.log("❌ Registration failed in handleRegister:", err);
-      // Kiểm tra nếu đã đăng ký rồi (code 1033)
+      console.log("❌ Registration failed in handleConfirmRegister:", err);
+
       if (
         typeof err === "object" &&
         err !== null &&
@@ -169,30 +325,25 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
           } 
         };
         
-        // Nếu đã đăng ký rồi, lưu vào localStorage và refresh list
-        if (axiosError.response?.data?.code === 1033 || 
-            axiosError.response?.data?.message?.includes("already registered")) {
-          // Save to localStorage as backup (this will trigger re-render via state update)
+        // Nếu đã đăng ký rồi
+        if (
+          axiosError.response?.data?.code === 1033 ||
+          axiosError.response?.data?.message?.includes("already registered")
+        ) {
           saveRegisteredMaterialId(material.id);
-          
-          // Try to refresh registered materials list from API
-          console.log("🔄 Material already registered, refreshing list from API...");
+
           try {
             await refetchRegisteredMaterials();
           } catch (apiError) {
-            console.warn("⚠️ Failed to refresh from API, using localStorage backup:", apiError);
-            // If API fails, we still have localStorage backup
+            console.warn("⚠️ Failed to refresh from API after already-registered error:", apiError);
           }
-          
-          // Show message and let component re-render to show "Continue Learning" button
+
           message.info("Bạn đã đăng ký khóa học này rồi.");
-          
-          // Don't navigate immediately - let the button update to "Continue Learning"
-          // The state update from saveRegisteredMaterialId will trigger re-render
+          setConfirmVisible(false);
           return;
         }
-        
-        // Xử lý các lỗi khác
+
+        // Các lỗi khác: để backend quyết định (bao gồm không đủ token)
         let errorMessage = "Đã xảy ra lỗi khi đăng ký tài liệu.";
         if (axiosError.response?.data?.message) {
           errorMessage = axiosError.response.data.message;
@@ -211,6 +362,8 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
       } else {
         message.error("Đã xảy ra lỗi khi đăng ký tài liệu.");
       }
+    } finally {
+      setConfirmLoading(false);
     }
   };
   return (
@@ -481,10 +634,144 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
           {
             key: "reviews",
             label: "Reviews",
-            children: <p>Reviews will go here...</p>,
+            children: (
+              <div>
+                {/* Statistics Section */}
+                {statistics && (
+                  <div className="mb-8 bg-gradient-to-br from-teal-50 to-teal-100 rounded-2xl p-6 border border-teal-200">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                      <div className="flex items-center gap-4">
+                        <div className="text-center">
+                          <div className="flex items-center gap-2 mb-2">
+                            {renderStars(Math.round(statistics.averageRating))}
+                            <span className="text-3xl font-bold text-gray-800">
+                              {statistics.averageRating.toFixed(1)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            ({statistics.totalRatings} {statistics.totalRatings === 1 ? 'đánh giá' : 'đánh giá'})
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-center md:text-right">
+                        <p className="text-2xl font-bold text-teal-700 mb-1">
+                          {statistics.totalRatings}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Tổng số đánh giá
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Ratings List */}
+                {ratingsLoading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Spin size="large" />
+                  </div>
+                ) : ratingsError ? (
+                  <div className="text-center py-12">
+                    <p className="text-red-500">{ratingsError}</p>
+                  </div>
+                ) : ratings.length === 0 ? (
+                  <Empty
+                    description="Chưa có đánh giá nào cho tài liệu này"
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    {ratings.map((rating) => {
+                      const ratingWithName = rating as RatingWithStudentName;
+                      const displayName = getStudentName(ratingWithName);
+                      
+                      return (
+                        <div
+                          key={rating.id}
+                          className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all duration-200"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-grow">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h4 className="font-semibold text-gray-800">
+                                  {displayName}
+                                </h4>
+                              </div>
+                              {renderStars(rating.rating)}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {rating.createdAt
+                                ? new Date(rating.createdAt).toLocaleDateString("vi-VN", {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  })
+                                : ""}
+                            </div>
+                          </div>
+
+                          {rating.comment && (
+                            <p className="text-gray-700 mb-3 leading-relaxed">
+                              {rating.comment}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Pagination Info */}
+                    {totalPages > 1 && (
+                      <div className="mt-6 text-center text-gray-600">
+                        <p>
+                          Hiển thị {ratings.length} trong tổng số {totalElements} đánh giá (Trang {currentPage + 1} / {totalPages})
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ),
           },
         ]}
       />
+
+      {/* Custom confirm modal */}
+      {confirmVisible && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              Xác nhận đăng ký tài liệu
+            </h3>
+            <p className="text-sm text-gray-700 mb-5">
+              {material.price && material.price > 0
+                ? `Tài liệu này có giá ${new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                    maximumFractionDigits: 0,
+                  }).format(material.price)}. Số tiền này sẽ được trừ khỏi tài khoản của bạn. Bạn có chắc chắn muốn đăng ký?`
+                : "Bạn có chắc chắn muốn đăng ký tài liệu này?"}
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmVisible(false)}
+                disabled={confirmLoading}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm disabled:opacity-60"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRegister}
+                disabled={confirmLoading}
+                className="px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 text-sm font-semibold disabled:opacity-60"
+              >
+                {confirmLoading ? "Đang xử lý..." : "Xác nhận"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

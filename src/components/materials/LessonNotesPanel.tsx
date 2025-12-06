@@ -46,16 +46,6 @@ const LessonNotesPanel: React.FC<LessonNotesPanelProps> = ({
     }
   }, [isActive, lesson?.id, userId, fetchNotesByLessonAndUser]);
 
-  // Sync textarea value with existing note (BE allows max 1 note per lesson/user)
-  useEffect(() => {
-    if (!isActive) return;
-    if (editingNoteId) return;
-    if (notes.length === 0) return;
-
-    const first = notes[0];
-    setNoteContent(String(first.description ?? ""));
-  }, [isActive, notes, editingNoteId]);
-
   const handleSaveNote = async () => {
     if (!lesson?.id || !userId) {
       message.error("Không xác định được bài học hoặc người dùng.");
@@ -70,26 +60,27 @@ const LessonNotesPanel: React.FC<LessonNotesPanelProps> = ({
 
     setNoteSubmitting(true);
 
-    const existing = notes[0];
-    if (existing) {
-      const updated = await updateNote(existing.id, { description: trimmed });
+    if (editingNoteId) {
+      const updated = await updateNote(editingNoteId, { description: trimmed });
       if (updated) {
         message.success("Đã cập nhật ghi chú.");
+        handleCancelEdit();
+        await fetchNotesByLessonAndUser(lesson.id, userId);
       }
-      setNoteSubmitting(false);
-      return;
-    }
+    } else {
+      const created = await createNote({
+        description: trimmed,
+        lessonId: lesson.id,
+        userId,
+      });
 
-    const created = await createNote({
-      description: trimmed,
-      lessonId: lesson.id,
-      userId,
-    });
-
-    if (created) {
-      message.success("Đã lưu ghi chú.");
-      setNoteContent("");
+      if (created) {
+        message.success("Đã lưu ghi chú.");
+        setNoteContent("");
+        await fetchNotesByLessonAndUser(lesson.id, userId);
+      }
     }
+    
     setNoteSubmitting(false);
   };
 
@@ -129,16 +120,12 @@ const LessonNotesPanel: React.FC<LessonNotesPanelProps> = ({
     const success = await deleteNote(noteToDelete.id);
     if (success) {
       message.success("Đã xoá ghi chú.");
-      if (notes.length <= 1) {
-        setNoteContent("");
-      }
     }
     setDeleteLoading(false);
     setNoteToDelete(null);
   };
 
   const cancelDeleteNote = () => {
-    if (deleteLoading) return;
     setNoteToDelete(null);
   };
 
