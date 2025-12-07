@@ -1,147 +1,198 @@
-import React from 'react';
-import { Card, Col, Row, Statistic, Table, Tag, List, Avatar, Button } from 'antd';
+import React, { useMemo } from 'react';
+import { Card, Col, Row, Statistic, Table, Tag, Button, Spin, Empty } from 'antd';
 import {
     UsergroupAddOutlined,
     BookOutlined,
-    CheckSquareOutlined,
-    RiseOutlined,
-    ClockCircleOutlined,
-    AlertOutlined,
-    RightOutlined
+    DollarOutlined,
+    RightOutlined,
+    TrophyOutlined,
+    StarOutlined,
+    FileTextOutlined,
+    UploadOutlined,
+    BarChartOutlined
 } from '@ant-design/icons';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Link } from 'react-router-dom';
+import { useTeacherDashboardStats } from '~/hooks/useTeacherDashboardStats';
+import { useAuth } from '~/hooks/useAuth';
 
-// Mock Data cho biểu đồ phổ điểm
-const scoreData = [
-    { range: '0-20', students: 2 },
-    { range: '21-40', students: 5 },
-    { range: '41-60', students: 15 },
-    { range: '61-80', students: 45 },
-    { range: '81-100', students: 28 },
-];
+const PRIMARY_COLOR = '#3CBCB2';
 
-// Mock Data cho học sinh cần chú ý (At Risk)
-const studentsAtRisk = [
-    { id: 1, name: 'Nguyen Van C', class: 'AP Physics', reason: 'Low Score (45%)', avatar: 'https://i.pravatar.cc/150?img=3' },
-    { id: 2, name: 'Tran Thi D', class: 'Calculus BC', reason: 'Inactive (7 days)', avatar: 'https://i.pravatar.cc/150?img=5' },
-    { id: 3, name: 'Le Van E', class: 'AP Physics', reason: 'Missed Exam', avatar: 'https://i.pravatar.cc/150?img=8' },
-];
-
-// Mock Data cho bài thi sắp tới
-const upcomingExams = [
-    { id: 1, title: 'Mid-term Physics', date: '2025-10-25', time: '09:00 AM', class: 'AP Physics C' },
-    { id: 2, title: 'Calculus Quiz 3', date: '2025-10-28', time: '02:00 PM', class: 'AP Calculus BC' },
+const quickActions = [
+    { title: 'Question Bank', link: '/teacher/question-bank', icon: <FileTextOutlined /> },
+    { title: 'Upload Material', link: '/teacher/materials', icon: <UploadOutlined /> },
+    { title: 'View Reports', link: '/teacher/analytics', icon: <BarChartOutlined /> },
 ];
 
 const TeacherDashboardPage: React.FC = () => {
+    const { user } = useAuth();
+    const { stats, loading } = useTeacherDashboardStats();
+
+    const topicData = useMemo(() => {
+        if (!stats?.questionsByTopic) return [];
+        return Object.entries(stats.questionsByTopic).map(([topic, count]) => ({
+            topic: topic.length > 15 ? topic.substring(0, 15) + '...' : topic,
+            fullTopic: topic,
+            count: count
+        })).sort((a, b) => b.count - a.count).slice(0, 8);
+    }, [stats]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex justify-center items-center bg-gray-50">
+                <Spin size="large" />
+            </div>
+        );
+    }
+
     return (
-        <div className="p-2">
-            <div className="flex justify-between items-center mb-6">
+        <div className="p-6 bg-gray-50 min-h-screen">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
-                    <h1 className='text-2xl font-bold text-gray-800'>Teacher Dashboard</h1>
-                    <p className="text-gray-500">Welcome back! Here's what's happening with your classes.</p>
+                    <h1 className="text-3xl font-bold text-gray-800">Teacher Dashboard</h1>
+                    <p className="text-gray-500 mt-1">Welcome back, {user?.firstName}!</p>
                 </div>
                 <Link to="/teacher/create-template">
-                    <Button type="primary" size="large" icon={<BookOutlined />}>Create New Exam</Button>
+                    <Button
+                        type="primary"
+                        size="large"
+                        icon={<BookOutlined />}
+                        style={{ backgroundColor: PRIMARY_COLOR, borderColor: PRIMARY_COLOR }}
+                    >
+                        Create New Exam
+                    </Button>
                 </Link>
             </div>
 
-            {/* Quick Stats */}
-            <Row gutter={[16, 16]} className='mb-6'>
-                <Col xs={24} sm={12} md={6}>
-                    <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow">
+            {/* Stats Cards */}
+            <Row gutter={[16, 16]} className="mb-8">
+                <Col xs={24} sm={12} lg={6}>
+                    <Card bordered={false} className="rounded-lg shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
-                            title='Total Students'
-                            value={125}
-                            prefix={<UsergroupAddOutlined className="text-blue-500" />}
-                            suffix={<span className="text-xs text-green-500 bg-green-50 px-2 py-0.5 rounded-full ml-2">+5 new</span>}
+                            title={<span className="text-gray-500">Students Tested</span>}
+                            value={stats?.totalStudentsTested || 0}
+                            prefix={<UsergroupAddOutlined style={{ color: PRIMARY_COLOR }} />}
                         />
                     </Card>
                 </Col>
-                <Col xs={24} sm={12} md={6}>
-                    <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow">
+                <Col xs={24} sm={12} lg={6}>
+                    <Card bordered={false} className="rounded-lg shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
-                            title="Active Classes"
-                            value={4}
-                            prefix={<BookOutlined className="text-purple-500" />}
+                            title={<span className="text-gray-500">Total Attempts</span>}
+                            value={stats?.totalExamAttempts || 0}
+                            prefix={<BookOutlined style={{ color: PRIMARY_COLOR }} />}
                         />
                     </Card>
                 </Col>
-                <Col xs={24} sm={12} md={6}>
-                    <Link to="/teacher/review-queue">
-                        <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-red-500">
-                            <Statistic
-                                title="Pending Grading"
-                                value={12}
-                                valueStyle={{ color: '#cf1322' }}
-                                prefix={<CheckSquareOutlined />}
-                                suffix={<span className="text-xs text-gray-400 ml-2">Needs Action</span>}
-                            />
-                        </Card>
-                    </Link>
-                </Col>
-                <Col xs={24} sm={12} md={6}>
-                    <Card bordered={false} className="shadow-sm hover:shadow-md transition-shadow">
+                <Col xs={24} sm={12} lg={6}>
+                    <Card bordered={false} className="rounded-lg shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
-                            title="Avg. Class Score"
-                            value={78.5}
+                            title={<span className="text-gray-500">Est. Revenue</span>}
+                            value={stats?.estimatedRevenue || 0}
+                            prefix={<DollarOutlined style={{ color: PRIMARY_COLOR }} />}
+                        />
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card bordered={false} className="rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                        <Statistic
+                            title={<span className="text-gray-500">Avg Rating</span>}
+                            value={stats?.averageRating || 0}
                             precision={1}
-                            prefix={<RiseOutlined className="text-green-600" />}
-                            suffix="%"
+                            prefix={<StarOutlined style={{ color: PRIMARY_COLOR }} />}
+                            suffix="/ 5"
+                        />
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card bordered={false} className="rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                        <Statistic
+                            title={<span className="text-gray-500">Pending Reviews</span>}
+                            value={stats?.pendingManualReviews || 0}
+                            prefix={<BookOutlined style={{ color: PRIMARY_COLOR }} />}
                         />
                     </Card>
                 </Col>
             </Row>
 
-            <Row gutter={[24, 24]}>
-                {/* Left Column: Charts & Analytics */}
+            <Row gutter={[16, 16]}>
+                {/* Left Column */}
                 <Col xs={24} lg={16}>
-                    <div className='flex flex-col gap-4'>
-                        <Card title="Student Score Distribution (Recent Exams)" className="shadow-sm mb-6">
+                    <div className="flex flex-col gap-4">
+                        {/* Chart */}
+                        <Card
+                            title="Questions by Topic"
+                            bordered={false}
+                            className="rounded-lg shadow-sm"
+                        >
                             <div style={{ height: 300 }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={scoreData}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                        <XAxis dataKey="range" />
-                                        <YAxis />
-                                        <Tooltip
-                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                                        />
-                                        <Bar dataKey="students" fill="#3CBCB2" radius={[4, 4, 0, 0]} name="Number of Students" />
-                                    </BarChart>
-                                </ResponsiveContainer>
+                                {topicData.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={topicData}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                            <XAxis dataKey="topic" tick={{ fontSize: 12 }} />
+                                            <YAxis tick={{ fontSize: 12 }} />
+                                            <Tooltip />
+                                            <Bar dataKey="count" fill={PRIMARY_COLOR} radius={[4, 4, 0, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <Empty description="No data available" />
+                                )}
                             </div>
                         </Card>
 
-                        <Card title={<span className="flex items-center gap-2"><AlertOutlined className="text-red-500" /> Students At Risk (Need Attention)</span>} className="shadow-sm">
+                        {/* Top Exams Table */}
+                        <Card
+                            title={
+                                <span className="flex items-center gap-2">
+                                    <TrophyOutlined style={{ color: '#f59e0b' }} />
+                                    Top Performing Exams
+                                </span>
+                            }
+                            bordered={false}
+                            className="rounded-lg shadow-sm"
+                        >
                             <Table
-                                dataSource={studentsAtRisk}
-                                rowKey="id"
+                                dataSource={stats?.topPerformingExams || []}
+                                rowKey="templateId"
                                 pagination={false}
+                                size="middle"
                                 columns={[
                                     {
-                                        title: 'Student',
-                                        dataIndex: 'name',
-                                        key: 'name',
-                                        render: (text, record) => (
-                                            <div className="flex items-center gap-3">
-                                                <Avatar src={record.avatar} />
-                                                <span className="font-medium">{text}</span>
-                                            </div>
+                                        title: 'Exam',
+                                        dataIndex: 'title',
+                                        key: 'title',
+                                        ellipsis: true,
+                                    },
+                                    {
+                                        title: 'Attempts',
+                                        dataIndex: 'attempts',
+                                        key: 'attempts',
+                                        align: 'center',
+                                        width: 100,
+                                        render: (val: number) => <Tag color="cyan">{val || 0}</Tag>
+                                    },
+                                    {
+                                        title: 'Avg Score',
+                                        dataIndex: 'avgScore',
+                                        key: 'avgScore',
+                                        align: 'center',
+                                        width: 100,
+                                        render: (val: number) => (
+                                            <span className={val >= 70 ? 'text-green-600' : 'text-orange-500'}>
+                                                {val?.toFixed(1) || 0}%
+                                            </span>
                                         )
                                     },
-                                    { title: 'Class', dataIndex: 'class', key: 'class' },
                                     {
-                                        title: 'Reason',
-                                        dataIndex: 'reason',
-                                        key: 'reason',
-                                        render: (text) => <Tag color="volcano">{text}</Tag>
-                                    },
-                                    {
-                                        title: 'Action',
-                                        key: 'action',
-                                        render: () => <Button size="small" type="link">Message</Button>
+                                        title: 'Revenue',
+                                        dataIndex: 'revenue',
+                                        key: 'revenue',
+                                        align: 'center',
+                                        width: 120,
+                                        render: (val: number) => `${val?.toLocaleString() || 0} tokens`
                                     }
                                 ]}
                             />
@@ -149,54 +200,45 @@ const TeacherDashboardPage: React.FC = () => {
                     </div>
                 </Col>
 
-                {/* Right Column: Upcoming & Activity */}
+                {/* Right Column */}
                 <Col xs={24} lg={8}>
-                    <div className='flex flex-col gap-4'>
-                        <Card title="Upcoming Exams" className="shadow-sm mb-6" extra={<Link to="/teacher/templates">View All</Link>}>
-                            <List
-                                itemLayout="horizontal"
-                                dataSource={upcomingExams}
-                                renderItem={item => (
-                                    <List.Item>
-                                        <List.Item.Meta
-                                            avatar={<div className="bg-blue-50 p-2 rounded-lg"><ClockCircleOutlined className="text-blue-500 text-lg" /></div>}
-                                            title={<span className="font-semibold">{item.title}</span>}
-                                            description={
-                                                <div className="text-xs mt-1">
-                                                    <div className="font-medium text-gray-700">{item.class}</div>
-                                                    <div>{item.date} at {item.time}</div>
-                                                </div>
-                                            }
-                                        />
-                                    </List.Item>
-                                )}
-                            />
+                    <div className="flex flex-col gap-4">
+                        {/* Quick Actions */}
+                        <Card title="Quick Actions" bordered={false} className="rounded-lg shadow-sm">
+                            <div className="flex flex-col gap-2">
+                                {quickActions.map((action, index) => (
+                                    <Link to={action.link} key={index}>
+                                        <Button
+                                            block
+                                            size="large"
+                                            icon={action.icon}
+                                            className="text-left flex justify-between items-center"
+                                        >
+                                            {action.title}
+                                            <RightOutlined className="text-xs text-gray-400" />
+                                        </Button>
+                                    </Link>
+                                ))}
+                            </div>
                         </Card>
 
-                        <Card title="Quick Actions" className="shadow-sm">
-                            <div className="flex flex-col gap-3">
-                                <Link to="/teacher/question-bank">
-                                    <Button block icon={<RightOutlined />} className="text-left flex justify-between items-center">
-                                        Add Question to Bank
-                                    </Button>
-                                </Link>
-                                <Link to="/teacher/materials">
-                                    <Button block icon={<RightOutlined />} className="text-left flex justify-between items-center">
-                                        Upload Material
-                                    </Button>
-                                </Link>
-                                <Link to="/teacher/analytics">
-                                    <Button block icon={<RightOutlined />} className="text-left flex justify-between items-center">
-                                        View Detailed Reports
-                                    </Button>
-                                </Link>
+                        {/* Summary Card */}
+                        <Card
+                            
+                            className="rounded-lg shadow-sm"
+                            style={{ borderColor: PRIMARY_COLOR }}
+                        >
+                            <div className="text-center text-textTealColor py-4">
+                                <FileTextOutlined className="text-4xl mb-3" />
+                                <p className="text-textTealColor text-sm mb-1">Total Questions</p>
+                                <p className="text-4xl font-bold">{stats?.totalQuestions?.toLocaleString() || 0}</p>
                             </div>
                         </Card>
                     </div>
                 </Col>
             </Row>
         </div>
-    )
-}
+    );
+};
 
 export default TeacherDashboardPage;

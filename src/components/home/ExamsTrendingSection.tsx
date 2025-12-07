@@ -94,7 +94,7 @@ const ExamsTrendingSection: React.FC = () => {
                 {/* Card Header with gradient background */}
                 <div className="bg-gray-100 p-6 text-gray-700">
                   <div className="flex items-start justify-between mb-3">
-                    <span className="inline-block px-3 py-1 bg-gray-100 backdrop-blur-sm text-gray-700 text-xs font-semibold rounded-full">
+                    <span className="inline-block px-3 py-1 bg-gray-200 backdrop-blur-sm text-gray-700 text-xs font-semibold rounded-full">
                       {exam.subject.name}
                     </span>
                     <div className="flex items-center gap-1 bg-gray-100/20 backdrop-blur-sm px-2 py-1 rounded-full">

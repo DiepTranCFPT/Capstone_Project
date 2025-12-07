@@ -192,10 +192,10 @@ export default function SidebarStudent({ mobileOpen = false, onMobileClose }: St
               `}
               style={{
                 minHeight: (collapsed && !isMobile) ? 48 : undefined,
-                color: isActive ? '#14b8a6' : '#1f2937',
+                color: isActive ? (isMobile ? '#14b8a6' : 'white') : '#1f2937',
               }}
             >
-              <span className={`text-lg ${isActive ? "text-white" : ""}`}>
+              <span className={`text-lg`}>
                 {item.icon}
               </span>
               {(!collapsed || isMobile) && (

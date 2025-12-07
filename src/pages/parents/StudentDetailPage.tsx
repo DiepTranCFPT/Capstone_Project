@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Spin, Tag, Typography, Space, Statistic, Row, Col } from 'antd';
+import { Card, Table, Button, Spin, Tag, Typography, Space} from 'antd';
 import { ArrowLeftOutlined, TrophyOutlined, FileTextOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useParent } from '~/hooks/useParent';
+import { useParentDashboardStats } from '~/hooks/useParentDashboardStats';
 import type { ChildExamHistoryItem } from '~/types/parent';
+import ChildDetailStats from '~/components/parents/ChildDetailStats';
 import dayjs from 'dayjs';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const StudentDetailPage: React.FC = () => {
   const { studentId } = useParams<{ studentId: string }>();
@@ -20,6 +22,9 @@ const StudentDetailPage: React.FC = () => {
     fetchChildren,
     fetchChildExamHistory
   } = useParent();
+
+  // Fetch detailed stats for charts
+  const { stats: childStats, loading: statsLoading } = useParentDashboardStats(studentId || null);
 
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 10;
@@ -38,13 +43,13 @@ const StudentDetailPage: React.FC = () => {
 
   const columns: ColumnsType<ChildExamHistoryItem> = [
     {
-      title: 'Mã bài thi',
-      dataIndex: 'examId',
-      key: 'examId',
-      render: (examId: string) => <Text code>{examId}</Text>,
+      title: 'Exam',
+      dataIndex: 'title',
+      key: 'title',
+      render: (title: string) => <Text code>{title}</Text>,
     },
     {
-      title: 'Điểm số',
+      title: 'Score',
       dataIndex: 'score',
       key: 'score',
       render: (score: number) => (
@@ -55,7 +60,7 @@ const StudentDetailPage: React.FC = () => {
       sorter: (a, b) => a.score - b.score,
     },
     {
-      title: 'Đánh giá',
+      title: 'Rating',
       dataIndex: 'rating',
       key: 'rating',
       render: (rating: number) => (
@@ -66,7 +71,7 @@ const StudentDetailPage: React.FC = () => {
       ),
     },
     {
-      title: 'Trạng thái',
+      title: 'Status',
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => (
@@ -76,14 +81,14 @@ const StudentDetailPage: React.FC = () => {
       ),
     },
     {
-      title: 'Thời gian bắt đầu',
+      title: 'Start Time',
       dataIndex: 'startTime',
       key: 'startTime',
       render: (time: string) => dayjs(time).format('DD/MM/YYYY HH:mm'),
       sorter: (a, b) => dayjs(a.startTime).unix() - dayjs(b.startTime).unix(),
     },
     {
-      title: 'Thời gian kết thúc',
+      title: 'End Time',
       dataIndex: 'endTime',
       key: 'endTime',
       render: (time: string) => time ? dayjs(time).format('DD/MM/YYYY HH:mm') : 'N/A',
@@ -95,10 +100,10 @@ const StudentDetailPage: React.FC = () => {
       <div className="p-6">
         <Card>
           <div className="text-center py-8">
-            <Text type="danger">Không tìm thấy thông tin học sinh</Text>
+            <Text type="danger">Student not found</Text>
             <div className="mt-4">
               <Button type="primary" onClick={() => navigate('/parent/dashboard')}>
-                Quay lại
+                Back
               </Button>
             </div>
           </div>
@@ -114,58 +119,22 @@ const StudentDetailPage: React.FC = () => {
         onClick={() => navigate('/parent/dashboard')}
         className="mb-4"
       >
-        Quay lại
+        Back
       </Button>
+  
+      {/* Topic Performance Charts */}
+      <div className="mb-6">
+        <ChildDetailStats
+          stats={childStats}
+          loading={statsLoading}
+        />
+      </div>
 
-      {student && (
-        <Card className="mb-6">
-          <div className="flex items-center gap-4 mb-4">
-            <Title level={3} className="mb-0">
-              {student.studentName}
-            </Title>
-            <Tag color="blue">{student.email}</Tag>
-          </div>
-
-          <Row gutter={16}>
-            <Col span={6}>
-              <Statistic
-                title="Tổng số bài thi"
-                value={student.totalExamsTaken}
-                prefix={<FileTextOutlined />}
-              />
-            </Col>
-            <Col span={6}>
-              <Statistic
-                title="Điểm trung bình"
-                value={student.averageScore.toFixed(1)}
-                suffix="/ 100"
-                valueStyle={{ color: student.averageScore >= 80 ? '#3f8600' : '#cf1322' }}
-              />
-            </Col>
-            <Col span={6}>
-              <Statistic
-                title="Bài thi gần nhất"
-                value={student.lastExamScore?.toFixed(1) || 'N/A'}
-                suffix={student.lastExamScore ? '/ 100' : ''}
-              />
-            </Col>
-            <Col span={6}>
-              <div>
-                <Text type="secondary">Hoạt động gần nhất</Text>
-                <div className="text-lg font-semibold">
-                  {dayjs(student.lastActivity).format('DD/MM/YYYY')}
-                </div>
-              </div>
-            </Col>
-          </Row>
-        </Card>
-      )}
-
-      <Card title="Lịch sử thi" extra={<FileTextOutlined />}>
+      <Card title="Exam history" extra={<FileTextOutlined />}>
         {loadingHistory ? (
           <div className="text-center py-8">
             <Spin size="large" />
-            <p className="mt-4 text-gray-600">Đang tải lịch sử thi...</p>
+            <p className="mt-4 text-gray-600">Loading history exam...</p>
           </div>
         ) : (
           <Table
@@ -178,10 +147,10 @@ const StudentDetailPage: React.FC = () => {
               total: historyPageInfo?.totalElements || 0,
               onChange: (page) => setCurrentPage(page - 1),
               showSizeChanger: false,
-              showTotal: (total) => `Tổng ${total} bài thi`,
+              showTotal: (total) => `Total ${total} exams`,
             }}
             locale={{
-              emptyText: 'Chưa có lịch sử thi',
+              emptyText: 'No exam history',
             }}
           />
         )}
