@@ -1,75 +1,45 @@
 import React from 'react';
-import { Progress, Card, Badge, Button } from 'antd';
+import { Card, Badge, Button, Spin, Empty } from 'antd';
 import {
   BookOutlined,
   ClockCircleOutlined,
   TrophyOutlined,
   FireOutlined,
-  CalendarOutlined,
   StarOutlined,
   RightOutlined,
-  GiftOutlined
+  GiftOutlined,
+  BarChartOutlined,
+  CheckCircleOutlined
 } from '@ant-design/icons';
-import CardAnalytics from './CardAnalytics';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+// import CardAnalytics from './CardAnalytics';
 import { useAuth } from '~/hooks/useAuth';
+import { useStudentDashboardStats } from '~/hooks/useStudentDashboardStats';
+import { useNavigate } from 'react-router-dom';
 
 const StudentDashboard: React.FC = () => {
-
   const { user } = useAuth();
-  // Sample data
-  const courseProgress = [
-    { name: 'AP 2-D Art and Design', progress: 75, color: '#3b82f6' },
-    { name: 'Digital Photography', progress: 92, color: '#10b981' },
-    { name: 'Graphic Design Basics', progress: 48, color: '#f59e0b' },
-    { name: 'Color Theory', progress: 100, color: '#06d6a0' },
-  ];
+  const { stats, loading } = useStudentDashboardStats();
+  const navigate = useNavigate();
 
-  const upcomingTests = [
-    {
-      id: 1,
-      title: 'AP Art Portfolio Review',
-      subject: 'AP 2-D Art and Design',
-      date: '2025-09-25',
-      time: '14:00',
-      type: 'Portfolio',
-      difficulty: 'High'
-    },
-    {
-      id: 2,
-      title: 'Color Theory Quiz',
-      subject: 'Color Theory',
-      date: '2025-09-27',
-      time: '10:30',
-      type: 'Quiz',
-      difficulty: 'Medium'
-    },
-    {
-      id: 3,
-      title: 'Photography Techniques Test',
-      subject: 'Digital Photography',
-      date: '2025-09-30',
-      time: '09:00',
-      type: 'Exam',
-      difficulty: 'Medium'
-    }
-  ];
+  // Transform topic performance for Radar Chart
+  const topicData = React.useMemo(() => {
+    if (!stats?.topicPerformance) return [];
+    return Object.entries(stats.topicPerformance).map(([subject, score]) => ({
+      subject: subject.length > 15 ? subject.substring(0, 15) + '...' : subject,
+      fullSubject: subject,
+      score: score,
+      fullMark: 100
+    }));
+  }, [stats]);
 
-  const getDaysUntil = (dateStr: string) => {
-    const testDate = new Date(dateStr);
-    const today = new Date();
-    const diffTime = testDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'High': return '#ef4444';
-      case 'Medium': return '#f59e0b';
-      case 'Low': return '#10b981';
-      default: return '#6b7280';
-    }
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f4f7fd] p-6 flex justify-center items-center">
+        <Spin size="large" tip="Loading dashboard data..." />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f4f7fd] p-6">
@@ -78,77 +48,119 @@ const StudentDashboard: React.FC = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.firstName} {user?.lastName} 👋</h1>
           <p className="text-gray-600">Here's your learning progress overview</p>
+          {stats?.recommendedTopic && (
+            <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium border border-blue-100">
+              <StarOutlined className="mr-2" />
+              Recommended focus based on your performance: <span className="font-bold ml-1">{stats.recommendedTopic}</span>
+            </div>
+          )}
         </div>
+
         {/* Quick Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-xl shadow-md p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">12</div>
-            <div className="text-sm text-gray-500">Courses Enrolled</div>
+            <div className="flex justify-center mb-2">
+              <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
+                <BookOutlined />
+              </div>
+            </div>
+            <div className="text-2xl font-bold text-gray-900">{stats?.totalExamsTaken || 0}</div>
+            <div className="text-sm text-gray-500">Exams Taken</div>
           </div>
           <div className="bg-white rounded-xl shadow-md p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">8</div>
-            <div className="text-sm text-gray-500">Completed</div>
+            <div className="flex justify-center mb-2">
+              <div className="p-2 bg-green-100 rounded-lg text-green-600">
+                <CheckCircleOutlined />
+              </div>
+            </div>
+            <div className="text-2xl font-bold text-gray-900">{stats?.examsInProgress || 0}</div>
+            <div className="text-sm text-gray-500">In Progress</div>
           </div>
           <div className="bg-white rounded-xl shadow-md p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">47h</div>
+            <div className="flex justify-center mb-2">
+              <div className="p-2 bg-orange-100 rounded-lg text-orange-600">
+                <ClockCircleOutlined />
+              </div>
+            </div>
+            {/* Mocking study time for now as it's not in API yet */}
+            <div className="text-2xl font-bold text-gray-900">12h</div>
             <div className="text-sm text-gray-500">Study Time</div>
           </div>
           <div className="bg-white rounded-xl shadow-md p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">4.8</div>
+            <div className="flex justify-center mb-2">
+              <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
+                <BarChartOutlined />
+              </div>
+            </div>
+            <div className="text-2xl font-bold text-gray-900">{stats?.averageScore ? Math.round(stats.averageScore * 10) / 10 : 0}</div>
             <div className="text-sm text-gray-500">Avg Score</div>
           </div>
         </div>
+
         {/* Main Dashboard Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
 
-          {/* Progress Card */}
+          {/* Topic Performance Radar Chart */}
           <Card className="bg-white rounded-2xl shadow-lg border-0 hover:shadow-xl transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-blue-100 rounded-xl">
-                  <BookOutlined className="text-xl text-blue-600" />
+                  <BarChartOutlined className="text-xl text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Course Progress</h3>
-                  <p className="text-sm text-gray-500">4 courses in progress</p>
+                  <h3 className="text-lg font-semibold text-gray-900">Topic Performance</h3>
+                  <p className="text-sm text-gray-500">Your strengths & weaknesses</p>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-4">
-              {courseProgress.map((course, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-700 truncate">{course.name}</span>
-                    <span className="text-sm font-semibold text-gray-900">{course.progress}%</span>
-                  </div>
-                  <Progress
-                    percent={course.progress}
-                    showInfo={false}
-                    strokeColor={course.color}
-                    trailColor="#f1f5f9"
-                    strokeWidth={8}
-                    className="!m-0"
-                  />
-                </div>
-              ))}
+            <div className="h-64 w-full">
+              {topicData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={topicData}>
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#6b7280', fontSize: 12 }} />
+                    <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                    <Radar
+                      name="Score"
+                      dataKey="score"
+                      stroke="#3b82f6"
+                      fill="#3b82f6"
+                      fillOpacity={0.6}
+                    />
+                    <RechartsTooltip />
+                  </RadarChart>
+                </ResponsiveContainer>
+              ) : (
+                <Empty description="No topic data yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+              )}
             </div>
 
             <div className="mt-6 pt-4 border-t border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Overall Progress</p>
-                  <p className="text-2xl font-bold text-gray-900">79%</p>
+                  <p className="text-sm text-gray-500">Weakest Topic</p>
+                  {/* Calculate weakest topic */}
+                  <p className="text-md font-bold text-gray-900">
+                    {topicData.length > 0
+                      ? topicData.reduce((min, p) => p.score < min.score ? p : min, topicData[0]).fullSubject
+                      : "N/A"}
+                  </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-green-600 font-medium">+12% this week</p>
-                  <p className="text-xs text-gray-500">Keep it up!</p>
+                <div>
+                  <p className="text-sm text-gray-500">Strongest Topic</p>
+                  {/* Calculate strongest topic */}
+                  <p className="text-md font-bold text-gray-900 text-right">
+                    {topicData.length > 0
+                      ? topicData.reduce((max, p) => p.score > max.score ? p : max, topicData[0]).fullSubject
+                      : "N/A"}
+                  </p>
                 </div>
               </div>
             </div>
           </Card>
 
-          {/* Upcoming Tests Card */}
+          {/* Recent Attempts Card */}
           <Card className="bg-white rounded-2xl shadow-lg border-0 hover:shadow-xl transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -156,57 +168,47 @@ const StudentDashboard: React.FC = () => {
                   <ClockCircleOutlined className="text-xl text-orange-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Upcoming Tests</h3>
-                  <p className="text-sm text-gray-500">3 tests this week</p>
+                  <h3 className="text-lg font-semibold text-gray-900">Recent Attempts</h3>
+                  <p className="text-sm text-gray-500">Latest exam activity</p>
                 </div>
               </div>
             </div>
 
             <div className="space-y-3 max-h-80 overflow-y-auto">
-              {upcomingTests.map((test) => {
-                const daysUntil = getDaysUntil(test.date);
-                return (
-                  <div key={test.id} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+              {stats?.recentAttempts && stats.recentAttempts.length > 0 ? (
+                stats.recentAttempts.map((attempt) => (
+                  <div key={attempt.attemptId} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                     <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium text-gray-900 text-sm">{test.title}</h4>
+                      <h4 className="font-medium text-gray-900 text-sm">{attempt.title}</h4>
                       <Badge
-                        color={getDifficultyColor(test.difficulty)}
-                        text={test.difficulty}
+                        color={attempt.status === 'COMPLETED' ? '#10b981' : '#f59e0b'}
+                        text={attempt.status}
                         className="text-xs"
                       />
                     </div>
-                    <p className="text-xs text-gray-600 mb-2">{test.subject}</p>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <CalendarOutlined />
-                          {test.date}
-                        </span>
-                        <span>{test.time}</span>
+                      <div className="text-xs text-gray-500">
+                        {new Date(attempt.startTime).toLocaleDateString()}
                       </div>
-                      <div className="text-right">
-                        {daysUntil === 0 ? (
-                          <span className="text-xs font-semibold text-red-600">Today</span>
-                        ) : daysUntil === 1 ? (
-                          <span className="text-xs font-semibold text-orange-600">Tomorrow</span>
-                        ) : (
-                          <span className="text-xs text-gray-500">{daysUntil} days</span>
-                        )}
+                      <div className="text-right font-bold text-blue-600">
+                        {attempt.score !== undefined ? `${attempt.score}%` : 'N/A'}
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                ))
+              ) : (
+                <Empty description="No recent attempts" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+              )}
             </div>
 
             <div className="mt-4 pt-4 border-t border-gray-100">
-              <Button type="text" className="w-full text-blue-600 hover:bg-blue-50">
-                View All Tests <RightOutlined className="ml-2" />
+              <Button type="text" className="w-full text-blue-600 hover:bg-blue-50" onClick={() => navigate('/practice')}>
+                View All Exams <RightOutlined className="ml-2" />
               </Button>
             </div>
           </Card>
 
-          {/* Token Balance Card */}
+          {/* Token Balance Card (Kept as is/Mocked for now as requested) */}
           <Card className="bg-white rounded-2xl shadow-lg border-0 hover:shadow-xl transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -268,8 +270,8 @@ const StudentDashboard: React.FC = () => {
             </div>
           </Card>
         </div>
-        {/* Test Analytics Section */}
-        <CardAnalytics />
+        {/* Test Analytics Section (Assuming this is a separate component that might also need updates later) */}
+        {/* <CardAnalytics /> */}
       </div>
     </div>
   );
