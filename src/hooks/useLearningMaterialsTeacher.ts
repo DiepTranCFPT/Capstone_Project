@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import type { LearningMaterial, LearningMaterialQuery, PageInfo } from "~/types/learningMaterial";
+import type { LearningMaterial, PageInfo } from "~/types/learningMaterial";
 import LearningMaterialService from "~/services/learningMaterialService";
 
 const getErrorMessage = (error: unknown, fallback: string): string => {
@@ -26,16 +26,27 @@ export function useLearningMaterial() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  //  Lấy danh sách (có phân trang)
-  const fetchAll = useCallback(async (query?: LearningMaterialQuery) => {
+  //  Lấy danh sách tài liệu của giáo viên (dùng API my-materials)
+  const fetchAll = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await LearningMaterialService.getAll(query);
+      const res = await LearningMaterialService.getMyMaterials();
       const data = res.data.data;
-      setPageInfo(data);
-      setMaterials(data.items || data.content || []);
+
+      // API my-materials thường trả về mảng; fallback nếu backend trả PageInfo
+      if (Array.isArray(data)) {
+        setMaterials(data);
+        setPageInfo(null);
+      } else if (data && typeof data === "object") {
+        const pageData = data as PageInfo<LearningMaterial>;
+        setPageInfo(pageData);
+        setMaterials(pageData.items || pageData.content || []);
+      } else {
+        setMaterials([]);
+        setPageInfo(null);
+      }
     } catch (err: unknown) {
-      console.error("❌ Fetch materials error:", err);
+      console.error(" Fetch my materials error:", err);
       setError(getErrorMessage(err, "Failed to load materials"));
     } finally {
       setLoading(false);
@@ -49,7 +60,7 @@ export function useLearningMaterial() {
       const res = await LearningMaterialService.getById(id);
       return res.data.data;
     } catch (err: unknown) {
-      console.error("❌ Get material error:", err);
+      console.error(" Get material error:", err);
       setError(getErrorMessage(err, "Failed to load material"));
       return null;
     } finally {
@@ -64,7 +75,7 @@ export function useLearningMaterial() {
       const res = await LearningMaterialService.create(payload);
       return res.data.data;
     } catch (err: unknown) {
-      console.error("❌ Create material error:", err);
+      console.error(" Create material error:", err);
       const message = getErrorMessage(err, "Failed to create material");
       setError(message);
       throw err;
@@ -80,7 +91,7 @@ export function useLearningMaterial() {
       const res = await LearningMaterialService.update(id, payload);
       return res.data.data;
     } catch (err: unknown) {
-      console.error("❌ Update material error:", err);
+      console.error(" Update material error:", err);
       const message = getErrorMessage(err, "Failed to update material");
       setError(message);
       throw err;
@@ -95,7 +106,7 @@ export function useLearningMaterial() {
       setLoading(true);
       await LearningMaterialService.delete(id);
     } catch (err: unknown) {
-      console.error("❌ Delete material error:", err);
+      console.error(" Delete material error:", err);
       const message = getErrorMessage(err, "Failed to delete material");
       setError(message);
       throw err;
@@ -111,7 +122,7 @@ export function useLearningMaterial() {
       const res = await LearningMaterialService.search(keyword);
       setMaterials(res.data.data);
     } catch (err: unknown) {
-      console.error("❌ Search error:", err);
+      console.error(" Search error:", err);
       setError(getErrorMessage(err, "Failed to search materials"));
     } finally {
       setLoading(false);
