@@ -3,7 +3,6 @@ import { Card, Col, Row, Statistic, Table, Tag, Button, Spin, Empty } from 'antd
 import {
     UsergroupAddOutlined,
     BookOutlined,
-    DollarOutlined,
     RightOutlined,
     TrophyOutlined,
     StarOutlined,
@@ -15,6 +14,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Link } from 'react-router-dom';
 import { useTeacherDashboardStats } from '~/hooks/useTeacherDashboardStats';
 import { useAuth } from '~/hooks/useAuth';
+import { FaCoins } from 'react-icons/fa';
 
 const PRIMARY_COLOR = '#3CBCB2';
 
@@ -90,7 +90,7 @@ const TeacherDashboardPage: React.FC = () => {
                         <Statistic
                             title={<span className="text-gray-500">Est. Revenue</span>}
                             value={stats?.estimatedRevenue || 0}
-                            prefix={<DollarOutlined style={{ color: PRIMARY_COLOR }} />}
+                            prefix={<FaCoins style={{ color: PRIMARY_COLOR }} />}
                         />
                     </Card>
                 </Col>

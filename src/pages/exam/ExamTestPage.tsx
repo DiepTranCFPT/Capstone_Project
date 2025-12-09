@@ -106,6 +106,8 @@ const ExamTestPage: React.FC = () => {
     const [selectedSubjectsForPlatform, setSelectedSubjectsForPlatform] = useState<string[]>([]);
     const [isStartingCombinedTest, setIsStartingCombinedTest] = useState(false);
     const [isStartingPlatformTest, setIsStartingPlatformTest] = useState(false);
+    const [isStartingSingleTest, setIsStartingSingleTest] = useState(false);
+    const [loadingExamId, setLoadingExamId] = useState<string | null>(null);
 
     const handlePlatformSubjectToggle = (subject: string) => {
         setSelectedSubjectsForPlatform(prev =>
@@ -188,34 +190,44 @@ const ExamTestPage: React.FC = () => {
         // Execute the pending action based on type
         if (pendingAction.type === 'single' && pendingAction.exam) {
             const exam = pendingAction.exam;
-            // Check if there's an existing active attempt for this exam
-            const existingAttemptKey = `exam_attempt_${exam.id}`;
-            const existingAttemptStr = localStorage.getItem(existingAttemptKey);
-            let attempt = null;
+            setIsStartingSingleTest(true);
+            setLoadingExamId(exam.id);
 
-            if (existingAttemptStr) {
-                const existingAttempt = JSON.parse(existingAttemptStr);
-                // Check if the attempt still has time remaining
-                const savedProgress = localStorage.getItem('examProgress');
-                if (savedProgress) {
-                    const progress = JSON.parse(savedProgress);
-                    if (progress.remainingTime > 0 && progress.examId === exam.id) {
-                        // Continue existing attempt
-                        localStorage.setItem('activeExamAttempt', JSON.stringify(existingAttempt));
-                        window.location.href = `/do-test/${exam.id}/full`;
-                        setPendingAction(null);
-                        return;
+            try {
+                // Check if there's an existing active attempt for this exam
+                const existingAttemptKey = `exam_attempt_${exam.id}`;
+                const existingAttemptStr = localStorage.getItem(existingAttemptKey);
+                let attempt = null;
+
+                if (existingAttemptStr) {
+                    const existingAttempt = JSON.parse(existingAttemptStr);
+                    // Check if the attempt still has time remaining
+                    const savedProgress = localStorage.getItem('examProgress');
+                    if (savedProgress) {
+                        const progress = JSON.parse(savedProgress);
+                        if (progress.remainingTime > 0 && progress.examId === exam.id) {
+                            // Continue existing attempt
+                            localStorage.setItem('activeExamAttempt', JSON.stringify(existingAttempt));
+                            window.location.href = `/do-test/${exam.id}/full`;
+                            setPendingAction(null);
+                            return;
+                        }
                     }
                 }
-            }
 
-            // Create new attempt for individual exam
-            attempt = await startSingleAttempt({ templateId: exam.id });
-            if (attempt) {
-                // Store attempt data for continuation
-                localStorage.setItem('activeExamAttempt', JSON.stringify(attempt));
-                localStorage.setItem(existingAttemptKey, JSON.stringify(attempt));
-                window.location.href = `/do-test/${exam.id}/full`;
+                // Create new attempt for individual exam
+                attempt = await startSingleAttempt({ templateId: exam.id });
+                if (attempt) {
+                    // Store attempt data for continuation
+                    localStorage.setItem('activeExamAttempt', JSON.stringify(attempt));
+                    localStorage.setItem(existingAttemptKey, JSON.stringify(attempt));
+                    window.location.href = `/do-test/${exam.id}/full`;
+                }
+            } catch (error) {
+                console.error('Failed to start single test:', error);
+            } finally {
+                setIsStartingSingleTest(false);
+                setLoadingExamId(null);
             }
         } else if (pendingAction.type === 'combined' && pendingAction.exams) {
             setIsStartingCombinedTest(true);
@@ -618,7 +630,13 @@ const ExamTestPage: React.FC = () => {
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                         {filteredExams.map((exam: Exam) => (
-                                            <ExamCard exams={exam} key={exam.id} onStartExam={handleStartExamClick} />
+                                            <ExamCard
+                                                exams={exam}
+                                                key={exam.id}
+                                                onStartExam={handleStartExamClick}
+                                                isLoading={isStartingSingleTest}
+                                                loadingExamId={loadingExamId ?? undefined}
+                                            />
                                         ))}
                                     </div>
                                 )}

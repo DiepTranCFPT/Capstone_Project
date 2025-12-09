@@ -11,6 +11,22 @@ import { useEnhancedExamPersistence } from '~/hooks/useEnhancedExamPersistence';
 import { useExamUnloadWarning } from '~/hooks/useExamUnloadWarning';
 import { useExamProctoring } from '~/hooks/useExamProctoring';
 import type { ExamSubmissionAnswer, ActiveExamQuestion, ExamAnswer } from '~/types/test';
+import {
+    MdOutlineMenuBook,
+    MdTimer,
+    MdSave,
+    MdCloudSync,
+    MdSync,
+    MdBarChart,
+    MdList,
+    MdHourglassEmpty,
+    MdError,
+    MdCheckCircle,
+    MdCancel,
+    MdWarning,
+    MdAccessTime,
+    MdSmartphone
+} from 'react-icons/md';
 
 
 const DoTestPage: React.FC = () => {
@@ -337,20 +353,22 @@ const DoTestPage: React.FC = () => {
 
         // Check if this is a combo test (has attemptId param)
         if (attemptId) {
-            navigate('/exam-test');
+            window.location.href = `/exam-test`;
         } else {
-            navigate(`/exam-details/${examId}`);
+            window.location.href = `/exam-details/${examId}`;
         }
     };
 
     const handleConfirmSubmit = () => {
         setShowConFirmed(true);
         setIsSubmit(true);
+        setIsCancel(false);
     };
 
     const handleConfirmCancel = () => {
         setShowConFirmed(true);
         setIsCancel(true);
+        setIsSubmit(false);
     };
 
     const totalQuestions = sortedQuestions.length;
@@ -417,21 +435,21 @@ const DoTestPage: React.FC = () => {
             return {
                 text: 'Saving...',
                 color: 'text-blue-600',
-                icon: '🔄'
+                icon: <MdSync className="animate-spin" />
             };
         }
         if (syncStatus.syncError) {
             return {
                 text: 'Saving failed',
                 color: 'text-red-600',
-                icon: '⚠️'
+                icon: <MdWarning />
             };
         }
         if (syncStatus.hasUnsyncedChanges) {
             return {
                 text: 'Unsaved changes',
                 color: 'text-orange-600',
-                icon: '⏳'
+                icon: <MdAccessTime />
             };
         }
         if (syncStatus.lastSyncTime) {
@@ -441,13 +459,13 @@ const DoTestPage: React.FC = () => {
                     minute: '2-digit'
                 })}`,
                 color: 'text-green-600',
-                icon: '✅'
+                icon: <MdCheckCircle />
             };
         }
         return {
             text: 'Unsaved',
             color: 'text-gray-500',
-            icon: '📱'
+            icon: <MdSmartphone />
         };
     };
 
@@ -458,7 +476,7 @@ const DoTestPage: React.FC = () => {
             {/* Left Sidebar */}
             <aside className="w-72 bg-white/95 backdrop-blur-sm p-6 flex flex-col shadow-xl border-r border-teal-200/50">
                 <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">📚{activeExamData?.title || 'Exam'}</h2>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2"><MdOutlineMenuBook className="text-teal-600" />{activeExamData?.title || 'Exam'}</h2>
                     <div className="h-1 w-16 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full"></div>
                 </div>
 
@@ -473,7 +491,7 @@ const DoTestPage: React.FC = () => {
 
                 <div className="bg-teal-50/60 rounded-xl p-4 mb-6 border border-teal-200/50">
                     <div className="flex items-center justify-between">
-                        <span className="font-semibold text-gray-700">⏱️ Time left:</span>
+                        <span className="font-semibold text-gray-700 flex items-center gap-1"><MdTimer /> Time left:</span>
                         <Timer
                             initialMinutes={activeExamData?.durationInMinute || 60}
                             onTimeUp={handleSubmit}
@@ -484,7 +502,7 @@ const DoTestPage: React.FC = () => {
 
                     {/* Auto-save indicator */}
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-teal-200/30">
-                        <span className="text-sm text-gray-600">💾 Auto save:</span>
+                        <span className="text-sm text-gray-600 flex items-center gap-1"><MdSave /> Auto save:</span>
                         <div className="flex items-center gap-2">
                             {lastSavedTime && Date.now() - lastSavedTime < 2000 ? (
                                 <div className="flex items-center gap-1 text-xs text-teal-600 font-medium">
@@ -506,7 +524,7 @@ const DoTestPage: React.FC = () => {
 
                     {/* Server sync indicator */}
                     <div className="flex items-center justify-between mt-2 pt-2 border-t border-teal-200/30">
-                        <span className="text-sm text-gray-600">☁️ Sync server:</span>
+                        <span className="text-sm text-gray-600 flex items-center gap-1"><MdCloudSync /> Sync server:</span>
                         <div className="flex items-center gap-2">
                             <span className={`text-xs ${syncStatusInfo.color} flex items-center gap-1`}>
                                 <span>{syncStatusInfo.icon}</span>
@@ -529,7 +547,7 @@ const DoTestPage: React.FC = () => {
                                 </>
                             ) : (
                                 <>
-                                    <span>🔄</span>
+                                    <MdSync />
                                     Sync now
                                 </>
                             )}
@@ -540,7 +558,7 @@ const DoTestPage: React.FC = () => {
                 {/* Progress Bar */}
                 <div className="bg-white/60 rounded-xl p-4 mb-6 border border-teal-200/50">
                     <div className="flex items-center justify-between mb-3">
-                        <span className="font-semibold text-gray-700">📊 Progress</span>
+                        <span className="font-semibold text-gray-700 flex items-center gap-1"><MdBarChart /> Progress</span>
                         <span className="text-sm text-gray-600">
                             {answeredQuestions.size}/{totalQuestions} questions
                         </span>
@@ -563,7 +581,7 @@ const DoTestPage: React.FC = () => {
                 <div className="flex-1 overflow-y-auto">
                     <div className="bg-white/60 rounded-xl p-4 mb-6 border border-teal-200/50">
                         <h3 className="font-bold text-gray-800 mb-4 flex items-center">
-                            <span className="mr-2">📋</span>
+                            <MdList className="mr-2" />
                             Questions ({totalQuestions})
                         </h3>
                         <div className="grid grid-cols-5 gap-2">
@@ -585,13 +603,13 @@ const DoTestPage: React.FC = () => {
                 <div className='flex gap-3 mt-6'>
                     <button
                         onClick={handleConfirmSubmit}
-                        className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-4 rounded-xl transition-all duration-200 border border-teal-500/60 hover:border-teal-400 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                        className="w-full bg-backgroundColor hover:bg-backgroundColor/80 text-white font-bold py-4 rounded-xl transition-all duration-200 border border-teal-500/60 hover:border-teal-400 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                     >
                         Submit
                     </button>
                     <button
                         onClick={handleConfirmCancel}
-                        className="w-full bg-red-500 hover:to-red-700 text-white font-bold py-4 rounded-xl transition-all duration-200 border border-red-400/60 hover:border-red-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                        className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-xl transition-all duration-200 border border-red-400/60 hover:border-red-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                     >
                         Cancel
                     </button>
@@ -603,7 +621,7 @@ const DoTestPage: React.FC = () => {
                 <div className="max-w-4xl mx-auto">
                     {loading ? (
                         <div className="text-center py-20">
-                            <div className="text-6xl mb-6">⏳</div>
+                            <div className="text-6xl mb-6"><MdHourglassEmpty className="mx-auto text-teal-500" /></div>
                             <h3 className="text-2xl font-bold text-gray-800 mb-4">
                                 Loading...
                             </h3>
@@ -613,7 +631,7 @@ const DoTestPage: React.FC = () => {
                         </div>
                     ) : error ? (
                         <div className="text-center py-20">
-                            <div className="text-6xl mb-6">❌</div>
+                            <div className="text-6xl mb-6"><MdError className="mx-auto text-red-500" /></div>
                             <h3 className="text-2xl font-bold text-gray-800 mb-4">
                                 Error loading exam
                             </h3>
@@ -740,7 +758,7 @@ const DoTestPage: React.FC = () => {
                             <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${isSubmit ? 'bg-teal-100' : 'bg-red-100'
                                 }`}>
                                 <span className="text-2xl">
-                                    {isSubmit ? '✅' : '❌'}
+                                    {isSubmit ? <MdCheckCircle className="text-teal-600" /> : <MdCancel className="text-red-600" />}
                                 </span>
                             </div>
                             <h3 className="text-xl font-bold text-gray-800 mb-3">
@@ -763,7 +781,7 @@ const DoTestPage: React.FC = () => {
                                 {isCancel ? (
                                     <button
                                         onClick={handleCancel}
-                                        className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium rounded-lg transition-all duration-200 border border-red-400/60 hover:border-red-300 shadow-lg hover:shadow-xl"
+                                        className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-all duration-200 border border-red-400/60 hover:border-red-300 shadow-lg hover:shadow-xl"
                                     >
                                         Confirm Cancel
                                     </button>
@@ -771,7 +789,7 @@ const DoTestPage: React.FC = () => {
                                     <button
                                         onClick={handleSubmit}
                                         disabled={isSubmitting}
-                                        className="px-6 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-medium rounded-lg transition-all duration-200 border border-teal-500/60 hover:border-teal-400 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="px-6 py-3 bg-backgroundColor hover:bg-backgroundColor/80 text-white font-medium rounded-lg transition-all duration-200 border border-teal-500/60 hover:border-teal-400 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isSubmitting ? 'Submitting...' : 'Confirm Submit'}
                                     </button>

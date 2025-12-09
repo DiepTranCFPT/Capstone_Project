@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Spin, Tag, Typography, Space} from 'antd';
+import { Card, Table, Button, Tag, Typography, Space} from 'antd';
 import { ArrowLeftOutlined, TrophyOutlined, FileTextOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useParent } from '~/hooks/useParent';
@@ -8,6 +8,7 @@ import { useParentDashboardStats } from '~/hooks/useParentDashboardStats';
 import type { ChildExamHistoryItem } from '~/types/parent';
 import ChildDetailStats from '~/components/parents/ChildDetailStats';
 import dayjs from 'dayjs';
+import Loading from '~/components/common/Loading';
 
 const { Text } = Typography;
 
@@ -15,7 +16,6 @@ const StudentDetailPage: React.FC = () => {
   const { studentId } = useParams<{ studentId: string }>();
   const navigate = useNavigate();
   const {
-    children,
     examHistory,
     historyPageInfo,
     loadingHistory,
@@ -39,7 +39,6 @@ const StudentDetailPage: React.FC = () => {
     }
   }, [studentId, currentPage, fetchChildExamHistory]);
 
-  const student = children.find(child => child.studentId === studentId);
 
   const columns: ColumnsType<ChildExamHistoryItem> = [
     {
@@ -95,7 +94,7 @@ const StudentDetailPage: React.FC = () => {
     },
   ];
 
-  if (!student && !loadingHistory) {
+  if (!studentId && !loadingHistory) {
     return (
       <div className="p-6">
         <Card>
@@ -132,10 +131,7 @@ const StudentDetailPage: React.FC = () => {
 
       <Card title="Exam history" extra={<FileTextOutlined />}>
         {loadingHistory ? (
-          <div className="text-center py-8">
-            <Spin size="large" />
-            <p className="mt-4 text-gray-600">Loading history exam...</p>
-          </div>
+          <Loading />
         ) : (
           <Table
             columns={columns}

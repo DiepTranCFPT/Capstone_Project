@@ -3,6 +3,7 @@ import { Card, Row, Col, Progress, Button, Avatar, Typography, Space, Empty } fr
 import { Link } from 'react-router-dom';
 import type { ChildInfo } from '~/types/parent';
 import { DisconnectOutlined, EyeOutlined, UserOutlined } from '@ant-design/icons';
+import Loading from '../common/Loading';
 
 const { Text, Title } = Typography;
 
@@ -21,12 +22,7 @@ const ChildrenList: React.FC<ChildrenListProps> = ({
 }) => {
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <Text>Loading children data...</Text>
-        </div>
-      </div>
+      <Loading />
     );
   }
 

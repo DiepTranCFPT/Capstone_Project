@@ -1,37 +1,52 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, Row, Col, Progress, Button, Avatar, Typography, Modal, Space } from 'antd';
 import { Link } from 'react-router-dom';
 import { useParent } from '~/hooks/useParent';
 import type { ChildInfo } from '~/types/parent';
-import { DisconnectOutlined, EyeOutlined } from '@ant-design/icons';
+import { DisconnectOutlined, EyeOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import Loading from '../common/Loading';
 
 const { Text } = Typography;
 
 const ParentDashboard: React.FC = () => {
   const { children, loading, fetchChildren, unlinkStudent } = useParent();
 
+  // State for unlink confirmation modal
+  const [isUnlinkModalOpen, setIsUnlinkModalOpen] = useState(false);
+  const [unlinkTarget, setUnlinkTarget] = useState<{ email: string; name: string } | null>(null);
+  const [unlinkLoading, setUnlinkLoading] = useState(false);
+
   useEffect(() => {
     fetchChildren();
   }, [fetchChildren]);
 
-  const handleUnlink = async (email: string, name: string) => {
-    Modal.confirm({
-      title: 'Xác nhận hủy liên kết',
-      content: `Bạn có chắc chắn muốn hủy liên kết với học sinh ${name}?`,
-      okText: 'Hủy liên kết',
-      cancelText: 'Hủy',
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        const success = await unlinkStudent(email);
-        if (success) {
-          fetchChildren();
-        }
-      },
-    });
+  const handleUnlink = (email: string, name: string) => {
+    setUnlinkTarget({ email, name });
+    setIsUnlinkModalOpen(true);
+  };
+
+  const handleConfirmUnlink = async () => {
+    if (!unlinkTarget) return;
+
+    setUnlinkLoading(true);
+    const success = await unlinkStudent(unlinkTarget.email);
+    setUnlinkLoading(false);
+
+    if (success) {
+      fetchChildren();
+    }
+
+    setIsUnlinkModalOpen(false);
+    setUnlinkTarget(null);
+  };
+
+  const handleCancelUnlink = () => {
+    setIsUnlinkModalOpen(false);
+    setUnlinkTarget(null);
   };
 
   if (loading) {
-    return <div>Loading children data...</div>;
+    return <Loading />
   }
 
   if (children.length === 0) {
@@ -81,7 +96,7 @@ const ParentDashboard: React.FC = () => {
                   <Space direction="vertical" className="w-full">
                     <Link to={`/parent/student/${child.studentId}`}>
                       <Button type="primary" icon={<EyeOutlined />} block>
-                        Xem chi tiết
+                        View Detail
                       </Button>
                     </Link>
                     <Button
@@ -90,7 +105,7 @@ const ParentDashboard: React.FC = () => {
                       onClick={() => handleUnlink(child.email, child.studentName)}
                       block
                     >
-                      Hủy liên kết
+                      Unlink
                     </Button>
                   </Space>
                 </Col>
@@ -99,6 +114,34 @@ const ParentDashboard: React.FC = () => {
           </Col>
         ))}
       </Row>
+
+      {/* Unlink Confirmation Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <ExclamationCircleOutlined className="text-orange-500 text-xl" />
+            <span>Confirm Unlink</span>
+          </div>
+        }
+        open={isUnlinkModalOpen}
+        onCancel={handleCancelUnlink}
+        footer={[
+          <Button key="cancel" onClick={handleCancelUnlink}>
+            Cancel
+          </Button>,
+          <Button
+            key="unlink"
+            type="primary"
+            danger
+            loading={unlinkLoading}
+            onClick={handleConfirmUnlink}
+          >
+            Unlink
+          </Button>,
+        ]}
+      >
+        <p>Are you sure you want to unlink from student <strong>{unlinkTarget?.name}</strong>?</p>
+      </Modal>
     </div>
   );
 };

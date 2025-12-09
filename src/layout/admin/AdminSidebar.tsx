@@ -1,4 +1,4 @@
-import { MenuFoldOutlined, MenuUnfoldOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { Button, Avatar, Spin, message } from "antd";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -9,10 +9,10 @@ import {
   DashboardOutlined,
   ReadOutlined,
 
-  AuditOutlined,
-  UsergroupAddOutlined,
-  FormOutlined,
-  IdcardOutlined,
+  // AuditOutlined,
+  // UsergroupAddOutlined,
+  // FormOutlined,
+  // IdcardOutlined,
   CreditCardOutlined,
 } from "@ant-design/icons";
 import { getCurrentUserApi } from "~/services/authService";
@@ -23,13 +23,13 @@ import { useAuth } from "~/hooks/useAuth";
 const adminMenu = [
   { key: "/admin/dashboard", label: "Dashboard", icon: <DashboardOutlined /> },
   { key: "/admin/users", label: "Users", icon: <UserOutlined /> },
-  { key: "/admin/courses", label: "Courses", icon: <ReadOutlined /> },
-  { key: "/admin/parents", label: "Parents", icon: <AuditOutlined /> },
-  { key: "/admin/students", label: "Students", icon: <UsergroupAddOutlined /> },
+  // { key: "/admin/courses", label: "Courses", icon: <ReadOutlined /> },
+  // { key: "/admin/parents", label: "Parents", icon: <AuditOutlined /> },
+  // { key: "/admin/students", label: "Students", icon: <UsergroupAddOutlined /> },
   { key: "/admin/subjects", label: "Subjects", icon: <ReadOutlined /> },
-  { key: "/admin/mock-tests", label: "Mock Tests", icon: <FormOutlined /> },
-  { key: "/admin/teachers", label: "Teacher", icon: <IdcardOutlined /> },
-  { key: "/admin/questions", label: "Questions", icon: <QuestionCircleOutlined /> },
+  // { key: "/admin/mock-tests", label: "Mock Tests", icon: <FormOutlined /> },
+  // { key: "/admin/teachers", label: "Teacher", icon: <IdcardOutlined /> },
+  // { key: "/admin/questions", label: "Questions", icon: <QuestionCircleOutlined /> },
   { key: "/admin/certificates", label: "Certificates & Ranking", icon: <TrophyOutlined /> },
   { key: "/admin/subscriptions", label: "Subscriptions & Payments", icon: <CreditCardOutlined /> },
   // { key: "/settings", label: "Settings", icon: <SettingOutlined /> },

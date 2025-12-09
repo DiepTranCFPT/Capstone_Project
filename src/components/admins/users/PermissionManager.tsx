@@ -24,6 +24,13 @@ import type { ColumnsType } from 'antd/es/table';
 
 const { Title } = Typography;
 
+// Helper function to extract display name from permission name (removes UUID suffix)
+const getDisplayPermissionName = (name: string): string => {
+  // Match pattern: NAME_UUID where UUID is like "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+  return name.replace(uuidPattern, '');
+};
+
 const PermissionManager: React.FC = () => {
   const {
     permissions,
@@ -89,7 +96,7 @@ const PermissionManager: React.FC = () => {
       dataIndex: 'name',
       key: 'name',
       render: (name: string) => (
-        <span className="font-medium text-gray-800">{name}</span>
+        <span className="font-medium text-gray-800">{getDisplayPermissionName(name)}</span>
       ),
     },
     {
@@ -296,7 +303,7 @@ const PermissionManager: React.FC = () => {
                   <div className="flex flex-wrap gap-2">
                     {rolePermissions.map((permission) => (
                       <Tag key={permission.name} color="green">
-                        {permission.name}
+                        {getDisplayPermissionName(permission.name)}
                       </Tag>
                     ))}
                   </div>
@@ -320,7 +327,7 @@ const PermissionManager: React.FC = () => {
                     <div key={permission.name} className="flex items-start gap-2 p-2 border rounded">
                       <Checkbox value={permission.name} />
                       <div>
-                        <div className="font-medium text-sm">{permission.name}</div>
+                        <div className="font-medium text-sm">{getDisplayPermissionName(permission.name)}</div>
                         <div className="text-xs text-gray-500">{permission.description}</div>
                       </div>
                     </div>
