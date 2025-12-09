@@ -35,11 +35,11 @@ const MaterialLearnPage: React.FC = () => {
     fetchRatingByTeacherAndStudent,
     fetchStatisticsByTeacher,
     createRating,
+    resetMyRating,
   } = useTeacherRatings();
-  const [ratingValue, setRatingValue] = useState<number>(5);
+  const [ratingValue, setRatingValue] = useState<number>(0);
   const [ratingComment, setRatingComment] = useState<string>("");
   const [ratingModalOpen, setRatingModalOpen] = useState(false);
-  const [hasWatchedLastLesson, setHasWatchedLastLesson] = useState(false);
   const [hasSelectedRating, setHasSelectedRating] = useState(false);
   const commentRef = useRef<HTMLTextAreaElement | null>(null);
   const handleOpenPdf = async () => {
@@ -105,24 +105,45 @@ const MaterialLearnPage: React.FC = () => {
   // Load rating info khi có material + user
   useEffect(() => {
     const teacherId = material?.authorId;
-    const studentId = user?.id;
-    if (!teacherId || !studentId) return;
+    const userId = user?.id;
+    if (!teacherId || !userId) {
+      resetMyRating(); // tránh lưu rating cũ khi thiếu thông tin
+      return;
+    }
 
-    fetchRatingByTeacherAndStudent(teacherId, studentId);
+    resetMyRating(); // clear rating cũ khi đổi giáo viên
+    fetchRatingByTeacherAndStudent(teacherId, userId);
     fetchStatisticsByTeacher(teacherId);
-  }, [material?.authorId, user?.id, fetchRatingByTeacherAndStudent, fetchStatisticsByTeacher]);
+  }, [
+    material?.authorId,
+    user?.id,
+    fetchRatingByTeacherAndStudent,
+    fetchStatisticsByTeacher,
+    resetMyRating,
+  ]);
+
+  // Nếu đã có rating trước đó, prefill modal; nếu chưa có thì về 0
+  useEffect(() => {
+    if (myRating) {
+      setRatingValue(myRating.rating ?? 0);
+      setRatingComment(myRating.comment ?? "");
+    } else {
+      setRatingValue(0);
+      setRatingComment("");
+    }
+  }, [myRating]);
 
   const handleSubmitRating = async () => {
     const teacherId = material?.authorId;
-    const studentId = user?.id;
-    if (!teacherId || !studentId) {
+    const userId = user?.id;
+    if (!teacherId || !userId) {
       message.error("Không xác định được giáo viên hoặc học viên.");
       return;
     }
 
     const result = await createRating({
       teacherId,
-      studentId,
+      studentId: userId,
       rating: ratingValue,
       comment: ratingComment.trim() || undefined,
     });
@@ -132,7 +153,6 @@ const MaterialLearnPage: React.FC = () => {
       setRatingComment("");
       fetchStatisticsByTeacher(teacherId);
       setRatingModalOpen(false);
-      setHasWatchedLastLesson(true);
       setHasSelectedRating(false);
     }
   };
@@ -213,9 +233,36 @@ const MaterialLearnPage: React.FC = () => {
   // Reset trạng thái rating khi đổi bài học
   useEffect(() => {
     setRatingModalOpen(false);
-    setHasWatchedLastLesson(false);
     setHasSelectedRating(false);
   }, [selectedLesson]);
+
+  const sortedLessons = sortLessons(lessons);
+  const isLastLessonSelected =
+    !!selectedLesson &&
+    sortedLessons.length > 0 &&
+    selectedLesson.id === sortedLessons[sortedLessons.length - 1].id;
+
+  const handleVideoEnded = () => {
+    console.log("Video ended", { isLastLessonSelected, hasRating: !!myRating });
+    if (isLastLessonSelected && material?.authorId && user) {
+      console.log("Mở modal rating (cho phép cập nhật)");
+      setRatingModalOpen(true);
+    }
+  };
+
+  // Nếu đã ở bài cuối và chưa có rating, tự mở modal sau khi đã fetch rating xong
+  useEffect(() => {
+    if (!ratingLoading) {
+      // Chờ rating load xong mới kiểm tra
+      if (isLastLessonSelected && material?.authorId && user) {
+        console.log("Auto mở modal rating", {
+          isLastLessonSelected,
+          myRating,
+        });
+        setRatingModalOpen(true);
+      }
+    }
+  }, [isLastLessonSelected, material?.authorId, user, myRating, ratingLoading]);
 
   if (materialLoading) {
     return (
@@ -246,24 +293,6 @@ const MaterialLearnPage: React.FC = () => {
       </div>
     );
   }
-
-  const sortedLessons = sortLessons(lessons);
-  const isLastLessonSelected =
-    !!selectedLesson &&
-    sortedLessons.length > 0 &&
-    selectedLesson.id === sortedLessons[sortedLessons.length - 1].id;
-
-  const handleVideoEnded = () => {
-    if (
-      isLastLessonSelected &&
-      material?.authorId &&
-      user &&
-      !myRating
-    ) {
-      setHasWatchedLastLesson(true);
-      setRatingModalOpen(true);
-    }
-  };
 
   const handleRatingChange = (value: number) => {
     const safeValue = value || 1;
@@ -329,7 +358,6 @@ const MaterialLearnPage: React.FC = () => {
       <Modal
         open={
           ratingModalOpen &&
-          hasWatchedLastLesson &&
           isLastLessonSelected &&
           !!material.authorId &&
           !!user
@@ -350,80 +378,82 @@ const MaterialLearnPage: React.FC = () => {
           </p>
         )}
 
-        {myRating ? (
-          <div className="rounded-lg bg-green-50 border border-green-200 p-4 text-sm text-gray-700">
+        {myRating && (
+          <div className="rounded-lg bg-green-50 border border-green-200 p-4 text-sm text-gray-700 mb-3">
             <p className="font-semibold mb-1">
               Bạn đã đánh giá: {myRating.rating}/5
             </p>
             {myRating.comment && <p>{myRating.comment}</p>}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Trải nghiệm của bạn thế nào?
-              </label>
-              <div className="flex flex-col items-center gap-2 group">
-                <Rate
-                  value={ratingValue}
-                  onChange={handleRatingChange}
-                  allowClear={false}
-                  className="scale-100 transition-transform duration-300 hover:scale-105"
-                />
-                <div className="flex items-center gap-2 text-xs font-medium text-blue-500">
-                  <span className="text-3xl transition-transform duration-300 group-hover:rotate-12">
-                    {ratingValue >= 5
-                      ? "😄"
-                      : ratingValue >= 4
-                      ? "😊"
-                      : ratingValue === 3
-                      ? "😐"
-                      : ratingValue === 2
-                      ? "☹️"
-                      : "😡"}
-                  </span>
-                  <span>
-                    {ratingValue >= 5
-                      ? "Rất hài lòng"
-                      : ratingValue >= 4
-                      ? "Hài lòng"
-                      : ratingValue === 3
-                      ? "Bình thường"
-                      : ratingValue === 2
-                      ? "Chưa hài lòng"
-                      : "Rất tệ"}
-                  </span>
-                </div>
-              </div>
-            </div>
-            {hasSelectedRating && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nhận xét (tuỳ chọn)
-                </label>
-                <textarea
-                  ref={commentRef}
-                  rows={3}
-                  value={ratingComment}
-                  onChange={(e) => setRatingComment(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Hãy chia sẻ cảm nhận của bạn về chất lượng giảng dạy..."
-                />
-              </div>
-            )}
-            {ratingError && (
-              <p className="text-xs text-red-500">{ratingError}</p>
-            )}
-            <button
-              type="button"
-              disabled={ratingLoading}
-              onClick={handleSubmitRating}
-              className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60"
-            >
-              {ratingLoading ? "Đang gửi..." : "Gửi đánh giá"}
-            </button>
+            <p className="text-xs text-gray-600 mt-2">
+              Bạn có thể cập nhật lại đánh giá của mình bên dưới.
+            </p>
           </div>
         )}
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Trải nghiệm của bạn thế nào?
+            </label>
+            <div className="flex flex-col items-center gap-2 group">
+              <Rate
+                value={ratingValue}
+                onChange={handleRatingChange}
+                allowClear={false}
+                className="scale-100 transition-transform duration-300 hover:scale-105"
+              />
+              <div className="flex items-center gap-2 text-xs font-medium text-blue-500">
+                <span className="text-3xl transition-transform duration-300 group-hover:rotate-12">
+                  {ratingValue >= 5
+                    ? "😄"
+                    : ratingValue >= 4
+                    ? "😊"
+                    : ratingValue === 3
+                    ? "😐"
+                    : ratingValue === 2
+                    ? "☹️"
+                    : "😡"}
+                </span>
+                <span>
+                  {ratingValue >= 5
+                    ? "Rất hài lòng"
+                    : ratingValue >= 4
+                    ? "Hài lòng"
+                    : ratingValue === 3
+                    ? "Bình thường"
+                    : ratingValue === 2
+                    ? "Chưa hài lòng"
+                    : "Rất tệ"}
+                </span>
+              </div>
+            </div>
+          </div>
+          {(hasSelectedRating || ratingComment || myRating) && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nhận xét (tuỳ chọn)
+              </label>
+              <textarea
+                ref={commentRef}
+                rows={3}
+                value={ratingComment}
+                onChange={(e) => setRatingComment(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Hãy chia sẻ cảm nhận của bạn về chất lượng giảng dạy..."
+              />
+            </div>
+          )}
+          {ratingError && (
+            <p className="text-xs text-red-500">{ratingError}</p>
+          )}
+          <button
+            type="button"
+            disabled={ratingLoading || !ratingValue}
+            onClick={handleSubmitRating}
+            className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60"
+          >
+            {ratingLoading ? "Đang gửi..." : myRating ? "Cập nhật" : "Gửi đánh giá"}
+          </button>
+        </div>
       </Modal>
 
     </div>

@@ -1,7 +1,7 @@
 // src/services/teacherRatingService.ts
 import axiosInstance from "~/configs/axios";
 import type { AxiosResponse } from "axios";
-import type { ApiResponse } from "~/types/api";
+import type { ApiResponse, PaginatedResponse } from "~/types/api";
 import type {
   TeacherRating,
   TeacherRatingPayload,
@@ -25,7 +25,9 @@ const TeacherRatingService = {
     size: number = 10,
     sortBy: string = "createdAt",
     sortDir: string = "DESC"
-  ): Promise<AxiosResponse<ApiResponse<any>>> {
+  ): Promise<
+    AxiosResponse<ApiResponse<PaginatedResponse<TeacherRating>>>
+  > {
     return axiosInstance.get(`/api/teacher-ratings/teacher/${teacherId}`, {
       params: {
         page,
@@ -36,15 +38,30 @@ const TeacherRatingService = {
     });
   },
 
-  // GET /api/teacher-ratings/teacher/{teacherId}/student/{studentId}
-  // Lấy đánh giá của một học sinh cụ thể cho một giáo viên
-  getRatingByTeacherAndStudent(
+  // GET /api/teacher-ratings/teacher/{teacherId}/user/{userId}
+  // Lấy đánh giá của một người dùng cụ thể cho một giáo viên
+  async getRatingByTeacherAndStudent(
     teacherId: string,
-    studentId: string
+    userId: string
   ): Promise<AxiosResponse<ApiResponse<TeacherRating>>> {
-    return axiosInstance.get(
-      `/api/teacher-ratings/teacher/${teacherId}/student/${studentId}`
-    );
+    try {
+      // BE mới: endpoint dùng "user/{userId}"
+      return await axiosInstance.get(
+        `/api/teacher-ratings/teacher/${teacherId}/user/${userId}`
+      );
+    } catch (error: unknown) {
+      // Nếu BE chưa cập nhật và còn dùng "student/{studentId}", fallback để tránh lỗi 404/400
+      const status =
+        typeof error === "object" && error !== null && "response" in error
+          ? (error as { response?: { status?: number } }).response?.status
+          : undefined;
+      if (status === 404 || status === 400) {
+        return axiosInstance.get(
+          `/api/teacher-ratings/teacher/${teacherId}/student/${userId}`
+        );
+      }
+      throw error;
+    }
   },
 
   // GET /api/teacher-ratings/teacher/{teacherId}/statistics
