@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Card, Typography, Button, message } from "antd";
 import { ReloadOutlined, PlusOutlined } from "@ant-design/icons";
-import useLearningMaterialsAdmin from "~/hooks/useLearningMaterialsAdmin";
+import useLearningMaterialsTeacher from "~/hooks/useLearningMaterialsTeacher";
 import type { LearningMaterial, LearningMaterialQuery } from "~/types/learningMaterial";
 import type { Lesson } from "~/types/lesson";
 import MaterialFilter from "~/components/teachers/material/MaterialFilter";
@@ -55,7 +55,7 @@ const MaterialManagerPage: React.FC = () => {
     remove,
     create,
     update,
-  } = useLearningMaterialsAdmin();
+  } = useLearningMaterialsTeacher();
 
   const [filteredData, setFilteredData] = useState<LearningMaterial[]>([]);
   const [pageNo, setPageNo] = useState(0);
