@@ -143,7 +143,7 @@ const Navbar: React.FC = () => {
                         {user.firstName} {user.lastName}
                       </span>
                       <img
-                        src={user.imgUrl || 'https://placehold.co/50x50'}
+                        src={user.imgUrl || `https://ui-avatars.com/api/?name=${user.firstName} ${user.lastName}&background=random`}
                         alt="User avatar"
                         className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 transition-all duration-300 hover:border-teal-300 hover:scale-110"
                       />

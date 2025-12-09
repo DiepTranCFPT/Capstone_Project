@@ -3,7 +3,7 @@ import { Button, Avatar, Drawer, Spin } from "antd";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { IoIosArrowBack } from "react-icons/io";
-import { FaBook, FaUserGraduate, FaCertificate, FaCog, FaChartBar, FaCoins, FaRobot, FaUserFriends, FaCalendarCheck, FaTrophy, FaBars } from "react-icons/fa";
+import { FaBook, FaUserGraduate, FaCertificate, FaCog, FaChartBar, FaCoins, FaRobot, FaTrophy, FaBars } from "react-icons/fa";
 import { useAuth } from "~/hooks/useAuth";
 import { useWalletBalance } from "~/hooks/useWalletBalance";
 
@@ -19,16 +19,16 @@ const studentMenu = [
     path: "/student/ai-tutor",
     icon: <FaRobot />,
   },
-  {
-    label: "Find a Tutor",
-    path: "/student/find-tutor",
-    icon: <FaUserFriends />,
-  },
-  {
-    label: "My Bookings",
-    path: "/student/my-bookings",
-    icon: <FaCalendarCheck />,
-  },
+  // {
+  //   label: "Find a Tutor",
+  //   path: "/student/find-tutor",
+  //   icon: <FaUserFriends />,
+  // },
+  // {
+  //   label: "My Bookings",
+  //   path: "/student/my-bookings",
+  //   icon: <FaCalendarCheck />,
+  // },
   {
     label: "Quiz Battle",
     path: "/student/quiz-battle",
@@ -152,7 +152,7 @@ export default function SidebarStudent({ mobileOpen = false, onMobileClose }: St
           >
             <Avatar
               size={collapsed && !isMobile ? 32 : 40}
-              src={currentUser.imgUrl}
+              src={currentUser.imgUrl || `https://ui-avatars.com/api/?name=${currentUser.firstName} ${currentUser.lastName}&background=random`}
               className="cursor-pointer"
             />
 

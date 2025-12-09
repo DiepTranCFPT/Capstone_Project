@@ -19,7 +19,6 @@ interface HistoryRecord {
 // Primary color: #3CBCB2
 const PRIMARY_COLOR = '#3CBCB2';
 const PRIMARY_LIGHT = '#E8F7F6';
-const PRIMARY_DARK = '#2A9D93';
 
 const TestReportsPage: React.FC = () => {
     const navigate = useNavigate();
@@ -77,17 +76,17 @@ const TestReportsPage: React.FC = () => {
 
     const getScoreStyle = (score: number) => {
         if (score >= 80) return {
-            bg: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+            bg: '#10b981',
             text: '#ffffff',
             tagColor: 'success'
         };
         if (score >= 60) return {
-            bg: 'linear-gradient(135deg, #f8ab25ff 0%, #ff9216ff 100%)',
+            bg: '#f8ab25',
             text: '#ffffff',
             tagColor: 'warning'
         };
         return {
-            bg: 'linear-gradient(135deg, #ff6f6fff 0%, #ff5050ff 100%)',
+            bg: '#fa5d5d',
             text: '#ffffff',
             tagColor: 'error'
         };
@@ -112,9 +111,9 @@ const TestReportsPage: React.FC = () => {
         <div className="min-h-screen" style={{ backgroundColor: '#F8FAFA' }}>
             {/* Header Banner */}
             <div
-                className="relative overflow-hidden"
+                className="relative overflow-hidden bg-backgroundColor"
                 style={{
-                    background: `linear-gradient(135deg, ${PRIMARY_COLOR} 0%, ${PRIMARY_DARK} 100%)`,
+                    
                     padding: '2rem 1.5rem'
                 }}
             >

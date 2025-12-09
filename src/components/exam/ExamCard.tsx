@@ -1,15 +1,18 @@
 import React from 'react'
 import { FaCoins } from 'react-icons/fa';
-import { FiBook, FiClock, FiFileText } from 'react-icons/fi';
+import { FiBook, FiClock, FiFileText, FiLoader } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import type { Exam } from '~/types/test';
 
 interface ExamCardProps {
     exams: Exam;
     onStartExam?: (exam: Exam) => void;
+    isLoading?: boolean;
+    loadingExamId?: string;
 }
 
-const ExamCard: React.FC<ExamCardProps> = ({ exams, onStartExam }) => {
+const ExamCard: React.FC<ExamCardProps> = ({ exams, onStartExam, isLoading = false, loadingExamId }) => {
+    const isCurrentExamLoading = isLoading && loadingExamId === exams.id;
     return (
         <div className="bg-white border border-gray-200 rounded-lg shadow-md p-4 flex flex-col hover:shadow-xl transition-shadow duration-300 h-max">
             <h3 className="text-lg font-bold text-gray-800">{exams.title}</h3>
@@ -79,9 +82,20 @@ const ExamCard: React.FC<ExamCardProps> = ({ exams, onStartExam }) => {
                 {onStartExam && (
                     <button
                         onClick={() => onStartExam(exams)}
-                        className="text-sm font-semibold text-white px-4 py-2 rounded-lg bg-teal-500 hover:bg-teal-600 hover:cursor-pointer transition-colors"
+                        disabled={isCurrentExamLoading}
+                        className={`text-sm font-semibold text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isCurrentExamLoading
+                                ? 'bg-teal-400 cursor-not-allowed'
+                                : 'bg-teal-500 hover:bg-teal-600 hover:cursor-pointer'
+                            }`}
                     >
-                        Start Exam
+                        {isCurrentExamLoading ? (
+                            <>
+                                <FiLoader className="animate-spin" />
+                                Loading...
+                            </>
+                        ) : (
+                            'Start Exam'
+                        )}
                     </button>
                 )}
             </div>

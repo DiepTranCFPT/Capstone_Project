@@ -17,6 +17,13 @@ import type { User } from '~/types/user';
 
 const { Title, Text } = Typography;
 
+// Helper function to extract display name from permission name (removes UUID suffix)
+const getDisplayPermissionName = (name: string): string => {
+  // Match pattern: NAME_UUID where UUID is like "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  const uuidPattern = /_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+  return name.replace(uuidPattern, '');
+};
+
 interface UserPermissionModalProps {
   visible: boolean;
   user: User | null;
@@ -130,7 +137,7 @@ const UserPermissionModal: React.FC<UserPermissionModalProps> = ({
               {userPermissions.map((permission) => (
                 <Tag key={permission.name} color="green" className="mb-1">
                   <Shield className="w-3 h-3 mr-1" />
-                  {permission.name}
+                  {getDisplayPermissionName(permission.name)}
                 </Tag>
               ))}
             </div>
@@ -161,14 +168,13 @@ const UserPermissionModal: React.FC<UserPermissionModalProps> = ({
                     return (
                       <div
                         key={permission.name}
-                        className={`flex items-start gap-2 p-2 border rounded ${
-                          isAssigned ? 'border-green-300 bg-green-50' : 'border-gray-300'
-                        }`}
+                        className={`flex items-start gap-2 p-2 border rounded ${isAssigned ? 'border-green-300 bg-green-50' : 'border-gray-300'
+                          }`}
                       >
                         <Checkbox value={permission.name} />
                         <div className="flex-1">
                           <div className="font-medium text-sm flex items-center gap-2">
-                            {permission.name}
+                            {getDisplayPermissionName(permission.name)}
                             {isAssigned && (
                               <Tag color="green" className="text-xs">
                                 Assigned

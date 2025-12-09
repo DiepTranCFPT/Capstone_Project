@@ -1,5 +1,9 @@
 import React from 'react';
-
+import { CiLock } from "react-icons/ci";
+import { CiWarning } from "react-icons/ci";
+import { FaCheckCircle } from "react-icons/fa";
+import { FcCancel } from "react-icons/fc";
+import { FaXmark } from "react-icons/fa6";
 interface ProctoringRulesModalProps {
     visible: boolean;
     onAccept: () => void;
@@ -17,9 +21,9 @@ const ProctoringRulesModal: React.FC<ProctoringRulesModalProps> = ({
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-teal-600 to-teal-400 text-white p-6 rounded-t-2xl">
+                <div className="bg-backgroundColor text-white p-6 rounded-t-2xl">
                     <h2 className="text-2xl font-bold flex items-center gap-3">
-                        <span className="text-3xl">🔒</span>
+                        <span className="text-3xl"><CiLock /></span>
                         Proctoring Rules
                     </h2>
                     <p className="text-teal-100 mt-2">
@@ -32,7 +36,7 @@ const ProctoringRulesModal: React.FC<ProctoringRulesModalProps> = ({
                     {/* Warning Box */}
                     <div className="bg-red-50 border-2 border-red-300 rounded-xl p-4 mb-6">
                         <div className="flex items-start gap-3">
-                            <span className="text-2xl">⚠️</span>
+                            <span className="text-2xl"><CiWarning className='text-red-500'/></span>
                             <div>
                                 <h3 className="font-bold text-red-800 mb-1">Important Warning</h3>
                                 <p className="text-sm text-red-700">
@@ -45,12 +49,12 @@ const ProctoringRulesModal: React.FC<ProctoringRulesModalProps> = ({
                     {/* Prohibited Actions */}
                     <div className="mb-6">
                         <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <span className="text-xl">🚫</span>
+                            <span className="text-xl"><FcCancel /></span>
                             Prohibited Actions
                         </h3>
                         <ul className="space-y-3">
                             <li className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                                <span className="text-lg">❌</span>
+                                <span className="text-lg"><FaXmark className='text-red-500'/></span>
                                 <div>
                                     <strong className="text-gray-800">Switch tab or window</strong>
                                     <p className="text-sm text-gray-600 mt-1">
@@ -59,7 +63,7 @@ const ProctoringRulesModal: React.FC<ProctoringRulesModalProps> = ({
                                 </div>
                             </li>
                             <li className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                                <span className="text-lg">❌</span>
+                                <span className="text-lg"><FaXmark className='text-red-500'/></span>
                                 <div>
                                     <strong className="text-gray-800">Exit fullscreen mode</strong>
                                     <p className="text-sm text-gray-600 mt-1">
@@ -68,7 +72,7 @@ const ProctoringRulesModal: React.FC<ProctoringRulesModalProps> = ({
                                 </div>
                             </li>
                             <li className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                                <span className="text-lg">❌</span>
+                                <span className="text-lg"><FaXmark className='text-red-500' /></span>
                                 <div>
                                     <strong className="text-gray-800">Copy exam content</strong>
                                     <p className="text-sm text-gray-600 mt-1">
@@ -82,7 +86,7 @@ const ProctoringRulesModal: React.FC<ProctoringRulesModalProps> = ({
                     {/* Allowed Actions */}
                     <div className="mb-6">
                         <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <span className="text-xl">✅</span>
+                            <span className="text-xl"><FaCheckCircle className='text-green-500'/></span>
                             Allowed Actions
                         </h3>
                         <ul className="space-y-2">
@@ -140,7 +144,7 @@ const ProctoringRulesModal: React.FC<ProctoringRulesModalProps> = ({
                     </button>
                     <button
                         onClick={onAccept}
-                        className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                        className="px-6 py-3 bg-backgroundColor hover:bg-backgroundColor/80 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
                     >
                         I agree - Start Exam
                     </button>

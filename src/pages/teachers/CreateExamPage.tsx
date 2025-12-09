@@ -442,9 +442,9 @@ const CreateExamPage: React.FC = () => {
                   </Select.Option>
                 ))}
               </Select>
-              {!selectedSubjectId && (
+              {/* {!selectedSubjectId && (
                 <div className="text-red-500 text-sm mt-1">Subject must be selected</div>
-              )}
+              )} */}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Token Cost *</label>

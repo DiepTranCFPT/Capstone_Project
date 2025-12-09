@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Col, Row, Statistic, Spin, Empty, Table, Tag, Progress } from 'antd';
+import { Card, Col, Row, Statistic, Empty, Table, Tag } from 'antd';
 import {
     FileTextOutlined,
     TrophyOutlined,
@@ -12,6 +12,7 @@ import {
     RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
 import type { StudentExamStats } from '~/types/dashboard';
+import Loading from '../common/Loading';
 
 const PRIMARY_COLOR = '#3CBCB2';
 
@@ -24,9 +25,7 @@ interface ChildDetailStatsProps {
 export const ChildDetailStats: React.FC<ChildDetailStatsProps> = ({ stats, loading, childName }) => {
     if (loading) {
         return (
-            <div className="flex justify-center py-8">
-                <Spin size="large" />
-            </div>
+            <Loading />
         );
     }
 
@@ -82,12 +81,12 @@ export const ChildDetailStats: React.FC<ChildDetailStatsProps> = ({ stats, loadi
                                 fontWeight: 'bold'
                             }}
                         />
-                        <Progress
+                        {/* <Progress
                             percent={stats.averageScore || 0}
                             size="small"
                             strokeColor={stats.averageScore >= 70 ? '#10b981' : '#f59e0b'}
                             className="mt-2"
-                        />
+                        /> */}
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
@@ -101,7 +100,7 @@ export const ChildDetailStats: React.FC<ChildDetailStatsProps> = ({ stats, loadi
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card className="shadow-sm hover:shadow-md transition-shadow" style={{ borderColor: PRIMARY_COLOR }}>
+                    <Card className="shadow-sm hover:shadow-md transition-shadow h-full" style={{ borderColor: PRIMARY_COLOR }}>
                         <div className="flex items-center gap-2 mb-2">
                             <BulbOutlined style={{ color: PRIMARY_COLOR }} />
                             <span className="text-gray-600 font-medium">Recommended topic</span>
