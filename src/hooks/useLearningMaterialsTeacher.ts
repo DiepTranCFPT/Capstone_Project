@@ -20,20 +20,63 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
-export function useLearningMaterial() {
+const normalizePageData = (
+  raw: unknown,
+): { items: LearningMaterial[]; pageInfo: PageInfo<LearningMaterial> | null } => {
+  if (Array.isArray(raw)) {
+    const items = raw as LearningMaterial[];
+    const total = items.length;
+    return {
+      items,
+      pageInfo: {
+        pageNo: 0,
+        pageSize: total || 10,
+        totalPage: 1,
+        totalElement: total,
+        totalElements: total,
+        items,
+        content: items,
+        sortBy: [],
+      },
+    };
+  }
+
+  if (raw && typeof raw === "object") {
+    const page = raw as PageInfo<LearningMaterial>;
+    const items = page.items ?? page.content ?? [];
+    const totalElements = page.totalElements ?? page.totalElement ?? items.length;
+    return {
+      items,
+      pageInfo: {
+        ...page,
+        items,
+        content: page.content ?? items,
+        totalElements,
+        totalElement: totalElements,
+        sortBy: page.sortBy ?? [],
+      },
+    };
+  }
+
+  return { items: [], pageInfo: null };
+};
+
+export function useLearningMaterialsTeacher() {
   const [materials, setMaterials] = useState<LearningMaterial[]>([]);
   const [pageInfo, setPageInfo] = useState<PageInfo<LearningMaterial> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   //  Lấy danh sách (có phân trang)
-  const fetchAll = useCallback(async (query?: LearningMaterialQuery) => {
+  const fetchAll = useCallback(async (_query?: LearningMaterialQuery) => {
     try {
       setLoading(true);
-      const res = await LearningMaterialService.getAll(query);
-      const data = res.data.data;
-      setPageInfo(data);
-      setMaterials(data.items || data.content || []);
+      setError(null);
+      void _query; // giữ chữ ký hàm cho các nơi đang gọi có query
+      const res = await LearningMaterialService.getMyMaterials();
+      const { items, pageInfo: normalizedPageInfo } = normalizePageData(res.data.data);
+      setMaterials(items);
+      setPageInfo(normalizedPageInfo);
     } catch (err: unknown) {
       console.error("❌ Fetch materials error:", err);
       setError(getErrorMessage(err, "Failed to load materials"));
@@ -151,4 +194,6 @@ export function useLearningMaterial() {
   };
 }
 
-export default useLearningMaterial;
+export default useLearningMaterialsTeacher;
+
+
