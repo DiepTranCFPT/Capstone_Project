@@ -145,7 +145,7 @@ export const useTeacherRatings = () => {
   );
 
   const fetchRatingByTeacherAndStudent = useCallback(
-    async (teacherId: string, studentId: string): Promise<TeacherRating | null> => {
+    async (teacherId: string, userId: string): Promise<TeacherRating | null> => {
       try {
         setLoading(true);
         setError(null);
@@ -153,7 +153,7 @@ export const useTeacherRatings = () => {
         const response =
           await TeacherRatingService.getRatingByTeacherAndStudent(
             teacherId,
-            studentId
+            userId
           );
 
         const responseData =
@@ -165,13 +165,29 @@ export const useTeacherRatings = () => {
             : (responseData as ApiResponse<TeacherRating>).data ?? null;
 
         if (rawData && typeof rawData === "object") {
+          console.log("✅ Tìm thấy rating:", rawData);
           setMyRating(rawData as TeacherRating);
           return rawData as TeacherRating;
         }
 
+        console.log("⚠️ Response không có data hợp lệ, set myRating = null");
         setMyRating(null);
         return null;
       } catch (err) {
+        // Phân biệt giữa 404 (chưa có rating - hợp lệ) và lỗi khác
+        const axiosError = err as {
+          response?: { status?: number; data?: unknown };
+        };
+        
+        // 404 = không tìm thấy rating, đây là trường hợp hợp lệ
+        if (axiosError.response?.status === 404) {
+          console.log("✅ Chưa có rating cho giáo viên này (404) - set myRating = null");
+          setMyRating(null);
+          return null;
+        }
+
+        // Các lỗi khác (500, network, etc.)
+        console.error("Lỗi khi tải rating:", err);
         setError(
           getErrorMessage(
             err,
@@ -186,6 +202,11 @@ export const useTeacherRatings = () => {
     },
     []
   );
+
+  // Dùng để clear state rating khi chuyển tài liệu/giáo viên
+  const resetMyRating = useCallback(() => {
+    setMyRating(null);
+  }, []);
 
   const fetchStatisticsByTeacher = useCallback(
     async (teacherId: string): Promise<TeacherRatingStatistics | null> => {
@@ -277,6 +298,7 @@ export const useTeacherRatings = () => {
     fetchRatingByTeacherAndStudent,
     fetchStatisticsByTeacher,
     createRating,
+    resetMyRating,
   };
 };
 
