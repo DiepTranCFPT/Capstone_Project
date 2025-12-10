@@ -9,13 +9,16 @@ export interface ParentTransactionItem {
   amount: number;
   to?: string;
   type?: "in" | "out";
+  status?: string;
+  balanceAfter?: number;
 }
 
 interface ParentRecentTransactionsProps {
   transactions: ParentTransactionItem[];
+  loading?: boolean;
 }
 
-const ParentRecentTransactions: React.FC<ParentRecentTransactionsProps> = ({ transactions }) => {
+const ParentRecentTransactions: React.FC<ParentRecentTransactionsProps> = ({ transactions, loading }) => {
   return (
     <Card
       title={<span className="font-semibold text-gray-800">Recent transactions</span>}
@@ -24,9 +27,19 @@ const ParentRecentTransactions: React.FC<ParentRecentTransactionsProps> = ({ tra
       headStyle={{ background: "#f8fafc" }}
     >
       <div className="space-y-3">
+        {loading && <p className="text-sm text-gray-500">Loading transactions...</p>}
+        {!loading && transactions.length === 0 && (
+          <p className="text-sm text-gray-500">No transactions.</p>
+        )}
         {transactions.map((tx) => {
           const isIncome = tx.amount > 0;
           const Icon = isIncome ? CheckCircleTwoTone : MinusCircleTwoTone;
+          const statusUpper = (tx.status || "").toUpperCase();
+          const statusColor = statusUpper.includes("SUCCESS")
+            ? "green"
+            : statusUpper.includes("PENDING")
+            ? "orange"
+            : "red";
           return (
             <div
               key={tx.id}
@@ -39,10 +52,20 @@ const ParentRecentTransactions: React.FC<ParentRecentTransactionsProps> = ({ tra
                 <div>
                   <p className="font-semibold text-gray-800">{tx.title}</p>
                   <p className="text-xs text-gray-500">{tx.date}</p>
+                  {tx.status && (
+                    <Tag color={statusColor} className="mt-1">
+                      {statusUpper || "STATUS"}
+                    </Tag>
+                  )}
                   {tx.to && (
                     <Tag color="blue" className="mt-1">
                       To: {tx.to}
                     </Tag>
+                  )}
+                  {typeof tx.balanceAfter === "number" && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Balance after: {tx.balanceAfter.toLocaleString("vi-VN")} đ
+                    </p>
                   )}
                 </div>
               </div>

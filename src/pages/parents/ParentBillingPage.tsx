@@ -13,6 +13,8 @@ import ParentChildrenAccounts from "~/components/parents/wallet/ParentChildrenAc
 import ParentRecentTransactions, { type ParentTransactionItem } from "~/components/parents/wallet/ParentRecentTransactions";
 import TopUpModal from "~/components/parents/wallet/TopUpModal";
 import TransferModal from "~/components/parents/wallet/TransferModal";
+import PaymentService from "~/services/PaymentService";
+import type { ParentTransactionRaw } from "~/types/payment";
 
 const ParentBillingPage: React.FC = () => {
   // Balance from API
@@ -30,35 +32,8 @@ const ParentBillingPage: React.FC = () => {
   const [childrenAccounts, setChildrenAccounts] = useState<ChildInfo[]>([]);
   const [childrenLoading, setChildrenLoading] = useState(false);
   const { transfer, loading: transferLoading } = useTransferParentToStudent();
-  const transactions: ParentTransactionItem[] = [
-    {
-      id: 1,
-      title: "Top-up via ABC Bank",
-      date: "12/09/2025",
-      amount: 5000000,
-      type: "in",
-    },
-    {
-      id: 2,
-      title: "Breakfast transfer",
-      date: "12/08/2025",
-      amount: -200000,
-      to: "Minh",
-    },
-    {
-      id: 3,
-      title: "Reward for good grades",
-      date: "12/05/2025",
-      amount: -500000,
-      to: "Lan",
-    },
-    {
-      id: 4,
-      title: "Salary September",
-      date: "11/30/2025",
-      amount: 10000000,
-    },
-  ];
+  const [transactions, setTransactions] = useState<ParentTransactionItem[]>([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
 
   const randomId = () => `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const quickAmounts = [200000, 500000, 1000000, 2000000];
@@ -88,6 +63,44 @@ const ParentBillingPage: React.FC = () => {
   useEffect(() => {
     fetchChildren();
   }, [fetchChildren]);
+
+  const fetchTransactions = useCallback(async () => {
+    try {
+      setTransactionsLoading(true);
+      const res = await PaymentService.getParentTransactions();
+      const data = res.data as ParentTransactionRaw[];
+      if (Array.isArray(data)) {
+        const mapped: ParentTransactionItem[] = data
+          .slice()
+          .sort((a, b) => new Date(b.createdAt ?? "").getTime() - new Date(a.createdAt ?? "").getTime())
+          .map((item) => ({
+            id: item.id,
+            title: item.externalReference || item.description || "Transaction",
+            date: item.createdAt
+              ? new Date(item.createdAt).toLocaleString("vi-VN", {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                })
+              : "",
+            amount: item.amount,
+            status: item.status,
+            balanceAfter: item.balanceAfter,
+          }));
+        setTransactions(mapped);
+      } else {
+        setTransactions([]);
+      }
+    } catch (err) {
+      console.error("Failed to load transactions", err);
+      setTransactions([]);
+    } finally {
+      setTransactionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
 
   const handleTopUp = useCallback(async (amount?: number, note?: string) => {
     const targetAmount = amount ?? topupAmount;
@@ -160,7 +173,7 @@ const ParentBillingPage: React.FC = () => {
         />
       </div>
 
-      <ParentRecentTransactions transactions={transactions} />
+      <ParentRecentTransactions transactions={transactions} loading={transactionsLoading} />
 
       <TopUpModal
         open={modalOpen}

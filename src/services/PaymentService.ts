@@ -1,5 +1,9 @@
 import axiosInstance from "~/configs/axios";
-import type { TransferParentToStudentRequest, TransferParentToStudentResponse } from "~/types/payment";
+import type {
+  TransferParentToStudentRequest,
+  TransferParentToStudentResponse,
+  ParentTransactionRaw,
+} from "~/types/payment";
 
 
 const PaymentService = {
@@ -9,6 +13,10 @@ const PaymentService = {
       null,
       { params: payload }
     );
+  },
+  getParentTransactions: () => {
+    // Backend path includes /api/transactions under baseURL
+    return axiosInstance.get<ParentTransactionRaw[]>("/api/transactions");
   },
 };
 
