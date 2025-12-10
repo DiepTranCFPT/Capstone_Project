@@ -1,4 +1,4 @@
-import { Avatar, Card, Empty, Spin, Tag, Tooltip } from "antd";
+import { Avatar, Card, Empty, Spin, Tooltip } from "antd";
 import type React from "react";
 import { useEffect } from "react";
 import { FiBook, FiUsers } from "react-icons/fi";
@@ -6,7 +6,9 @@ import MaterialThumbnail from "~/components/common/MaterialThumbnail";
 import useMaterialsWithStudents from "~/hooks/useMaterialsWithStudents";
 import type { MaterialWithStudents, RegisteredStudent } from "~/types/learningMaterial";
 
-const MyClassesPage: React.FC = () => {
+const PRIMARY_COLOR = '#3CBCB2';
+
+const MyMaterialsPage: React.FC = () => {
     const { materialsWithStudents, loading, error, fetchMaterialsWithStudents, getTotalStudentsCount } = useMaterialsWithStudents();
 
     useEffect(() => {
@@ -16,7 +18,7 @@ const MyClassesPage: React.FC = () => {
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
-                <Spin size="large" tip="Đang tải dữ liệu..." />
+                <Spin size="large" />
             </div>
         );
     }
@@ -26,29 +28,29 @@ const MyClassesPage: React.FC = () => {
             <div className="flex justify-center items-center h-64">
                 <div className="text-red-500 text-center">
                     <p className="text-lg font-semibold">Error</p>
-                    <p>{error}</p>
+                    <p className="text-sm">{error}</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="p-6">
+        <div className="p-6 bg-gray-50 min-h-screen">
             {/* Header */}
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-800">My Materials</h1>
-                    <p className="text-gray-500 mt-1">
-                        Total {materialsWithStudents.length} materials • {getTotalStudentsCount()} students registered
-                    </p>
-                </div>
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold text-gray-800">My Materials</h1>
+                <p className="text-gray-500 text-sm mt-1">
+                    {materialsWithStudents.length} materials • {getTotalStudentsCount()} students enrolled
+                </p>
             </div>
 
             {/* Materials Grid */}
             {materialsWithStudents.length === 0 ? (
-                <Empty description="You have no materials" />
+                <Card bordered={false} className="rounded-lg shadow-sm">
+                    <Empty description="You have no materials yet" />
+                </Card>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {materialsWithStudents.map((item: MaterialWithStudents) => (
                         <MaterialCard key={item.material.id} data={item} />
                     ))}
@@ -58,7 +60,6 @@ const MyClassesPage: React.FC = () => {
     );
 };
 
-// Component hiển thị mỗi material card
 interface MaterialCardProps {
     data: MaterialWithStudents;
 }
@@ -69,80 +70,111 @@ const MaterialCard: React.FC<MaterialCardProps> = ({ data }) => {
     return (
         <Card
             hoverable
-            className="shadow-md rounded-xl overflow-hidden"
-            cover={
-                material.fileImage ? (
+            bordered={false}
+            className="rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
+            styles={{ body: { padding: 0 } }}
+        >
+            {/* Thumbnail */}
+            <div className="relative">
+                {material.fileImage ? (
                     <MaterialThumbnail
                         source={material.fileImage}
                         width="100%"
-                        height={250}
+                        height={160}
                         fit="cover"
-                        roundedClass="rounded-t-xl"
                         className="w-full"
                     />
                 ) : (
-                    <div className="h-40 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                        <FiBook className="text-white text-5xl" />
+                    <div
+                        className="h-40 flex items-center justify-center"
+                        style={{ background: 'linear-gradient(135deg, #3CBCB2 0%, #2dd4bf 100%)' }}
+                    >
+                        <FiBook className="text-white text-4xl opacity-80" />
                     </div>
-                )
-            }
-        >
-            {/* Material Info */}
-            <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 mb-2">
-                    {material.title}
-                </h3>
-                <p className="text-gray-500 text-sm line-clamp-2 mb-3">
-                    {material.description || "Không có mô tả"}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                    <Tag color="blue">{material.subjectName}</Tag>
-                    <Tag color="green">{material.typeName}</Tag>
-                    {material.price && material.price > 0 && (
-                        <Tag color="gold">{material.price.toLocaleString()}đ</Tag>
-                    )}
+                )}
+
+                {/* Student count overlay */}
+                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                    <FiUsers className="text-xs" style={{ color: PRIMARY_COLOR }} />
+                    <span className="text-xs font-medium text-gray-700">{totalStudent}</span>
                 </div>
             </div>
 
-            {/* Registered Students */}
-            <div className="border-t pt-4">
-                <div className="flex items-center justify-between mb-3">
-                    <span className="text-gray-600 font-medium flex items-center gap-2">
-                        <FiUsers className="text-blue-500" />
-                        Registered Students
-                    </span>
-                    <Tag color="purple">{totalStudent} students</Tag>
-                </div>
+            {/* Content */}
+            <div className="p-4">
+                {/* Title */}
+                <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 mb-2 leading-tight">
+                    {material.title}
+                </h3>
+                <p className="text-xs text-gray-500 mb-4">{material.description}</p>
 
-                {registeredStudents.length > 0 ? (
-                    <div className="flex items-center">
-                        <Avatar.Group maxCount={5} maxStyle={{ backgroundColor: '#1890ff' }}>
-                            {registeredStudents.map((student: RegisteredStudent) => (
+                {/* Tags */}
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    <span
+                        className="text-xs px-2 py-0.5 rounded-full"
+                        style={{ backgroundColor: '#3CBCB215', color: PRIMARY_COLOR }}
+                    >
+                        {material.subjectName}
+                    </span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                        {material.typeName}
+                    </span>
+                </div>
+                {/* Price badge */}
+                {material.price ? (
+                    <div
+                        className="w-max px-2 py-1 rounded-full text-xs font-medium text-white shadow mb-2"
+                        style={{ backgroundColor: PRIMARY_COLOR }}
+                    >
+                        {material.price.toLocaleString()} tokens
+                    </div>
+                ) : (<div>
+                    <div
+                        className="w-max px-2 py-1 rounded-full text-xs font-medium text-white shadow mb-2"
+                        style={{ backgroundColor: PRIMARY_COLOR }}
+                    >
+                        Free
+                    </div>
+                </div>)}
+
+                {/* Students Section */}
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <span className="text-xs text-gray-500">
+                        {totalStudent} {totalStudent === 1 ? 'student' : 'students'}
+                    </span>
+
+                    {registeredStudents.length > 0 && (
+                        <Avatar.Group
+                            size={24}
+                            maxCount={4}
+                            maxStyle={{
+                                backgroundColor: PRIMARY_COLOR,
+                                fontSize: 10,
+                                width: 24,
+                                height: 24,
+                                lineHeight: '24px'
+                            }}
+                        >
+                            {registeredStudents.slice(0, 4).map((student: RegisteredStudent) => (
                                 <Tooltip
                                     key={student.id}
                                     title={`${student.firstName} ${student.lastName}`}
                                 >
                                     <Avatar
+                                        size={24}
                                         src={student.imgUrl}
-                                        style={{ backgroundColor: '#87d068' }}
+                                        style={{ backgroundColor: PRIMARY_COLOR }}
                                     >
                                         {student.firstName?.charAt(0)}
                                     </Avatar>
                                 </Tooltip>
                             ))}
                         </Avatar.Group>
-                        {registeredStudents.length > 5 && (
-                            <span className="ml-2 text-gray-500 text-sm">
-                                +{registeredStudents.length - 5} others
-                            </span>
-                        )}
-                    </div>
-                ) : (
-                    <p className="text-gray-400 text-sm italic">No students registered</p>
-                )}
+                    )}
+                </div>
             </div>
         </Card>
     );
 };
 
-export default MyClassesPage;
+export default MyMaterialsPage;
