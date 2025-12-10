@@ -1,7 +1,7 @@
 import axiosInstance from "~/configs/axios";
 import type { AxiosResponse } from "axios";
 import type { ApiResponse } from "~/types/api";
-import type { LearningMaterial, LearningMaterialQuery, PageInfo } from "~/types/learningMaterial";
+import type { LearningMaterial, LearningMaterialQuery, PageInfo, MaterialsWithStudentsResponse } from "~/types/learningMaterial";
 
 const LearningMaterialService = {
   getById(id: string): Promise<AxiosResponse<ApiResponse<LearningMaterial>>> {
@@ -62,6 +62,10 @@ const LearningMaterialService = {
 
   getAllNoPaging(): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {
     return axiosInstance.get(`/learning-materials/all`);
+  },
+
+  getMaterialsWithStudents(): Promise<AxiosResponse<MaterialsWithStudentsResponse>> {
+    return axiosInstance.get(`/learning-materials/teacher/materials-with-students`);
   },
 };
 

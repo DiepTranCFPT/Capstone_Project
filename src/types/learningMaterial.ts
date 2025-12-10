@@ -40,3 +40,52 @@ export interface PageInfo<T> {
   content?: T[];
   sortBy: string[];
 }
+
+// Types for GET /learning-materials/teacher/materials-with-students API
+export interface RegisteredStudentTeacherProfile {
+  id: string;
+  qualification: string;
+  specialization: string;
+  experience: string;
+  biography: string;
+  rating: number;
+  certificateUrls: string[];
+  isVerified: boolean;
+}
+
+export interface RegisteredStudentStudentProfile {
+  id: string;
+  schoolName: string;
+  emergencyContact: string;
+  goal: string;
+}
+
+export interface RegisteredStudentParentProfile {
+  id: string;
+  occupation: string;
+}
+
+export interface RegisteredStudent {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  imgUrl: string;
+  dob: string;
+  roles: string[];
+  teacherProfile?: RegisteredStudentTeacherProfile;
+  studentProfile?: RegisteredStudentStudentProfile;
+  parentProfile?: RegisteredStudentParentProfile;
+}
+
+export interface MaterialWithStudents {
+  material: LearningMaterial;
+  registeredStudents: RegisteredStudent[];
+  totalStudent: number;
+}
+
+export interface MaterialsWithStudentsResponse {
+  code: number;
+  message: string;
+  data: MaterialWithStudents[];
+}
