@@ -55,3 +55,4 @@ const MaterialCard: React.FC<{ material: Material }> = ({ material }) => {
 };
 
 export default MaterialCard;
+

@@ -71,7 +71,6 @@ const MaterialLearnPage: React.FC = () => {
   };
 
 
-  // Helper sort: ưu tiên `order`, sau đó `createdAt` (bài tạo trước đứng trước)
   const sortLessons = (lessonList: Lesson[]): Lesson[] => {
     return [...lessonList].sort((a, b) => {
       const orderDiff = (a.order || 0) - (b.order || 0);
@@ -88,7 +87,6 @@ const MaterialLearnPage: React.FC = () => {
       getLessonsByLearningMaterial(id).then((lessonList) => {
         const sorted = sortLessons(lessonList);
         setLessons(sorted);
-        // Tự động chọn bài học đầu tiên nếu có
         if (sorted.length > 0 && !selectedLesson) {
           setSelectedLesson(sorted[0]);
         }
@@ -102,16 +100,15 @@ const MaterialLearnPage: React.FC = () => {
     return selectedLesson.video ?? selectedLesson.url ?? null;
   }, [selectedLesson]);
 
-  // Load rating info khi có material + user
   useEffect(() => {
     const teacherId = material?.authorId;
     const userId = user?.id;
     if (!teacherId || !userId) {
-      resetMyRating(); // tránh lưu rating cũ khi thiếu thông tin
+      resetMyRating();
       return;
     }
 
-    resetMyRating(); // clear rating cũ khi đổi giáo viên
+    resetMyRating();
     fetchRatingByTeacherAndStudent(teacherId, userId);
     fetchStatisticsByTeacher(teacherId);
   }, [
@@ -122,7 +119,6 @@ const MaterialLearnPage: React.FC = () => {
     resetMyRating,
   ]);
 
-  // Nếu đã có rating trước đó, prefill modal; nếu chưa có thì về 0
   useEffect(() => {
     if (myRating) {
       setRatingValue(myRating.rating ?? 0);
@@ -131,7 +127,10 @@ const MaterialLearnPage: React.FC = () => {
       setRatingValue(0);
       setRatingComment("");
     }
-  }, [myRating]);
+    if (ratingModalOpen && !videoPlayedForLastLessonRef.current && !videoEndedForLastLessonRef.current) {
+      setRatingModalOpen(false);
+    }
+  }, [myRating, ratingModalOpen]);
 
   const handleSubmitRating = async () => {
     const teacherId = material?.authorId;
@@ -230,11 +229,15 @@ const MaterialLearnPage: React.FC = () => {
     void loadVideo();
   }, [lessonVideoRef]);
 
-  // Reset trạng thái rating khi đổi bài học
+  const videoEndedForLastLessonRef = useRef(false);
+  const videoPlayedForLastLessonRef = useRef(false);
+
   useEffect(() => {
+    videoEndedForLastLessonRef.current = false;
+    videoPlayedForLastLessonRef.current = false;
     setRatingModalOpen(false);
     setHasSelectedRating(false);
-  }, [selectedLesson]);
+  }, [selectedLesson?.id]);
 
   const sortedLessons = sortLessons(lessons);
   const isLastLessonSelected =
@@ -242,27 +245,61 @@ const MaterialLearnPage: React.FC = () => {
     sortedLessons.length > 0 &&
     selectedLesson.id === sortedLessons[sortedLessons.length - 1].id;
 
-  const handleVideoEnded = () => {
-    console.log("Video ended", { isLastLessonSelected, hasRating: !!myRating });
-    if (isLastLessonSelected && material?.authorId && user) {
-      console.log("Mở modal rating (cho phép cập nhật)");
-      setRatingModalOpen(true);
+  const setRatingModalOpenSafe = (open: boolean) => {
+    if (open) {
+      const currentIsLastLesson = 
+        !!selectedLesson &&
+        sortedLessons.length > 0 &&
+        selectedLesson.id === sortedLessons[sortedLessons.length - 1].id;
+      
+      const canOpen = 
+        currentIsLastLesson &&
+        videoPlayedForLastLessonRef.current &&
+        videoEndedForLastLessonRef.current;
+      
+      setRatingModalOpen(canOpen);
+    } else {
+      setRatingModalOpen(false);
     }
   };
 
-  // Nếu đã ở bài cuối và chưa có rating, tự mở modal sau khi đã fetch rating xong
   useEffect(() => {
-    if (!ratingLoading) {
-      // Chờ rating load xong mới kiểm tra
-      if (isLastLessonSelected && material?.authorId && user) {
-        console.log("Auto mở modal rating", {
-          isLastLessonSelected,
-          myRating,
-        });
-        setRatingModalOpen(true);
+    if (isLastLessonSelected) {
+      const shouldBeOpen = 
+        videoPlayedForLastLessonRef.current && 
+        videoEndedForLastLessonRef.current;
+      
+      if (ratingModalOpen && !shouldBeOpen) {
+        setRatingModalOpen(false);
+      }
+      
+      if (!videoPlayedForLastLessonRef.current) {
+        videoEndedForLastLessonRef.current = false;
+      }
+    } else {
+      if (ratingModalOpen) {
+        setRatingModalOpen(false);
       }
     }
-  }, [isLastLessonSelected, material?.authorId, user, myRating, ratingLoading]);
+  }, [isLastLessonSelected, ratingModalOpen]);
+
+  const handleVideoPlay = () => {
+    if (isLastLessonSelected) {
+      videoPlayedForLastLessonRef.current = true;
+    }
+  };
+
+  const handleVideoEnded = () => {
+    if (
+      isLastLessonSelected && 
+      videoPlayedForLastLessonRef.current &&
+      material?.authorId && 
+      user
+    ) {
+      videoEndedForLastLessonRef.current = true;
+      setRatingModalOpenSafe(true);
+    }
+  };
 
   if (materialLoading) {
     return (
@@ -325,6 +362,7 @@ const MaterialLearnPage: React.FC = () => {
                 videoLoading={videoLoading}
                 videoError={videoError}
                 onVideoEnded={handleVideoEnded}
+                onVideoPlay={handleVideoPlay}
                 onOpenPdf={handleOpenPdf}
                 openingFile={openingFile}
                 activeTab={activeTab}
@@ -354,11 +392,12 @@ const MaterialLearnPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal rating giáo viên – mở sau khi xem hết video bài cuối */}
       <Modal
         open={
           ratingModalOpen &&
           isLastLessonSelected &&
+          videoPlayedForLastLessonRef.current &&
+          videoEndedForLastLessonRef.current &&
           !!material.authorId &&
           !!user
         }

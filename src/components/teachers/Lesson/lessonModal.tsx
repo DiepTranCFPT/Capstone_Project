@@ -153,6 +153,25 @@ const LessonModal: React.FC<LessonModalProps> = ({
   const [form] = Form.useForm<LessonFormFields>();
   const canCreate = useMemo(() => Boolean(material), [material]);
 
+  // Sắp xếp lessons theo thời gian tạo - bài tạo trước đứng trước, xuống dần
+  const sortedLessons = useMemo(() => {
+    return [...lessons].sort((a, b) => {
+      // Nếu cả hai đều có createdAt, sắp xếp theo thời gian tạo
+      if (a.createdAt && b.createdAt) {
+        const timeA = new Date(a.createdAt).getTime();
+        const timeB = new Date(b.createdAt).getTime();
+        return timeA - timeB; // Bài tạo trước (time nhỏ hơn) đứng trước
+      }
+      
+      // Nếu chỉ một trong hai có createdAt, bài có createdAt đứng trước
+      if (a.createdAt && !b.createdAt) return -1;
+      if (!a.createdAt && b.createdAt) return 1;
+      
+      // Nếu cả hai đều không có createdAt, giữ nguyên thứ tự (hoặc sắp xếp theo id)
+      return a.id.localeCompare(b.id);
+    });
+  }, [lessons]);
+
   const extractFileName = (path?: string | null): string => {
     if (!path) return "current-file";
     try {
@@ -354,7 +373,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
         ) : lessons.length > 0 ? (
           <List
             size="small"
-            dataSource={lessons}
+            dataSource={sortedLessons}
             renderItem={(lesson) => {
               const secondary = lesson.url ?? lesson.file ?? lesson.description;
               return (
