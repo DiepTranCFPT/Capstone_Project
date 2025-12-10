@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { FRQ } from '~/types/question';
 import { BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
+import { getSubjectRenderModeByCodeAndName } from '~/configs/subjectRenderMode';
 
 interface FRQCardProps {
     question: FRQ;
@@ -17,20 +18,11 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
     const isSyncingRef = useRef(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    // Determine the card mode based on subject
+    // Determine the card mode based on subject using centralized config
+    // Checks subjectCode first (if available), then falls back to subject name
     const getCardMode = () => {
-        const subjectName = question.subject;
-        //update subject names as needed
-        const mathScienceSubjects = ["Mathematics", "Physics", "Chemistry"];
-        const historyEnglishSubjects = ["History", "AP English Language"];
-
-        if (mathScienceSubjects.includes(subjectName)) {
-            return "latex";
-        } else if (historyEnglishSubjects.includes(subjectName)) {
-            return "splitscreen";
-        } else {
-            return "normal";
-        }
+        const subjectCode = (question as unknown as { subjectCode?: string }).subjectCode;
+        return getSubjectRenderModeByCodeAndName(subjectCode, question.subject);
     };
 
     const cardMode = getCardMode();

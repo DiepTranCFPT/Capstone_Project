@@ -5,9 +5,9 @@ import { FiSearch, FiLoader } from 'react-icons/fi';
 import Section from '~/components/exam/Section';
 import { useBrowseExamTemplates } from '~/hooks/useExamBrowser';
 import { useSubjects } from '~/hooks/useSubjects';
-import { useTeachers } from '~/hooks/useTeachers';
+import { useTeachersList } from '~/hooks/useTeachersList';
 import { useExamAttempt } from '~/hooks/useExamAttempt';
-import { useAuth } from '~/hooks/useAuth';
+// import { useAuth } from '~/hooks/useAuth';
 import type { Exam, ExamTemplate } from '~/types/test';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,15 +16,16 @@ import { useNavigate } from 'react-router-dom';
 const ExamTestPage: React.FC = () => {
     const { templates, loading: examsLoading, error: examsError, applyFilters } = useBrowseExamTemplates();
     const { subjects, loading: subjectsLoading } = useSubjects();
-    const { teachers, loading: teachersLoading } = useTeachers();
+    const { teachers, loading: teachersLoading } = useTeachersList({ pageNo: 0, pageSize: 100 });
     const { startSingleAttempt, startComboAttempt, startComboRandomAttempt } = useExamAttempt();
-    const { isAuthenticated } = useAuth();
+    // const { isAuthenticated } = useAuth();
     const navigation = useNavigate();
     // Create a lookup map from teacher email to teacher info
     const teacherLookup = useMemo(() => {
         const map = new Map<string, { name: string; imgUrl?: string }>();
         teachers.forEach(teacher => {
-            map.set(teacher.email, { name: teacher.name, imgUrl: teacher.imgUrl });
+            const fullName = `${teacher.firstName} ${teacher.lastName}`.trim();
+            map.set(teacher.email, { name: fullName, imgUrl: teacher.imgUrl });
         });
         return map;
     }, [teachers]);
@@ -285,34 +286,6 @@ const ExamTestPage: React.FC = () => {
         setPendingAction(null);
     };
 
-    if (!isAuthenticated) {
-        return (
-            <div className="bg-slate-50">
-                {/* Page Title Section */}
-                <Section />
-
-                {/* Login Required Message */}
-                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-                    <div className="text-center py-20">
-                        <div className="text-6xl mb-6">🔒</div>
-                        <h3 className="text-3xl font-bold text-gray-800 mb-4">
-                            Please login to view
-                        </h3>
-                        <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                            You need to login to access exams and features of the system.
-                        </p>
-                        <button
-                            onClick={() => window.location.href = '/auth'}
-                            className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
-                        >
-                            Login
-                        </button>
-                    </div>
-                </main>
-            </div>
-        );
-    }
-
     return (
         <div className="bg-slate-50">
             {/* Page Title Section */}
@@ -404,7 +377,7 @@ const ExamTestPage: React.FC = () => {
                                         <option value="">{teachersLoading ? 'Loading teachers...' : 'All Teachers'}</option>
                                         {teachers.map((teacher) => (
                                             <option key={teacher.id} value={teacher.id}>
-                                                {teacher.name}
+                                                {teacher.firstName} {teacher.lastName}
                                             </option>
                                         ))}
                                     </select>
