@@ -1,29 +1,51 @@
-import React, { useState } from 'react';
-import { Button, Input } from 'antd';
+import React, { useState, useEffect, useRef } from 'react';
+import { Button, Input, Spin } from 'antd';
 import { FaRobot } from 'react-icons/fa';
-import { useAuth } from '~/hooks/useAuth';
+import { useAiStudentDashboard } from '~/hooks/useAiStudentDashboard';
 
 const AITutorPage: React.FC = () => {
     const [messages, setMessages] = useState<{ text: string; sender: 'user' | 'ai' }[]>([]);
     const [inputValue, setInputValue] = useState('');
-    const { user, spendTokens } = useAuth();
+    const { response, isLoading, error, askAi, clearResponse } = useAiStudentDashboard();
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const handleSendMessage = () => {
-        if (inputValue.trim() === '') return;
+    // Scroll to bottom when messages change
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages, response]);
 
-        if (user && user.tokenBalance > 0) {
-            spendTokens(1);
-            const newMessages = [...messages, { text: inputValue, sender: 'user' as const }];
-            setMessages(newMessages);
-            setInputValue('');
-
-            // Simulate AI response
-            setTimeout(() => {
-                setMessages([...newMessages, { text: 'This is a simulated AI response.', sender: 'ai' as const }]);
-            }, 1000);
-        } else {
-            alert("You don't have enough tokens to ask a question.");
+    // Update AI message when streaming response changes
+    useEffect(() => {
+        if (response) {
+            setMessages((prev) => {
+                const lastMessage = prev[prev.length - 1];
+                if (lastMessage && lastMessage.sender === 'ai') {
+                    // Update last AI message with streaming content
+                    return [...prev.slice(0, -1), { text: response, sender: 'ai' as const }];
+                } else {
+                    // Add new AI message
+                    return [...prev, { text: response, sender: 'ai' as const }];
+                }
+            });
         }
+    }, [response]);
+
+    // Handle error
+    useEffect(() => {
+        if (error) {
+            setMessages((prev) => [...prev, { text: `Error: ${error}`, sender: 'ai' as const }]);
+        }
+    }, [error]);
+
+    const handleSendMessage = async () => {
+        if (inputValue.trim() === '' || isLoading) return;
+
+        const userMessage = inputValue.trim();
+        setMessages((prev) => [...prev, { text: userMessage, sender: 'user' as const }]);
+        setInputValue('');
+        clearResponse();
+
+        await askAi({ message: userMessage });
     };
 
     return (
@@ -37,11 +59,19 @@ const AITutorPage: React.FC = () => {
                 <div className="border rounded-lg p-4 h-96 overflow-y-auto mb-4 bg-gray-50">
                     {messages.map((msg, index) => (
                         <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
-                            <div className={`rounded-lg px-4 py-2 ${msg.sender === 'user' ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-800'}`}>
+                            <div className={`rounded-lg px-4 py-2 max-w-[80%] ${msg.sender === 'user' ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-800'}`}>
                                 {msg.text}
                             </div>
                         </div>
                     ))}
+                    {isLoading && !response && (
+                        <div className="flex justify-start mb-4">
+                            <div className="rounded-lg px-4 py-2 bg-gray-200 text-gray-800">
+                                <Spin size="small" /> Đang suy nghĩ...
+                            </div>
+                        </div>
+                    )}
+                    <div ref={messagesEndRef} />
                 </div>
 
                 <div className="flex">
@@ -49,14 +79,20 @@ const AITutorPage: React.FC = () => {
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onPressEnter={handleSendMessage}
-                        placeholder="Ask a question (1 Token)"
+                        placeholder="Nhập câu hỏi của bạn..."
                         className="flex-grow"
+                        disabled={isLoading}
                     />
-                    <Button type="primary" onClick={handleSendMessage} className="ml-2">
-                        Send
+                    <Button
+                        type="primary"
+                        onClick={handleSendMessage}
+                        className="ml-2"
+                        loading={isLoading}
+                        disabled={isLoading || inputValue.trim() === ''}
+                    >
+                        Gửi
                     </Button>
                 </div>
-                <p className="text-sm text-gray-500 mt-2">You have {user?.tokenBalance} tokens remaining.</p>
             </div>
         </div>
     );

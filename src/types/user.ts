@@ -21,12 +21,14 @@ export interface StudentProfile {
   schoolName: string;
   emergencyContact: string;
   parentPhone: string;
+  goal: string;
 }
 
 export interface UpdateStudentProfileRequest {
   schoolName: string;
   parentPhone: string;
   emergencyContact: string;
+  goal: string;
 }
 
 export interface UpdateStudentProfileResponse {

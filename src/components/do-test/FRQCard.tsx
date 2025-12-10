@@ -134,7 +134,7 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
     // LaTeX preview renderer
     const renderLatexPreview = (text: string) => {
         if (!text.trim()) {
-            return <span className="text-gray-400">Công thức sẽ hiển thị ở đây...</span>;
+            return <span className="text-gray-400">The formula will be displayed here....</span>;
         }
 
         try {
@@ -144,7 +144,7 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
             return <BlockMath>{latexFormattedText}</BlockMath>;
         } catch (error) {
             console.error('Error rendering LaTeX:', error);
-            return <span className="text-gray-500">Lỗi hiển thị công thức. Kiểm tra cú pháp LaTeX.</span>;
+            return <span className="text-gray-500">Error rendering LaTeX. Check LaTeX syntax.</span>;
         }
     };
 
@@ -194,53 +194,53 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
                 {/* LaTeX Instructions */}
                 <div className="mb-4 bg-blue-50 p-3 rounded-md">
                     <h4 className="text-sm font-medium text-blue-800 mb-2">
-                        📝 Hướng dẫn viết công thức toán:
+                        📝 How to write math formula:
                     </h4>
                     <div className="text-xs text-blue-700 space-y-1">
-                        <div>• Nhấn <kbd className="bg-blue-100 px-1 rounded">Enter</kbd> để xuống dòng</div>
-                        <div>• Sử dụng ký hiệu: <code className="bg-blue-100 px-1 rounded">^</code> cho lũy thừa, <code className="bg-blue-100 px-1 rounded">_</code> cho chỉ số dưới</div>
-                        <div>• Phím tắt: <kbd className="bg-blue-100 px-1 rounded">Ctrl+R</kbd> căn bậc 2, <kbd className="bg-blue-100 px-1 rounded">Ctrl+Shift+R</kbd> tập ℝ, <kbd className="bg-blue-100 px-1 rounded">Ctrl+Shift+N</kbd> tập ℕ, <kbd className="bg-blue-100 px-1 rounded">Ctrl+I</kbd> tích phân</div>
-                        <div>• Ví dụ: <code className="bg-blue-100 px-1 rounded">x^2 + 2x + 1 = 0</code> hoặc <code className="bg-blue-100 px-1 rounded">H_2O</code></div>
+                        <div>• Press <kbd className="bg-blue-100 px-1 rounded">Enter</kbd> to go to the next line</div>
+                        <div>• Use symbols: <code className="bg-blue-100 px-1 rounded">^</code> for power, <code className="bg-blue-100 px-1 rounded">_</code> for subscript</div>
+                        <div>• Shortcuts: <kbd className="bg-blue-100 px-1 rounded">Ctrl+R</kbd> square root, <kbd className="bg-blue-100 px-1 rounded">Ctrl+Shift+R</kbd> set ℝ, <kbd className="bg-blue-100 px-1 rounded">Ctrl+Shift+N</kbd> set ℕ, <kbd className="bg-blue-100 px-1 rounded">Ctrl+I</kbd> integration</div>
+                        <div>• Example: <code className="bg-blue-100 px-1 rounded">x^2 + 2x + 1 = 0</code> or <code className="bg-blue-100 px-1 rounded">H_2O</code></div>
                     </div>
                 </div>
 
                 {/* LaTeX Math Input */}
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nhập công thức toán (LaTeX/Math):
+                        Enter math formula (LaTeX/Math):
                     </label>
                     <div className="flex gap-2 mb-3">
                         <button
                             onClick={() => setAnswerText(prev => prev + "\n")}
                             className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-xs rounded text-gray-700"
                             type="button"
-                            title="Xuống dòng"
+                            title="New line"
                         >
-                            ⏎ Dòng mới
+                            ⏎ New line
                         </button>
                         <button
                             onClick={() => setAnswerText(prev => prev + "^")}
                             className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-xs rounded text-gray-700"
                             type="button"
-                            title="Lũy thừa"
+                            title="Power"
                         >
-                            x² Mũ
+                            x² Power
                         </button>
                         <button
                             onClick={() => setAnswerText(prev => prev + "_")}
                             className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-xs rounded text-gray-700"
                             type="button"
-                            title="Chỉ số dưới"
+                            title="Subscript"
                         >
-                            x₁ Chỉ số
+                            x₁ Subscript
                         </button>
                         <button
                             onClick={() => setAnswerText(prev => prev + "\\frac{}{}")}
                             className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-xs rounded text-gray-700"
                             type="button"
-                            title="Phân số"
+                            title="Fraction"
                         >
-                            ½ Phân số
+                            ½ Fraction
                         </button>
                     </div>
                     <textarea
@@ -253,18 +253,18 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
                         }}
                         onKeyDown={handleKeyDown}
                         className="w-full p-3 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 font-mono text-sm resize-vertical"
-                        placeholder={`Ví dụ hoàn chỉnh:\nx = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}
+                        placeholder={`Example:\nx = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}
 
-Hoặc đơn giản:
+Or simple:
 x^2 + 2x + 1 = 0`}
                         style={{ minHeight: '120px' }}
                     />
                 </div>
 
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Xem trước công thức:</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Preview mathematical formulas:</label>
                     <div className="bg-gray-50 p-4 rounded-md border min-h-32 whitespace-pre-wrap">
-                        <div className="text-gray-600 text-sm mb-2">Công thức của bạn:</div>
+                        <div className="text-gray-600 text-sm mb-2">Your formula:</div>
                         <div className="bg-white p-3 rounded min-h-16">
                             {renderLatexPreview(answerText) || answerText}
                         </div>
@@ -287,7 +287,7 @@ x^2 + 2x + 1 = 0`}
                         className="bg-teal-50/50 p-6 border-r border-gray-200 overflow-hidden"
                     >
                         <h3 className="font-semibold text-gray-800 mb-4 text-lg">
-                            {questionNumber}. Câu hỏi
+                            {questionNumber}. Question
                         </h3>
                         <div className="text-sm text-gray-700 whitespace-pre-line">
                             {question.text}
@@ -308,7 +308,7 @@ x^2 + 2x + 1 = 0`}
                         className="p-6 overflow-hidden"
                     >
                         <h3 className="font-semibold text-gray-800 mb-4 text-lg">
-                            Đáp án của bạn
+                            Your answer
                         </h3>
                         <textarea
                             ref={textareaRef}
@@ -317,7 +317,7 @@ x^2 + 2x + 1 = 0`}
                             onChange={handleTextChange}
                             onKeyDown={handleKeyDown}
                             className="w-full p-3 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 resize-vertical min-h-[16rem]"
-                            placeholder="Nhập đáp án của bạn ở đây..."
+                            placeholder="Enter your answer here..."
                         />
                     </div>
                 </div>

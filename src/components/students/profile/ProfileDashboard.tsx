@@ -1,8 +1,5 @@
 import React, { useState } from "react";
-import { Card, Progress, Table, Tag, Button, Spin, Badge, Modal } from "antd";
-import type { ColumnsType } from "antd/es/table";
-import { mockProfile } from "~/data/profileData";
-import type { Subject, TestResult, UserProfile } from "~/types/profile";
+import { Card, Button, Spin, Badge, Modal } from "antd";
 import { EditOutlined, LockOutlined } from "@ant-design/icons";
 import EditProfileForm from "./EditProfileForm";
 import EditStudentProfileForm from "./EditStudentProfileForm";
@@ -23,15 +20,6 @@ const ProfileDashboard: React.FC = () => {
   const { connectionCode, loading: connectionLoading, fetchConnectionCode } = useStudentConnection();
   const { balance: tokenBalance, loading: balanceLoading } = useWalletBalance();
 
-  // Use mock data for subjects and test results since they're not in the auth user object
-  const profile: UserProfile = mockProfile;
-
-  const columns: ColumnsType<TestResult> = [
-    { title: "Môn học", dataIndex: "subject", key: "subject" },
-    { title: "Điểm số", dataIndex: "score", key: "score" },
-    { title: "Ngày thi", dataIndex: "date", key: "date" },
-  ];
-
   // Function to refresh user data from API and update localStorage
   const refreshUser = async () => {
     try {
@@ -40,20 +28,20 @@ const ProfileDashboard: React.FC = () => {
         // Set lại toàn bộ user data thay vì cập nhật thuộc tính bên trong
         localStorage.setItem('user', JSON.stringify(response.user));
 
-        toast.success('Thông tin đã được cập nhật!');
+        toast.success('User data updated successfully!');
         // Force re-render by reloading page
         window.location.reload();
       }
     } catch (error) {
       console.error('Error refreshing user data:', error);
-      toast.error('Không thể cập nhật thông tin. Vui lòng thử lại.');
+      toast.error('Cannot update user data. Please try again.');
     }
   };
 
   // Function to handle logout after password change
   const handleLogout = () => {
     logout();
-    toast.success('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.');
+    toast.success('Password changed successfully! Please log in again.');
     window.location.href = '/auth';
   };
 
@@ -61,7 +49,7 @@ const ProfileDashboard: React.FC = () => {
     return (
       <div className="p-6 text-center">
         <Spin size="large" />
-        <p className="mt-4 text-gray-600">Đang tải thông tin cá nhân...</p>
+        <p className="mt-4 text-gray-600">Loading user information...</p>
       </div>
     );
   }
@@ -69,7 +57,7 @@ const ProfileDashboard: React.FC = () => {
   if (!user) {
     return (
       <div className="p-6 text-center">
-        <p className="text-red-600">Không thể tải thông tin cá nhân. Vui lòng đăng nhập lại.</p>
+        <p className="text-red-600">Failed to load user information. Please log in again.</p>
       </div>
     );
   }
@@ -82,10 +70,10 @@ const ProfileDashboard: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AvatarUpload />
             <div className="flex flex-col gap-6">
-              <Card title="Thông tin cá nhân" className="shadow-sm">
+              <Card title="Profile" className="shadow-sm">
                 <div className="space-y-3">
                   <div className="flex gap-3">
-                    <span className="text-gray-600">Họ tên:</span>
+                    <span className="text-gray-600">Full name:</span>
                     <span className="font-medium">{user.firstName} {user.lastName}</span>
                   </div>
                   <div className="flex gap-3">
@@ -93,11 +81,11 @@ const ProfileDashboard: React.FC = () => {
                     <span className="font-medium">{user.email}</span>
                   </div>
                   <div className="flex gap-3">
-                    <span className="text-gray-600">Vai trò:</span>
+                    <span className="text-gray-600">Role:</span>
                     <Badge color="blue" text={user.role} />
                   </div>
                   <div className="flex gap-3">
-                    <span className="text-gray-600">Ngày sinh:</span>
+                    <span className="text-gray-600">Birthday:</span>
                     <span>🎂 {user.dob ? new Date(user.dob).toLocaleDateString() : 'N/A'}</span>
                   </div>
 
@@ -119,7 +107,7 @@ const ProfileDashboard: React.FC = () => {
                         onClick={() => setEditProfileModalVisible(true)}
                         size="small"
                       >
-                        Chỉnh sửa thông tin
+                        Edit
                       </Button>
                       <Button
                         icon={<LockOutlined />}
@@ -127,26 +115,34 @@ const ProfileDashboard: React.FC = () => {
                         size="small"
                         danger
                       >
-                        Đổi mật khẩu
+                        Change password
                       </Button>
                     </div>
                   </div>
                 </div>
               </Card>
 
-              <Card title="Thông tin học tập" className="shadow-sm">
+              <Card title="Student profile" className="shadow-sm">
                 <div className="space-y-3">
                   <div className="flex gap-3">
-                    <span className="text-gray-600">Trường học:</span>
+                    <span className="text-gray-600">School name:</span>
                     <span className="font-medium">{user.studentProfile?.schoolName || ""}</span>
                   </div>
                   <div className="flex gap-3">
-                    <span className="text-gray-600">Số điện thoại phụ huynh:</span>
+                    <span className="text-gray-600">Parent phone:</span>
                     <span className="font-medium">{user.studentProfile?.parentPhone || ""}</span>
                   </div>
                   <div className="flex gap-3">
-                    <span className="text-gray-600">Liên hệ khẩn cấp:</span>
+                    <span className="text-gray-600">Emergency contact:</span>
                     <span className="font-medium">{user.studentProfile?.emergencyContact || ""}</span>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="text-gray-600">Goal:</span>
+                    {user.studentProfile?.goal ? (
+                      <span className="font-medium">{user.studentProfile?.goal}</span>
+                    ) : (
+                        <span className="text-gray-600 italic">What result do you want to achieve ?</span>
+                    )}
                   </div>
 
                   {/* Edit button */}
@@ -158,7 +154,7 @@ const ProfileDashboard: React.FC = () => {
                         onClick={() => setEditStudentProfileModalVisible(true)}
                         size="small"
                       >
-                        Chỉnh sửa thông tin học tập
+                        Edit
                       </Button>
                       <Button
                         type="primary"
@@ -168,7 +164,7 @@ const ProfileDashboard: React.FC = () => {
                         }}
                         size="small"
                       >
-                        Xem mã kết nối
+                        View connection code
                       </Button>
                     </div>
                   </div>
@@ -180,47 +176,13 @@ const ProfileDashboard: React.FC = () => {
 
         {/* Nội dung chính */}
 
-        <div className="">
-          {/* Tiến độ học tập */}
-          <div className="lg:col-span-3">
-            <Card title="Tiến độ học tập" className="shadow-sm">
-              <div className="space-y-4">
-                {profile.subjects.map((subject: Subject) => (
-                  <div key={subject.name} className="p-4 bg-gray-50 rounded-lg">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium">{subject.name}</span>
-                      <span className="text-blue-600 font-medium">{subject.progress}%</span>
-                    </div>
-                    <Progress percent={subject.progress} size="small" />
-                    <div className="flex gap-2 mt-2">
-                      <Tag color="green">✓ {subject.strength}</Tag>
-                      <Tag color="orange">⚠ {subject.weakness}</Tag>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-
-          {/* Kết quả luyện thi */}
-          <div className="lg:col-span-3 mt-6">
-            <Card title="Kết quả luyện thi" className="shadow-sm">
-              <Table
-                dataSource={profile.testResults}
-                columns={columns}
-                rowKey={(record) => record.subject + record.date}
-                pagination={false}
-                size="small"
-              />
-            </Card>
-          </div>
-        </div>
+        
         {/* Modals */}
         <Modal
           title={
             <div className="flex items-center gap-2">
               <EditOutlined className="text-blue-500" />
-              Chỉnh sửa thông tin cá nhân
+              Edit Profile
             </div>
           }
           open={editProfileModalVisible}
@@ -242,7 +204,7 @@ const ProfileDashboard: React.FC = () => {
           title={
             <div className="flex items-center gap-2">
               <LockOutlined className="text-orange-500" />
-              Đổi mật khẩu
+              Change Password
             </div>
           }
           open={changePasswordModalVisible}
@@ -266,7 +228,7 @@ const ProfileDashboard: React.FC = () => {
           title={
             <div className="flex items-center gap-2">
               <EditOutlined className="text-blue-500" />
-              Chỉnh sửa thông tin học tập
+              Edit Student Profile
             </div>
           }
           open={editStudentProfileModalVisible}
@@ -285,12 +247,12 @@ const ProfileDashboard: React.FC = () => {
         </Modal>
 
         <Modal
-          title="Mã kết nối học sinh"
+          title="Connection Code"
           open={connectionCodeModalVisible}
           onCancel={() => setConnectionCodeModalVisible(false)}
           footer={[
             <Button key="close" onClick={() => setConnectionCodeModalVisible(false)}>
-              Đóng
+              Close
             </Button>,
           ]}
           width={500}
@@ -298,23 +260,23 @@ const ProfileDashboard: React.FC = () => {
           {connectionLoading ? (
             <div className="text-center py-8">
               <Spin size="large" />
-              <p className="mt-4 text-gray-600">Đang tải mã kết nối...</p>
+              <p className="mt-4 text-gray-600">Loading connection code...</p>
             </div>
           ) : connectionCode ? (
             <div className="text-center py-6">
               <div className="mb-4">
-                <p className="text-gray-600 mb-2">Mã kết nối của bạn:</p>
+                <p className="text-gray-600 mb-2">Your connection code:</p>
                 <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
                   <span className="text-3xl font-bold text-blue-600">{connectionCode}</span>
                 </div>
               </div>
               <p className="text-sm text-gray-500">
-                Chia sẻ mã này với phụ huynh để họ có thể kết nối và theo dõi tiến độ học tập của bạn.
+                Share this code with your parent to connect and monitor your progress.
               </p>
             </div>
           ) : (
             <div className="text-center py-6">
-              <p className="text-red-600">Không thể lấy mã kết nối. Vui lòng thử lại.</p>
+              <p className="text-red-600">Unable to retrieve connection code. Please try again.</p>
             </div>
           )}
         </Modal>
