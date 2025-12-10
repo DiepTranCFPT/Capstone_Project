@@ -3,13 +3,11 @@ import { Card, Badge, Button, Spin, Empty } from 'antd';
 import {
   BookOutlined,
   ClockCircleOutlined,
-  TrophyOutlined,
-  FireOutlined,
   StarOutlined,
   RightOutlined,
-  GiftOutlined,
   BarChartOutlined,
-  CheckCircleOutlined
+  CheckCircleOutlined,
+  DollarOutlined
 } from '@ant-design/icons';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 // import CardAnalytics from './CardAnalytics';
@@ -19,7 +17,7 @@ import { useNavigate } from 'react-router-dom';
 
 const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { stats, loading } = useStudentDashboardStats();
+  const { stats, overall, financial, examStats, loading } = useStudentDashboardStats();
   const navigate = useNavigate();
 
   // Transform topic performance for Radar Chart
@@ -57,7 +55,7 @@ const StudentDashboard: React.FC = () => {
         </div>
 
         {/* Quick Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           <div className="bg-white rounded-xl shadow-md p-4 text-center">
             <div className="flex justify-center mb-2">
               <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
@@ -76,16 +74,7 @@ const StudentDashboard: React.FC = () => {
             <div className="text-2xl font-bold text-gray-900">{stats?.examsInProgress || 0}</div>
             <div className="text-sm text-gray-500">In Progress</div>
           </div>
-          <div className="bg-white rounded-xl shadow-md p-4 text-center">
-            <div className="flex justify-center mb-2">
-              <div className="p-2 bg-orange-100 rounded-lg text-orange-600">
-                <ClockCircleOutlined />
-              </div>
-            </div>
-            {/* Mocking study time for now as it's not in API yet */}
-            <div className="text-2xl font-bold text-gray-900">12h</div>
-            <div className="text-sm text-gray-500">Study Time</div>
-          </div>
+
           <div className="bg-white rounded-xl shadow-md p-4 text-center">
             <div className="flex justify-center mb-2">
               <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
@@ -97,8 +86,116 @@ const StudentDashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* Statistics Cards - Overall, Financial, Exam */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Overall Statistics Card */}
+          <Card className="bg-white rounded-2xl shadow-lg border-0 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-blue-100 rounded-xl">
+                  <BarChartOutlined className="text-xl text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Tổng quan</h3>
+                  <p className="text-sm text-gray-500">Thống kê tổng thể</p>
+                </div>
+              </div>
+            </div>
+            {overall ? (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Khóa học đã đăng ký:</span>
+                  <span className="text-lg font-bold text-gray-900">{overall.totalCoursesEnrolled ?? 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Khóa học đã hoàn thành:</span>
+                  <span className="text-lg font-bold text-green-600">{overall.totalCompletedCourses ?? 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Bài tập đang chờ:</span>
+                  <span className="text-lg font-bold text-orange-600">{overall.totalPendingAssignments ?? 0}</span>
+                </div>
+              </div>
+            ) : (
+              <Empty description="Không có dữ liệu" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
+          </Card>
+
+          {/* Financial Statistics Card */}
+          <Card className="bg-white rounded-2xl shadow-lg border-0 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-green-100 rounded-xl">
+                  <DollarOutlined className="text-xl text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Tài chính</h3>
+                  <p className="text-sm text-gray-500">Thống kê thanh toán</p>
+                </div>
+              </div>
+            </div>
+            {financial ? (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Tổng đã chi:</span>
+                  <span className="text-lg font-bold text-green-600">{(financial.totalSpent ?? 0).toLocaleString('vi-VN')} VNĐ</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Số tài liệu đã đăng ký:</span>
+                  <span className="text-lg font-bold text-blue-600">{financial.totalRegisteredMaterials ?? 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Số dư hiện tại:</span>
+                  <span className="text-lg font-bold text-purple-600">{(financial.currentBalance ?? 0).toLocaleString('vi-VN')} VNĐ</span>
+                </div>
+              </div>
+            ) : (
+              <Empty description="Không có dữ liệu" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
+          </Card>
+
+          {/* Exam Statistics Card */}
+          <Card className="bg-white rounded-2xl shadow-lg border-0 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-purple-100 rounded-xl">
+                  <BookOutlined className="text-xl text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Thi cử</h3>
+                  <p className="text-sm text-gray-500">Thống kê bài thi</p>
+                </div>
+              </div>
+            </div>
+            {examStats ? (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Số bài thi đã làm:</span>
+                  <span className="text-lg font-bold text-gray-900">{examStats.totalExamsTaken ?? 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Đang làm:</span>
+                  <span className="text-lg font-bold text-orange-600">{examStats.examsInProgress ?? 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Đã hoàn thành:</span>
+                  <span className="text-lg font-bold text-green-600">
+                    {examStats.recentAttempts?.filter(a => a.status === 'COMPLETED').length ?? 0}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                  <span className="text-gray-600">Điểm trung bình:</span>
+                  <span className="text-xl font-bold text-blue-600">{(examStats.averageScore ?? 0).toFixed(1)}</span>
+                </div>
+              </div>
+            ) : (
+              <Empty description="Không có dữ liệu" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
+          </Card>
+        </div>
+
         {/* Main Dashboard Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
 
           {/* Topic Performance Radar Chart */}
           <Card className="bg-white rounded-2xl shadow-lg border-0 hover:shadow-xl transition-all duration-300">
@@ -208,67 +305,6 @@ const StudentDashboard: React.FC = () => {
             </div>
           </Card>
 
-          {/* Token Balance Card (Kept as is/Mocked for now as requested) */}
-          <Card className="bg-white rounded-2xl shadow-lg border-0 hover:shadow-xl transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-yellow-100 rounded-xl">
-                  <TrophyOutlined className="text-xl text-yellow-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Token Balance</h3>
-                  <p className="text-sm text-gray-500">Learning rewards</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center mb-6">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <StarOutlined className="text-2xl text-yellow-500" />
-                <span className="text-4xl font-bold text-gray-900">1,247</span>
-              </div>
-              <p className="text-sm text-gray-500">Total tokens earned</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="text-center p-3 bg-green-50 rounded-xl">
-                <FireOutlined className="text-lg text-green-600 mb-1" />
-                <p className="text-lg font-semibold text-green-600">+45</p>
-                <p className="text-xs text-gray-500">This week</p>
-              </div>
-              <div className="text-center p-3 bg-blue-50 rounded-xl">
-                <GiftOutlined className="text-lg text-blue-600 mb-1" />
-                <p className="text-lg font-semibold text-blue-600">250</p>
-                <p className="text-xs text-gray-500">Available</p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">Recent activity:</span>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-700">Quiz completed</span>
-                  <span className="text-green-600 font-medium">+15</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-700">Assignment submitted</span>
-                  <span className="text-green-600 font-medium">+20</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-700">Daily login bonus</span>
-                  <span className="text-green-600 font-medium">+10</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-gray-100">
-              <Button type="primary" className="w-full bg-yellow-500 hover:bg-yellow-600 border-0 rounded-xl">
-                Redeem Rewards
-              </Button>
-            </div>
-          </Card>
         </div>
         {/* Test Analytics Section (Assuming this is a separate component that might also need updates later) */}
         {/* <CardAnalytics /> */}

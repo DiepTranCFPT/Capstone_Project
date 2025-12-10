@@ -235,9 +235,14 @@ export const useTeacherWallet = () => {
         balanceRes?.data?.data as WalletBalanceSummary | PaymentObject[] | undefined
       );
 
-      const transformedTransactions = transactionsData.map(
-        transformUserTokenTransaction
-      );
+      // Sắp xếp giao dịch mới nhất trước để hiển thị đúng thứ tự thời gian
+      const sortedTransactions = [...transactionsData].sort((a, b) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime;
+      });
+
+      const transformedTransactions = sortedTransactions.map(transformUserTokenTransaction);
       setTransactions(transformedTransactions);
 
       const summary = calculateWalletSummary(transactionsData, balanceData);
