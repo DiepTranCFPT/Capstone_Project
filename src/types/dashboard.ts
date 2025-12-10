@@ -106,3 +106,23 @@ export interface AdminExamStatsResponse {
     message: string;
     data: AdminExamStats;
 }
+
+// Revenue Types
+export interface RevenueSystemParams {
+    day?: string;
+    month?: string;
+    year?: string;
+}
+
+export interface RevenueSystemData {
+    totalAmount: number;
+    day: string | null;
+    month: string | null;
+    year: string | null;
+}
+
+export interface RevenueSystemResponse {
+    code: number;
+    message: string;
+    data: RevenueSystemData;
+}

@@ -1,5 +1,5 @@
 import axiosInstance from "~/configs/axios";
-import type { DashboardStatsResponse } from "~/types/dashboard";
+import type { DashboardStatsResponse, RevenueSystemParams, RevenueSystemResponse } from "~/types/dashboard";
 import type { UserDashboardParams, UserDashboardResponse } from "~/types/user";
 
 const DashboardService = {
@@ -35,6 +35,12 @@ const DashboardService = {
     // GET /admin/dashboard/exam-stats
     async getAdminExamStats(): Promise<import("~/types/dashboard").AdminExamStatsResponse> {
         const response = await axiosInstance.get<import("~/types/dashboard").AdminExamStatsResponse>("/admin/dashboard/exam-stats");
+        return response.data;
+    },
+
+    // GET /admin/dashboard/revenue/system
+    async getRevenueSystem(params?: RevenueSystemParams): Promise<RevenueSystemResponse> {
+        const response = await axiosInstance.get<RevenueSystemResponse>("/admin/dashboard/revenue/system", { params });
         return response.data;
     },
 };
