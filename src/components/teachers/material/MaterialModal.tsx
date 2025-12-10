@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Form, Input, Modal, Select, Switch, Upload, message, Button, InputNumber } from "antd";
 import type { UploadFile } from "antd";
 import type { Subject } from "~/types/subject";
@@ -39,6 +39,14 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
   const [form] = Form.useForm<MaterialFormValues>();
   const [thumbnailList, setThumbnailList] = useState<UploadFile[]>([]);
   const price = Form.useWatch("price", form) ?? 0;
+  const selectedTypeId = Form.useWatch("typeId", form);
+  
+  // Check if selected material type is "token"
+  const isTokenType = useMemo(() => {
+    if (!selectedTypeId) return false;
+    const selectedType = materialTypes.find((type) => type.id === selectedTypeId);
+    return selectedType?.name?.toLowerCase().includes("token") ?? false;
+  }, [selectedTypeId, materialTypes]);
 
   const formatAmount = (value: number) =>
     new Intl.NumberFormat("vi-VN", {
@@ -59,6 +67,13 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
     }
   }, [open, form]);
 
+  // Reset price to 0 when material type changes to non-token
+  useEffect(() => {
+    if (!isTokenType && selectedTypeId) {
+      form.setFieldsValue({ price: 0 });
+    }
+  }, [isTokenType, selectedTypeId, form]);
+
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
@@ -77,7 +92,9 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
       formData.append("typeId", values.typeId ?? "");
       formData.append("subjectId", values.subjectId ?? "");
       formData.append("isPublic", String(values.isPublic ?? true));
-      formData.append("price", String(values.price ?? 0));
+      // Set price to 0 if not token type
+      const finalPrice = isTokenType ? (values.price ?? 0) : 0;
+      formData.append("price", String(finalPrice));
       formData.append("file", thumbnailFile);
 
       await onSubmit(formData);
@@ -190,47 +207,49 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
           </Select>
         </Form.Item>
 
-        <Form.Item
-          label="Price (VND)"
-          name="price"
-          rules={[
-            { required: true, message: "Please enter price" },
-            { type: "number", min: 0, message: "Price must be greater than or equal to 0" },
-          ]}
-        >
-          <div className="space-y-3">
-            <div className="flex gap-3 items-center">
-              <InputNumber
-                min={0}
-                value={price}
-                onChange={(value) => form.setFieldsValue({ price: value ?? 0 })}
-                placeholder="Enter price (VND)"
-                className="flex-1"
-                formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-                parser={(value) => value?.replace(/\$\s?|(,*)/g, "") as unknown as number}
-              />
-              <div className="min-w-[140px] rounded-lg border border-slate-200 bg-white px-4 py-2 text-lg font-bold text-slate-900">
-                {formatAmount(price)}
+        {isTokenType && (
+          <Form.Item
+            label="Price (VND)"
+            name="price"
+            rules={[
+              { required: true, message: "Please enter price" },
+              { type: "number", min: 0, message: "Price must be greater than or equal to 0" },
+            ]}
+          >
+            <div className="space-y-3">
+              <div className="flex gap-3 items-center">
+                <InputNumber
+                  min={0}
+                  value={price}
+                  onChange={(value) => form.setFieldsValue({ price: value ?? 0 })}
+                  placeholder="Enter price (VND)"
+                  className="flex-1"
+                  formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                  parser={(value) => value?.replace(/\$\s?|(,*)/g, "") as unknown as number}
+                />
+                <div className="min-w-[140px] rounded-lg border border-slate-200 bg-white px-4 py-2 text-lg font-bold text-slate-900">
+                  {formatAmount(price)}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {quickPriceAmounts.map((amount) => (
+                  <Button
+                    key={amount}
+                    type={price === amount ? "primary" : "default"}
+                    onClick={() => form.setFieldsValue({ price: amount })}
+                    className={
+                      price === amount
+                        ? "border-teal-400 bg-teal-50 text-teal-600"
+                        : "border-slate-200 text-slate-500 hover:border-teal-200 hover:text-teal-500"
+                    }
+                  >
+                    {amount === 0 ? "Free" : formatAmount(amount)}
+                  </Button>
+                ))}
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {quickPriceAmounts.map((amount) => (
-                <Button
-                  key={amount}
-                  type={price === amount ? "primary" : "default"}
-                  onClick={() => form.setFieldsValue({ price: amount })}
-                  className={
-                    price === amount
-                      ? "border-teal-400 bg-teal-50 text-teal-600"
-                      : "border-slate-200 text-slate-500 hover:border-teal-200 hover:text-teal-500"
-                  }
-                >
-                  {amount === 0 ? "Free" : formatAmount(amount)}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </Form.Item>
+          </Form.Item>
+        )}
 
         <Form.Item label="Public" name="isPublic" valuePropName="checked">
           <Switch />

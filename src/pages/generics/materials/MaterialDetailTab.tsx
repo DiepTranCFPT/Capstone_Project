@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Tabs, message, Spin, Empty, Tag } from "antd";
+import { Tabs, Spin, Empty, Tag } from "antd";
 import { useNavigate } from "react-router-dom";
 import type { Material } from "~/types/material";
 import { useMaterialRegister } from "~/hooks/useMaterialRegister";
@@ -14,6 +14,7 @@ import { PlayCircleOutlined, FileTextOutlined, ClockCircleOutlined } from "@ant-
 import { useLearningMaterialRatings } from "~/hooks/useLearningMaterialRatings";
 import { FaStar } from "react-icons/fa";
 import type { LearningMaterialRating } from "~/types/learningMaterialRating";
+import { toast } from "~/components/common/Toast";
 
 interface MaterialDetailTabProps {
   material: Material;
@@ -253,7 +254,7 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
               });
             }
           }
-        } catch (err) {
+        } catch {
           // Ignore errors
         }
       });
@@ -275,7 +276,7 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
 
     // Chỉ kiểm tra đăng nhập, không tự check/trừ token ở FE
     if (!user) {
-      message.error("Bạn cần đăng nhập để đăng ký tài liệu.");
+      toast.error("You need to log in to register for the material.");
       setConfirmVisible(false);
       navigate("/auth");
       return;
@@ -291,8 +292,6 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
       // Lưu local để đồng bộ UI
       saveRegisteredMaterialId(material.id);
 
-      message.success("Đăng ký tài liệu thành công!");
-
       // Thử refetch danh sách đã đăng ký
       try {
         await refetchRegisteredMaterials();
@@ -302,10 +301,13 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
 
       setConfirmVisible(false);
 
-      // Điều hướng sang trang học
+      // Hiển thị toast thông báo thành công
+      toast.success("Successfully registered for the material!");
+
+      // Điều hướng sang trang học sau khi toast hiển thị
       setTimeout(() => {
         navigate(`/materials/${material.id}/learn`);
-      }, 500);
+      }, 1500);
     } catch (err: unknown) {
       console.log("❌ Registration failed in handleConfirmRegister:", err);
 
@@ -338,29 +340,29 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
             console.warn("⚠️ Failed to refresh from API after already-registered error:", apiError);
           }
 
-          message.info("Bạn đã đăng ký khóa học này rồi.");
+          toast.info("You have already registered for this course.");
           setConfirmVisible(false);
           return;
         }
 
         // Các lỗi khác: để backend quyết định (bao gồm không đủ token)
-        let errorMessage = "Đã xảy ra lỗi khi đăng ký tài liệu.";
+        let errorMessage = "An error occurred while registering for the material.";
         if (axiosError.response?.data?.message) {
           errorMessage = axiosError.response.data.message;
         } else if (axiosError.response?.data?.error) {
           errorMessage = axiosError.response.data.error;
         } else if (axiosError.response?.status === 400) {
-          errorMessage = "Yêu cầu không hợp lệ. Vui lòng kiểm tra lại thông tin.";
+          errorMessage = "Invalid request. Please check your information.";
         } else if (axiosError.response?.status === 401) {
-          errorMessage = "Bạn cần đăng nhập để đăng ký tài liệu.";
+          errorMessage = "You need to log in to register for the material.";
         } else if (axiosError.response?.status === 403) {
-          errorMessage = "Bạn không có quyền thực hiện thao tác này.";
+          errorMessage = "You do not have permission to perform this action.";
         }
-        message.error(errorMessage);
+        toast.error(errorMessage);
       } else if (error) {
-        message.error(error);
+        toast.error(error);
       } else {
-        message.error("Đã xảy ra lỗi khi đăng ký tài liệu.");
+        toast.error("An error occurred while registering for the material.");
       }
     } finally {
       setConfirmLoading(false);

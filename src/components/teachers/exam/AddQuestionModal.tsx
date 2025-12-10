@@ -175,15 +175,17 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
     }
 
     const newChoices = currentChoices.filter((_, i) => i !== index);
-    let newCorrectIndex = formData.correctIndex;
+    let newCorrectIndex = formData.correctIndex ?? 0;
 
     // Điều chỉnh correctIndex nếu cần
-    if (formData.correctIndex === index) {
-      // Nếu xóa choice đang được chọn là đáp án đúng, chuyển sang choice đầu tiên
-      newCorrectIndex = 0;
-    } else if (formData.correctIndex > index) {
-      // Nếu đáp án đúng ở sau choice bị xóa, giảm index đi 1
-      newCorrectIndex = formData.correctIndex - 1;
+    if (formData.correctIndex !== null && formData.correctIndex !== undefined) {
+      if (formData.correctIndex === index) {
+        // Nếu xóa choice đang được chọn là đáp án đúng, chuyển sang choice đầu tiên
+        newCorrectIndex = 0;
+      } else if (formData.correctIndex > index) {
+        // Nếu đáp án đúng ở sau choice bị xóa, giảm index đi 1
+        newCorrectIndex = formData.correctIndex - 1;
+      }
     }
 
     setFormData((prev) => ({
