@@ -18,6 +18,7 @@ interface QuestionDetail {
     userAnswer: string;
     correctAnswer: string;
     explanation: string;
+    feedback: string | null;
 }
 
 interface AdvancedReportProps {
@@ -116,11 +117,15 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
             // 3. Lấy giải thích
             const explanation = q.studentAnswer?.correctAnswer?.explanation || 'Explanation not available';
 
+            // 4. Lấy feedback (nếu có)
+            const feedback = q.studentAnswer?.feedback || null;
+
             return {
                 question: q.question.content,
                 userAnswer,
                 correctAnswer,
-                explanation
+                explanation,
+                feedback
             };
         });
     }, [attemptResultDetail]);
@@ -200,6 +205,15 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
                                     <p className="text-sm">Correct answer: <span className="text-green-600 font-bold">{ans.correctAnswer}</span></p>
                                 )}
 
+                                {/* Hiển thị feedback nếu có */}
+                                {ans.feedback && (
+                                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <p className="text-sm text-blue-800">
+                                            <span className="font-semibold">Feedback:</span> {ans.feedback}
+                                        </p>
+                                    </div>
+                                )}
+
                                 <p className="text-sm mt-2 pt-2 border-t text-gray-700"><em>Explanation: {ans.explanation}</em></p>
                                 <div className="flex space-x-2 mt-2">
                                     <button
@@ -207,12 +221,6 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
                                         className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 flex items-center"
                                     >
                                         <RobotOutlined className="mr-1" /> Ask AI
-                                    </button>
-                                    <button
-                                        onClick={() => openModal('advisor', ans)}
-                                        className="text-xs px-3 py-1 rounded-full bg-purple-100 text-purple-800 hover:bg-purple-200"
-                                    >
-                                        Ask Advisor
                                     </button>
                                 </div>
                             </div>
@@ -227,7 +235,7 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
                         {/* Modal Header */}
                         <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-white to-gray-50 rounded-t-2xl">
                             <h3 className="text-2xl font-bold text-gray-800 flex items-center">
-                                {modalContent.type === 'ai' ? (
+                                {modalContent.type === 'ai' && (
                                     <>
                                         <div className="bg-blue-100 p-2 rounded-lg mr-3">
                                             <RobotOutlined className="text-blue-600 text-xl" />
@@ -236,8 +244,6 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
                                             AI Assistant
                                         </span>
                                     </>
-                                ) : (
-                                    'Ask Advisor'
                                 )}
                             </h3>
                             <button

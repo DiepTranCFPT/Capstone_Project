@@ -16,15 +16,17 @@ import { useAuth } from '~/hooks/useAuth';
 import { Avatar, Button } from 'antd';
 import { FileAddOutlined, MenuFoldOutlined, MenuUnfoldOutlined, TagsOutlined } from '@ant-design/icons';
 import { IoCheckmarkCircle } from "react-icons/io5";
+import { BsQuestionSquare } from "react-icons/bs";
+import { CiBoxList } from "react-icons/ci";
 
 const teacherMenu = [
     { label: "Dashboard", path: "/teacher/dashboard", icon: <FaTachometerAlt /> },
-    { label: "My Classes", path: "/teacher/classes", icon: <FaUsers /> },
-    { label: "Materials", path: "Materials", icon: <TagsOutlined /> },
-    { label: "Questions Bank", path: "/teacher/question-bank", icon: <FaUsers /> },
+    { label: "My Materials", path: "/teacher/my-materials", icon: <FaUsers /> },
+    { label: "Materials", path: "materials", icon: <TagsOutlined /> },
+    { label: "Questions Bank", path: "/teacher/question-bank", icon: <BsQuestionSquare /> },
     { label: "Templates", path: "/teacher/templates", icon: <FaClipboardList /> },
     { label: "Create Template", path: "/teacher/create-template", icon: <FileAddOutlined /> },
-    { label: "Review Queue", path: "/teacher/review-queue", icon: <FaClipboardList /> },
+    { label: "Review Queue", path: "/teacher/review-queue", icon: <CiBoxList /> },
     { label: "My Ratings", path: "/teacher/ratings", icon: <FaStar /> },
     // { label: "Analytics", path: "/teacher/analytics", icon: <FaChartBar /> },
     // { label: "Tutor Profile", path: "/teacher/tutor-profile", icon: <FaBookOpen /> },

@@ -3,7 +3,17 @@ import { Button, Avatar, Drawer, Spin } from "antd";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { IoIosArrowBack } from "react-icons/io";
-import { FaBook, FaUserGraduate, FaCertificate, FaCog, FaChartBar, FaCoins, FaRobot, FaTrophy, FaBars } from "react-icons/fa";
+import {
+  FaBook,
+  FaUserGraduate,
+  FaCertificate,
+  // FaCog,
+  FaChartBar,
+  FaCoins,
+  FaRobot,
+  // FaTrophy,
+  FaBars
+} from "react-icons/fa";
 import { useAuth } from "~/hooks/useAuth";
 import { useWalletBalance } from "~/hooks/useWalletBalance";
 
@@ -15,7 +25,7 @@ const studentMenu = [
     icon: <FaBook />,
   },
   {
-    label: "AI Tutor",
+    label: "AI Support",
     path: "/student/ai-tutor",
     icon: <FaRobot />,
   },
@@ -29,11 +39,11 @@ const studentMenu = [
   //   path: "/student/my-bookings",
   //   icon: <FaCalendarCheck />,
   // },
-  {
-    label: "Quiz Battle",
-    path: "/student/quiz-battle",
-    icon: <FaTrophy />,
-  },
+  // {
+  //   label: "Quiz Battle",
+  //   path: "/student/quiz-battle",
+  //   icon: <FaTrophy />,
+  // },
   {
     label: "My Courses",
     path: "/student/my-courses",
@@ -49,11 +59,11 @@ const studentMenu = [
     path: "/student/test-reports",
     icon: <FaChartBar />,
   },
-  {
-    label: "Settings",
-    path: "/student/settings",
-    icon: <FaCog />,
-  },
+  // {
+  //   label: "Settings",
+  //   path: "/student/settings",
+  //   icon: <FaCog />,
+  // },
 ];
 
 interface StudentSidebarProps {
