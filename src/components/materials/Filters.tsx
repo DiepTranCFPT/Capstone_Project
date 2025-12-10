@@ -1,3 +1,4 @@
+import React from "react";
 import { Search } from "lucide-react";
 
 interface FiltersProps {
@@ -94,3 +95,4 @@ const Filters: React.FC<FiltersProps> = ({
 };
 
 export default Filters;
+

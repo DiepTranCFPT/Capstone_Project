@@ -16,17 +16,18 @@ const MaterialsPageHeader: React.FC = () => {
 
       {/* Hình ảnh trang trí */}
       <img
-        className="w-48 h-40 absolute right-10 top-0"
-        src="https://placehold.co/186x164"
-        alt="Decoration top right"
+        className="w-48 h-40 absolute right-10 top-0 object-contain"
+        src="/learning.png"
+        alt="Learning decoration top right"
       />
       <img
-        className="w-48 h-20 absolute bottom-5"
-        src="https://placehold.co/197x85"
-        alt="Decoration bottom center"
+        className="w-48 h-20 absolute bottom-5 object-contain"
+        src="/learning.png"
+        alt="Learning decoration bottom center"
       />
     </div>
   );
 };
 
 export default MaterialsPageHeader;
+
