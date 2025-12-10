@@ -13,4 +13,14 @@ export interface TransferParentToStudentRequest {
       transferredAmount: number;
     };
   }
+
+export interface ParentTransactionRaw {
+  id: string;
+  amount: number;
+  balanceAfter?: number;
+  status?: string;
+  externalReference?: string;
+  createdAt?: string;
+  description?: string;
+}
   
