@@ -1,6 +1,7 @@
 import { Tabs } from "antd";
 import type { Lesson } from "~/types/lesson";
 import type { ReactNode } from "react";
+import { useRef, useEffect } from "react";
 
 interface LessonDetailsSectionProps {
   lesson: Lesson;
@@ -8,6 +9,7 @@ interface LessonDetailsSectionProps {
   videoLoading: boolean;
   videoError: string | null;
   onVideoEnded: () => void;
+  onVideoPlay?: () => void;
   onOpenPdf: () => void;
   openingFile: boolean;
   activeTab: string;
@@ -21,12 +23,41 @@ const LessonDetailsSection: React.FC<LessonDetailsSectionProps> = ({
   videoLoading,
   videoError,
   onVideoEnded,
+  onVideoPlay,
   onOpenPdf,
   openingFile,
   activeTab,
   onTabChange,
   notesPanel,
 }) => {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const hasActuallyPlayedRef = useRef(false);
+  const lastPlayTimeRef = useRef<number>(0);
+
+  useEffect(() => {
+    hasActuallyPlayedRef.current = false;
+    lastPlayTimeRef.current = 0;
+    
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      videoElement.currentTime = 0;
+      videoElement.pause();
+      videoElement.load();
+      
+      const handleLoadedData = () => {
+        if (videoElement.ended) {
+          videoElement.currentTime = 0;
+        }
+      };
+      
+      videoElement.addEventListener('loadeddata', handleLoadedData, { once: true });
+      
+      return () => {
+        videoElement.removeEventListener('loadeddata', handleLoadedData);
+      };
+    }
+  }, [lesson.id, videoUrl]);
+
   const renderVideoContent = () => {
     if (videoLoading) {
       return (
@@ -48,10 +79,46 @@ const LessonDetailsSection: React.FC<LessonDetailsSectionProps> = ({
       return (
         <div className="bg-black aspect-video flex items-center justify-center">
           <video
+            ref={videoRef}
+            key={lesson.id}
             controls
             className="w-full h-full"
             src={videoUrl}
-            onEnded={onVideoEnded}
+            onPlay={() => {
+              const videoElement = videoRef.current;
+              if (videoElement && videoElement.currentTime >= 0) {
+                hasActuallyPlayedRef.current = true;
+                lastPlayTimeRef.current = Date.now();
+              }
+              if (onVideoPlay) {
+                onVideoPlay();
+              }
+            }}
+            onTimeUpdate={() => {
+              const videoElement = videoRef.current;
+              if (videoElement && videoElement.currentTime > 0) {
+                hasActuallyPlayedRef.current = true;
+              }
+            }}
+            onEnded={(e) => {
+              const videoElement = e.currentTarget;
+              const hasValidDuration = videoElement.duration && videoElement.duration > 0;
+              const hasPlayed = hasActuallyPlayedRef.current && videoElement.currentTime > 0;
+              const hasRecentPlay = lastPlayTimeRef.current > 0;
+              const timeSinceLastPlay = hasRecentPlay ? Date.now() - lastPlayTimeRef.current : Infinity;
+              const recentlyPlayed = hasRecentPlay && timeSinceLastPlay < 60000;
+              const hasWatchedEnough = videoElement.currentTime >= Math.min(1, videoElement.duration * 0.1);
+              
+              if (hasPlayed && recentlyPlayed && hasWatchedEnough && hasValidDuration) {
+                onVideoEnded();
+              } else {
+                if (!hasPlayed || !recentlyPlayed || !hasWatchedEnough) {
+                  videoElement.currentTime = 0;
+                  videoElement.load();
+                }
+              }
+            }}
+            preload="metadata"
           >
             Trình duyệt của bạn không hỗ trợ video.
           </video>
