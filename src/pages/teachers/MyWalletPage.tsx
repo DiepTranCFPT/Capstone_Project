@@ -4,7 +4,6 @@ import {
   FiArrowUpRight,
   FiArrowDownRight,
   FiClock,
-  FiCopy,
   FiLoader,
 } from "react-icons/fi";
 import { useTeacherWallet } from "~/hooks/useTeacherWallet";
@@ -61,9 +60,6 @@ const MyWalletPage = () => {
             </h1>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-white">
-              <FiCopy /> Statement
-            </button>
             <button
               onClick={() => setIsAddPaymentMethodModalOpen(true)}
               className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-white"
