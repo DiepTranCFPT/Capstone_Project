@@ -166,6 +166,33 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
     }));
   };
 
+  const removeChoice = (index: number) => {
+    const currentChoices = formData.choices ?? [];
+    // Chỉ cho phép xóa nếu có nhiều hơn 2 choices
+    if (currentChoices.length <= 2) {
+      message.warning("At least 2 choices are required");
+      return;
+    }
+
+    const newChoices = currentChoices.filter((_, i) => i !== index);
+    let newCorrectIndex = formData.correctIndex;
+
+    // Điều chỉnh correctIndex nếu cần
+    if (formData.correctIndex === index) {
+      // Nếu xóa choice đang được chọn là đáp án đúng, chuyển sang choice đầu tiên
+      newCorrectIndex = 0;
+    } else if (formData.correctIndex > index) {
+      // Nếu đáp án đúng ở sau choice bị xóa, giảm index đi 1
+      newCorrectIndex = formData.correctIndex - 1;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      choices: newChoices,
+      correctIndex: newCorrectIndex,
+    }));
+  };
+
   const handleSubmit = () => {
 
     if (!formData.text.trim()) {
@@ -384,6 +411,17 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
                     />
                     {formData.correctIndex === index && (
                       <CheckCircleOutlined className="text-green-500 text-lg" />
+                    )}
+                    {(formData.choices ?? []).length > 2 && (
+                      <Button
+                        type="text"
+                        danger
+                        icon={<CloseOutlined />}
+                        onClick={() => removeChoice(index)}
+                        size="small"
+                        className="flex-shrink-0"
+                        title="Remove choice"
+                      />
                     )}
                   </div>
                 ))}
