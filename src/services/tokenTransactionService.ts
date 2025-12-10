@@ -40,15 +40,14 @@ const TokenTransactionService = {
     return axiosInstance.get(`/api/admin/withdraw-requests`, { params });
   },
 
-  // GET /api/admin/withdraw-requests
-  // Admin: lấy danh sách yêu cầu rút tiền kèm filter nâng cao (alias theo yêu cầu)
+  // Alias cho admin, dùng chung implement để tránh trùng lặp
   getAdminWithdrawRequests(params?: {
     pageNo?: number;
     pageSize?: number;
     status?: string;
     [key: string]: unknown;
   }): Promise<AxiosResponse<ApiResponse<WithdrawRequest[]>>> {
-    return axiosInstance.get(`/api/admin/withdraw-requests`, { params });
+    return TokenTransactionService.getWithdrawRequests(params);
   },
 
   // GET /api/payment-method

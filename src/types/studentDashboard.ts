@@ -7,16 +7,41 @@ export interface StudentOverallStatistics {
   }
   
   export interface StudentFinancialStatistics {
-    totalPaid: number;
-    totalPending: number;
-    totalRefunded: number;
+    totalSpent: number;
+    totalRegisteredMaterials: number;
+    currentBalance: number;
+    spendingBySubject: Record<string, number>;
+    spendingByType: Record<string, number>;
+    monthlySpending: Record<string, number>;
+    recentPurchases: Array<{
+      materialId: string;
+      title: string;
+      subjectName: string;
+      typeName: string;
+      price: number;
+      purchasedDate: string;
+      authorName: string;
+      fileImage: string;
+    }>;
   }
   
   export interface StudentExamStatistics {
-    examTaken: number;
-    passed: number;
-    failed: number;
+    totalExamsTaken: number;
     averageScore: number;
+    examsInProgress: number;
+    topicPerformance: Record<string, number>;
+    recommendedTopic: string;
+    recentAttempts: Array<{
+      attemptId: string;
+      title: string;
+      examId: string;
+      doneBy: string;
+      score: number;
+      startTime: string;
+      endTime: string;
+      status: string;
+      rating: number | null;
+    }>;
   }
   
   //  ApiResponse wrapper

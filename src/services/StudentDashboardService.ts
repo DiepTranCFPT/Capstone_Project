@@ -3,16 +3,19 @@ import type { StudentExamStatisticsResponse, StudentFinancialStatisticsResponse,
 
 
 const StudentDashboardService = {
-  getOverall(): Promise<StudentOverallStatisticsResponse> {
-    return axiosInstance.get("/student/dashboard/overall-stats");
+  async getOverall(): Promise<StudentOverallStatisticsResponse> {
+    const response = await axiosInstance.get<StudentOverallStatisticsResponse>("/student/dashboard/overall-stats");
+    return response.data;
   },
 
-  getFinancial(): Promise<StudentFinancialStatisticsResponse> {
-    return axiosInstance.get("/student/dashboard/financial-stats");
+  async getFinancial(): Promise<StudentFinancialStatisticsResponse> {
+    const response = await axiosInstance.get<StudentFinancialStatisticsResponse>("/student/dashboard/financial-stats");
+    return response.data;
   },
 
-  getExam(): Promise<StudentExamStatisticsResponse> {
-    return axiosInstance.get("/student/dashboard/exam-stats");
+  async getExam(): Promise<StudentExamStatisticsResponse> {
+    const response = await axiosInstance.get<StudentExamStatisticsResponse>("/student/dashboard/exam-stats");
+    return response.data;
   },
 };
 
