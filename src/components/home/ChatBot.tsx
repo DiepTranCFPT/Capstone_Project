@@ -98,7 +98,7 @@ const ChatBot: React.FC = () => {
               <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-base">EduChat</h3>
+              <h3 className="font-semibold text-base">ChatBot</h3>
               <p className="text-xs text-white/80">Ask me anything about learning</p>
             </div>
             <button
@@ -116,7 +116,7 @@ const ChatBot: React.FC = () => {
                 <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-teal-100 to-emerald-100 rounded-full flex items-center justify-center">
                   <FaRobot className="text-3xl text-teal-500" />
                 </div>
-                <h4 className="font-semibold text-gray-800 mb-2">Hello! 👋</h4>
+                <h4 className="font-semibold text-gray-800 mb-2">Hello!</h4>
                 <p className="text-sm text-gray-500 mb-4">
                   I can help you with questions about AP exams and learning.
                 </p>

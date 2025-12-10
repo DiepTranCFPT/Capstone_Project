@@ -45,7 +45,7 @@ const StudentDashboard: React.FC = () => {
       <div className="max-w-7xl mx-auto md:ml-0 ml-0">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.firstName} {user?.lastName} 👋</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.firstName} {user?.lastName}</h1>
           <p className="text-gray-600">Here's your learning progress overview</p>
           {stats?.recommendedTopic && (
             <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium border border-blue-100">
