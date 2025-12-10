@@ -31,7 +31,7 @@ const formatDate = (dateString?: string): string => {
   if (!dateString) return "";
   try {
     const date = new Date(dateString);
-    return date.toLocaleString("vi-VN", {
+    return date.toLocaleString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       day: "2-digit",
@@ -68,7 +68,7 @@ const getTransactionTitle = (transaction: {
   type?: string;
 }): string => {
   if (transaction.description) {
-    // Ẩn phần "Admin note: ..." nếu có trong description
+    // Hide "Admin note: ..." part if present in description
     const cleaned = transaction.description
       .replace(/\s*\|\s*Admin note:.*$/i, "")
       .trim();
@@ -81,29 +81,29 @@ const getTransactionTitle = (transaction: {
   }
   const type = transaction.type?.toUpperCase() || "";
   if (type.includes("WITHDRAW") || type.includes("RUT")) {
-    return "Yêu cầu rút tiền";
+    return "Withdrawal Request";
   }
   if (type.includes("SALARY") || type.includes("LUONG")) {
-    return "Lương";
+    return "Salary";
   }
   if (type.includes("COMMISSION") || type.includes("HOA_HONG")) {
-    return "Hoa hồng";
+    return "Commission";
   }
-  return "Giao dịch";
+  return "Transaction";
 };
 
 const getStatusText = (status: string): string => {
   const statusUpper = status?.toUpperCase() || "";
   if (statusUpper.includes("SUCCESS") || statusUpper.includes("THANH_CONG") || statusUpper.includes("COMPLETED")) {
-    return "Thành công";
+    return "Success";
   }
   if (statusUpper.includes("PENDING") || statusUpper.includes("DANG_XU_LY") || statusUpper.includes("CHO")) {
-    return "Đang xử lý";
+    return "Pending";
   }
   if (statusUpper.includes("FAILED") || statusUpper.includes("THAT_BAI")) {
-    return "Thất bại";
+    return "Failed";
   }
-  return status || "Đang xử lý";
+  return status || "Pending";
 };
 
 const transformUserTokenTransaction = (
@@ -253,7 +253,7 @@ export const useTeacherWallet = () => {
         message?: string;
       };
       const errorMessage =
-        axiosError.response?.data?.message || axiosError.message || "Đã xảy ra lỗi khi tải dữ liệu ví.";
+        axiosError.response?.data?.message || axiosError.message || "An error occurred while loading wallet data.";
       setError(errorMessage);
       setTransactions([]);
       setWalletSummary({

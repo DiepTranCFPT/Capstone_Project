@@ -26,21 +26,21 @@ const MyWalletPage = () => {
 
   const summaryCards = [
     {
-      label: "Số dư khả dụng",
+      label: "Available Balance",
       value: formatCurrency(walletSummary.availableBalance),
-      hint: "Có thể rút ngay",
+      hint: "Can withdraw immediately",
       iconBg: "bg-emerald-100 text-emerald-600",
     },
     {
-      label: "Thu nhập tháng này",
+      label: "This Month's Income",
       value: formatCurrency(walletSummary.monthlyIncome),
-      hint: "Tổng thu nhập trong tháng hiện tại",
+      hint: "Total income in current month",
       iconBg: "bg-indigo-100 text-indigo-600",
     },
     {
-      label: "Đang chờ xử lý",
+      label: "Pending Processing",
       value: formatCurrency(walletSummary.pendingAmount),
-      hint: "Dự kiến về sau 24h",
+      hint: "Expected within 24h",
       iconBg: "bg-amber-100 text-amber-600",
     },
   ];
@@ -54,27 +54,27 @@ const MyWalletPage = () => {
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-slate-400">
-              Tổng quan tài chính
+              FINANCIAL OVERVIEW
             </p>
             <h1 className="text-3xl font-bold text-slate-900 mt-1">
-              Quản lý thu nhập và yêu cầu thanh toán
+              Income Management and Payment Requests
             </h1>
           </div>
           <div className="flex flex-wrap gap-3">
             <button className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-white">
-              <FiCopy /> Sao kê
+              <FiCopy /> Statement
             </button>
             <button
               onClick={() => setIsAddPaymentMethodModalOpen(true)}
               className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-white"
             >
-              <FiArrowUpRight /> Thêm tài khoản
+              <FiArrowUpRight /> Add Account
             </button>
             <button
               onClick={() => setIsWithdrawModalOpen(true)}
               className="inline-flex items-center gap-2 rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-200 hover:bg-emerald-600"
             >
-              <FiArrowUpRight /> Yêu cầu rút tiền
+              <FiArrowUpRight /> Withdrawal Request
             </button>
           </div>
         </header>
@@ -93,7 +93,7 @@ const MyWalletPage = () => {
                 {loading ? (
                   <span className="inline-flex items-center gap-2">
                     <FiLoader className="animate-spin" />
-                    <span className="text-lg">Đang tải...</span>
+                    <span className="text-lg">Loading...</span>
                   </span>
                 ) : (
                   card.value
@@ -115,17 +115,17 @@ const MyWalletPage = () => {
         <div className="rounded-3xl bg-white p-6 shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-slate-800">Biểu đồ thu nhập</h3>
-              <p className="text-sm text-slate-400">Theo dõi 6 tháng gần nhất</p>
+              <h3 className="text-lg font-semibold text-slate-800">Income Chart</h3>
+              <p className="text-sm text-slate-400">Track last 6 months</p>
             </div>
             <select className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600">
-              <option>6 tháng qua</option>
-              <option>12 tháng qua</option>
+              <option>Last 6 months</option>
+              <option>Last 12 months</option>
             </select>
           </div>
           <div className="mt-6 h-64 w-full rounded-2xl bg-gradient-to-b from-emerald-50 to-white p-6">
             <div className="h-full rounded-2xl border border-dashed border-emerald-200 flex items-center justify-center text-sm text-slate-400">
-              Biểu đồ sẽ hiển thị khi tích hợp dữ liệu thực tế
+              Chart will display when actual data is integrated
             </div>
           </div>
         </div>
@@ -134,15 +134,15 @@ const MyWalletPage = () => {
         <div className="rounded-3xl bg-white p-6 shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-slate-800">Lịch sử giao dịch</h3>
-              <p className="text-sm text-slate-400">Các lệnh rút và thanh toán gần đây</p>
+              <h3 className="text-lg font-semibold text-slate-800">Transaction History</h3>
+              <p className="text-sm text-slate-400">Recent withdrawals and payments</p>
             </div>
             {transactions.length > 5 && (
               <button
                 className="text-sm font-semibold text-teal-600 hover:text-teal-700"
                 onClick={() => setShowAllTransactions((prev) => !prev)}
               >
-                {showAllTransactions ? "Thu gọn" : "Xem tất cả"}
+                {showAllTransactions ? "Collapse" : "View All"}
               </button>
             )}
           </div>
@@ -151,12 +151,12 @@ const MyWalletPage = () => {
               <div className="flex items-center justify-center py-12">
                 <div className="flex flex-col items-center gap-3">
                   <FiLoader className="animate-spin text-2xl text-slate-400" />
-                  <p className="text-sm text-slate-400">Đang tải lịch sử giao dịch...</p>
+                  <p className="text-sm text-slate-400">Loading transaction history...</p>
                 </div>
               </div>
             ) : transactions.length === 0 ? (
               <div className="flex items-center justify-center py-12">
-                <p className="text-sm text-slate-400">Chưa có giao dịch nào</p>
+                <p className="text-sm text-slate-400">No transactions yet</p>
               </div>
             ) : (
               visibleTransactions.map((item) => (
@@ -182,7 +182,7 @@ const MyWalletPage = () => {
                     </p>
                     <p
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                        item.status === "Thành công"
+                        item.status === "Success"
                           ? "bg-emerald-50 text-emerald-600"
                           : "bg-amber-50 text-amber-600"
                       }`}
