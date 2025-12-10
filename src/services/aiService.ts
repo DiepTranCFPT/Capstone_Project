@@ -1,4 +1,4 @@
-import type { AiExamAskRequest } from "~/types/ai";
+import type { AiExamAskRequest, AiStudentDashboardRequest } from "~/types/ai";
 import axiosInstance from "~/configs/axios";
 
 export const askAiExamQuestion = async (
@@ -27,6 +27,41 @@ export const askAiExamQuestion = async (
                 for (const line of lines) {
                     if (line.startsWith('data:')) {
                         const content = line.slice(5); // Remove 'data:'
+                        onChunk(content);
+                    }
+                }
+            }
+        });
+
+        onComplete();
+    } catch (error) {
+        onError(error instanceof Error ? error : new Error('Unknown error'));
+    }
+};
+
+export const askAiStudentDashboard = async (
+    payload: AiStudentDashboardRequest,
+    onChunk: (chunk: string) => void,
+    onError: (error: Error) => void,
+    onComplete: () => void
+) => {
+    let lastProcessedIndex = 0;
+
+    try {
+        await axiosInstance.post('/ai/students/dashboard', payload.message, {
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            responseType: 'text',
+            onDownloadProgress: (progressEvent) => {
+                const response = progressEvent.event.currentTarget.response;
+                const newContent = response.slice(lastProcessedIndex);
+                lastProcessedIndex = response.length;
+
+                const lines = newContent.split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('data:')) {
+                        const content = line.slice(5);
                         onChunk(content);
                     }
                 }

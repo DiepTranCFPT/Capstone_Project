@@ -14,6 +14,7 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import { useAuth } from '~/hooks/useAuth';
 import { useStudentDashboardStats } from '~/hooks/useStudentDashboardStats';
 import { useNavigate } from 'react-router-dom';
+import AIDashboardChatBubble from './AIDashboardChatBubble';
 
 const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -309,6 +310,9 @@ const StudentDashboard: React.FC = () => {
         {/* Test Analytics Section (Assuming this is a separate component that might also need updates later) */}
         {/* <CardAnalytics /> */}
       </div>
+
+      {/* AI Chat Bubble */}
+      <AIDashboardChatBubble />
     </div>
   );
 };

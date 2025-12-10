@@ -5,3 +5,7 @@ export interface AiExamAskRequest {
     studentAsking: string;
     doneBy: string;
 }
+
+export interface AiStudentDashboardRequest {
+    message: string;
+}
