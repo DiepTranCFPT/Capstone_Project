@@ -132,6 +132,12 @@ const SubjectManager: React.FC = () => {
       render: (name) => <span className="font-semibold text-gray-900">{name}</span>,
     },
     {
+      title: "Code",
+      dataIndex: "code",
+      key: "code",
+      render: (code) => <span className="font-semibold text-gray-900">{code}</span>,
+    },
+    {
       title: "Description",
       dataIndex: "description",
       key: "description",

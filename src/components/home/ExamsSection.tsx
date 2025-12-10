@@ -1,11 +1,18 @@
 import React from "react";
 import { PiExam } from "react-icons/pi";
+import { useNavigate } from "react-router-dom";
 import { useBrowseExamTemplates } from "~/hooks/useExamBrowser";
 
 const ExamsSection: React.FC = () => {
   const { templates, loading } = useBrowseExamTemplates({ pageNo: 0, pageSize: 3 });
 
   const filteredTemplates = templates.filter((template) => template.tokenCost === 0);
+  const navigate = useNavigate();
+
+  const handleExamClick = () => {
+    // Navigate to exam details page
+    navigate(`/exam-test`);
+  };
 
   if (loading) {
     return (
@@ -114,6 +121,12 @@ const ExamsSection: React.FC = () => {
                   <span className="text-xs md:text-sm font-bold text-emerald-600">{exam.passingScore}%</span>
                 </div>
               </div>
+              {/* Action Button */}
+              <button
+                onClick={() => handleExamClick()}
+                className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 text-white mt-4 px-6 py-3 rounded-lg text-sm font-bold hover:from-teal-500 hover:to-emerald-600 transition-all duration-300 shadow-md hover:shadow-lg">
+                Explore Exam Now
+              </button>
             </div>
           ))
         )}

@@ -266,3 +266,41 @@ export interface BrowseExamTemplateParams {
   pageSize?: number;
   sorts?: string[];
 }
+
+// Types for GET /exam-templates/ratings/{id} API
+export interface ExamRatingUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  imgUrl: string;
+  dob: string;
+}
+
+export interface ExamRatingItem {
+  rating: number;
+  comment: string;
+  rateBy: ExamRatingUser;
+  ratingTime: string;
+}
+
+export interface ExamRatingsPaginationData {
+  pageNo: number;
+  pageSize: number;
+  totalPage: number;
+  totalElement: number;
+  sortBy: string[];
+  items: ExamRatingItem[];
+}
+
+export interface ExamRatingsResponse {
+  code: number;
+  message: string;
+  data: ExamRatingsPaginationData;
+}
+
+export interface ExamRatingsQueryParams {
+  pageNo?: number;
+  pageSize?: number;
+  sorts?: string[];
+}

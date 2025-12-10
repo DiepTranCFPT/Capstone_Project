@@ -1,5 +1,5 @@
 import axiosInstance from "~/configs/axios";
-import type { User, UserQueryParams, UserResponse } from "~/types/user";
+import type { User, UserQueryParams, UserResponse, TeacherListResponse, TeacherListQueryParams } from "~/types/user";
 
 // Định nghĩa nhanh kiểu Response trả về 1 item (để không phải tạo file mới)
 interface SingleUserResponse {
@@ -58,7 +58,7 @@ const UserService = {
   // POST /users/me/avatar
   async uploadAvatar(file: File): Promise<SingleUserResponse> {
     const formData = new FormData();
-    formData.append("file", file); 
+    formData.append("file", file);
 
     const response = await axiosInstance.post<SingleUserResponse>("/users/me/avatar", formData, {
       headers: {
@@ -98,6 +98,14 @@ const UserService = {
   // POST /users/{userId}/permissions/revoke
   async revokePermission(userId: string, permissionName: string) {
     const response = await axiosInstance.post(`/users/${userId}/permissions/revoke`, { permission: permissionName });
+    return response.data;
+  },
+
+  // --- 5. Teacher List ---
+
+  // GET /users/teachers: Lấy danh sách giáo viên
+  async getTeachers(params?: TeacherListQueryParams): Promise<TeacherListResponse> {
+    const response = await axiosInstance.get<TeacherListResponse>("/users/teachers", { params });
     return response.data;
   },
 };

@@ -1,8 +1,9 @@
 import React from 'react';
-import { Table, Button, Typography, Tag, Spin, Alert } from 'antd';
+import { Table, Button, Typography, Tag, Alert } from 'antd';
 import { Link } from 'react-router-dom';
 import { useTeacherReviewQueue } from '~/hooks/useExamAttempt';
 import type { ReviewQueueItem } from '~/types/examAttempt';
+import Loading from '~/components/common/Loading';
 
 const { Title, Text } = Typography;
 
@@ -61,7 +62,7 @@ const TeacherReviewQueuePage: React.FC = () => {
     if (loading) {
         return (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                <Spin size="large" />
+                <Loading/>
             </div>
         );
     }
