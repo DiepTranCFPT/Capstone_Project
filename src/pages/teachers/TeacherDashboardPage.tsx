@@ -88,7 +88,7 @@ const TeacherDashboardPage: React.FC = () => {
                 <Col xs={24} sm={12} lg={6}>
                     <Card bordered={false} className="rounded-lg shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
-                            title={<span className="text-gray-500">Est. Revenue</span>}
+                            title={<span className="text-gray-500">Exam Revenue</span>}
                             value={stats?.estimatedRevenue || 0}
                             prefix={<FaCoins style={{ color: PRIMARY_COLOR }} />}
                         />

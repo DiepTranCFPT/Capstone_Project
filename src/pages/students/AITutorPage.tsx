@@ -53,7 +53,7 @@ const AITutorPage: React.FC = () => {
             <div className="bg-white rounded-lg shadow-lg p-6">
                 <div className="flex items-center mb-6">
                     <FaRobot className="text-3xl text-teal-500 mr-4" />
-                    <h1 className="text-3xl font-bold text-gray-800">AI Tutor</h1>
+                    <h1 className="text-3xl font-bold text-gray-800">AI Support</h1>
                 </div>
 
                 <div className="border rounded-lg p-4 h-96 overflow-y-auto mb-4 bg-gray-50">
@@ -67,7 +67,7 @@ const AITutorPage: React.FC = () => {
                     {isLoading && !response && (
                         <div className="flex justify-start mb-4">
                             <div className="rounded-lg px-4 py-2 bg-gray-200 text-gray-800">
-                                <Spin size="small" /> Đang suy nghĩ...
+                                <Spin size="small" /> Thinking...
                             </div>
                         </div>
                     )}
@@ -79,7 +79,7 @@ const AITutorPage: React.FC = () => {
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onPressEnter={handleSendMessage}
-                        placeholder="Nhập câu hỏi của bạn..."
+                        placeholder="Enter your question..."
                         className="flex-grow"
                         disabled={isLoading}
                     />
@@ -90,7 +90,7 @@ const AITutorPage: React.FC = () => {
                         loading={isLoading}
                         disabled={isLoading || inputValue.trim() === ''}
                     >
-                        Gửi
+                        Send
                     </Button>
                 </div>
             </div>

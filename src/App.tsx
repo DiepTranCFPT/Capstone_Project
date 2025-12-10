@@ -58,7 +58,7 @@ import SubjectManagerPage from "./pages/admins/SubjectManagerPage";
 import TeacherLayout from "./layout/teachers/TeacherLayout";
 import TeacherDashboardPage from "./pages/teachers/TeacherDashboardPage";
 import ProtectedRoute from "./context/ProtectedRoute";
-import MyClassesPage from "./pages/teachers/MyClassPage";
+import MyClassesPage from "./pages/teachers/MyMaterials";
 import ClassroomDetailPage from "./pages/teachers/ClassroomDetailPage";
 import QuestionBankPage from "./pages/teachers/QuestionBankPage";
 import CreateExamPage from "./pages/teachers/CreateExamPage";
@@ -214,7 +214,7 @@ function App() {
             <TeacherLayout />
           </ProtectedRoute>}>
           <Route path="dashboard" element={<TeacherDashboardPage />} />
-          <Route path="classes" element={<MyClassesPage />} />
+          <Route path="my-materials" element={<MyClassesPage />} />
           <Route path="classes/:classId" element={<ClassroomDetailPage />} />
           <Route path="materials" element={<MaterialManagerPage />} />
           <Route path="question-bank" element={<QuestionBankPage />} />
