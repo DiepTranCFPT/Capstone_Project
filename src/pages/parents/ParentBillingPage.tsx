@@ -1,117 +1,221 @@
 
-import React from 'react';
-import { Card, Button, Table, Space } from 'antd';
+import React, { useState, useCallback, useEffect } from "react";
+import useMomoPayment from "~/hooks/useMomoPayment";
+import { toast } from "~/components/common/Toast";
+import type { CreatePaymentResponse } from "~/types/momoPayment";
+import { useAuth } from "~/hooks/useAuth";
+import useWalletBalance from "~/hooks/useWalletBalance";
+import ParentService from "~/services/parentService";
+import type { ChildInfo } from "~/types/parent";
+import useTransferParentToStudent from "~/hooks/useTransferParentToStudent";
+import ParentWalletBalanceCard from "~/components/parents/wallet/ParentWalletBalanceCard";
+import ParentChildrenAccounts from "~/components/parents/wallet/ParentChildrenAccounts";
+import ParentRecentTransactions, { type ParentTransactionItem } from "~/components/parents/wallet/ParentRecentTransactions";
+import TopUpModal from "~/components/parents/wallet/TopUpModal";
+import TransferModal from "~/components/parents/wallet/TransferModal";
 
 const ParentBillingPage: React.FC = () => {
-  const tokenOptions = [
-    { id: 1, amount: 10, price: 9.99 },
-    { id: 2, amount: 50, price: 44.99 },
-    { id: 3, amount: 100, price: 79.99 },
-  ];
+  // Balance from API
+  const { balance, loading: balanceLoading, error: balanceError, refetch: refetchBalance } = useWalletBalance();
+  const { user } = useAuth();
+  const { createPayment, loading } = useMomoPayment();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [topupAmount, setTopupAmount] = useState<number>(500000);
+  const [topupNote, setTopupNote] = useState<string>("Top up parent wallet");
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [transferAmount, setTransferAmount] = useState<number>(200000);
+  const [transferNote, setTransferNote] = useState<string>("Transfer to child");
+  const [transferChildId, setTransferChildId] = useState<string | undefined>(undefined);
 
-  const learningPackages = [
+  const [childrenAccounts, setChildrenAccounts] = useState<ChildInfo[]>([]);
+  const [childrenLoading, setChildrenLoading] = useState(false);
+  const { transfer, loading: transferLoading } = useTransferParentToStudent();
+  const transactions: ParentTransactionItem[] = [
     {
       id: 1,
-      name: 'Basic Math Access',
-      description: 'Unlimited access to all basic math courses for 3 months.',
-      price: 29.99,
+      title: "Top-up via ABC Bank",
+      date: "12/09/2025",
+      amount: 5000000,
+      type: "in",
     },
     {
       id: 2,
-      name: 'Premium Science Pack',
-      description: 'Access to all science courses, advanced labs, and 1-on-1 tutoring for 6 months.',
-      price: 99.99,
+      title: "Breakfast transfer",
+      date: "12/08/2025",
+      amount: -200000,
+      to: "Minh",
     },
     {
       id: 3,
-      name: 'Full Curriculum Yearly',
-      description: 'Access to all subjects and features for one year.',
-      price: 199.99,
+      title: "Reward for good grades",
+      date: "12/05/2025",
+      amount: -500000,
+      to: "Lan",
+    },
+    {
+      id: 4,
+      title: "Salary September",
+      date: "11/30/2025",
+      amount: 10000000,
     },
   ];
 
-  const transactionHistory = [
-    { id: '1', date: '2024-01-15', description: 'Purchased 50 tokens', amount: 44.99, status: 'Completed' },
-    { id: '2', date: '2024-02-01', description: 'Purchased 10 tokens', amount: 9.99, status: 'Completed' },
-    { id: '3', date: '2024-03-10', description: 'Used 5 tokens for quiz', amount: -5, status: 'Completed' },
-    { id: '4', date: '2024-03-15', description: 'Purchased Basic Math Access', amount: 29.99, status: 'Completed' },
-  ];
+  const randomId = () => `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+  const quickAmounts = [200000, 500000, 1000000, 2000000];
 
-  const columns = [
-    { title: 'Date', dataIndex: 'date', key: 'date' },
-    { title: 'Description', dataIndex: 'description', key: 'description' },
-    { title: 'Amount', dataIndex: 'amount', key: 'amount' },
-    { title: 'Status', dataIndex: 'status', key: 'status' },
-  ];
+  const fetchChildren = useCallback(async () => {
+    try {
+      setChildrenLoading(true);
+      const res = await ParentService.getChildren();
+      const data = res.data?.data;
+      if (Array.isArray(data)) {
+        setChildrenAccounts(data);
+        if (!transferChildId && data.length > 0) {
+          setTransferChildId(data[0].studentId);
+        }
+      } else {
+        setChildrenAccounts([]);
+      }
+    } catch (err) {
+      console.error("Failed to load children", err);
+      toast.error("Cannot load children accounts");
+      setChildrenAccounts([]);
+    } finally {
+      setChildrenLoading(false);
+    }
+  }, [transferChildId]);
 
-  const handleBuyTokens = (amount: number, price: number) => {
-    console.log(`Buying ${amount} tokens for $${price}`);
-    // Implement actual payment logic here
-  };
+  useEffect(() => {
+    fetchChildren();
+  }, [fetchChildren]);
 
-  const handleBuyPackage = (packageName: string, price: number) => {
-    console.log(`Buying ${packageName} for $${price}`);
-    // Implement actual payment logic here
-  };
+  const handleTopUp = useCallback(async (amount?: number, note?: string) => {
+    const targetAmount = amount ?? topupAmount;
+    const targetNote = (note ?? topupNote)?.trim() || "Top up parent wallet";
+    if (!targetAmount || Number.isNaN(targetAmount) || targetAmount < 1000) {
+      toast.error("Please enter a valid amount (>= 1,000 VND).");
+      return;
+    }
+    const orderId = `PARENT_WALLET_${randomId()}`;
+    const requestId = `REQ_${randomId()}`;
+
+    const res = await createPayment({
+      amount: targetAmount,
+      orderId,
+      requestId,
+      orderType: "PARENT_WALLET",
+      orderInfo: targetNote,
+      extraData: JSON.stringify({
+        userId: user?.id,
+        channel: "PARENT_WALLET",
+        timestamp: Date.now(),
+      }),
+    });
+
+    if (!res) {
+      toast.error("Unable to create top-up request, please try again.");
+      return;
+    }
+
+    const successCodes = [0, 1000, "0", "1000"];
+    const responseData = (res.data || {}) as CreatePaymentResponse;
+    const rawResultCode =
+      responseData.resultCode ?? (res as unknown as { resultCode?: number | string }).resultCode;
+    const rawMessage = responseData.message || res.message;
+    const payUrl = responseData.payUrl || (res as unknown as { payUrl?: string }).payUrl;
+
+    const isSuccess =
+      successCodes.includes(res.code as never) ||
+      successCodes.includes(rawResultCode as never) ||
+      /success/gi.test(rawMessage || "");
+
+    if (isSuccess && payUrl) {
+      toast.success("Redirecting to payment gateway...");
+      window.location.assign(payUrl);
+    } else {
+      toast.error(res.message || "Failed to create top-up request.");
+    }
+  }, [createPayment, topupAmount, topupNote, user?.id]);
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-4">Billing</h1>
-      <div className='flex flex-col gap-4'>
-        <Card title="Buy Tokens" className="mb-4">
-          <p className="mb-4">Choose a token package to purchase:</p>
-          <Space size="large">
-            {tokenOptions.map((option) => (
-              <Card
-                key={option.id}
-                hoverable
-                style={{ width: 200, textAlign: 'center' }}
-                actions={[
-                  <Button type="primary" onClick={() => handleBuyTokens(option.amount, option.price)}>
-                    Buy Now
-                  </Button>,
-                ]}
-              >
-                <Card.Meta
-                  title={`${option.amount} Tokens`}
-                  description={`$${option.price}`}
-                />
-              </Card>
-            ))}
-          </Space>
-        </Card>
-
-        <Card title="Learning Packages" className="mb-4">
-          <p className="mb-4">Explore our learning packages:</p>
-          <Space size="large" direction="vertical" style={{ width: '100%' }}>
-            {learningPackages.map((pkg) => (
-              <Card
-                key={pkg.id}
-                hoverable
-                actions={[
-                  <Button type="primary" onClick={() => handleBuyPackage(pkg.name, pkg.price)}>
-                    Buy Now
-                  </Button>,
-                ]}
-              >
-                <Card.Meta
-                  title={pkg.name}
-                  description={
-                    <>
-                      <p>{pkg.description}</p>
-                      <p className="font-bold text-lg">{`$${pkg.price}`}</p>
-                    </>
-                  }
-                />
-              </Card>
-            ))}
-          </Space>
-        </Card>
-
-        <Card title="Transaction History">
-          <Table columns={columns} dataSource={transactionHistory} rowKey="id" />
-        </Card>
+    <div className="p-4 space-y-6 bg-gradient-to-b from-gray-50 via-white to-gray-50 min-h-screen">
+      <h1 className="text-2xl font-bold text-gray-800 mb-2">Parent Wallet</h1>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <ParentWalletBalanceCard
+            balance={balance}
+            loading={balanceLoading}
+            error={balanceError}
+            onRefresh={refetchBalance}
+            onTopUp={() => setModalOpen(true)}
+            onTransfer={() => setTransferModalOpen(true)}
+            topupLoading={loading}
+            transferLoading={transferLoading}
+            transferDisabled={childrenAccounts.length === 0 || childrenLoading}
+          />
+        </div>
+        <ParentChildrenAccounts
+          childrenAccounts={childrenAccounts}
+          loading={childrenLoading}
+        />
       </div>
+
+      <ParentRecentTransactions transactions={transactions} />
+
+      <TopUpModal
+        open={modalOpen}
+        loading={loading}
+        amount={topupAmount}
+        note={topupNote}
+        quickAmounts={quickAmounts}
+        onAmountChange={setTopupAmount}
+        onNoteChange={setTopupNote}
+        onCancel={() => setModalOpen(false)}
+        onSubmit={() => handleTopUp(topupAmount, topupNote)}
+      />
+
+      <TransferModal
+        open={transferModalOpen}
+        loading={transferLoading}
+        childrenAccounts={childrenAccounts}
+        childrenLoading={childrenLoading}
+        selectedChildId={transferChildId}
+        amount={transferAmount}
+        note={transferNote}
+        quickAmounts={quickAmounts}
+        onSelectChild={setTransferChildId}
+        onAmountChange={setTransferAmount}
+        onNoteChange={setTransferNote}
+        onCancel={() => setTransferModalOpen(false)}
+        onSubmit={() => {
+          if (!transferChildId) {
+            toast.error("Please select a child.");
+            return;
+          }
+          void (async () => {
+            if (!transferAmount || transferAmount < 1000) {
+              toast.error("Amount must be at least 1,000 VND.");
+              return;
+            }
+            if (!user?.id) {
+              toast.error("Missing parent information.");
+              return;
+            }
+            try {
+              await transfer({
+                parentId: user.id,
+                studentId: transferChildId,
+                amount: transferAmount,
+              });
+              toast.success("Transfer created successfully.");
+              setTransferModalOpen(false);
+              void refetchBalance();
+            } catch {
+              toast.error("Transfer failed. Please try again.");
+            }
+          })();
+        }}
+      />
     </div>
   );
 };
