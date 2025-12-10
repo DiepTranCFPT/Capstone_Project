@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     FaTachometerAlt,
     FaUserPlus,
-    FaFileInvoiceDollar,
     FaSignOutAlt,
     FaBell,
     FaUsers,
@@ -17,7 +16,7 @@ import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 type ParentMenuItem = {
     label: string;
     path: string;
-    icon: JSX.Element;
+    icon: React.ReactNode;
 };
 
 const parentMenu: ParentMenuItem[] = [
@@ -34,7 +33,6 @@ const ParentSidebar: React.FC = () => {
     const navigate = useNavigate();
     const { stats } = useNotifications();
     const [collapsed, setCollapsed] = useState(false);
-    const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
     const toggleCollapse = () => {
         setCollapsed(!collapsed);
@@ -70,10 +68,6 @@ const ParentSidebar: React.FC = () => {
                 {parentMenu.map((item) => {
                     const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
                     const showBadge = item.path === "/parent/notifications" && stats.unread > 0;
-                    const hasChildren = item.children && item.children.length > 0;
-                    const isOpen = hasChildren
-                        ? openMenus[item.label] ?? isActive
-                        : false;
 
                     return (
                         <div key={item.path} className="w-full flex flex-col items-center">
@@ -90,12 +84,7 @@ const ParentSidebar: React.FC = () => {
                                     minHeight: collapsed ? 48 : undefined,
                                 }}
                                 onClick={() => {
-                                    if (hasChildren) {
-                                        setOpenMenus((prev) => ({
-                                            ...prev,
-                                            [item.label]: !isOpen,
-                                        }));
-                                    } else if (location.pathname !== item.path) {
+                                    if (location.pathname !== item.path) {
                                         navigate(item.path);
                                     }
                                 }}
@@ -119,25 +108,6 @@ const ParentSidebar: React.FC = () => {
                                 )}
                             </div>
 
-                            {hasChildren && isOpen && !collapsed && (
-                                <div className="w-11/12 pl-10">
-                                    {item.children!.map((child) => {
-                                        const childActive = location.pathname === child.path;
-                                        return (
-                                            <Link
-                                                key={child.path}
-                                                to={child.path}
-                                                className={`
-                                                    block py-2 text-sm rounded-xl transition
-                                                    ${childActive ? "text-backgroundColor font-semibold" : "text-gray-600 hover:text-backgroundColor"}
-                                                `}
-                                            >
-                                                {child.label}
-                                            </Link>
-                                        );
-                                    })}
-                                </div>
-                            )}
                         </div>
                     );
                 })}
