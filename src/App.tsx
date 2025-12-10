@@ -247,6 +247,7 @@ function App() {
           <Route path="children" element={<ChildrenListPage />} />
           <Route path="student/:studentId" element={<StudentDetailPage />} />
           <Route path="billing" element={<ParentBillingPage />} />
+          <Route path="wallet" element={<ParentBillingPage />} />
         </Route>
 
         {/* Advisor routes with AdvisorLayout */}

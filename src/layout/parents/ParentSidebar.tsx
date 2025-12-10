@@ -1,31 +1,40 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     FaTachometerAlt,
     FaUserPlus,
     FaFileInvoiceDollar,
     FaSignOutAlt,
     FaBell,
-    FaUsers
+    FaUsers,
+    FaWallet
 } from 'react-icons/fa';
 import { useAuth } from '~/hooks/useAuth';
 import { useNotifications } from '~/hooks/useNotifications';
 import { Avatar, Button, Badge } from 'antd';
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 
-const parentMenu = [
+type ParentMenuItem = {
+    label: string;
+    path: string;
+    icon: JSX.Element;
+};
+
+const parentMenu: ParentMenuItem[] = [
     { label: "Dashboard", path: "/parent/dashboard", icon: <FaTachometerAlt /> },
     { label: "Notifications", path: "/parent/notifications", icon: <FaBell /> },
     { label: "Link Student", path: "/parent/link-student", icon: <FaUserPlus /> },
     { label: "List of children", path: "/parent/children", icon: <FaUsers /> },
-    { label: "Billing", path: "/parent/billing", icon: <FaFileInvoiceDollar /> },
+    { label: "Wallet", path: "/parent/wallet", icon: <FaWallet /> },
 ];
 
 const ParentSidebar: React.FC = () => {
     const location = useLocation();
     const { user, logout } = useAuth();
+    const navigate = useNavigate();
     const { stats } = useNotifications();
     const [collapsed, setCollapsed] = useState(false);
+    const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
     const toggleCollapse = () => {
         setCollapsed(!collapsed);
@@ -59,45 +68,77 @@ const ParentSidebar: React.FC = () => {
             {/* Menu */}
             <nav className="flex-1 mt-4 flex flex-col items-center">
                 {parentMenu.map((item) => {
-                    const isActive = location.pathname === item.path;
+                    const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
                     const showBadge = item.path === "/parent/notifications" && stats.unread > 0;
+                    const hasChildren = item.children && item.children.length > 0;
+                    const isOpen = hasChildren
+                        ? openMenus[item.label] ?? isActive
+                        : false;
 
                     return (
-                        <Link
-                            key={item.path}
-                            to={item.path}
-                            className={`
-                            flex items-center transition-all duration-200 active-menu mt-1 relative
-                            ${collapsed ? "justify-center w-12 h-12" : "px-6 py-2 w-11/12"}
-                            ${isActive
-                                    ? "bg-backgroundColor text-white rounded-2xl"
-                                    : "text-black hover:bg-backgroundColor hover:text-white rounded-2xl"
-                                }
-                          `}
-                            style={{
-                                minHeight: collapsed ? 48 : undefined,
-                            }}
-                        >
-                            <span className={`text-lg ${isActive ? "text-white" : ""} relative`}>
-                                {item.icon}
-                                {showBadge && collapsed && (
-                                    <Badge
-                                        count={stats.unread}
-                                        size="small"
-                                        className="absolute -top-2 -right-2"
-                                        style={{ fontSize: '8px' }}
-                                    />
-                                )}
-                            </span>
-                            {!collapsed && (
-                                <div className="flex items-center justify-between flex-1 ml-3">
-                                    <span className="font-medium">{item.label}</span>
-                                    {showBadge && (
-                                        <Badge count={stats.unread} />
+                        <div key={item.path} className="w-full flex flex-col items-center">
+                            <div
+                                className={`
+                                    flex items-center transition-all duration-200 active-menu mt-1 relative cursor-pointer
+                                    ${collapsed ? "justify-center w-12 h-12" : "px-6 py-2 w-11/12"}
+                                    ${isActive
+                                        ? "bg-backgroundColor text-white rounded-2xl"
+                                        : "text-black hover:bg-backgroundColor hover:text-white rounded-2xl"
+                                    }
+                                `}
+                                style={{
+                                    minHeight: collapsed ? 48 : undefined,
+                                }}
+                                onClick={() => {
+                                    if (hasChildren) {
+                                        setOpenMenus((prev) => ({
+                                            ...prev,
+                                            [item.label]: !isOpen,
+                                        }));
+                                    } else if (location.pathname !== item.path) {
+                                        navigate(item.path);
+                                    }
+                                }}
+                            >
+                                <span className={`text-lg ${isActive ? "text-white" : ""} relative`}>
+                                    {item.icon}
+                                    {showBadge && collapsed && (
+                                        <Badge
+                                            count={stats.unread}
+                                            size="small"
+                                            className="absolute -top-2 -right-2"
+                                            style={{ fontSize: '8px' }}
+                                        />
                                     )}
+                                </span>
+                                {!collapsed && (
+                                    <div className="flex items-center justify-between flex-1 ml-3">
+                                        <span className="font-medium">{item.label}</span>
+                                        {showBadge && <Badge count={stats.unread} />}
+                                    </div>
+                                )}
+                            </div>
+
+                            {hasChildren && isOpen && !collapsed && (
+                                <div className="w-11/12 pl-10">
+                                    {item.children!.map((child) => {
+                                        const childActive = location.pathname === child.path;
+                                        return (
+                                            <Link
+                                                key={child.path}
+                                                to={child.path}
+                                                className={`
+                                                    block py-2 text-sm rounded-xl transition
+                                                    ${childActive ? "text-backgroundColor font-semibold" : "text-gray-600 hover:text-backgroundColor"}
+                                                `}
+                                            >
+                                                {child.label}
+                                            </Link>
+                                        );
+                                    })}
                                 </div>
                             )}
-                        </Link>
+                        </div>
                     );
                 })}
             </nav>
