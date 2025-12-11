@@ -97,28 +97,28 @@ const StudentDashboard: React.FC = () => {
                   <BarChartOutlined className="text-xl text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Tổng quan</h3>
-                  <p className="text-sm text-gray-500">Thống kê tổng thể</p>
+                  <h3 className="text-lg font-semibold text-gray-900">Overview</h3>
+                  <p className="text-sm text-gray-500">Overall statistics</p>
                 </div>
               </div>
             </div>
             {overall ? (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Khóa học đã đăng ký:</span>
+                  <span className="text-gray-600">Courses enrolled:</span>
                   <span className="text-lg font-bold text-gray-900">{overall.totalCoursesEnrolled ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Khóa học đã hoàn thành:</span>
+                  <span className="text-gray-600">Courses completed:</span>
                   <span className="text-lg font-bold text-green-600">{overall.totalCompletedCourses ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Bài tập đang chờ:</span>
+                  <span className="text-gray-600">Pending assignments:</span>
                   <span className="text-lg font-bold text-orange-600">{overall.totalPendingAssignments ?? 0}</span>
                 </div>
               </div>
             ) : (
-              <Empty description="Không có dữ liệu" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+              <Empty description="No data" image={Empty.PRESENTED_IMAGE_SIMPLE} />
             )}
           </Card>
 
@@ -130,28 +130,28 @@ const StudentDashboard: React.FC = () => {
                   <DollarOutlined className="text-xl text-green-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Tài chính</h3>
-                  <p className="text-sm text-gray-500">Thống kê thanh toán</p>
+                  <h3 className="text-lg font-semibold text-gray-900">Finance</h3>
+                  <p className="text-sm text-gray-500">Payment statistics</p>
                 </div>
               </div>
             </div>
             {financial ? (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Tổng đã chi:</span>
+                  <span className="text-gray-600">Total spent:</span>
                   <span className="text-lg font-bold text-green-600">{(financial.totalSpent ?? 0).toLocaleString('vi-VN')} VNĐ</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Số tài liệu đã đăng ký:</span>
+                  <span className="text-gray-600">Registered materials:</span>
                   <span className="text-lg font-bold text-blue-600">{financial.totalRegisteredMaterials ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Số dư hiện tại:</span>
+                  <span className="text-gray-600">Current balance:</span>
                   <span className="text-lg font-bold text-purple-600">{(financial.currentBalance ?? 0).toLocaleString('vi-VN')} VNĐ</span>
                 </div>
               </div>
             ) : (
-              <Empty description="Không có dữ liệu" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+              <Empty description="No data" image={Empty.PRESENTED_IMAGE_SIMPLE} />
             )}
           </Card>
 
@@ -163,34 +163,34 @@ const StudentDashboard: React.FC = () => {
                   <BookOutlined className="text-xl text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Thi cử</h3>
-                  <p className="text-sm text-gray-500">Thống kê bài thi</p>
+                  <h3 className="text-lg font-semibold text-gray-900">Exams</h3>
+                  <p className="text-sm text-gray-500">Exam statistics</p>
                 </div>
               </div>
             </div>
             {examStats ? (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Số bài thi đã làm:</span>
+                  <span className="text-gray-600">Total attempts:</span>
                   <span className="text-lg font-bold text-gray-900">{examStats.totalExamsTaken ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Đang làm:</span>
+                  <span className="text-gray-600">In progress:</span>
                   <span className="text-lg font-bold text-orange-600">{examStats.examsInProgress ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Đã hoàn thành:</span>
+                  <span className="text-gray-600">Completed:</span>
                   <span className="text-lg font-bold text-green-600">
                     {examStats.recentAttempts?.filter(a => a.status === 'COMPLETED').length ?? 0}
                   </span>
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-                  <span className="text-gray-600">Điểm trung bình:</span>
+                  <span className="text-gray-600">Average score:</span>
                   <span className="text-xl font-bold text-blue-600">{(examStats.averageScore ?? 0).toFixed(1)}</span>
                 </div>
               </div>
             ) : (
-              <Empty description="Không có dữ liệu" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+              <Empty description="No data" image={Empty.PRESENTED_IMAGE_SIMPLE} />
             )}
           </Card>
         </div>

@@ -77,9 +77,9 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
         const updated = [...localRegisteredIds, materialId];
         setLocalRegisteredIds(updated);
         localStorage.setItem('registeredMaterials', JSON.stringify(updated));
-        console.log("✅ Saved material ID to localStorage:", materialId, "Updated list:", updated);
+        console.log("Saved material ID to localStorage:", materialId, "Updated list:", updated);
       } else {
-        console.log("ℹ️ Material ID already in localStorage:", materialId);
+        console.log("ℹ Material ID already in localStorage:", materialId);
       }
     } catch (error) {
       console.error('Failed to save registered material ID to localStorage:', error);
@@ -94,7 +94,7 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
     const isRegisteredFromStorage = localRegisteredIds.includes(material.id);
     const result = isRegisteredFromAPI || isRegisteredFromStorage;
     
-    console.log("🔍 Registration status check:", {
+    console.log(" Registration status check:", {
       materialId: material.id,
       isRegisteredFromAPI,
       isRegisteredFromStorage,
@@ -284,10 +284,10 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
 
     try {
       setConfirmLoading(true);
-      console.log("🔄 Calling API /learning-materials/register with id:", material.id);
+      console.log(" Calling API /learning-materials/register with id:", material.id);
 
       const result = await register(material.id);
-      console.log("✅ Registration API successful, result:", result);
+      console.log(" Registration API successful, result:", result);
 
       // Lưu local để đồng bộ UI
       saveRegisteredMaterialId(material.id);
@@ -296,7 +296,7 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
       try {
         await refetchRegisteredMaterials();
       } catch (apiError) {
-        console.warn("⚠️ Failed to refresh registered materials from API:", apiError);
+        console.warn(" Failed to refresh registered materials from API:", apiError);
       }
 
       setConfirmVisible(false);
@@ -309,7 +309,7 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
         navigate(`/materials/${material.id}/learn`);
       }, 1500);
     } catch (err: unknown) {
-      console.log("❌ Registration failed in handleConfirmRegister:", err);
+      console.log(" Registration failed in handleConfirmRegister:", err);
 
       if (
         typeof err === "object" &&
