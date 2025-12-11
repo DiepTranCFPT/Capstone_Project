@@ -74,6 +74,14 @@ const TeacherRatingService = {
     );
   },
 
+  // GET /api/teacher-ratings/avg/{teacherId}
+  // Lấy điểm đánh giá trung bình của một giáo viên
+  getAverageRating(
+    teacherId: string
+  ): Promise<AxiosResponse<ApiResponse<number>>> {
+    return axiosInstance.get(`/api/teacher-ratings/avg/${teacherId}`);
+  },
+
   // GET /api/teacher-ratings/student/{studentId}
   // Lấy danh sách đánh giá mà một học sinh đã đánh giá cho các giáo viên
   getRatingsByStudent(
