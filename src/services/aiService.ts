@@ -25,9 +25,14 @@ export const askAiExamQuestion = async (
 
                 const lines = newContent.split('\n');
                 for (const line of lines) {
-                    if (line.startsWith('data:')) {
-                        const content = line.slice(5); // Remove 'data:'
-                        onChunk(content);
+                    const trimmedLine = line.trim();
+                    if (trimmedLine.startsWith('data:')) {
+                        // Remove 'data:' prefix and any leading whitespace after it
+                        const content = trimmedLine.slice(5).trimStart();
+                        // Add space between words if content is not empty
+                        if (content) {
+                            onChunk(content + ' ');
+                        }
                     }
                 }
             }
@@ -60,9 +65,14 @@ export const askAiStudentDashboard = async (
 
                 const lines = newContent.split('\n');
                 for (const line of lines) {
-                    if (line.startsWith('data:')) {
-                        const content = line.slice(5);
-                        onChunk(content);
+                    const trimmedLine = line.trim();
+                    if (trimmedLine.startsWith('data:')) {
+                        // Remove 'data:' prefix and any leading whitespace after it
+                        const content = trimmedLine.slice(5).trimStart();
+                        // Add space between words if content is not empty
+                        if (content) {
+                            onChunk(content + ' ');
+                        }
                     }
                 }
             }
