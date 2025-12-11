@@ -36,6 +36,9 @@ export const LATEX_SUBJECT_IDENTIFIERS: string[] = [
     "Geometry",
     "Trigonometry",
     "Statistics",
+    "AP Calculus AB",
+    "AP Calculus BC",
+    "AP Statistics",
 ];
 
 /**
