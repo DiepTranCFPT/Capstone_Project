@@ -10,6 +10,13 @@ interface Message {
     sender: 'user' | 'ai';
 }
 
+// Helper function to format AI response with proper line breaks
+const formatAiResponse = (text: string): string => {
+    if (!text) return '';
+    // Add line breaks before numbered headers like "1. **", "2. **", etc.
+    return text.replace(/(\d+)\.\s*\*\*/g, '\n\n$1. **');
+};
+
 // Typing indicator component
 const TypingIndicator: React.FC = () => (
     <div className="flex justify-start mb-3">
@@ -213,7 +220,7 @@ const AIDashboardChatBubble: React.FC = () => {
                                                     ),
                                                 }}
                                             >
-                                                {message.text}
+                                                {formatAiResponse(message.text)}
                                             </ReactMarkdown>
                                         ) : (
                                             message.text

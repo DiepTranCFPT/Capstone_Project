@@ -13,6 +13,13 @@ import { useAiExamAsk } from '~/hooks/useAiExamAsk';
 import { useAuth } from '~/hooks/useAuth';
 import ReactMarkdown from 'react-markdown';
 
+// Helper function to format AI response with proper line breaks
+const formatAiResponse = (text: string): string => {
+    if (!text) return '';
+    // Add line breaks before numbered headers like "1. **", "2. **", etc.
+    return text.replace(/(\d+)\.\s*\*\*/g, '\n\n$1. **');
+};
+
 interface QuestionDetail {
     question: string;
     userAnswer: string;
@@ -338,7 +345,7 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
                                                                     blockquote: ({ ...props }) => <blockquote className="border-l-4 border-blue-200 pl-4 italic text-gray-500 my-4" {...props} />,
                                                                 }}
                                                             >
-                                                                {aiResponse}
+                                                                {formatAiResponse(aiResponse)}
                                                             </ReactMarkdown>
                                                             {isAiLoading && (
                                                                 <div className="flex space-x-1 mt-2 h-4 items-center">

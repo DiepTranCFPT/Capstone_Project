@@ -5,6 +5,13 @@ import { useAuth } from '../../hooks/useAuth';
 import { FaRobot, FaTimes, FaPaperPlane } from 'react-icons/fa';
 import { RiSparklingFill } from 'react-icons/ri';
 
+// Helper function to format AI response with proper line breaks
+const formatAiResponse = (text: string): string => {
+  if (!text) return '';
+  // Add line breaks before numbered headers like "1. **", "2. **", etc.
+  return text.replace(/(\d+)\.\s*\*\*/g, '\n\n$1. **');
+};
+
 // Typing indicator component
 const TypingIndicator: React.FC = () => (
   <div className="flex justify-start mb-3">
@@ -66,8 +73,8 @@ const ChatBot: React.FC = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 ${isOpen
-            ? 'bg-gray-600 hover:bg-gray-700 rotate-180'
-            : 'bg-gradient-to-br from-teal-500 via-emerald-500 to-cyan-500 hover:from-teal-600 hover:via-emerald-600 hover:to-cyan-600'
+          ? 'bg-gray-600 hover:bg-gray-700 rotate-180'
+          : 'bg-gradient-to-br from-teal-500 via-emerald-500 to-cyan-500 hover:from-teal-600 hover:via-emerald-600 hover:to-cyan-600'
           }`}
         title={isOpen ? "Close chat" : "Chat with EduBot"}
       >
@@ -147,8 +154,8 @@ const ChatBot: React.FC = () => {
                 )}
                 <div
                   className={`max-w-[75%] px-4 py-2.5 rounded-2xl shadow-sm ${message.sender === 'user'
-                      ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-br-sm'
-                      : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm'
+                    ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-br-sm'
+                    : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm'
                     }`}
                 >
                   <div className="text-sm leading-relaxed">
@@ -170,7 +177,7 @@ const ChatBot: React.FC = () => {
                           ),
                         }}
                       >
-                        {message.text}
+                        {formatAiResponse(message.text)}
                       </ReactMarkdown>
                     ) : (
                       message.text
