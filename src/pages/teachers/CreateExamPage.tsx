@@ -219,7 +219,7 @@ const CreateExamPage: React.FC = () => {
       setRulesError('At least one rule must be added');
       hasErrors = true;
     }
-    if (tokenCost <= 0) {
+    if (tokenCost < 0) {
       setTokenCostError('Token cost must be greater than 0');
       hasErrors = true;
     }
@@ -458,7 +458,7 @@ const CreateExamPage: React.FC = () => {
                 }}
                 status={tokenCostError ? 'error' : ''}
               />
-              {tokenCostError && <div className="text-red-500 text-sm mt-1">Token cost must be greater than 0</div>}
+              {tokenCostError && <div className="text-red-500 text-sm mt-1">{tokenCostError}</div>}
             </div>
 
             <div className="flex items-center gap-2">

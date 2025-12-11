@@ -100,3 +100,12 @@ export interface QuestionPaginationResponse {
   items: QuestionBankItem[];
   totalElement: number;
 }
+
+// Response type cho API import questions
+export interface QuestionImportResponse {
+  totalProcessed: number;
+  successCount: number;
+  errorCount: number;
+  errorMessages: string[];
+  successQuestionIds: string[];
+}

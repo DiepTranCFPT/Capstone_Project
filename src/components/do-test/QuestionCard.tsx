@@ -1,5 +1,6 @@
 import React from 'react';
 import type { QuestionBankItem } from '~/types/question';
+import LatexRenderer from '~/components/common/LatexRenderer';
 
 interface QuestionCardProps {
     question: QuestionBankItem;
@@ -15,7 +16,9 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNumber, o
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="font-semibold text-gray-800 mb-4">{questionNumber}. {question.text}</h3>
+            <h3 className="font-semibold text-gray-800 mb-4">
+                {questionNumber}. <LatexRenderer content={question.text} />
+            </h3>
             <div className="space-y-3">
                 {question.options?.map(option => {
                     const isChecked = String(selectedAnswerId) === String(option.id);
@@ -29,7 +32,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNumber, o
                                 onChange={() => handleAnswerChange(option.id || '')}
                                 className="h-4 w-4"
                             />
-                            <span>{option.text}</span>
+                            <span><LatexRenderer content={option.text} /></span>
                         </label>
                     );
                 })}
@@ -39,3 +42,4 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNumber, o
 };
 
 export default QuestionCard;
+

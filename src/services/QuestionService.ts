@@ -3,7 +3,7 @@ import type { AxiosResponse } from "axios";
 import type { ApiResponse } from "~/types/api";
 import type { PageInfo } from "~/types/pagination";
 import type { QuestionTopic } from "~/types/questionTopic";
-import type { QuestionBankItem, NewQuestion, QuestionV2PaginationResponse } from "~/types/question";
+import type { QuestionBankItem, NewQuestion, QuestionV2PaginationResponse, QuestionImportResponse } from "~/types/question";
 
 const QuestionService = {
   //  Lấy tất cả câu hỏi (có phân trang)
@@ -81,6 +81,29 @@ const QuestionService = {
     params?: { pageNo?: number; pageSize?: number }
   ): Promise<AxiosResponse<ApiResponse<QuestionV2PaginationResponse>>> {
     return axiosInstance.get("/questions-v2", { params });
+  },
+
+  // Import câu hỏi từ file
+  async importQuestions(
+    subjectId: string,
+    file: File,
+    skipErrors: boolean = false
+  ): Promise<AxiosResponse<ApiResponse<QuestionImportResponse>>> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return axiosInstance.post("/questions-v2/import", formData, {
+      params: { subjectId, skipErrors },
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+
+  // Tải template import câu hỏi
+  async getImportTemplate(): Promise<AxiosResponse<Blob>> {
+    return axiosInstance.get("/questions-v2/import/template", {
+      responseType: "blob",
+    });
   },
 };
 

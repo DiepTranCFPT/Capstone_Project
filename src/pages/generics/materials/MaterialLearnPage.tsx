@@ -7,10 +7,11 @@ import type { Lesson, LessonVideoAsset } from "~/types/lesson";
 import FileContentService from "~/services/fileContentService";
 import LessonService from "~/services/LessonService";
 import { useAuth } from "~/hooks/useAuth";
-import useTeacherRatings from "~/hooks/useTeacherRatings";
+import { useLearningMaterialRatings } from "~/hooks/useLearningMaterialRatings";
 import LessonNotesPanel from "~/components/materials/LessonNotesPanel";
 import LessonDetailsSection from "~/components/materials/LessonDetailsSection";
 import CourseContentSidebar from "~/components/materials/CourseContentSidebar";
+import { toast } from "~/components/common/Toast";
 
 const MaterialLearnPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,11 +33,10 @@ const MaterialLearnPage: React.FC = () => {
     error: ratingError,
     myRating,
     statistics,
-    fetchRatingByTeacherAndStudent,
-    fetchStatisticsByTeacher,
+    fetchRatingByMaterialAndStudent,
+    fetchStatisticsByMaterial,
     createRating,
-    resetMyRating,
-  } = useTeacherRatings();
+  } = useLearningMaterialRatings();
   const [ratingValue, setRatingValue] = useState<number>(0);
   const [ratingComment, setRatingComment] = useState<string>("");
   const [ratingModalOpen, setRatingModalOpen] = useState(false);
@@ -101,22 +101,19 @@ const MaterialLearnPage: React.FC = () => {
   }, [selectedLesson]);
 
   useEffect(() => {
-    const teacherId = material?.authorId;
+    const materialId = material?.id;
     const userId = user?.id;
-    if (!teacherId || !userId) {
-      resetMyRating();
+    if (!materialId || !userId) {
       return;
     }
 
-    resetMyRating();
-    fetchRatingByTeacherAndStudent(teacherId, userId);
-    fetchStatisticsByTeacher(teacherId);
+    fetchRatingByMaterialAndStudent(materialId, userId);
+    fetchStatisticsByMaterial(materialId);
   }, [
-    material?.authorId,
+    material?.id,
     user?.id,
-    fetchRatingByTeacherAndStudent,
-    fetchStatisticsByTeacher,
-    resetMyRating,
+    fetchRatingByMaterialAndStudent,
+    fetchStatisticsByMaterial,
   ]);
 
   useEffect(() => {
@@ -133,26 +130,30 @@ const MaterialLearnPage: React.FC = () => {
   }, [myRating, ratingModalOpen]);
 
   const handleSubmitRating = async () => {
-    const teacherId = material?.authorId;
+    const materialId = material?.id;
     const userId = user?.id;
-    if (!teacherId || !userId) {
-      message.error("Không xác định được giáo viên hoặc học viên.");
+    if (!materialId || !userId) {
+      message.error("Không xác định được tài liệu hoặc học viên.");
       return;
     }
 
     const result = await createRating({
-      teacherId,
+      learningMaterialId: materialId,
       studentId: userId,
       rating: ratingValue,
       comment: ratingComment.trim() || undefined,
     });
 
     if (result) {
-      message.success("Cảm ơn bạn đã đánh giá giáo viên!");
+      toast.success("Congratulations on completing the course!");
       setRatingComment("");
-      fetchStatisticsByTeacher(teacherId);
+      fetchStatisticsByMaterial(materialId);
       setRatingModalOpen(false);
       setHasSelectedRating(false);
+      // Navigate to certificates page after a short delay
+      setTimeout(() => {
+        navigate("/student/certificates");
+      }, 1500);
     }
   };
 
@@ -193,11 +194,11 @@ const MaterialLearnPage: React.FC = () => {
             : res.data;
         const matched = Array.isArray(payload)
           ? payload.find(
-              (video) =>
-                video.id === lessonVideoRef ||
-                video.name === lessonVideoRef ||
-                video.nameFile === lessonVideoRef
-            )
+            (video) =>
+              video.id === lessonVideoRef ||
+              video.name === lessonVideoRef ||
+              video.nameFile === lessonVideoRef
+          )
           : payload;
         if (typeof matched === "string") {
           videoCache.current[lessonVideoRef] = matched;
@@ -247,16 +248,16 @@ const MaterialLearnPage: React.FC = () => {
 
   const setRatingModalOpenSafe = (open: boolean) => {
     if (open) {
-      const currentIsLastLesson = 
+      const currentIsLastLesson =
         !!selectedLesson &&
         sortedLessons.length > 0 &&
         selectedLesson.id === sortedLessons[sortedLessons.length - 1].id;
-      
-      const canOpen = 
+
+      const canOpen =
         currentIsLastLesson &&
         videoPlayedForLastLessonRef.current &&
         videoEndedForLastLessonRef.current;
-      
+
       setRatingModalOpen(canOpen);
     } else {
       setRatingModalOpen(false);
@@ -265,14 +266,14 @@ const MaterialLearnPage: React.FC = () => {
 
   useEffect(() => {
     if (isLastLessonSelected) {
-      const shouldBeOpen = 
-        videoPlayedForLastLessonRef.current && 
+      const shouldBeOpen =
+        videoPlayedForLastLessonRef.current &&
         videoEndedForLastLessonRef.current;
-      
+
       if (ratingModalOpen && !shouldBeOpen) {
         setRatingModalOpen(false);
       }
-      
+
       if (!videoPlayedForLastLessonRef.current) {
         videoEndedForLastLessonRef.current = false;
       }
@@ -291,9 +292,9 @@ const MaterialLearnPage: React.FC = () => {
 
   const handleVideoEnded = () => {
     if (
-      isLastLessonSelected && 
+      isLastLessonSelected &&
       videoPlayedForLastLessonRef.current &&
-      material?.authorId && 
+      material?.id &&
       user
     ) {
       videoEndedForLastLessonRef.current = true;
@@ -398,12 +399,12 @@ const MaterialLearnPage: React.FC = () => {
           isLastLessonSelected &&
           videoPlayedForLastLessonRef.current &&
           videoEndedForLastLessonRef.current &&
-          !!material.authorId &&
+          !!material.id &&
           !!user
         }
         onCancel={() => setRatingModalOpen(false)}
         footer={null}
-        title="Đánh giá giáo viên"
+        title="Đánh giá tài liệu học"
         centered
         destroyOnClose
       >
@@ -445,23 +446,23 @@ const MaterialLearnPage: React.FC = () => {
                   {ratingValue >= 5
                     ? "😄"
                     : ratingValue >= 4
-                    ? "😊"
-                    : ratingValue === 3
-                    ? "😐"
-                    : ratingValue === 2
-                    ? "☹️"
-                    : "😡"}
+                      ? "😊"
+                      : ratingValue === 3
+                        ? "😐"
+                        : ratingValue === 2
+                          ? "☹️"
+                          : "😡"}
                 </span>
                 <span>
                   {ratingValue >= 5
                     ? "Rất hài lòng"
                     : ratingValue >= 4
-                    ? "Hài lòng"
-                    : ratingValue === 3
-                    ? "Bình thường"
-                    : ratingValue === 2
-                    ? "Chưa hài lòng"
-                    : "Rất tệ"}
+                      ? "Hài lòng"
+                      : ratingValue === 3
+                        ? "Bình thường"
+                        : ratingValue === 2
+                          ? "Chưa hài lòng"
+                          : "Rất tệ"}
                 </span>
               </div>
             </div>
@@ -477,11 +478,11 @@ const MaterialLearnPage: React.FC = () => {
                 value={ratingComment}
                 onChange={(e) => setRatingComment(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Hãy chia sẻ cảm nhận của bạn về chất lượng giảng dạy..."
+                placeholder="Hãy chia sẻ cảm nhận của bạn về tài liệu học này..."
               />
             </div>
           )}
-          {ratingError && (
+          {ratingError && !ratingError.toLowerCase().includes("not found") && (
             <p className="text-xs text-red-500">{ratingError}</p>
           )}
           <button
