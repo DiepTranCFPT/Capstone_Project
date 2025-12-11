@@ -100,6 +100,7 @@ import TeacherRatingsViewPage from "./pages/teachers/TeacherRatingsViewPage";
 import LoadingPage from "./pages/LoadingPage";
 import PaymentResult from "./pages/checkWallet/PaymentResult";
 import MyWalletPage from "./pages/teachers/MyWalletPage";
+import MyCertificatesPage from "./pages/students/MyCertificatesPage";
 // Layout Wrapper for common UI elements
 const Layout = () => (
   <div className="flex flex-col min-h-screen">
@@ -206,6 +207,7 @@ function App() {
           <Route path="my-bookings" element={<MyBookingsPage />} />
           <Route path="my-courses" element={<MyCoursesPage />} />
           <Route path="quiz-battle" element={<QuizBattlePage />} />
+          <Route path="certificates" element={<MyCertificatesPage />} />
         </Route>
 
         {/* Teacher routes with TeacherLayout */}

@@ -46,7 +46,7 @@ const LearningMaterialRatingService = {
     studentId: string
   ): Promise<AxiosResponse<ApiResponse<LearningMaterialRating>>> {
     return axiosInstance.get(
-      `/api/learning-material-ratings/material/${materialId}/student/${studentId}`
+      `/api/learning-material-ratings/material/${materialId}/user/${studentId}`
     );
   },
 
@@ -66,7 +66,7 @@ const LearningMaterialRatingService = {
     studentId: string
   ): Promise<AxiosResponse<ApiResponse<LearningMaterialRating[]>>> {
     return axiosInstance.get(
-      `/api/learning-material-ratings/student/${studentId}`
+      `/api/learning-material-ratings/user/${studentId}`
     );
   },
 };

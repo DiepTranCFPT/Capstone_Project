@@ -79,12 +79,12 @@ export const useQuestionBank = (teacherId?: string) => {
     // Try multiple field names for options/answers
     // Note: Backend currently returns answers with only id and content: null
     // Frontend will try to fetch answer details if content is missing
-    const optionsRaw = (record["options"] ?? 
-                        record["answers"] ?? 
-                        record["choices"] ?? 
-                        record["answerOptions"] ??
-                        record["answer_options"]) as unknown;
-    
+    const optionsRaw = (record["options"] ??
+      record["answers"] ??
+      record["choices"] ??
+      record["answerOptions"] ??
+      record["answer_options"]) as unknown;
+
     // Try to get correctAnswerId from question object
     const correctAnswerId = normalizeString(
       record["correctAnswerId"],
@@ -94,92 +94,92 @@ export const useQuestionBank = (teacherId?: string) => {
       (record["correctAnswer"] as Record<string, unknown>)?.["id"],
       (record["correctAnswer"] as Record<string, unknown>)?.["answerId"]
     );
-    
+
     // Debug: Log correctAnswerId if found
     if (correctAnswerId) {
       console.log("[useQuestionBank] Found correctAnswerId:", correctAnswerId);
     } else {
       console.warn("[useQuestionBank] No correctAnswerId found in question object");
     }
-    
+
     const options = Array.isArray(optionsRaw)
       ? optionsRaw
-          .map((item) => {
-            if (!item) {
-              return null;
+        .map((item) => {
+          if (!item) {
+            return null;
+          }
+
+          // Handle both object and string cases
+          let optionRecord: Record<string, unknown>;
+          if (typeof item === "string") {
+            // If item is a string, convert to object
+            optionRecord = { text: item, content: item, label: item };
+          } else if (typeof item === "object") {
+            optionRecord = item as Record<string, unknown>;
+
+            // Check if there's a nested answer object
+            if (optionRecord["answer"] && typeof optionRecord["answer"] === "object") {
+              const nestedAnswer = optionRecord["answer"] as Record<string, unknown>;
+              optionRecord = { ...optionRecord, ...nestedAnswer };
             }
-            
-            // Handle both object and string cases
-            let optionRecord: Record<string, unknown>;
-            if (typeof item === "string") {
-              // If item is a string, convert to object
-              optionRecord = { text: item, content: item, label: item };
-            } else if (typeof item === "object") {
-              optionRecord = item as Record<string, unknown>;
-              
-              // Check if there's a nested answer object
-              if (optionRecord["answer"] && typeof optionRecord["answer"] === "object") {
-                const nestedAnswer = optionRecord["answer"] as Record<string, unknown>;
-                optionRecord = { ...optionRecord, ...nestedAnswer };
-              }
-              
-              // Check if there's a nested content object
-              if (optionRecord["content"] && typeof optionRecord["content"] === "object") {
-                const nestedContent = optionRecord["content"] as Record<string, unknown>;
-                optionRecord = { ...optionRecord, ...nestedContent };
-              }
-            } else {
-              return null;
+
+            // Check if there's a nested content object
+            if (optionRecord["content"] && typeof optionRecord["content"] === "object") {
+              const nestedContent = optionRecord["content"] as Record<string, unknown>;
+              optionRecord = { ...optionRecord, ...nestedContent };
             }
-            
-            const optionText = normalizeString(
-              optionRecord["text"], 
-              optionRecord["content"], 
-              optionRecord["label"],
-              optionRecord["optionText"],
-              optionRecord["option_text"],
-              optionRecord["answerText"],
-              optionRecord["answer_text"],
-              optionRecord["name"],
-              optionRecord["title"],
-              optionRecord["value"]
-            );
-            
-            if (!optionText) {
-              return null;
-            }
-            
-            const optionId = normalizeString(
-              optionRecord["id"], 
-              optionRecord["optionId"],
-              optionRecord["option_id"],
-              optionRecord["answerId"],
-              optionRecord["answer_id"]
-            );
-            
-            // Check if this option is correct by comparing with correctAnswerId
-            let isCorrect = false;
-            if (correctAnswerId && optionId) {
-              isCorrect = correctAnswerId === optionId;
-            } else {
-              // Fallback to check field in option object
-              const isCorrectValue = optionRecord["isCorrect"] ?? 
-                                    optionRecord["correct"] ?? 
-                                    optionRecord["isAnswer"] ??
-                                    optionRecord["is_answer"] ??
-                                    optionRecord["isCorrectAnswer"] ??
-                                    optionRecord["is_correct_answer"] ??
-                                    false;
-              isCorrect = typeof isCorrectValue === "boolean" ? isCorrectValue : Boolean(isCorrectValue);
-            }
-            
-            return {
-              id: optionId || undefined,
-              text: optionText,
-              isCorrect,
-            } as QuestionOption;
-          })
-          .filter((item): item is QuestionOption => item !== null)
+          } else {
+            return null;
+          }
+
+          const optionText = normalizeString(
+            optionRecord["text"],
+            optionRecord["content"],
+            optionRecord["label"],
+            optionRecord["optionText"],
+            optionRecord["option_text"],
+            optionRecord["answerText"],
+            optionRecord["answer_text"],
+            optionRecord["name"],
+            optionRecord["title"],
+            optionRecord["value"]
+          );
+
+          if (!optionText) {
+            return null;
+          }
+
+          const optionId = normalizeString(
+            optionRecord["id"],
+            optionRecord["optionId"],
+            optionRecord["option_id"],
+            optionRecord["answerId"],
+            optionRecord["answer_id"]
+          );
+
+          // Check if this option is correct by comparing with correctAnswerId
+          let isCorrect = false;
+          if (correctAnswerId && optionId) {
+            isCorrect = correctAnswerId === optionId;
+          } else {
+            // Fallback to check field in option object
+            const isCorrectValue = optionRecord["isCorrect"] ??
+              optionRecord["correct"] ??
+              optionRecord["isAnswer"] ??
+              optionRecord["is_answer"] ??
+              optionRecord["isCorrectAnswer"] ??
+              optionRecord["is_correct_answer"] ??
+              false;
+            isCorrect = typeof isCorrectValue === "boolean" ? isCorrectValue : Boolean(isCorrectValue);
+          }
+
+          return {
+            id: optionId || undefined,
+            text: optionText,
+            isCorrect,
+          } as QuestionOption;
+        })
+        .filter((item): item is QuestionOption => item !== null)
       : undefined;
 
     const tagsRaw = record["tags"];
@@ -203,22 +203,22 @@ export const useQuestionBank = (teacherId?: string) => {
     // If expectedAnswer is still empty and this is FRQ, try to get from answers array
     if (!expectedAnswer && type === "frq") {
       // Check both optionsRaw (which may include answers) and record["answers"] separately
-      const answersArray = Array.isArray(record["answers"]) 
-        ? record["answers"] 
+      const answersArray = Array.isArray(record["answers"])
+        ? record["answers"]
         : (Array.isArray(optionsRaw) ? optionsRaw : []);
-      
+
       if (answersArray.length > 0) {
         // Find the correct answer in the answers array
         const correctAnswer = answersArray.find((item: unknown) => {
           if (!item || typeof item !== "object") return false;
           const itemRecord = item as Record<string, unknown>;
-          const isCorrect = itemRecord["isCorrect"] ?? 
-                           itemRecord["correct"] ?? 
-                           itemRecord["isAnswer"] ??
-                           itemRecord["is_answer"] ??
-                           itemRecord["isCorrectAnswer"] ??
-                           itemRecord["is_correct_answer"] ??
-                           false;
+          const isCorrect = itemRecord["isCorrect"] ??
+            itemRecord["correct"] ??
+            itemRecord["isAnswer"] ??
+            itemRecord["is_answer"] ??
+            itemRecord["isCorrectAnswer"] ??
+            itemRecord["is_correct_answer"] ??
+            false;
           return Boolean(isCorrect);
         });
 
@@ -325,13 +325,13 @@ export const useQuestionBank = (teacherId?: string) => {
       // Try with expand parameter first
       const res = await QuestionService.getById(id);
       let rawData = res.data?.data as unknown as Record<string, unknown> | undefined;
-      
+
       // Debug: Log raw response from backend
       console.log("[useQuestionBank] Raw response from backend:", JSON.stringify(rawData, null, 2));
       if (rawData && rawData.answers && Array.isArray(rawData.answers)) {
         console.log("[useQuestionBank] Answers from backend:", rawData.answers);
       }
-      
+
       // If answers still don't have content, try fetching answer details separately
       // TODO: Remove this workaround once backend returns full answer data
       if (rawData && rawData.answers && Array.isArray(rawData.answers)) {
@@ -360,7 +360,7 @@ export const useQuestionBank = (teacherId?: string) => {
         );
         rawData = { ...rawData, answers: answersWithContent };
       }
-      
+
       if (rawData) {
         // Normalize the question data using sanitizeQuestion
         const normalized = sanitizeQuestion(rawData);
@@ -401,7 +401,7 @@ export const useQuestionBank = (teacherId?: string) => {
       const nonEmptyChoices = data.choices
         .map((choice: string, originalIndex: number) => ({ text: choice, originalIndex }))
         .filter((item: { text: string; originalIndex: number }) => item.text && item.text.trim() !== "");
-      
+
       // Map to options with correct index after filtering
       transformed.options = nonEmptyChoices.map((item: { text: string; originalIndex: number }) => {
         // Find the new index of the originally selected correct answer
@@ -418,7 +418,7 @@ export const useQuestionBank = (teacherId?: string) => {
           isCorrectAnswer: isCorrect, // Backend may expect 'isCorrectAnswer' field
         };
       });
-      
+
       // Ensure at least one option is marked as correct
       if (transformed.options && Array.isArray(transformed.options) && transformed.options.length > 0) {
         const hasCorrectAnswer = transformed.options.some((opt: { isCorrect: boolean }) => opt.isCorrect);
@@ -640,6 +640,72 @@ export const useQuestionBank = (teacherId?: string) => {
     }
   }, [normalizeQuestions]);
 
+  // 🔹 Tải template import câu hỏi
+  const downloadImportTemplate = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await QuestionService.getImportTemplate();
+      // Create download link
+      const blob = new Blob([res.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'question_import_template.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      message.success("Tải template thành công!");
+    } catch (error) {
+      message.error("Không thể tải template import!");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // 🔹 Import câu hỏi từ file Excel
+  const importQuestions = useCallback(async (
+    subjectId: string,
+    file: File,
+    skipErrors: boolean = false
+  ) => {
+    try {
+      setLoading(true);
+      const res = await QuestionService.importQuestions(subjectId, file, skipErrors);
+      const result = res.data?.data;
+
+      if (result) {
+        if (result.errorCount > 0) {
+          message.warning(
+            `Import hoàn tất: ${result.successCount}/${result.totalProcessed} câu hỏi thành công. ${result.errorCount} lỗi.`
+          );
+        } else {
+          message.success(
+            `Import thành công ${result.successCount} câu hỏi!`
+          );
+        }
+        return result;
+      }
+      return null;
+    } catch (error: unknown) {
+      let errorMessage = "Import câu hỏi thất bại!";
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+      }
+      message.error(errorMessage);
+      console.error(error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (teacherId) {
       fetchByUserId(teacherId);
@@ -659,6 +725,8 @@ export const useQuestionBank = (teacherId?: string) => {
     fetchByUserId,
     // fetchByTopicId, // Method not available in service yet
     fetchBySubjectId,
+    downloadImportTemplate,
+    importQuestions,
   };
 };
 

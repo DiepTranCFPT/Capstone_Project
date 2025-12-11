@@ -7,6 +7,9 @@ import {
   Select,
   Space,
   Modal,
+  Upload,
+  Progress,
+  Alert,
 } from "antd";
 import {
   DeleteOutlined,
@@ -15,13 +18,17 @@ import {
   SearchOutlined,
   ExclamationCircleOutlined,
   EyeOutlined,
+  UploadOutlined,
+  DownloadOutlined,
+  FileExcelOutlined,
 } from "@ant-design/icons";
-import type { QuestionBankItem, NewQuestion } from "~/types/question";
+import type { QuestionBankItem, NewQuestion, QuestionImportResponse } from "~/types/question";
 import type { ColumnsType } from "antd/es/table";
 import AddQuestionModal from "~/components/teachers/exam/AddQuestionModal";
 import { toast } from "~/components/common/Toast";
 import { useQuestionBank } from "~/hooks/useQuestionBank";
 import { useAuth } from "~/hooks/useAuth";
+import { useSubjects } from "~/hooks/useSubjects";
 
 const { Option } = Select;
 
@@ -29,6 +36,10 @@ const QuestionBankPage: React.FC = () => {
   // Lấy teacherId (giáo viên hiện tại) từ auth
   const { user } = useAuth();
   const teacherId = user?.id;
+
+  // Hook quản lý subjects
+  const { subjects } = useSubjects();
+
   //  Hook quản lý dữ liệu câu hỏi
   const {
     questions: questionBank,
@@ -39,6 +50,8 @@ const QuestionBankPage: React.FC = () => {
     fetchQuestions,
     fetchByUserId,
     getQuestionById,
+    downloadImportTemplate,
+    importQuestions,
   } = useQuestionBank(teacherId);
 
   const difficultyOptions = useMemo(
@@ -69,6 +82,14 @@ const QuestionBankPage: React.FC = () => {
   const [viewQuestionVisible, setViewQuestionVisible] = useState(false);
   const [viewingQuestion, setViewingQuestion] = useState<QuestionBankItem | null>(null);
 
+  // Import Excel modal state
+  const [importModalVisible, setImportModalVisible] = useState(false);
+  const [importSubjectId, setImportSubjectId] = useState<string>("");
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importSkipErrors, setImportSkipErrors] = useState(false);
+  const [importResult, setImportResult] = useState<QuestionImportResponse | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+
   //  Filter states
   const [searchText, setSearchText] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
@@ -95,7 +116,7 @@ const QuestionBankPage: React.FC = () => {
         console.warn("[QuestionBankPage] Could not fetch full question details, using list data:", error);
         // Continue with question from list
       }
-      
+
       if (fullQuestion) {
         const normalizedQuestion: QuestionBankItem = {
           id: fullQuestion.id || question.id,
@@ -132,7 +153,7 @@ const QuestionBankPage: React.FC = () => {
     try {
       // Fetch full question details to ensure we have all data including expectedAnswer and options
       const fullQuestion = await getQuestionById(question.id);
-      
+
       if (fullQuestion) {
         // Merge data, prioritizing fullQuestion but keeping question data as fallback
         const normalizedQuestion: QuestionBankItem = {
@@ -188,7 +209,7 @@ const QuestionBankPage: React.FC = () => {
     try {
       console.log("[QuestionBankPage] Saving question:", newQuestion);
       console.log("[QuestionBankPage] Editing question:", editingQuestion);
-      
+
       if (editingQuestion) {
         // Pass NewQuestion directly - useQuestionBank will transform it to API format
         console.log("[QuestionBankPage] Updating question with ID:", editingQuestion.id);
@@ -224,7 +245,63 @@ const QuestionBankPage: React.FC = () => {
     setSelectedTopic("All Topics");
   };
 
-  // 🔍 Lọc dữ liệu hiển thị
+  // � Import Excel handlers
+  const handleOpenImportModal = () => {
+    setImportModalVisible(true);
+    setImportSubjectId("");
+    setImportFile(null);
+    setImportResult(null);
+    setImportSkipErrors(false);
+  };
+
+  const handleCloseImportModal = () => {
+    setImportModalVisible(false);
+    setImportFile(null);
+    setImportResult(null);
+    setImportSubjectId("");
+    setImportSkipErrors(false);
+  };
+
+  const handleFileChange = (file: File) => {
+    setImportFile(file);
+    setImportResult(null);
+  };
+
+  const handleDownloadTemplate = async () => {
+    await downloadImportTemplate();
+  };
+
+  const handleImportQuestions = async () => {
+    if (!importSubjectId) {
+      toast.error("Vui lòng chọn môn học!");
+      return;
+    }
+    if (!importFile) {
+      toast.error("Vui lòng chọn file Excel!");
+      return;
+    }
+
+    try {
+      setIsImporting(true);
+      const result = await importQuestions(importSubjectId, importFile, importSkipErrors);
+      setImportResult(result);
+
+      // Refresh questions list after successful import
+      if (result && result.successCount > 0) {
+        if (teacherId) {
+          await fetchByUserId(teacherId);
+        } else {
+          await fetchQuestions();
+        }
+      }
+    } catch (error) {
+      console.error("Import error:", error);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  // �🔍 Lọc dữ liệu hiển thị
   const filteredData = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();
 
@@ -308,8 +385,8 @@ const QuestionBankPage: React.FC = () => {
           difficulty === "easy"
             ? "cyan"
             : difficulty === "medium"
-            ? "orange"
-            : "red";
+              ? "orange"
+              : "red";
         return <Tag color={color}>{difficulty}</Tag>;
       },
     },
@@ -357,15 +434,25 @@ const QuestionBankPage: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Question Bank</h1>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          size="large"
-          onClick={() => setIsModalOpen(true)}
-          style={{ backgroundColor: "#3CBCB2", border: "none" }}
-        >
-          Add Question
-        </Button>
+        <Space>
+          <Button
+            icon={<UploadOutlined />}
+            size="large"
+            onClick={handleOpenImportModal}
+            style={{ borderColor: "#3CBCB2", color: "#3CBCB2" }}
+          >
+            Import Excel
+          </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            size="large"
+            onClick={() => setIsModalOpen(true)}
+            style={{ backgroundColor: "#3CBCB2", border: "none" }}
+          >
+            Add Question
+          </Button>
+        </Space>
       </div>
 
       {/* Filter Section */}
@@ -518,8 +605,8 @@ const QuestionBankPage: React.FC = () => {
                     viewingQuestion.difficulty === "easy"
                       ? "cyan"
                       : viewingQuestion.difficulty === "medium"
-                      ? "orange"
-                      : "red"
+                        ? "orange"
+                        : "red"
                   }
                 >
                   {viewingQuestion.difficulty}
@@ -535,11 +622,10 @@ const QuestionBankPage: React.FC = () => {
                   {viewingQuestion.options.map((option, index) => (
                     <div
                       key={option.id || index}
-                      className={`p-3 rounded-lg border ${
-                        option.isCorrect
-                          ? "bg-green-50 border-green-300"
-                          : "bg-gray-50 border-gray-200"
-                      }`}
+                      className={`p-3 rounded-lg border ${option.isCorrect
+                        ? "bg-green-50 border-green-300"
+                        : "bg-gray-50 border-gray-200"
+                        }`}
                     >
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-gray-600">Choice {index + 1}:</span>
@@ -582,6 +668,162 @@ const QuestionBankPage: React.FC = () => {
 
           </div>
         )}
+      </Modal>
+
+      {/* Import Excel Modal */}
+      <Modal
+        open={importModalVisible}
+        onCancel={handleCloseImportModal}
+        title={
+          <div className="flex items-center gap-2">
+            <FileExcelOutlined className="text-green-600 text-xl" />
+            <span className="text-xl font-semibold">Import Questions from Excel</span>
+          </div>
+        }
+        footer={[
+          <Button key="template" icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>
+            Download Template
+          </Button>,
+          <Button key="cancel" onClick={handleCloseImportModal}>
+            Cancel
+          </Button>,
+          <Button
+            key="import"
+            type="primary"
+            icon={<UploadOutlined />}
+            onClick={handleImportQuestions}
+            loading={isImporting}
+            disabled={!importSubjectId || !importFile}
+            style={{ backgroundColor: "#3CBCB2", border: "none" }}
+          >
+            Import
+          </Button>,
+        ]}
+        width={600}
+        styles={{
+          body: { padding: "24px" },
+        }}
+      >
+        <div className="space-y-6">
+          {/* Instructions */}
+          <Alert
+            message="Hướng dẫn Import"
+            description={
+              <ol className="list-decimal list-inside space-y-1 text-sm">
+                <li>Tải template Excel bằng nút "Download Template"</li>
+                <li>Điền câu hỏi vào file theo đúng format</li>
+                <li>Chọn môn học và upload file để import</li>
+              </ol>
+            }
+            type="info"
+            showIcon
+          />
+
+          {/* Subject Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Môn học <span className="text-red-500">*</span>
+            </label>
+            <Select
+              placeholder="Chọn môn học"
+              value={importSubjectId || undefined}
+              onChange={setImportSubjectId}
+              className="w-full"
+              size="large"
+            >
+              {subjects.map((subject) => (
+                <Option key={subject.id} value={subject.id}>
+                  {subject.name}
+                </Option>
+              ))}
+            </Select>
+          </div>
+
+          {/* File Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              File Excel <span className="text-red-500">*</span>
+            </label>
+            <Upload.Dragger
+              accept=".xlsx,.xls"
+              maxCount={1}
+              beforeUpload={(file) => {
+                handleFileChange(file);
+                return false; // Prevent auto upload
+              }}
+              onRemove={() => setImportFile(null)}
+              fileList={importFile ? [{ uid: '-1', name: importFile.name, status: 'done' }] : []}
+            >
+              <p className="ant-upload-drag-icon">
+                <FileExcelOutlined style={{ fontSize: '48px', color: '#52c41a' }} />
+              </p>
+              <p className="ant-upload-text">Click hoặc kéo thả file Excel vào đây</p>
+              <p className="ant-upload-hint">Chỉ hỗ trợ file .xlsx hoặc .xls</p>
+            </Upload.Dragger>
+          </div>
+
+          {/* Skip Errors Option */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="skipErrors"
+              checked={importSkipErrors}
+              onChange={(e) => setImportSkipErrors(e.target.checked)}
+              className="w-4 h-4 text-teal-600 rounded border-gray-300"
+            />
+            <label htmlFor="skipErrors" className="text-sm text-gray-600">
+              Bỏ qua các câu hỏi lỗi và tiếp tục import những câu hợp lệ
+            </label>
+          </div>
+
+          {/* Import Result */}
+          {importResult && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Progress
+                  type="circle"
+                  percent={Math.round((importResult.successCount / importResult.totalProcessed) * 100)}
+                  size={80}
+                  strokeColor={importResult.errorCount > 0 ? "#faad14" : "#52c41a"}
+                />
+                <div>
+                  <p className="text-lg font-medium">
+                    {importResult.successCount}/{importResult.totalProcessed} câu hỏi thành công
+                  </p>
+                  {importResult.errorCount > 0 && (
+                    <p className="text-red-500">{importResult.errorCount} câu hỏi lỗi</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Error Messages */}
+              {importResult.errorMessages && importResult.errorMessages.length > 0 && (
+                <Alert
+                  message="Chi tiết lỗi"
+                  description={
+                    <ul className="list-disc list-inside max-h-32 overflow-y-auto text-sm">
+                      {importResult.errorMessages.map((error, index) => (
+                        <li key={index} className="text-red-600">{error}</li>
+                      ))}
+                    </ul>
+                  }
+                  type="error"
+                  showIcon
+                />
+              )}
+
+              {/* Success Message */}
+              {importResult.successCount > 0 && importResult.errorCount === 0 && (
+                <Alert
+                  message="Import thành công!"
+                  description={`Đã import ${importResult.successCount} câu hỏi vào ngân hàng câu hỏi.`}
+                  type="success"
+                  showIcon
+                />
+              )}
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   );

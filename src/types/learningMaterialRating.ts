@@ -3,7 +3,7 @@
 
 export interface LearningMaterialRatingPayload {
   // Id của learning material
-  materialId: string;
+  learningMaterialId: string;
   // Id học sinh / user đánh giá
   studentId: string;
   // Điểm đánh giá, ví dụ: 1 - 5
@@ -16,7 +16,7 @@ export interface LearningMaterialRatingPayload {
 
 export interface LearningMaterialRating {
   id?: string;
-  materialId: string;
+  learningMaterialId: string;
   studentId: string;
   rating: number;
   comment?: string;
@@ -27,7 +27,7 @@ export interface LearningMaterialRating {
 }
 
 export interface LearningMaterialRatingStatistics {
-  materialId: string;
+  learningMaterialId: string;
   averageRating: number;
   totalRatings: number;
   // Có thể mở rộng thêm các field như: 1StarCount, 2StarCount,...
