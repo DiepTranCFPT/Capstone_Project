@@ -36,7 +36,7 @@ const ProctoringRulesModal: React.FC<ProctoringRulesModalProps> = ({
                     {/* Warning Box */}
                     <div className="bg-red-50 border-2 border-red-300 rounded-xl p-4 mb-6">
                         <div className="flex items-start gap-3">
-                            <span className="text-2xl"><CiWarning className='text-red-500'/></span>
+                            <span className="text-2xl"><CiWarning className='text-red-500' /></span>
                             <div>
                                 <h3 className="font-bold text-red-800 mb-1">Important Warning</h3>
                                 <p className="text-sm text-red-700">
@@ -54,7 +54,7 @@ const ProctoringRulesModal: React.FC<ProctoringRulesModalProps> = ({
                         </h3>
                         <ul className="space-y-3">
                             <li className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                                <span className="text-lg"><FaXmark className='text-red-500'/></span>
+                                <span className="text-lg"><FaXmark className='text-red-500' /></span>
                                 <div>
                                     <strong className="text-gray-800">Switch tab or window</strong>
                                     <p className="text-sm text-gray-600 mt-1">
@@ -63,7 +63,7 @@ const ProctoringRulesModal: React.FC<ProctoringRulesModalProps> = ({
                                 </div>
                             </li>
                             <li className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                                <span className="text-lg"><FaXmark className='text-red-500'/></span>
+                                <span className="text-lg"><FaXmark className='text-red-500' /></span>
                                 <div>
                                     <strong className="text-gray-800">Exit fullscreen mode</strong>
                                     <p className="text-sm text-gray-600 mt-1">
@@ -86,7 +86,7 @@ const ProctoringRulesModal: React.FC<ProctoringRulesModalProps> = ({
                     {/* Allowed Actions */}
                     <div className="mb-6">
                         <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <span className="text-xl"><FaCheckCircle className='text-green-500'/></span>
+                            <span className="text-xl"><FaCheckCircle className='text-green-500' /></span>
                             Allowed Actions
                         </h3>
                         <ul className="space-y-2">

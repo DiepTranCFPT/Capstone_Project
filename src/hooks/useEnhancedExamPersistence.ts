@@ -40,7 +40,7 @@ export const useEnhancedExamPersistence = () => {
     syncError: null,
     hasUnsyncedChanges: false
   });
-  
+
   const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { saveProgress: apiSaveProgress } = useExamAttempt();
 
@@ -85,27 +85,40 @@ export const useEnhancedExamPersistence = () => {
   const saveToServer = useCallback(async (
     attemptId: string,
     answers: Record<string, { selectedAnswerId?: string; frqAnswerText?: string }>,
-    answeredQuestions: Set<string>
+    _answeredQuestions: Set<string> // Keep param for API compatibility but use answers keys instead
   ): Promise<boolean> => {
     if (!attemptId) {
       console.warn('No attemptId provided for server save');
       return false;
     }
 
+    // Filter to only include answers that have actual content
+    const answersWithContent = Object.entries(answers).filter(([, answer]) =>
+      answer && (answer.selectedAnswerId || (answer.frqAnswerText && answer.frqAnswerText.trim() !== ''))
+    );
+
+    if (answersWithContent.length === 0) {
+      console.log('[saveToServer] No answers to save');
+      return true; // Nothing to save is considered success
+    }
+
     setSyncStatus(prev => ({ ...prev, isSyncing: true, syncError: null }));
 
     try {
-      // Convert answers to API format
+      // Convert answers to API format - use answers keys directly for reliability
       const payload = {
-        answers: Array.from(answeredQuestions).map(examQuestionId => ({
+        answers: answersWithContent.map(([examQuestionId, answer]) => ({
           examQuestionId,
-          selectedAnswerId: answers[examQuestionId]?.selectedAnswerId || null,
-          frqAnswerText: answers[examQuestionId]?.frqAnswerText || null
+          selectedAnswerId: answer.selectedAnswerId || null,
+          frqAnswerText: answer.frqAnswerText || null
         }))
       };
 
+      console.log('[saveToServer] Payload:', JSON.stringify(payload, null, 2));
+      console.log('[saveToServer] AttemptId:', attemptId);
+
       const success = await apiSaveProgress(attemptId, payload);
-      
+
       if (success) {
         setSyncStatus(prev => ({
           ...prev,
@@ -137,25 +150,27 @@ export const useEnhancedExamPersistence = () => {
 
   /**
    * Dual-save mechanism: localStorage (backup) + API (sync server)
+   * @param skipServerSync - If true, only save to localStorage (for auto-save to reduce API calls)
    */
   const saveExamProgress = useCallback(async (
     answers: Record<string, { selectedAnswerId?: string; frqAnswerText?: string }>,
     answeredQuestions: Set<string>,
     remainingTime: number,
     attemptId?: string,
-    examId?: string
+    examId?: string,
+    skipServerSync: boolean = false
   ) => {
     setIsAutoSaving(true);
-    
+
     try {
       // Save to localStorage (backup) - always succeeds if possible
       const localSaved = saveToLocalStorage(answers, answeredQuestions, remainingTime, attemptId, examId);
-      
-      // Save to server if we have attemptId
+
+      // Save to server if we have attemptId and not skipping server sync
       let serverSaved = true;
-      if (attemptId) {
+      if (attemptId && !skipServerSync) {
         serverSaved = await saveToServer(attemptId, answers, answeredQuestions);
-        
+
         // If server failed but local saved, mark as having unsynced changes
         if (!serverSaved && localSaved) {
           setSyncStatus(prev => ({ ...prev, hasUnsyncedChanges: true }));
@@ -163,7 +178,7 @@ export const useEnhancedExamPersistence = () => {
       }
 
       // Return overall success
-      return localSaved && (serverSaved || !attemptId);
+      return localSaved && (serverSaved || !attemptId || skipServerSync);
     } finally {
       setIsAutoSaving(false);
     }
@@ -333,11 +348,11 @@ export const useEnhancedExamPersistence = () => {
     stopAutoSave,
     lastSavedTime,
     isAutoSaving,
-    
+
     // Enhanced sync features
     syncStatus,
     syncToServer,
-    
+
     // Direct localStorage access (for compatibility)
     saveToLocalStorage,
     saveToServer

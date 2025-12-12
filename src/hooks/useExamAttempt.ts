@@ -260,11 +260,14 @@ export const useExamAttempt = () => {
           // Success - có thể return true để component biết đã lưu xong
           return true;
         } else {
-          console.error("Save progress failed:", res.data.message);
+          console.error("Save progress failed:", res.data.message, res.data);
           return false;
         }
       } catch (err) {
+        const axiosError = err as { response?: { data?: unknown; status?: number } };
         console.error("Save progress error:", err);
+        console.error("API Error Details:", axiosError.response?.data);
+        console.error("API Status:", axiosError.response?.status);
         return false;
       } finally {
         setLoading(false);

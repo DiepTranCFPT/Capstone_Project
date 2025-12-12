@@ -210,7 +210,7 @@ export const useExamProctoring = (
             // If user exits fullscreen (and we're in strict mode)
             if (!isCurrentlyFullscreen && isProctoringActive && config.strictFullscreen) {
                 addViolation('fullscreen_exit');
-                toast.error('Error! You have exited fullscreen mode!');
+                // toast.error('Error! You have exited fullscreen mode!');
 
                 // Try to re-enter fullscreen after a short delay
                 setTimeout(() => {

@@ -12,7 +12,7 @@ import {
   // AuditOutlined,
   // UsergroupAddOutlined,
   // FormOutlined,
-  // IdcardOutlined,
+  IdcardOutlined,
   CreditCardOutlined,
 } from "@ant-design/icons";
 import { getCurrentUserApi } from "~/services/authService";
@@ -28,7 +28,7 @@ const adminMenu = [
   // { key: "/admin/students", label: "Students", icon: <UsergroupAddOutlined /> },
   { key: "/admin/subjects", label: "Subjects", icon: <ReadOutlined /> },
   // { key: "/admin/mock-tests", label: "Mock Tests", icon: <FormOutlined /> },
-  // { key: "/admin/teachers", label: "Teacher", icon: <IdcardOutlined /> },
+  { key: "/admin/teachers", label: "Teacher", icon: <IdcardOutlined /> },
   // { key: "/admin/questions", label: "Questions", icon: <QuestionCircleOutlined /> },
   { key: "/admin/certificates", label: "Certificates & Ranking", icon: <TrophyOutlined /> },
   { key: "/admin/subscriptions", label: "Subscriptions & Payments", icon: <CreditCardOutlined /> },
