@@ -3,9 +3,10 @@ import { Spin, Empty, Card } from 'antd';
 import { useDashboardStats } from '~/hooks/useDashboardStats';
 import { useAdminExamStats } from '~/hooks/useAdminExamStats';
 import { useRevenueSystem } from '~/hooks/useRevenueSystem';
-import ExamStatsSection from '~/components/admins/ExamStatsSection';
-import UserStatsSection from '~/components/admins/UserStatsSection';
-import RevenueChart from '~/components/admins/RevenueChart';
+import ExamStatsSection from '~/components/admins/dashboard/ExamStatsSection';
+import UserStatsSection from '~/components/admins/dashboard/UserStatsSection';
+import RevenueChart from '~/components/admins/dashboard/RevenueChart';
+import RecentTokenTransactions from '~/components/admins/dashboard/RecentTokenTransactions';
 
 const AdminDashboardPage: React.FC = () => {
     const { stats, loading } = useDashboardStats();
@@ -174,6 +175,8 @@ const AdminDashboardPage: React.FC = () => {
 
             {/* Exam Statistics Section */}
             <ExamStatsSection stats={examStats} loading={examLoading} />
+
+            <RecentTokenTransactions />
         </div>
     );
 };

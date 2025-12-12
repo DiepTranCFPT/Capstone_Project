@@ -12,6 +12,7 @@ interface TransactionDisplay {
   amount: string;
   status: string;
   type: "income" | "withdraw";
+  balanceAfter?: string;
 }
 
 interface WalletSummary {
@@ -116,6 +117,11 @@ const transformUserTokenTransaction = (
   const amountWithSign =
     type === "income" ? `+${formattedAmount}` : `-${formattedAmount}`;
 
+  const balanceAfter =
+    typeof transaction.balanceAfter === "number"
+      ? formatCurrency(transaction.balanceAfter)
+      : undefined;
+
   return {
     id: `TXN-${transaction.id ?? ""}`,
     title: getTransactionTitle({ description: transaction.description }),
@@ -123,6 +129,7 @@ const transformUserTokenTransaction = (
     amount: amountWithSign,
     status: getStatusText(transaction.status || ""),
     type,
+    balanceAfter,
   };
 };
 

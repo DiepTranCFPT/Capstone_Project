@@ -93,6 +93,10 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({
         {visibleTransactions.map((tx) => {
           const isIncome = isIncomeTx(tx);
           const signedAmount = `${isIncome ? "+" : "-"}${formatAmount(Math.abs(tx.amount))}`;
+          const balanceAfterText =
+            typeof tx.balanceAfter === "number"
+              ? formatAmount(tx.balanceAfter)
+              : null;
           return (
             <div key={tx.id ?? `${tx.createdAt}-${tx.amount}`} className="flex flex-wrap items-center gap-4 py-4">
               <div className="flex flex-1 items-center gap-4">
@@ -114,6 +118,9 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({
                 >
                   {signedAmount}
                 </p>
+                {balanceAfterText && (
+                  <p className="text-xs text-slate-400">Balance after: {balanceAfterText}</p>
+                )}
                 <span
                   className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyles(
                     tx.status || ""
