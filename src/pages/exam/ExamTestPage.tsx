@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ExamCard from '~/components/exam/ExamCard';
 import TokenConfirmationModal from '~/components/common/TokenConfirmationModal';
+import WaitResultModal from '~/components/exam/WaitResultModal';
 import { FiSearch, FiLoader } from 'react-icons/fi';
 import Section from '~/components/exam/Section';
 import { useBrowseExamTemplates } from '~/hooks/useExamBrowser';
@@ -9,7 +10,7 @@ import { useTeachersList } from '~/hooks/useTeachersList';
 import { useExamAttempt } from '~/hooks/useExamAttempt';
 // import { useAuth } from '~/hooks/useAuth';
 import type { Exam, ExamTemplate } from '~/types/test';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 // Subjects will be fetched from API
 
@@ -20,6 +21,29 @@ const ExamTestPage: React.FC = () => {
     const { startSingleAttempt, startComboAttempt, startComboRandomAttempt } = useExamAttempt();
     // const { isAuthenticated } = useAuth();
     const navigation = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // State for WaitResultModal
+    const [showWaitResultModal, setShowWaitResultModal] = useState(false);
+    const [waitResultAttemptId, setWaitResultAttemptId] = useState<string | null>(null);
+
+    // Check for query params on mount to show WaitResultModal
+    useEffect(() => {
+        const showModal = searchParams.get('showWaitModal');
+        const attemptId = searchParams.get('attemptId');
+
+        if (showModal === 'true' && attemptId) {
+            setShowWaitResultModal(true);
+            setWaitResultAttemptId(attemptId);
+            // Clear query params from URL
+            setSearchParams({});
+        }
+    }, [searchParams, setSearchParams]);
+
+    const handleCloseWaitResultModal = () => {
+        setShowWaitResultModal(false);
+        setWaitResultAttemptId(null);
+    };
     // Create a lookup map from teacher email to teacher info
     const teacherLookup = useMemo(() => {
         const map = new Map<string, { name: string; imgUrl?: string }>();
@@ -633,6 +657,13 @@ const ExamTestPage: React.FC = () => {
                 }
                 onConfirm={handleConfirm}
                 onCancel={handleCancel}
+            />
+
+            {/* Wait Result Modal */}
+            <WaitResultModal
+                isOpen={showWaitResultModal}
+                attemptId={waitResultAttemptId || ''}
+                onClose={handleCloseWaitResultModal}
             />
         </div>
     );

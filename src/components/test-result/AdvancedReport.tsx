@@ -12,6 +12,7 @@ import type { AttemptResultDetail } from '~/types/examAttempt';
 import { useAiExamAsk } from '~/hooks/useAiExamAsk';
 import { useAuth } from '~/hooks/useAuth';
 import ReactMarkdown from 'react-markdown';
+import LatexRenderer from '~/components/common/LatexRenderer';
 
 // Helper function to format AI response with proper line breaks
 const formatAiResponse = (text: string): string => {
@@ -97,28 +98,30 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
 
             // 1. Lấy câu trả lời của học sinh dựa trên loại câu hỏi
             let userAnswer: string;
+            let selectedAnswerId: string | null = null;
             if (q.question.type === 'frq') {
                 // Cho FRQ, ưu tiên frqAnswerText
                 userAnswer = q.studentAnswer?.frqAnswerText || 'No answer';
             } else {
                 // Cho MCQ, sử dụng selectedAnswerId để tìm content
+                selectedAnswerId = q.studentAnswer?.selectedAnswerId || null;
                 let userAnswerContent = null;
-                if (q.studentAnswer?.selectedAnswerId) {
-                    userAnswerContent = q.question.answers.find(a => a.id === q.studentAnswer.selectedAnswerId)?.content;
+                if (selectedAnswerId) {
+                    userAnswerContent = q.question.answers.find(a => a.id === selectedAnswerId)?.content;
                     // Nếu không tìm thấy bằng selectedAnswerId, thử tìm bằng content matching
-                    if (!userAnswerContent && q.studentAnswer.selectedAnswerId) {
-                        // Có thể selectedAnswerId là content của answer, thử tìm bằng content
-                        userAnswerContent = q.question.answers.find(a => a.content === q.studentAnswer.selectedAnswerId)?.content;
+                    if (!userAnswerContent) {
+                        userAnswerContent = q.question.answers.find(a => a.content === selectedAnswerId)?.content;
                     }
                 }
                 userAnswer = userAnswerContent
-                    ? cleanAnswerContent(userAnswerContent) // Làm sạch text
-                    : (q.studentAnswer?.selectedAnswerId ? `Selected answer ID: ${q.studentAnswer.selectedAnswerId}` : 'No answer');
+                    ? cleanAnswerContent(userAnswerContent)
+                    : (selectedAnswerId ? `Selected answer ID: ${selectedAnswerId}` : 'No answer');
             }
 
             // 2. Lấy câu trả lời đúng
+            const correctAnswerId = q.studentAnswer?.correctAnswer?.id || null;
             const correctAnswer = q.studentAnswer?.correctAnswer?.content
-                ? cleanAnswerContent(q.studentAnswer.correctAnswer.content) // Làm sạch text
+                ? cleanAnswerContent(q.studentAnswer.correctAnswer.content)
                 : (q.question.type === 'frq' ? 'FRQ - Check with instructor' : 'Unknown');
 
             // 3. Lấy giải thích
@@ -127,12 +130,24 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
             // 4. Lấy feedback (nếu có)
             const feedback = q.studentAnswer?.feedback || null;
 
+            // 5. Lấy tất cả các đáp án cho MCQ
+            const allAnswers = q.question.type === 'mcq' ? q.question.answers.map(a => ({
+                id: a.id,
+                content: cleanAnswerContent(a.content),
+                isCorrect: a.id === correctAnswerId,
+                isSelected: a.id === selectedAnswerId
+            })) : [];
+
             return {
                 question: q.question.content,
+                questionType: q.question.type,
                 userAnswer,
                 correctAnswer,
                 explanation,
-                feedback
+                feedback,
+                allAnswers,
+                selectedAnswerId,
+                correctAnswerId
             };
         });
     }, [attemptResultDetail]);
@@ -195,33 +210,74 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
                     <div className="space-y-4">
                         {detailedAnswers.map((ans, i) => (
                             <div key={i} className="p-4 border rounded-lg bg-gray-50">
-                                <p className="font-semibold">{i + 1}. {ans.question}</p>
+                                <p className="font-semibold mb-3">{i + 1}. <LatexRenderer content={ans.question} /></p>
 
-                                {/* CẬP NHẬT: Hiển thị "No answer" nếu không có câu trả lời */}
-                                <p className={`text-sm ${ans.userAnswer === 'No answer' ? 'text-gray-500 italic' : (ans.userAnswer === ans.correctAnswer ? 'text-green-600 font-bold' : 'text-red-600 font-bold')}`}>
-                                    Your answer: {ans.userAnswer}
-                                </p>
+                                {/* Hiển thị tất cả đáp án cho MCQ */}
+                                {ans.questionType === 'mcq' && ans.allAnswers.length > 0 && (
+                                    <div className="space-y-2 mb-3">
+                                        {ans.allAnswers.map((option, idx) => {
+                                            const letter = String.fromCharCode(65 + idx); // A, B, C, D...
+                                            let bgColor = 'bg-white border-gray-200';
+                                            let textColor = 'text-gray-700';
+                                            let icon = null;
 
-                                {/* Chỉ hiển thị đáp án đúng nếu trả lời sai và không phải là "No answer" */}
-                                {ans.userAnswer !== ans.correctAnswer && ans.userAnswer !== 'No answer' && (
-                                    <p className="text-sm">Correct answer: <span className="text-green-600 font-bold">{ans.correctAnswer}</span></p>
+                                            if (option.isCorrect && option.isSelected) {
+                                                // Đáp án đúng và user đã chọn
+                                                bgColor = 'bg-green-100 border-green-400';
+                                                textColor = 'text-green-700';
+                                                icon = <span className="ml-2 text-green-600">✓ Correct</span>;
+                                            } else if (option.isCorrect) {
+                                                // Đáp án đúng nhưng user không chọn
+                                                bgColor = 'bg-green-50 border-green-300';
+                                                textColor = 'text-green-700';
+                                                icon = <span className="ml-2 text-green-600">✓ Correct answer</span>;
+                                            } else if (option.isSelected) {
+                                                // User chọn nhưng sai
+                                                bgColor = 'bg-red-100 border-red-400';
+                                                textColor = 'text-red-700';
+                                                icon = <span className="ml-2 text-red-600">✗ Your answer</span>;
+                                            }
+
+                                            return (
+                                                <div key={option.id} className={`flex items-center p-2 rounded-lg border ${bgColor} ${textColor}`}>
+                                                    <span className="font-bold mr-3 w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 text-gray-700 text-sm">
+                                                        {letter}
+                                                    </span>
+                                                    <span className="flex-1"><LatexRenderer content={option.content} /></span>
+                                                    {icon}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 )}
 
-                                {/* Hiển thị đáp án đúng nếu không trả lời */}
-                                {ans.userAnswer === 'No answer' && (
-                                    <p className="text-sm">Correct answer: <span className="text-green-600 font-bold">{ans.correctAnswer}</span></p>
+                                {/* Cho FRQ, hiển thị user answer và correct answer */}
+                                {ans.questionType === 'frq' && (
+                                    <>
+                                        <p className={`text-sm ${ans.userAnswer === 'No answer' ? 'text-gray-500 italic' : 'text-blue-600'}`}>
+                                            Your answer: <LatexRenderer content={ans.userAnswer} />
+                                        </p>
+                                        <p className="text-sm mt-1">
+                                            Correct answer: <span className="text-green-600 font-bold"><LatexRenderer content={ans.correctAnswer} /></span>
+                                        </p>
+                                    </>
+                                )}
+
+                                {/* Nếu không chọn đáp án nào cho MCQ */}
+                                {ans.questionType === 'mcq' && !ans.selectedAnswerId && (
+                                    <p className="text-sm text-gray-500 italic mb-2">You did not answer this question</p>
                                 )}
 
                                 {/* Hiển thị feedback nếu có */}
                                 {ans.feedback && (
                                     <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                                         <p className="text-sm text-blue-800">
-                                            <span className="font-semibold">Feedback:</span> {ans.feedback}
+                                            <span className="font-semibold">Feedback:</span> <LatexRenderer content={ans.feedback} />
                                         </p>
                                     </div>
                                 )}
 
-                                <p className="text-sm mt-2 pt-2 border-t text-gray-700"><em>Explanation: {ans.explanation}</em></p>
+                                <p className="text-sm mt-2 pt-2 border-t text-gray-700"><em>Explanation: <LatexRenderer content={ans.explanation} /></em></p>
                                 <div className="flex space-x-2 mt-2">
                                     <button
                                         onClick={() => openModal('ai', ans)}
@@ -266,7 +322,7 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
                             {/* Context Question */}
                             <div className="mb-8 bg-slate-50 p-6 rounded-xl border border-slate-100 shadow-sm">
                                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Context Question</p>
-                                <p className="text-gray-700 text-base leading-relaxed font-medium">{modalContent.question.question}</p>
+                                <p className="text-gray-700 text-base leading-relaxed font-medium"><LatexRenderer content={modalContent.question.question} /></p>
                             </div>
 
                             {modalContent.type === 'ai' ? (

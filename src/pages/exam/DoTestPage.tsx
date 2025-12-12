@@ -95,46 +95,59 @@ const DoTestPage: React.FC = () => {
     // Use the appropriate attempt data
     const activeExamData = currentActiveExam || examSpecificAttempt;
 
-    // Initialize remaining time - use saved time if available, otherwise use full exam time
-    // Note: Load directly from localStorage since hook is not yet initialized in useState
-    const [remainingTime, setRemainingTime] = useState<number>(() => {
-        try {
-            const progressStr = localStorage.getItem('examProgress');
-            if (progressStr) {
-                const progress = JSON.parse(progressStr);
-                if (progress && progress.remainingTime > 0) {
-                    return progress.remainingTime;
-                }
-            }
-            // Fallback to individual key
-            const remainingTimeStr = localStorage.getItem('examRemainingTime');
-            if (remainingTimeStr) {
-                const time = parseInt(remainingTimeStr, 10);
-                if (time > 0) return time;
-            }
-        } catch (e) {
-            console.error('Error loading remaining time from localStorage:', e);
+    // Helper function to calculate remaining time based on exam start time
+    const calculateRemainingTime = useCallback(() => {
+        if (!activeExamData) return 3600; // Default 60 minutes
+
+        const examAttemptId = activeExamData.examAttemptId;
+        const examStartedAtStr = localStorage.getItem(`exam_started_at_${examAttemptId}`);
+        const durationInSeconds = activeExamData.durationInMinute * 60;
+
+        if (examStartedAtStr) {
+            const examStartedAt = parseInt(examStartedAtStr, 10);
+            const now = Date.now();
+            const elapsedSeconds = Math.floor((now - examStartedAt) / 1000);
+            const remaining = durationInSeconds - elapsedSeconds;
+            return Math.max(0, remaining);
         }
-        return activeExamData?.durationInMinute ? activeExamData.durationInMinute * 60 : 3600; // Default 60 minutes
+
+        return durationInSeconds;
+    }, [activeExamData]);
+
+    // Initialize remaining time - calculated from exam start timestamp
+    const [remainingTime, setRemainingTime] = useState<number>(() => {
+        if (!activeExamData) return 3600;
+
+        const examAttemptId = activeExamData.examAttemptId;
+        const examStartedAtStr = localStorage.getItem(`exam_started_at_${examAttemptId}`);
+        const durationInSeconds = activeExamData.durationInMinute * 60;
+
+        if (examStartedAtStr) {
+            const examStartedAt = parseInt(examStartedAtStr, 10);
+            const now = Date.now();
+            const elapsedSeconds = Math.floor((now - examStartedAt) / 1000);
+            return Math.max(0, durationInSeconds - elapsedSeconds);
+        }
+
+        return durationInSeconds;
     });
 
-    // Timer countdown logic - only starts when user accepts proctoring rules
+    // Timer countdown logic - recalculates from start time every second
     useEffect(() => {
-        if (remainingTime > 0 && timerStarted) {
-            const timer = setTimeout(() => {
-                setRemainingTime(prev => {
-                    const newTime = prev - 1;
-                    if (newTime <= 0) {
-                        handleSubmit();
-                        return 0;
-                    }
-                    return newTime;
-                });
+        if (timerStarted) {
+            const timer = setInterval(() => {
+                const newTime = calculateRemainingTime();
+                setRemainingTime(newTime);
+
+                if (newTime <= 0) {
+                    clearInterval(timer);
+                    handleSubmit();
+                }
             }, 1000);
 
-            return () => clearTimeout(timer);
+            return () => clearInterval(timer);
         }
-    }, [remainingTime, timerStarted]);
+    }, [timerStarted, calculateRemainingTime]);
 
     // Initialize answers and answeredQuestions from localStorage directly
     const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(() => {
@@ -305,7 +318,7 @@ const DoTestPage: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeExamData, sortedQuestions]); // Removed loadExamProgress from dependencies - it's stable from hook
 
-    
+
     const autoSaveCallback = useCallback(() => {
         // Get current values from refs at save time - skip server sync for auto-save
         saveExamProgress(
@@ -394,12 +407,13 @@ const DoTestPage: React.FC = () => {
                 setShowConFirmed(false);
                 // Clear all exam progress and exam_started status after successful submission
                 clearExamProgress();
-                // Clear exam_started flag
+                // Clear exam_started flag and start timestamp
                 const examAttemptId = activeExamData.examAttemptId;
                 if (examAttemptId) {
                     localStorage.removeItem(`exam_started_${examAttemptId}`);
+                    localStorage.removeItem(`exam_started_at_${examAttemptId}`);
                 }
-                navigate(`/exam-test`);
+                navigate(`/exam-test?showWaitModal=true&attemptId=${examAttemptId}`);
             } else {
                 // If submission failed, close modal anyway to prevent getting stuck
                 setShowConFirmed(false);
@@ -417,10 +431,11 @@ const DoTestPage: React.FC = () => {
         setShowConFirmed(false);
         clearExamProgress();
 
-        // Clear exam_started flag
+        // Clear exam_started flag and start timestamp
         const examAttemptId = activeExamData?.examAttemptId;
         if (examAttemptId) {
             localStorage.removeItem(`exam_started_${examAttemptId}`);
+            localStorage.removeItem(`exam_started_at_${examAttemptId}`);
         }
 
         // Stop proctoring
@@ -770,14 +785,21 @@ const DoTestPage: React.FC = () => {
                 onAccept={() => {
                     setShowProctoringRules(false);
                     setProctoringAccepted(true);
-                    setTimerStarted(true); // Start timer after accepting rules
                     startProctoring();
 
-                    // Save exam_started status to localStorage
+                    // Save exam start timestamp and started status to localStorage
                     const examAttemptId = activeExamData?.examAttemptId;
                     if (examAttemptId) {
+                        // Only set start time if not already set (for resume scenarios)
+                        if (!localStorage.getItem(`exam_started_at_${examAttemptId}`)) {
+                            localStorage.setItem(`exam_started_at_${examAttemptId}`, Date.now().toString());
+                        }
                         localStorage.setItem(`exam_started_${examAttemptId}`, 'true');
+
+                        // Recalculate remaining time and start timer
+                        setRemainingTime(calculateRemainingTime());
                     }
+                    setTimerStarted(true); // Start timer after accepting rules
                 }}
                 onReject={() => {
                     setShowProctoringRules(false);
