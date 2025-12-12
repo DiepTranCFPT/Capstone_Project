@@ -8,7 +8,7 @@ interface AddPaymentMethodModalProps {
   onSuccess: () => void;
 }
 
-// Danh sách các ngân hàng phổ biến ở Việt Nam
+// Popular banks in Vietnam
 const VIETNAM_BANKS = [
   "Vietcombank",
   "BIDV",
@@ -42,17 +42,38 @@ const AddPaymentMethodModal: React.FC<AddPaymentMethodModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const handleBankNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const numeric = e.target.value.replace(/[^\d]/g, "");
+    setBankingNumber(numeric);
+  };
+
+  const handleBankNumberKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const allowed =
+      e.key === "Backspace" ||
+      e.key === "Delete" ||
+      e.key === "Tab" ||
+      e.key === "Enter" ||
+      e.key === "ArrowLeft" ||
+      e.key === "ArrowRight" ||
+      e.key === "Home" ||
+      e.key === "End";
+    if (allowed) return;
+    if (!/^\d$/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     if (!bankingNumber.trim()) {
-      setError("Vui lòng nhập số tài khoản ngân hàng");
+      setError("Please enter a bank account number");
       return;
     }
 
     if (!nameBanking.trim()) {
-      setError("Vui lòng nhập tên ngân hàng");
+      setError("Please enter a bank name");
       return;
     }
 
@@ -76,7 +97,7 @@ const AddPaymentMethodModal: React.FC<AddPaymentMethodModalProps> = ({
       const errorMessage =
         axiosError.response?.data?.message ||
         axiosError.message ||
-        "Đã xảy ra lỗi khi tạo phương thức thanh toán.";
+        "An error occurred while creating the payment method.";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -90,7 +111,7 @@ const AddPaymentMethodModal: React.FC<AddPaymentMethodModalProps> = ({
       <div className="bg-white rounded-3xl shadow-xl max-w-lg w-full mx-4 border border-slate-200">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200">
-          <h2 className="text-xl font-bold text-slate-900">Thêm phương thức thanh toán</h2>
+          <h2 className="text-xl font-bold text-slate-900">Add Payment Method</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-slate-100 rounded-full transition-colors"
@@ -110,14 +131,17 @@ const AddPaymentMethodModal: React.FC<AddPaymentMethodModalProps> = ({
 
           <div>
             <label htmlFor="bankingNumber" className="block text-sm font-semibold text-slate-700 mb-2">
-              Số tài khoản ngân hàng <span className="text-red-500">*</span>
+              Bank account number <span className="text-red-500">*</span>
             </label>
             <input
               id="bankingNumber"
               type="text"
+              inputMode="numeric"
+              pattern="\d*"
               value={bankingNumber}
-              onChange={(e) => setBankingNumber(e.target.value)}
-              placeholder="Nhập số tài khoản ngân hàng"
+              onChange={handleBankNumberChange}
+              onKeyDown={handleBankNumberKeyDown}
+              placeholder="Enter bank account number"
               className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               disabled={loading}
             />
@@ -125,7 +149,7 @@ const AddPaymentMethodModal: React.FC<AddPaymentMethodModalProps> = ({
 
           <div>
             <label htmlFor="nameBanking" className="block text-sm font-semibold text-slate-700 mb-2">
-              Tên ngân hàng <span className="text-red-500">*</span>
+              Bank name <span className="text-red-500">*</span>
             </label>
             {/* Input để nhập tay */}
             <input
@@ -133,14 +157,14 @@ const AddPaymentMethodModal: React.FC<AddPaymentMethodModalProps> = ({
               type="text"
               value={nameBanking}
               onChange={(e) => setNameBanking(e.target.value)}
-              placeholder="Nhập tên ngân hàng hoặc chọn từ gợi ý bên dưới"
+              placeholder="Enter bank name or choose a suggestion below"
               className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent mb-3"
               disabled={loading}
             />
             
             {/* Scrollable bank buttons - Gợi ý */}
             <div>
-              <p className="text-xs text-slate-500 mb-2">Gợi ý các ngân hàng phổ biến:</p>
+              <p className="text-xs text-slate-500 mb-2">Popular banks:</p>
               <div className="overflow-x-auto pb-2 -mx-2 px-2 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
                 <div className="flex gap-2 min-w-max">
                   {VIETNAM_BANKS.map((bank) => (
@@ -171,14 +195,14 @@ const AddPaymentMethodModal: React.FC<AddPaymentMethodModalProps> = ({
               disabled={loading}
               className="flex-1 px-4 py-3 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
               className="flex-1 px-4 py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Đang xử lý..." : "Xác nhận"}
+              {loading ? "Processing..." : "Confirm"}
             </button>
           </div>
         </form>
