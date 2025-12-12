@@ -319,11 +319,11 @@ const WithdrawMoneyModal: React.FC<WithdrawMoneyModalProps> = ({
                         <p className="text-sm text-slate-600 mt-1">
                           Account No.: {method.bankingNumber || method.bankAccount || "N/A"}
                         </p>
-                        {method.accountHolderName && (
+                        {method.accountHolderName || method.authorName ? (
                           <p className="text-xs text-slate-500 mt-1">
-                            Account Holder: {method.accountHolderName}
+                            Beneficiary: {String(method.accountHolderName || method.authorName)}
                           </p>
-                        )}
+                        ) : null}
                       </div>
                       {selectedPaymentMethod === String(method.id || "") && (
                         <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">

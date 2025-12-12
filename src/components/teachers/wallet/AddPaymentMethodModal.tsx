@@ -39,6 +39,7 @@ const AddPaymentMethodModal: React.FC<AddPaymentMethodModalProps> = ({
 }) => {
   const [bankingNumber, setBankingNumber] = useState("");
   const [nameBanking, setNameBanking] = useState("");
+  const [authorName, setAuthorName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,16 +78,23 @@ const AddPaymentMethodModal: React.FC<AddPaymentMethodModalProps> = ({
       return;
     }
 
+    if (!authorName.trim()) {
+      setError("Please enter an account holder name");
+      return;
+    }
+
     try {
       setLoading(true);
       await TokenTransactionService.createPaymentMethod({
         bankingNumber: bankingNumber.trim(),
         nameBanking: nameBanking.trim(),
+        authorName: authorName.trim(),
       });
 
       // Reset form
       setBankingNumber("");
       setNameBanking("");
+      setAuthorName("");
       onSuccess();
       onClose();
     } catch (err: unknown) {
@@ -187,6 +195,21 @@ const AddPaymentMethodModal: React.FC<AddPaymentMethodModalProps> = ({
             </div>
           </div>
 
+          <div>
+            <label htmlFor="authorName" className="block text-sm font-semibold text-slate-700 mb-2">
+              Account holder name <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="authorName"
+              type="text"
+              value={authorName}
+              onChange={(e) => setAuthorName(e.target.value)}
+              placeholder="Enter account holder name"
+              className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              disabled={loading}
+            />
+          </div>
+                  
           {/* Actions */}
           <div className="flex gap-3 pt-4">
             <button

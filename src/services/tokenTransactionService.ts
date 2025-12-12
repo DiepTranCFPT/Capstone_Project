@@ -60,12 +60,13 @@ const TokenTransactionService = {
   // Tạo phương thức thanh toán mới
   // API yêu cầu query params: bankingNumber và nameBanking
   createPaymentMethod(
-    payload: { bankingNumber: string; nameBanking: string }
+    payload: { bankingNumber: string; nameBanking: string; authorName: string }
   ): Promise<AxiosResponse<ApiResponse<PaymentMethod>>> {
     return axiosInstance.post(`/api/payment-method`, null, {
       params: {
         bankingNumber: payload.bankingNumber,
         nameBanking: payload.nameBanking,
+        authorName: payload.authorName,
       },
     });
   },
