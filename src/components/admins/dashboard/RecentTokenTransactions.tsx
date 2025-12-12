@@ -106,6 +106,11 @@ const RecentTokenTransactions: React.FC<RecentTokenTransactionsProps> = ({
                                     <p className="text-lg font-bold text-emerald-600">
                                         {formatAmount(item.amount)}
                                     </p>
+                                    {typeof item.balanceAfter === "number" && (
+                                        <p className="text-xs text-slate-400">
+                                            Balance after: {formatAmount(item.balanceAfter)}
+                                        </p>
+                                    )}
                                     <p
                                         className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold mt-1 ${
                                             isSuccess

@@ -176,6 +176,9 @@ const MyWalletPage = () => {
                     <p className={`text-lg font-bold ${item.type === "income" ? "text-emerald-600" : "text-slate-600"}`}>
                       {item.amount}
                     </p>
+                    {item.balanceAfter && (
+                      <p className="text-xs text-slate-400">Balance after: {item.balanceAfter}</p>
+                    )}
                     <p
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
                         item.status === "Success"
