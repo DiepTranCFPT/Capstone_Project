@@ -1,0 +1,71 @@
+/* MathEditor Component Styles */
+
+.math-editor-container {
+    position: relative;
+    width: 100%;
+}
+
+.math-editor-placeholder {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    color: #9ca3af;
+    pointer-events: none;
+    font-size: 14px;
+}
+
+/* Math Field Styling */
+.math-field-input {
+    --caret-color: #14b8a6;
+    --selection-background-color: rgba(20, 184, 166, 0.2);
+    --placeholder-color: #9ca3af;
+    --keyboard-accent-color: #14b8a6;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.math-field-input:focus-within {
+    border-color: #14b8a6 !important;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+    outline: none;
+}
+
+/* Virtual Keyboard Styling */
+math-field::part(virtual-keyboard-toggle) {
+    color: #14b8a6;
+}
+
+/* Keyboard container */
+.ML__keyboard {
+    --keyboard-background: #1f2937 !important;
+    --keyboard-text: #f9fafb !important;
+    --keyboard-background-border: #374151 !important;
+    --keyboard-toolbar-background: #111827 !important;
+    --keycap-background: #374151 !important;
+    --keycap-background-active: #14b8a6 !important;
+    --keycap-text: #f9fafb !important;
+    --keycap-text-active: #ffffff !important;
+    --keycap-border: #4b5563 !important;
+    font-family: 'Inter', system-ui, sans-serif !important;
+    z-index: 9999 !important;
+}
+
+/* Keycap hover */
+.ML__keyboard .keycap:hover {
+    background-color: #4b5563 !important;
+}
+
+/* Keyboard rows */
+.ML__keyboard .rows {
+    padding: 8px;
+}
+
+/* Action keys */
+.ML__keyboard .action {
+    background-color: #14b8a6 !important;
+    color: #ffffff !important;
+}
+
+/* Ensure keyboard is visible above modals */
+.ML__keyboard-container {
+    z-index: 10000 !important;
+}
