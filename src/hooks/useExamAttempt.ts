@@ -141,30 +141,12 @@ export const useExamAttempt = () => {
       setLoading(true);
       setError(null);
       try {
-        // Chạy subscribe API ngầm (không đợi kết quả)
-        ExamAttemptService.subscribe(attemptId)
-          .then((subscribeRes) => {
-            if (subscribeRes.data) {
-              toast.success("Result details are ready! Click to view now.", {
-                onClick: () => {
-                  window.location.href = `/test-result/${attemptId}`;
-                },
-                style: { cursor: 'pointer' }
-              });
-              setAttemptResultDetail(subscribeRes.data as unknown as AttemptResultDetail);
-            }
-          })
-          .catch((err) => {
-            console.error('Subscribe failed:', err);
-            toast.error("Failed to load attempt result. Please try again later.");
-          });
-
-        // Submit API chạy ngay không cần đợi subscribe
+        // Submit API - subscribe is now handled by WaitResultModal
         const res = await ExamAttemptService.submit(attemptId, payload);
         if (res.data.code === 0 || res.data.code === 1000) {
           setSubmissionResult(res.data.data);
           setActiveAttempt(null); // Xóa bài thi đang làm
-          toast.success("Submit successfully! Waiting for result details.");
+          toast.success("Nộp bài thành công!");
           return res.data.data;
         } else {
           throw new Error(res.data.message || "Failed to submit attempt");
@@ -260,11 +242,14 @@ export const useExamAttempt = () => {
           // Success - có thể return true để component biết đã lưu xong
           return true;
         } else {
-          console.error("Save progress failed:", res.data.message);
+          console.error("Save progress failed:", res.data.message, res.data);
           return false;
         }
       } catch (err) {
+        const axiosError = err as { response?: { data?: unknown; status?: number } };
         console.error("Save progress error:", err);
+        console.error("API Error Details:", axiosError.response?.data);
+        console.error("API Status:", axiosError.response?.status);
         return false;
       } finally {
         setLoading(false);

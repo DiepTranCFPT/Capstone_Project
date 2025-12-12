@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { FRQ } from '~/types/question';
-import { BlockMath } from 'react-katex';
-import 'katex/dist/katex.min.css';
 import { getSubjectRenderModeByCodeAndName } from '~/configs/subjectRenderMode';
+import MathEditor from '~/components/common/MathEditor';
 
 interface FRQCardProps {
     question: FRQ;
@@ -131,22 +130,6 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
         setAnswerText(e.target.value);
     };
 
-    // LaTeX preview renderer
-    const renderLatexPreview = (text: string) => {
-        if (!text.trim()) {
-            return <span className="text-gray-400">The formula will be displayed here....</span>;
-        }
-
-        try {
-            // For now, render the whole text as LaTeX. In a production app, you'd parse $ delimiters
-            // Replace newlines with LaTeX newline command for BlockMath
-            const latexFormattedText = text.replace(/\n/g, '\\\\');
-            return <BlockMath>{latexFormattedText}</BlockMath>;
-        } catch (error) {
-            console.error('Error rendering LaTeX:', error);
-            return <span className="text-gray-500">Error rendering LaTeX. Check LaTeX syntax.</span>;
-        }
-    };
 
     // State for split screen width (percentage of left panel)
     const [leftPanelWidth, setLeftPanelWidth] = useState(50);
@@ -191,84 +174,16 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <h3 className="font-semibold text-gray-800 mb-4">{questionNumber}. {question.text}</h3>
 
-                {/* LaTeX Instructions */}
-                <div className="mb-4 bg-blue-50 p-3 rounded-md">
-                    <h4 className="text-sm font-medium text-blue-800 mb-2">
-                        📝 How to write math formula:
-                    </h4>
-                    <div className="text-xs text-blue-700 space-y-1">
-                        <div>• Press <kbd className="bg-blue-100 px-1 rounded">Enter</kbd> to go to the next line</div>
-                        <div>• Use symbols: <code className="bg-blue-100 px-1 rounded">^</code> for power, <code className="bg-blue-100 px-1 rounded">_</code> for subscript</div>
-                        <div>• Shortcuts: <kbd className="bg-blue-100 px-1 rounded">Ctrl+R</kbd> square root, <kbd className="bg-blue-100 px-1 rounded">Ctrl+Shift+R</kbd> set ℝ, <kbd className="bg-blue-100 px-1 rounded">Ctrl+Shift+N</kbd> set ℕ, <kbd className="bg-blue-100 px-1 rounded">Ctrl+I</kbd> integration</div>
-                        <div>• Example: <code className="bg-blue-100 px-1 rounded">x^2 + 2x + 1 = 0</code> or <code className="bg-blue-100 px-1 rounded">H_2O</code></div>
-                    </div>
-                </div>
-
-                {/* LaTeX Math Input */}
+                {/* MathLive WYSIWYG Editor */}
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Enter math formula (LaTeX/Math):
+                        Your answer:
                     </label>
-                    <div className="flex gap-2 mb-3">
-                        <button
-                            onClick={() => setAnswerText(prev => prev + "\n")}
-                            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-xs rounded text-gray-700"
-                            type="button"
-                            title="New line"
-                        >
-                            ⏎ New line
-                        </button>
-                        <button
-                            onClick={() => setAnswerText(prev => prev + "^")}
-                            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-xs rounded text-gray-700"
-                            type="button"
-                            title="Power"
-                        >
-                            x² Power
-                        </button>
-                        <button
-                            onClick={() => setAnswerText(prev => prev + "_")}
-                            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-xs rounded text-gray-700"
-                            type="button"
-                            title="Subscript"
-                        >
-                            x₁ Subscript
-                        </button>
-                        <button
-                            onClick={() => setAnswerText(prev => prev + "\\frac{}{}")}
-                            className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-xs rounded text-gray-700"
-                            type="button"
-                            title="Fraction"
-                        >
-                            ½ Fraction
-                        </button>
-                    </div>
-                    <textarea
-                        ref={textareaRef}
-                        rows={6}
+                    <MathEditor
                         value={answerText}
-                        onChange={(e) => {
-                            // Allow line breaks by treating Enter key normally
-                            handleTextChange(e);
-                        }}
-                        onKeyDown={handleKeyDown}
-                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 font-mono text-sm resize-vertical"
-                        placeholder={`Example:\nx = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}
-
-Or simple:
-x^2 + 2x + 1 = 0`}
-                        style={{ minHeight: '120px' }}
+                        onChange={setAnswerText}
+                        placeholder="Enter your answer here..."
                     />
-                </div>
-
-                <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Preview mathematical formulas:</label>
-                    <div className="bg-gray-50 p-4 rounded-md border min-h-32 whitespace-pre-wrap">
-                        <div className="text-gray-600 text-sm mb-2">Your formula:</div>
-                        <div className="bg-white p-3 rounded min-h-16">
-                            {renderLatexPreview(answerText) || answerText}
-                        </div>
-                    </div>
                 </div>
             </div>
         );

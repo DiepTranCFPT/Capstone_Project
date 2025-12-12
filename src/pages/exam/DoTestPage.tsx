@@ -15,17 +15,12 @@ import {
     MdOutlineMenuBook,
     MdTimer,
     MdSave,
-    MdCloudSync,
-    MdSync,
     MdBarChart,
     MdList,
     MdHourglassEmpty,
     MdError,
     MdCheckCircle,
-    MdCancel,
-    MdWarning,
-    MdAccessTime,
-    MdSmartphone
+    MdCancel
 } from 'react-icons/md';
 
 
@@ -37,6 +32,8 @@ const DoTestPage: React.FC = () => {
     // Proctoring state
     const [showProctoringRules, setShowProctoringRules] = useState(false);
     const [proctoringAccepted, setProctoringAccepted] = useState(false);
+    const [timerStarted, setTimerStarted] = useState(false);
+    const [showResumeModal, setShowResumeModal] = useState(false); // Modal to resume exam with fullscreen
 
     // Enhanced exam persistence hooks with dual-save mechanism
     const {
@@ -45,9 +42,7 @@ const DoTestPage: React.FC = () => {
         clearExamProgress,
         startAutoSave,
         stopAutoSave,
-        lastSavedTime,
-        syncStatus,
-        syncToServer
+        lastSavedTime
     } = useEnhancedExamPersistence();
 
     // Unload warning hook
@@ -57,7 +52,6 @@ const DoTestPage: React.FC = () => {
     const [isSubmit, setIsSubmit] = useState(false);
     const [isCancel, setIsCancel] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isManualSyncing, setIsManualSyncing] = useState(false);
 
     // Proctoring hook with auto-submit callback
     const {
@@ -101,36 +95,108 @@ const DoTestPage: React.FC = () => {
     // Use the appropriate attempt data
     const activeExamData = currentActiveExam || examSpecificAttempt;
 
-    // Initialize remaining time - use saved time if available, otherwise use full exam time
-    const [remainingTime, setRemainingTime] = useState<number>(() => {
-        const savedProgress = loadExamProgress();
-        if (savedProgress && savedProgress.remainingTime > 0) {
-            return savedProgress.remainingTime;
+    // Helper function to calculate remaining time based on exam start time
+    const calculateRemainingTime = useCallback(() => {
+        if (!activeExamData) return 3600; // Default 60 minutes
+
+        const examAttemptId = activeExamData.examAttemptId;
+        const examStartedAtStr = localStorage.getItem(`exam_started_at_${examAttemptId}`);
+        const durationInSeconds = activeExamData.durationInMinute * 60;
+
+        if (examStartedAtStr) {
+            const examStartedAt = parseInt(examStartedAtStr, 10);
+            const now = Date.now();
+            const elapsedSeconds = Math.floor((now - examStartedAt) / 1000);
+            const remaining = durationInSeconds - elapsedSeconds;
+            return Math.max(0, remaining);
         }
-        return activeExamData?.durationInMinute ? activeExamData.durationInMinute * 60 : 3600; // Default 60 minutes
+
+        return durationInSeconds;
+    }, [activeExamData]);
+
+    // Initialize remaining time - calculated from exam start timestamp
+    const [remainingTime, setRemainingTime] = useState<number>(() => {
+        if (!activeExamData) return 3600;
+
+        const examAttemptId = activeExamData.examAttemptId;
+        const examStartedAtStr = localStorage.getItem(`exam_started_at_${examAttemptId}`);
+        const durationInSeconds = activeExamData.durationInMinute * 60;
+
+        if (examStartedAtStr) {
+            const examStartedAt = parseInt(examStartedAtStr, 10);
+            const now = Date.now();
+            const elapsedSeconds = Math.floor((now - examStartedAt) / 1000);
+            return Math.max(0, durationInSeconds - elapsedSeconds);
+        }
+
+        return durationInSeconds;
     });
 
-    // Timer countdown logic
+    // Timer countdown logic - recalculates from start time every second
     useEffect(() => {
-        if (remainingTime > 0) {
-            const timer = setTimeout(() => {
-                setRemainingTime(prev => {
-                    const newTime = prev - 1;
-                    if (newTime <= 0) {
-                        handleSubmit();
-                        return 0;
-                    }
-                    return newTime;
-                });
+        if (timerStarted) {
+            const timer = setInterval(() => {
+                const newTime = calculateRemainingTime();
+                setRemainingTime(newTime);
+
+                if (newTime <= 0) {
+                    clearInterval(timer);
+                    handleSubmit();
+                }
             }, 1000);
 
-            return () => clearTimeout(timer);
+            return () => clearInterval(timer);
         }
-    }, [remainingTime]);
+    }, [timerStarted, calculateRemainingTime]);
 
-    // Initialize answers and answeredQuestions - will be loaded from localStorage in useEffect
-    const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(new Set());
-    const [answers, setAnswers] = useState<Record<string, { selectedAnswerId?: string; frqAnswerText?: string }>>({});
+    // Initialize answers and answeredQuestions from localStorage directly
+    const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(() => {
+        try {
+            const progressStr = localStorage.getItem('examProgress');
+            if (progressStr) {
+                const progress = JSON.parse(progressStr);
+                if (progress.answeredQuestions) {
+                    if (Array.isArray(progress.answeredQuestions)) {
+                        return new Set(progress.answeredQuestions.map((id: number | string) => id.toString()));
+                    }
+                }
+            }
+            // Fallback to individual key
+            const answeredStr = localStorage.getItem('answeredQuestions');
+            if (answeredStr) {
+                const parsed = JSON.parse(answeredStr);
+                if (Array.isArray(parsed)) {
+                    return new Set(parsed.map((id: number | string) => id.toString()));
+                }
+            }
+        } catch (e) {
+            console.error('[DoTestPage] Error loading answeredQuestions from localStorage:', e);
+        }
+        return new Set();
+    });
+
+    const [answers, setAnswers] = useState<Record<string, { selectedAnswerId?: string; frqAnswerText?: string }>>(() => {
+        try {
+            const progressStr = localStorage.getItem('examProgress');
+            if (progressStr) {
+                const progress = JSON.parse(progressStr);
+                if (progress.answers && Object.keys(progress.answers).length > 0) {
+                    return progress.answers;
+                }
+            }
+            // Fallback to individual key
+            const answersStr = localStorage.getItem('examAnswers');
+            if (answersStr) {
+                const parsed = JSON.parse(answersStr);
+                if (parsed && Object.keys(parsed).length > 0) {
+                    return parsed;
+                }
+            }
+        } catch (e) {
+            console.error('[DoTestPage] Error loading answers from localStorage:', e);
+        }
+        return {};
+    });
 
     // Sort questions by orderNumber - moved before useEffect that uses it
     const sortedQuestions = useMemo(() =>
@@ -163,6 +229,7 @@ const DoTestPage: React.FC = () => {
     useEffect(() => {
         if (!activeExamData || sortedQuestions.length === 0) return;
 
+
         // 🥇 Priority 1: Cross-device savedAnswer from API
         const apiAnswers: Record<string, { selectedAnswerId?: string; frqAnswerText?: string }> = {};
         const answeredSet: Set<string> = new Set();
@@ -194,6 +261,7 @@ const DoTestPage: React.FC = () => {
 
         // 🥈 Priority 2: localStorage backup (ongoing exams)
         const savedProgress = loadExamProgress();
+
         if (!savedProgress || !savedProgress.answers || Object.keys(savedProgress.answers).length === 0) {
             return;
         }
@@ -215,6 +283,7 @@ const DoTestPage: React.FC = () => {
             });
         }
 
+
         // Update answers - always update if we have saved data
         setAnswers(prevAnswers => {
             // If prevAnswers is empty, always update
@@ -235,6 +304,7 @@ const DoTestPage: React.FC = () => {
             }
         });
 
+
         // Always update answeredQuestions when loading from localStorage
         setAnsweredQuestions(new Set(answeredQuestionsSet));
 
@@ -245,17 +315,19 @@ const DoTestPage: React.FC = () => {
             }
             return prevTime;
         });
-    }, [activeExamData, sortedQuestions, loadExamProgress]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeExamData, sortedQuestions]); // Removed loadExamProgress from dependencies - it's stable from hook
 
-    // Auto-save callback - defined outside useEffect to avoid recreation
+
     const autoSaveCallback = useCallback(() => {
-        // Get current values from refs at save time
+        // Get current values from refs at save time - skip server sync for auto-save
         saveExamProgress(
             answersRef.current,
             answeredQuestionsRef.current,
             remainingTimeRef.current,
             activeExamData?.examAttemptId,
-            examId
+            examId,
+            true // skipServerSync - only save to localStorage
         );
     }, [saveExamProgress, activeExamData?.examAttemptId, examId]);
 
@@ -270,32 +342,39 @@ const DoTestPage: React.FC = () => {
         }
     }, [activeExamData, autoSaveCallback, startAutoSave, stopAutoSave]);
 
-    // Show proctoring rules modal when exam loads
+    // Check if exam was already started (user already accepted rules before reload)
+    useEffect(() => {
+        if (activeExamData) {
+            const currentAttemptId = activeExamData.examAttemptId;
+            const examStartedKey = `exam_started_${currentAttemptId}`;
+            const wasExamStarted = localStorage.getItem(examStartedKey) === 'true';
+
+            if (wasExamStarted) {
+                // User already accepted rules, show resume modal for fullscreen (browser requires user gesture)
+                setProctoringAccepted(true);
+                setTimerStarted(true); // Timer can start immediately
+                setShowResumeModal(true); // Show modal for user to click to enter fullscreen
+            }
+        }
+    }, [activeExamData]);
+
+    // Show proctoring rules modal when exam loads (only if not already started)
     useEffect(() => {
         if (activeExamData && !proctoringAccepted && !showProctoringRules) {
-            // Delay to show modal after exam content is loaded
-            const timer = setTimeout(() => {
-                setShowProctoringRules(true);
-            }, 500);
-            return () => clearTimeout(timer);
+            const examAttemptId = activeExamData.examAttemptId;
+            const examStartedKey = `exam_started_${examAttemptId}`;
+            const wasExamStarted = localStorage.getItem(examStartedKey) === 'true';
+
+            if (!wasExamStarted) {
+                // Delay to show modal after exam content is loaded
+                const timer = setTimeout(() => {
+                    setShowProctoringRules(true);
+                }, 500);
+                return () => clearTimeout(timer);
+            }
         }
     }, [activeExamData, proctoringAccepted, showProctoringRules]);
 
-    // Manual sync function
-    const handleManualSync = useCallback(async () => {
-        if (!activeExamData?.examAttemptId || isManualSyncing) return;
-
-        setIsManualSyncing(true);
-        try {
-            await syncToServer(
-                activeExamData.examAttemptId,
-                answersRef.current,
-                answeredQuestionsRef.current
-            );
-        } finally {
-            setIsManualSyncing(false);
-        }
-    }, [activeExamData?.examAttemptId, syncToServer, isManualSyncing]);
 
     const handleSubmit = async () => {
         if (!activeExamData) return;
@@ -326,9 +405,15 @@ const DoTestPage: React.FC = () => {
             if (result) {
                 // Close the confirmation modal
                 setShowConFirmed(false);
-                // Clear all exam progress after successful submission
+                // Clear all exam progress and exam_started status after successful submission
                 clearExamProgress();
-                navigate(`/exam-test`);
+                // Clear exam_started flag and start timestamp
+                const examAttemptId = activeExamData.examAttemptId;
+                if (examAttemptId) {
+                    localStorage.removeItem(`exam_started_${examAttemptId}`);
+                    localStorage.removeItem(`exam_started_at_${examAttemptId}`);
+                }
+                navigate(`/exam-test?showWaitModal=true&attemptId=${examAttemptId}`);
             } else {
                 // If submission failed, close modal anyway to prevent getting stuck
                 setShowConFirmed(false);
@@ -345,6 +430,13 @@ const DoTestPage: React.FC = () => {
     const handleCancel = () => {
         setShowConFirmed(false);
         clearExamProgress();
+
+        // Clear exam_started flag and start timestamp
+        const examAttemptId = activeExamData?.examAttemptId;
+        if (examAttemptId) {
+            localStorage.removeItem(`exam_started_${examAttemptId}`);
+            localStorage.removeItem(`exam_started_at_${examAttemptId}`);
+        }
 
         // Stop proctoring
         if (isProctoringActive) {
@@ -377,6 +469,7 @@ const DoTestPage: React.FC = () => {
         setAnswers(prev => {
             const currentAnswer = prev[examQuestionId];
 
+            // Check if answer actually changed
             if (answerData) {
                 const isDifferent =
                     currentAnswer?.selectedAnswerId !== answerData.selectedAnswerId ||
@@ -389,14 +482,22 @@ const DoTestPage: React.FC = () => {
                 return prev; // No change, return same reference
             }
 
-            // Update answers
-            const newAnswers = {
-                ...prev,
-                [examQuestionId]: {
-                    ...prev[examQuestionId],
-                    ...answerData
-                }
-            };
+            // Update answers - if clearing, remove the answer completely
+            let newAnswers: typeof prev;
+            if (!hasAnswer && !answerData?.selectedAnswerId && !answerData?.frqAnswerText) {
+                // Clear answer - remove from object
+                const { [examQuestionId]: _, ...rest } = prev;
+                newAnswers = rest;
+            } else {
+                // Update answer
+                newAnswers = {
+                    ...prev,
+                    [examQuestionId]: {
+                        ...prev[examQuestionId],
+                        ...answerData
+                    }
+                };
+            }
 
             // Update answeredQuestions
             setAnsweredQuestions(prevAnswered => {
@@ -406,17 +507,27 @@ const DoTestPage: React.FC = () => {
                 } else {
                     newSet.delete(examQuestionId);
                 }
-                // Only update if set actually changed
-                if (newSet.size === prevAnswered.size &&
-                    Array.from(newSet).every(id => prevAnswered.has(id))) {
-                    return prevAnswered; // No change
-                }
                 return newSet;
             });
 
+            // Always save when answer content changes (not just when set changes)
+            // Use setTimeout to ensure state updates are committed first
+            setTimeout(() => {
+                saveExamProgress(
+                    newAnswers,
+                    new Set(Object.keys(newAnswers).filter(id => {
+                        const ans = newAnswers[id];
+                        return ans && (ans.selectedAnswerId || (ans.frqAnswerText && ans.frqAnswerText.trim() !== ''));
+                    })),
+                    remainingTimeRef.current,
+                    activeExamData?.examAttemptId,
+                    examId
+                );
+            }, 0);
+
             return newAnswers;
         });
-    }, []);
+    }, [saveExamProgress, activeExamData?.examAttemptId, examId]);
 
     // Navigation function to scroll to a specific question
     const scrollToQuestion = useCallback((questionIndex: number) => {
@@ -429,47 +540,6 @@ const DoTestPage: React.FC = () => {
         }
     }, []);
 
-    // Get sync status display info
-    const getSyncStatusInfo = () => {
-        if (syncStatus.isSyncing) {
-            return {
-                text: 'Saving...',
-                color: 'text-blue-600',
-                icon: <MdSync className="animate-spin" />
-            };
-        }
-        if (syncStatus.syncError) {
-            return {
-                text: 'Saving failed',
-                color: 'text-red-600',
-                icon: <MdWarning />
-            };
-        }
-        if (syncStatus.hasUnsyncedChanges) {
-            return {
-                text: 'Unsaved changes',
-                color: 'text-orange-600',
-                icon: <MdAccessTime />
-            };
-        }
-        if (syncStatus.lastSyncTime) {
-            return {
-                text: `Last saved: ${new Date(syncStatus.lastSyncTime).toLocaleTimeString('vi-VN', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })}`,
-                color: 'text-green-600',
-                icon: <MdCheckCircle />
-            };
-        }
-        return {
-            text: 'Unsaved',
-            color: 'text-gray-500',
-            icon: <MdSmartphone />
-        };
-    };
-
-    const syncStatusInfo = getSyncStatusInfo();
 
     return (
         <div className="flex h-screen bg-teal-50/80">
@@ -520,39 +590,10 @@ const DoTestPage: React.FC = () => {
                                 <span className="text-xs text-gray-400">Unsaved</span>
                             )}
                         </div>
-                    </div>
 
-                    {/* Server sync indicator */}
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-teal-200/30">
-                        <span className="text-sm text-gray-600 flex items-center gap-1"><MdCloudSync /> Sync server:</span>
-                        <div className="flex items-center gap-2">
-                            <span className={`text-xs ${syncStatusInfo.color} flex items-center gap-1`}>
-                                <span>{syncStatusInfo.icon}</span>
-                                <span className="truncate max-w-24">{syncStatusInfo.text}</span>
-                            </span>
-                        </div>
+                        {/* Server sync UI hidden - sync happens automatically when selecting answers */}
+                        {/* Auto-save now only saves to localStorage for reliability */}
                     </div>
-
-                    {/* Manual sync button */}
-                    {activeExamData?.examAttemptId && (
-                        <button
-                            onClick={handleManualSync}
-                            disabled={isManualSyncing || syncStatus.isSyncing}
-                            className="w-full mt-3 px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white text-xs font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
-                        >
-                            {isManualSyncing ? (
-                                <>
-                                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
-                                    Syncing...
-                                </>
-                            ) : (
-                                <>
-                                    <MdSync />
-                                    Sync now
-                                </>
-                            )}
-                        </button>
-                    )}
                 </div>
 
                 {/* Progress Bar */}
@@ -684,6 +725,7 @@ const DoTestPage: React.FC = () => {
                                                         questionNumber={q.orderNumber}
                                                         onAnswerChange={(answerId) => handleAnswerChange(q.examQuestionId, !!answerId, { selectedAnswerId: answerId })}
                                                         selectedAnswerId={currentAnswer?.selectedAnswerId}
+                                                        onClearAnswer={() => handleAnswerChange(q.examQuestionId, false, { selectedAnswerId: undefined })}
                                                     />
                                                 </div>
                                             );
@@ -744,12 +786,54 @@ const DoTestPage: React.FC = () => {
                     setShowProctoringRules(false);
                     setProctoringAccepted(true);
                     startProctoring();
+
+                    // Save exam start timestamp and started status to localStorage
+                    const examAttemptId = activeExamData?.examAttemptId;
+                    if (examAttemptId) {
+                        // Only set start time if not already set (for resume scenarios)
+                        if (!localStorage.getItem(`exam_started_at_${examAttemptId}`)) {
+                            localStorage.setItem(`exam_started_at_${examAttemptId}`, Date.now().toString());
+                        }
+                        localStorage.setItem(`exam_started_${examAttemptId}`, 'true');
+
+                        // Recalculate remaining time and start timer
+                        setRemainingTime(calculateRemainingTime());
+                    }
+                    setTimerStarted(true); // Start timer after accepting rules
                 }}
                 onReject={() => {
                     setShowProctoringRules(false);
                     handleCancel();
                 }}
             />
+
+            {/* Resume Exam Modal - shown after reload to enter fullscreen */}
+            {showResumeModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+                        <div className="text-center">
+                            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-teal-100 flex items-center justify-center">
+                                <MdOutlineMenuBook className="text-4xl text-teal-600" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                                Resume Exam
+                            </h2>
+                            <p className="text-gray-600 mb-6">
+                                Your exam progress has been saved. Click the button below to resume in fullscreen mode.
+                            </p>
+                            <button
+                                onClick={() => {
+                                    setShowResumeModal(false);
+                                    startProctoring(); // This will enter fullscreen via user gesture
+                                }}
+                                className="w-full bg-backgroundColor hover:bg-backgroundColor/80 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                            >
+                                Continue Exam
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {showConFirmed && (
                 <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center">
