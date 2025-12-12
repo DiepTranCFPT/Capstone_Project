@@ -43,10 +43,14 @@ const RecentTokenTransactions: React.FC<RecentTokenTransactionsProps> = ({
         fetchTransactions();
     }, []);
 
-    const items = useMemo(
-        () => (pageSize > 0 ? transactions.slice(0, pageSize) : transactions),
-        [transactions, pageSize]
-    );
+    const items = useMemo(() => {
+        const sorted = [...transactions].sort((a, b) => {
+            const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return bTime - aTime;
+        });
+        return pageSize > 0 ? sorted.slice(0, pageSize) : sorted;
+    }, [transactions, pageSize]);
 
     const formatAmount = (val?: number) =>
         new Intl.NumberFormat("vi-VN", {
