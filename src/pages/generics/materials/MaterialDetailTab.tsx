@@ -742,16 +742,16 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">
-              Xác nhận đăng ký tài liệu
+              Confirm Material Registration
             </h3>
             <p className="text-sm text-gray-700 mb-5">
               {material.price && material.price > 0
-                ? `Tài liệu này có giá ${new Intl.NumberFormat("vi-VN", {
+                ? `This material costs ${new Intl.NumberFormat("vi-VN", {
                     style: "currency",
                     currency: "VND",
                     maximumFractionDigits: 0,
-                  }).format(material.price)}. Số tiền này sẽ được trừ khỏi tài khoản của bạn. Bạn có chắc chắn muốn đăng ký?`
-                : "Bạn có chắc chắn muốn đăng ký tài liệu này?"}
+                  }).format(material.price)}. This amount will be deducted from your account. Are you sure you want to register?`
+                : "Are you sure you want to register this material?"}
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -760,7 +760,7 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
                 disabled={confirmLoading}
                 className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm disabled:opacity-60"
               >
-                Hủy
+                Cancel
               </button>
               <button
                 type="button"
@@ -768,7 +768,7 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
                 disabled={confirmLoading}
                 className="px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 text-sm font-semibold disabled:opacity-60"
               >
-                {confirmLoading ? "Đang xử lý..." : "Xác nhận"}
+                {confirmLoading ? "Processing..." : "Confirm"}
               </button>
             </div>
           </div>
