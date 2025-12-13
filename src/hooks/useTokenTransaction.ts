@@ -155,6 +155,7 @@ export const useTokenTransaction = () => {
         const apiPayload = {
           bankingNumber: (payload.bankAccount || payload.bankingNumber || "") as string,
           nameBanking: (payload.bankName || payload.nameBanking || "") as string,
+          authorName: (payload.authorName || "") as string,
         };
         const res = await TokenTransactionService.createPaymentMethod(apiPayload);
         return res.data;
