@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useExamAttempt } from "~/hooks/useExamAttempt";
 import type { ManualGradeItem } from "~/types/examAttempt";
+import LatexRenderer from "~/components/common/LatexRenderer";
 
 const { TextArea } = Input;
 
@@ -108,10 +109,15 @@ const GradeSubmissionPage: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left side: student's answer */}
                 <div className="lg:col-span-2">
-                    <Card title={`Question: ${activeQuestion.question.content}`}>
-                        <p className="bg-gray-50 p-4 rounded-md min-h-[200px] whitespace-pre-wrap">
-                            {activeQuestion.studentAnswer?.frqAnswerText || ''}
-                        </p>
+                    <Card title={
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span>Question:</span>
+                            <LatexRenderer content={activeQuestion.question.content} />
+                        </div>
+                    }>
+                        <div className="bg-gray-50 p-4 rounded-md min-h-[200px] whitespace-pre-wrap">
+                            <LatexRenderer content={activeQuestion.studentAnswer?.frqAnswerText || ''} />
+                        </div>
                     </Card>
                     {/* Navigation */}
                     <div className="flex justify-between mt-4">
@@ -155,13 +161,13 @@ const GradeSubmissionPage: React.FC = () => {
                             />
                         </div>
 
-                        <div className="space-y-3">                          
+                        <div className="space-y-3">
                             <Button type="primary" block size="large" onClick={handleFinishGrading}>
                                 Finish Grading
                             </Button>
                         </div>
                     </Card>
-                  
+
                 </div>
             </div>
         </div>

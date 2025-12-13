@@ -212,6 +212,9 @@ const DoTestPage: React.FC = () => {
     // Refs for question navigation
     const questionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+    // Debounce ref to prevent duplicate server save calls
+    const saveDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
     // Update refs when values change
     useEffect(() => {
         answersRef.current = answers;
@@ -514,8 +517,11 @@ const DoTestPage: React.FC = () => {
             });
 
             // Always save when answer content changes (not just when set changes)
-            // Use setTimeout to ensure state updates are committed first
-            setTimeout(() => {
+            // Use debounce to prevent duplicate API calls
+            if (saveDebounceRef.current) {
+                clearTimeout(saveDebounceRef.current);
+            }
+            saveDebounceRef.current = setTimeout(() => {
                 saveExamProgress(
                     newAnswers,
                     new Set(Object.keys(newAnswers).filter(id => {
@@ -528,7 +534,7 @@ const DoTestPage: React.FC = () => {
                     false, // skipServerSync
                     activeExamData?.attemptSessionToken
                 );
-            }, 0);
+            }, 500); // Debounce 500ms to prevent duplicate calls
 
             return newAnswers;
         });
