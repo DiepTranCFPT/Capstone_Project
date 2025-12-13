@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Button, Select, Pagination, Spin, Empty, Tag } from 'antd';
-import { FileTextOutlined, ClockCircleOutlined, TrophyOutlined, CalendarOutlined, HistoryOutlined, CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons';
+import { FileTextOutlined, ClockCircleOutlined, TrophyOutlined, CalendarOutlined, HistoryOutlined, CheckCircleOutlined, LoadingOutlined, WarningOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useExamAttemptHistory } from '~/hooks/useExamAttempt';
 
@@ -14,6 +14,7 @@ interface HistoryRecord {
     rating: number | null;
     title?: string;
     status?: 'COMPLETED' | 'PENDING_GRADING';
+    isLate?: boolean;
 }
 
 // Primary color: #3CBCB2
@@ -248,6 +249,15 @@ const TestReportsPage: React.FC = () => {
                                                     Pending Grading
                                                 </Tag>
                                             ) : null}
+                                            {record.isLate && (
+                                                <Tag
+                                                    icon={<WarningOutlined />}
+                                                    color="error"
+                                                    style={{ borderRadius: '12px', padding: '2px 10px' }}
+                                                >
+                                                    Late Submission
+                                                </Tag>
+                                            )}
                                         </div>
 
                                         {/* Title */}
