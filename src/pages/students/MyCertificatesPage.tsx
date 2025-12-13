@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Empty, Modal } from 'antd';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { Empty, Modal, message } from 'antd';
 import { FaCertificate, FaEye, FaDownload } from 'react-icons/fa';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { useCertificates } from '~/hooks/useCertificates';
 import { useSubjects } from '~/hooks/useSubjects';
 import { useAuth } from '~/hooks/useAuth';
@@ -15,6 +17,8 @@ const MyCertificatesPage: React.FC = () => {
     const [selectedCertificate, setSelectedCertificate] = useState<CertificateData | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [subjectNames, setSubjectNames] = useState<Record<string, string>>({});
+    const [isDownloading, setIsDownloading] = useState(false);
+    const certificateRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         fetchMyCertificates();
@@ -51,16 +55,93 @@ const MyCertificatesPage: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [certificates]);
 
+    const getStudentName = useCallback(() => {
+        if (!user) return 'Student';
+        return `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Student';
+    }, [user]);
+
     const handleViewCertificate = (cert: CertificateData) => {
         setSelectedCertificate(cert);
         setIsModalOpen(true);
     };
 
-    const handleDownload = (cert: CertificateData) => {
-        if (cert.certificateUrl) {
-            window.open(cert.certificateUrl, '_blank');
+    const handleDownloadPDF = useCallback(async (cert: CertificateData) => {
+        // Open the modal to render the certificate first
+        setSelectedCertificate(cert);
+        setIsModalOpen(true);
+        setIsDownloading(true);
+
+        // Wait for modal to render
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        try {
+            if (!certificateRef.current) {
+                message.error('Could not capture certificate. Please try again.');
+                setIsDownloading(false);
+                return;
+            }
+
+            const canvas = await html2canvas(certificateRef.current, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#fffbeb',
+                logging: false,
+                // Convert oklch colors to safe hex values before rendering
+                onclone: (clonedDoc) => {
+                    const elements = clonedDoc.querySelectorAll('*');
+                    elements.forEach((el) => {
+                        const htmlEl = el as HTMLElement;
+                        const styles = window.getComputedStyle(htmlEl);
+
+                        // Get computed colors and apply them directly
+                        const bgColor = styles.backgroundColor;
+                        const color = styles.color;
+                        const borderColor = styles.borderColor;
+
+                        if (bgColor && bgColor.includes('oklch')) {
+                            htmlEl.style.backgroundColor = '#fffbeb';
+                        }
+                        if (color && color.includes('oklch')) {
+                            htmlEl.style.color = '#1f2937';
+                        }
+                        if (borderColor && borderColor.includes('oklch')) {
+                            htmlEl.style.borderColor = '#f59e0b';
+                        }
+                    });
+                },
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4',
+            });
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+
+            // Calculate dimensions to fit the certificate centered in the PDF
+            const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight) * 0.9;
+            const imgX = (pdfWidth - imgWidth * ratio) / 2;
+            const imgY = (pdfHeight - imgHeight * ratio) / 2;
+
+            pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+
+            const subjectName = subjectNames[cert.subjectId] || 'Certificate';
+            const fileName = `certificate_${subjectName.replace(/\s+/g, '_')}_${cert.certificateNumber.slice(0, 8)}.pdf`;
+            pdf.save(fileName);
+
+            message.success('Certificate downloaded successfully!');
+        } catch (err) {
+            console.error('Download error:', err);
+            message.error('Failed to download certificate. Please try again.');
+        } finally {
+            setIsDownloading(false);
         }
-    };
+    }, [subjectNames]);
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -184,8 +265,9 @@ const MyCertificatesPage: React.FC = () => {
                                             View
                                         </button>
                                         <button
-                                            onClick={() => handleDownload(cert)}
-                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors text-sm"
+                                            onClick={() => handleDownloadPDF(cert)}
+                                            disabled={isDownloading}
+                                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             <FaDownload />
                                             Download
@@ -210,11 +292,19 @@ const MyCertificatesPage: React.FC = () => {
                 {selectedCertificate && (
                     <div className="py-4">
                         <CertificateCard
+                            ref={certificateRef}
                             certificate={selectedCertificate}
-                            studentName={user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Student' : 'Student'}
+                            studentName={getStudentName()}
                             subjectName={subjectNames[selectedCertificate.subjectId] || 'Certificate'}
-                            onDownload={() => handleDownload(selectedCertificate)}
+                            hideActions={isDownloading}
+                            onDownload={() => handleDownloadPDF(selectedCertificate)}
                         />
+                        {isDownloading && (
+                            <div className="flex items-center justify-center mt-4">
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500"></div>
+                                <span className="ml-2 text-gray-600">Generating PDF...</span>
+                            </div>
+                        )}
                     </div>
                 )}
             </Modal>
