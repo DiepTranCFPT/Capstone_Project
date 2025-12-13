@@ -85,7 +85,8 @@ export const useEnhancedExamPersistence = () => {
   const saveToServer = useCallback(async (
     attemptId: string,
     answers: Record<string, { selectedAnswerId?: string; frqAnswerText?: string }>,
-    _answeredQuestions: Set<string> // Keep param for API compatibility but use answers keys instead
+    _answeredQuestions: Set<string>, // Keep param for API compatibility but use answers keys instead
+    attemptSessionToken?: string
   ): Promise<boolean> => {
     if (!attemptId) {
       console.warn('No attemptId provided for server save');
@@ -98,8 +99,11 @@ export const useEnhancedExamPersistence = () => {
     );
 
     if (answersWithContent.length === 0) {
-      console.log('[saveToServer] No answers to save');
       return true; // Nothing to save is considered success
+    }
+
+    if (!attemptSessionToken) {
+      return false;
     }
 
     setSyncStatus(prev => ({ ...prev, isSyncing: true, syncError: null }));
@@ -111,11 +115,9 @@ export const useEnhancedExamPersistence = () => {
           examQuestionId,
           selectedAnswerId: answer.selectedAnswerId || null,
           frqAnswerText: answer.frqAnswerText || null
-        }))
+        })),
+        attemptSessionToken
       };
-
-      console.log('[saveToServer] Payload:', JSON.stringify(payload, null, 2));
-      console.log('[saveToServer] AttemptId:', attemptId);
 
       const success = await apiSaveProgress(attemptId, payload);
 
@@ -158,7 +160,8 @@ export const useEnhancedExamPersistence = () => {
     remainingTime: number,
     attemptId?: string,
     examId?: string,
-    skipServerSync: boolean = false
+    skipServerSync: boolean = false,
+    attemptSessionToken?: string
   ) => {
     setIsAutoSaving(true);
 
@@ -168,8 +171,8 @@ export const useEnhancedExamPersistence = () => {
 
       // Save to server if we have attemptId and not skipping server sync
       let serverSaved = true;
-      if (attemptId && !skipServerSync) {
-        serverSaved = await saveToServer(attemptId, answers, answeredQuestions);
+      if (attemptId && !skipServerSync && attemptSessionToken) {
+        serverSaved = await saveToServer(attemptId, answers, answeredQuestions, attemptSessionToken);
 
         // If server failed but local saved, mark as having unsynced changes
         if (!serverSaved && localSaved) {
@@ -178,7 +181,7 @@ export const useEnhancedExamPersistence = () => {
       }
 
       // Return overall success
-      return localSaved && (serverSaved || !attemptId || skipServerSync);
+      return localSaved && (serverSaved || !attemptId || skipServerSync || !attemptSessionToken);
     } finally {
       setIsAutoSaving(false);
     }
@@ -257,9 +260,10 @@ export const useEnhancedExamPersistence = () => {
   const syncToServer = useCallback(async (
     attemptId: string,
     answers: Record<string, { selectedAnswerId?: string; frqAnswerText?: string }>,
-    answeredQuestions: Set<string>
+    answeredQuestions: Set<string>,
+    attemptSessionToken?: string
   ) => {
-    const success = await saveToServer(attemptId, answers, answeredQuestions);
+    const success = await saveToServer(attemptId, answers, answeredQuestions, attemptSessionToken);
     if (success) {
       toast.success('Sync exam progress to server successfully!');
     } else {

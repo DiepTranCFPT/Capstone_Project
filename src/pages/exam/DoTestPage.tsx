@@ -401,7 +401,10 @@ const DoTestPage: React.FC = () => {
         // console.log('Proctoring Metadata:', proctoringMetadata);
 
         try {
-            const result = await submitAttempt(activeExamData.examAttemptId, { answers: submissionAnswers });
+            const result = await submitAttempt(activeExamData.examAttemptId, {
+                answers: submissionAnswers,
+                attemptSessionToken: activeExamData.attemptSessionToken
+            });
             if (result) {
                 // Close the confirmation modal
                 setShowConFirmed(false);
@@ -521,13 +524,15 @@ const DoTestPage: React.FC = () => {
                     })),
                     remainingTimeRef.current,
                     activeExamData?.examAttemptId,
-                    examId
+                    examId,
+                    false, // skipServerSync
+                    activeExamData?.attemptSessionToken
                 );
             }, 0);
 
             return newAnswers;
         });
-    }, [saveExamProgress, activeExamData?.examAttemptId, examId]);
+    }, [saveExamProgress, activeExamData?.examAttemptId, activeExamData?.attemptSessionToken, examId]);
 
     // Navigation function to scroll to a specific question
     const scrollToQuestion = useCallback((questionIndex: number) => {

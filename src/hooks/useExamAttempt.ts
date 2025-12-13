@@ -146,7 +146,7 @@ export const useExamAttempt = () => {
         if (res.data.code === 0 || res.data.code === 1000) {
           setSubmissionResult(res.data.data);
           setActiveAttempt(null); // Xóa bài thi đang làm
-          toast.success("Nộp bài thành công!");
+          toast.success("Submit exam successfully!");
           return res.data.data;
         } else {
           throw new Error(res.data.message || "Failed to submit attempt");
@@ -337,11 +337,7 @@ export const useExamAttemptHistory = () => {
   const [pageInfo, setPageInfo] = useState<PageInfo<HistoryRecord> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sorts, setSorts] = useState<string[]>(["startTime_desc"]);
-
-  if (!sorts) {
-    setSorts(["startTime_desc"]);
-  }
+  const [currentSorts, setCurrentSorts] = useState<string[]>(["startTime:desc"]);
 
   const handleError = (err: unknown, defaultMessage: string) => {
     setLoading(false);
@@ -387,12 +383,19 @@ export const useExamAttemptHistory = () => {
     []
   );
 
+  // Initial load
   useEffect(() => {
-    fetchHistory(0, 10, ["startTime_desc"]); // Keep default sorting for initial load
+    fetchHistory(0, 10, currentSorts);
   }, [fetchHistory]);
 
+  // Handle sort change - call API with new sort
+  const handleSortChange = useCallback((newSorts: string[]) => {
+    setCurrentSorts(newSorts);
+    fetchHistory(0, pageInfo?.pageSize || 10, newSorts);
+  }, [fetchHistory, pageInfo?.pageSize]);
+
   const handlePageChange = (newPage: number, newSize: number) => {
-    fetchHistory(newPage - 1, newSize, ["startTime_desc"]);
+    fetchHistory(newPage - 1, newSize, currentSorts);
   };
 
   return {
@@ -402,7 +405,8 @@ export const useExamAttemptHistory = () => {
     error,
     fetchHistory,
     handlePageChange,
-    setSorts,
+    handleSortChange,
+    currentSorts,
   };
 };
 

@@ -222,6 +222,7 @@ export interface ActiveExam {
   durationInMinute: number;
   passingScore: number;
   belongTo: string;
+  attemptSessionToken: string;
   questions: ActiveExamQuestion[];
 }
 
@@ -241,18 +242,28 @@ export interface ExamSubmissionAnswer {
  */
 export interface SubmitExamPayload {
   answers: ExamSubmissionAnswer[];
+  attemptSessionToken: string;
 }
 
 /**
  * (API Submit) Dữ liệu trả về sau khi nộp bài.
  */
 export interface ExamResult {
-  id: string; // Submission ID
+  id?: string; // Submission ID (optional for backward compatibility)
+  attemptId: string;
   examId: string;
-  userId: string;
+  userId?: string;
+  doneBy?: string;
+  subject?: string;
+  title?: string;
   score: number;
-  startAt: string; // ISO Date string
-  endAt: string;   // ISO Date string
+  passingScore?: number;
+  startTime: string; // ISO Date string
+  endTime: string | null;   // ISO Date string
+  status?: 'COMPLETED' | 'PENDING_GRADING' | 'IN_PROGRESS';
+  comment?: string | null;
+  rating?: number | null;
+  isLate?: boolean | null;
 }
 
 export type MyExamTemplateResponse = ApiResponse<MyExamTemplatePageData>;

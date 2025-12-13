@@ -49,90 +49,27 @@ const LatexRenderer: React.FC<LatexRendererProps> = ({ content, className = '' }
 
         // Process content
         while (remainingContent.length > 0) {
-            // Check for block math $$...$$
-            const blockMatch = remainingContent.match(/^\$\$([^$]+)\$\$/);
-            if (blockMatch) {
-                parts.push(
-                    <BlockMath key={key++} math={blockMatch[1].trim()} />
-                );
-                remainingContent = remainingContent.slice(blockMatch[0].length);
-                continue;
-            }
-
-            // Check for inline math $...$
-            const inlineMatch = remainingContent.match(/^\$([^$]+)\$/);
-            if (inlineMatch) {
-                parts.push(
-                    <InlineMath key={key++} math={inlineMatch[1].trim()} />
-                );
-                remainingContent = remainingContent.slice(inlineMatch[0].length);
-                continue;
-            }
-
-            // Check for \(...\) inline math
-            const parenMatch = remainingContent.match(/^\\\((.*?)\\\)/);
-            if (parenMatch) {
-                parts.push(
-                    <InlineMath key={key++} math={parenMatch[1].trim()} />
-                );
-                remainingContent = remainingContent.slice(parenMatch[0].length);
-                continue;
-            }
-
-            // Check for \[...\] block math
-            const bracketMatch = remainingContent.match(/^\\\[(.*?)\\\]/s);
-            if (bracketMatch) {
-                parts.push(
-                    <BlockMath key={key++} math={bracketMatch[1].trim()} />
-                );
-                remainingContent = remainingContent.slice(bracketMatch[0].length);
-                continue;
-            }
-
-            // Check if entire remaining content is raw LaTeX (like \begin{...}...\end{...})
-            const rawLatexMatch = remainingContent.match(/^(\\begin\{[^}]+\}[\s\S]*?\\end\{[^}]+\})/);
-            if (rawLatexMatch) {
-                parts.push(
-                    <BlockMath key={key++} math={rawLatexMatch[1]} />
-                );
-                remainingContent = remainingContent.slice(rawLatexMatch[0].length);
-                continue;
-            }
-
-            // Check if content starts with LaTeX commands (without $ wrapper)
-            // This handles cases like "V = a^3" or "\frac{1}{2}"
-            if (LATEX_COMMAND_PATTERN.test(remainingContent)) {
-                // If the entire content looks like LaTeX, render it as inline math
-                try {
-                    parts.push(
-                        <InlineMath key={key++} math={remainingContent} />
-                    );
-                    break;
-                } catch {
-                    // If it fails, treat as plain text
-                    parts.push(<span key={key++}>{remainingContent}</span>);
-                    break;
-                }
-            }
-
-            // Find next LaTeX delimiter
-            const nextDollar = remainingContent.indexOf('$');
-            const nextParen = remainingContent.indexOf('\\(');
-            const nextBracket = remainingContent.indexOf('\\[');
-            const nextBegin = remainingContent.indexOf('\\begin');
+            // Find all possible delimiters and their positions
+            const blockDollarPos = remainingContent.indexOf('$$');
+            const inlineDollarPos = remainingContent.search(/\$(?!\$)/); // $ not followed by $
+            const parenPos = remainingContent.indexOf('\\(');
+            const bracketPos = remainingContent.indexOf('\\[');
+            const beginPos = remainingContent.indexOf('\\begin');
 
             // Find the closest delimiter
-            const delimiters = [nextDollar, nextParen, nextBracket, nextBegin]
-                .filter(pos => pos !== -1);
+            const positions = [
+                { type: 'block-dollar', pos: blockDollarPos },
+                { type: 'inline-dollar', pos: inlineDollarPos },
+                { type: 'paren', pos: parenPos },
+                { type: 'bracket', pos: bracketPos },
+                { type: 'begin', pos: beginPos },
+            ].filter(p => p.pos !== -1).sort((a, b) => a.pos - b.pos);
 
-            if (delimiters.length === 0) {
-                // No more LaTeX, check if remaining content has math notation
-                if (/[\^_]\{[^}]+\}/.test(remainingContent) || /\\[a-zA-Z]+/.test(remainingContent)) {
-                    // Try to render as LaTeX
+            if (positions.length === 0) {
+                // No more LaTeX delimiters, check if remaining content has raw LaTeX
+                if (LATEX_COMMAND_PATTERN.test(remainingContent) || /[\^_]\{[^}]+\}/.test(remainingContent)) {
                     try {
-                        parts.push(
-                            <InlineMath key={key++} math={remainingContent} />
-                        );
+                        parts.push(<InlineMath key={key++} math={remainingContent} />);
                     } catch {
                         parts.push(<span key={key++}>{remainingContent}</span>);
                     }
@@ -140,13 +77,64 @@ const LatexRenderer: React.FC<LatexRendererProps> = ({ content, className = '' }
                     parts.push(<span key={key++}>{remainingContent}</span>);
                 }
                 break;
-            } else {
-                const nextPos = Math.min(...delimiters);
-                // Add text before the next LaTeX
-                if (nextPos > 0) {
-                    parts.push(<span key={key++}>{remainingContent.slice(0, nextPos)}</span>);
+            }
+
+            const closest = positions[0];
+
+            // Add text before the delimiter as plain text
+            if (closest.pos > 0) {
+                parts.push(<span key={key++}>{remainingContent.slice(0, closest.pos)}</span>);
+                remainingContent = remainingContent.slice(closest.pos);
+            }
+
+            // Process based on delimiter type
+            if (closest.type === 'block-dollar') {
+                const match = remainingContent.match(/^\$\$([^$]+)\$\$/);
+                if (match) {
+                    parts.push(<BlockMath key={key++} math={match[1].trim()} />);
+                    remainingContent = remainingContent.slice(match[0].length);
+                } else {
+                    // Invalid block math, treat $$ as text
+                    parts.push(<span key={key++}>$$</span>);
+                    remainingContent = remainingContent.slice(2);
                 }
-                remainingContent = remainingContent.slice(nextPos);
+            } else if (closest.type === 'inline-dollar') {
+                const match = remainingContent.match(/^\$([^$]+)\$/);
+                if (match) {
+                    parts.push(<InlineMath key={key++} math={match[1].trim()} />);
+                    remainingContent = remainingContent.slice(match[0].length);
+                } else {
+                    // Unclosed $, treat as text
+                    parts.push(<span key={key++}>$</span>);
+                    remainingContent = remainingContent.slice(1);
+                }
+            } else if (closest.type === 'paren') {
+                const match = remainingContent.match(/^\\\((.*?)\\\)/);
+                if (match) {
+                    parts.push(<InlineMath key={key++} math={match[1].trim()} />);
+                    remainingContent = remainingContent.slice(match[0].length);
+                } else {
+                    parts.push(<span key={key++}>{'\\('}</span>);
+                    remainingContent = remainingContent.slice(2);
+                }
+            } else if (closest.type === 'bracket') {
+                const match = remainingContent.match(/^\\\[(.*?)\\\]/s);
+                if (match) {
+                    parts.push(<BlockMath key={key++} math={match[1].trim()} />);
+                    remainingContent = remainingContent.slice(match[0].length);
+                } else {
+                    parts.push(<span key={key++}>{'\\['}</span>);
+                    remainingContent = remainingContent.slice(2);
+                }
+            } else if (closest.type === 'begin') {
+                const match = remainingContent.match(/^(\\begin\{[^}]+\}[\s\S]*?\\end\{[^}]+\})/);
+                if (match) {
+                    parts.push(<BlockMath key={key++} math={match[1]} />);
+                    remainingContent = remainingContent.slice(match[0].length);
+                } else {
+                    parts.push(<span key={key++}>{'\\begin'}</span>);
+                    remainingContent = remainingContent.slice(6);
+                }
             }
         }
 
