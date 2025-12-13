@@ -18,7 +18,7 @@ export const useSubjects = () => {
       setSubjects(res.data.data.items || []);
       setPageInfo(res.data.data);
     } catch {
-      toast.error("Không thể tải danh sách môn học");
+      toast.error("Failed to load subjects");
     } finally {
       setLoading(false);
     }
@@ -30,7 +30,7 @@ export const useSubjects = () => {
       const res = await SubjectService.getById(id);
       return res.data.data;
     } catch {
-      toast.error("Không thể tải thông tin môn học");
+      toast.error("Failed to load subject");
       return null;
     }
   }, []);
@@ -39,11 +39,11 @@ export const useSubjects = () => {
   const createSubject = useCallback(async (data: NewSubject) => {
     try {
       const res = await SubjectService.create(data);
-      toast.success("Tạo môn học thành công");
+      toast.success("Create subject successfully");
       fetchSubjects();
       return res.data.data;
     } catch {
-      toast.error("Tạo môn học thất bại");
+      toast.error("Failed to create subject");
       return null;
     }
   }, [fetchSubjects]);
@@ -52,11 +52,11 @@ export const useSubjects = () => {
   const updateSubject = useCallback(async (id: string, data: Partial<Subject>) => {
     try {
       const res = await SubjectService.update(id, data);
-      toast.success("Cập nhật môn học thành công");
+      toast.success("Update subject successfully");
       fetchSubjects();
       return res.data.data;
     } catch {
-      toast.error("Cập nhật môn học thất bại");
+      toast.error("Failed to update subject");
       return null;
     }
   }, [fetchSubjects]);
@@ -65,10 +65,10 @@ export const useSubjects = () => {
   const deleteSubject = useCallback(async (id: string) => {
     try {
       await SubjectService.delete(id);
-      toast.success("Xóa môn học thành công");
+      toast.success("Delete subject successfully");
       fetchSubjects();
     } catch {
-      toast.error("Xóa môn học thất bại");
+      toast.error("Failed to delete subject");
     }
   }, [fetchSubjects]);
 

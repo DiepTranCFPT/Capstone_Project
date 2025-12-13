@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, Button, Select, Pagination, Spin, Empty, Tag } from 'antd';
 import { FileTextOutlined, ClockCircleOutlined, TrophyOutlined, CalendarOutlined, HistoryOutlined, CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -22,36 +22,24 @@ const PRIMARY_LIGHT = '#E8F7F6';
 
 const TestReportsPage: React.FC = () => {
     const navigate = useNavigate();
-    const { history, loading: historyLoading, pageInfo, handlePageChange, setSorts } = useExamAttemptHistory();
-    const [currentSort, setCurrentSort] = useState('startTime_desc');
+    const { history, loading: historyLoading, pageInfo, handlePageChange, handleSortChange } = useExamAttemptHistory();
+    const [currentSort, setCurrentSort] = useState('startTime:desc');
 
     const sortOptions = [
-        { label: 'Most Recent', value: 'startTime_desc' },
-        { label: 'Oldest First', value: 'startTime_asc' },
-        { label: 'Highest Score', value: 'score_desc' },
-        { label: 'Lowest Score', value: 'score_asc' },
+        { label: 'Most Recent', value: 'startTime:desc' },
+        { label: 'Oldest First', value: 'startTime:asc' },
+        { label: 'Highest Score', value: 'score:desc' },
+        { label: 'Lowest Score', value: 'score:asc' },
     ];
 
-    useEffect(() => {
-        setSorts([currentSort]);
-    }, [currentSort, setSorts]);
+    // Handle sort change - call API
+    const onSortChange = (value: string) => {
+        setCurrentSort(value);
+        handleSortChange([value]);
+    };
 
-    const sortedHistory = useMemo(() => {
-        return [...history].sort((a, b) => {
-            switch (currentSort) {
-                case 'startTime_desc':
-                    return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
-                case 'startTime_asc':
-                    return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-                case 'score_desc':
-                    return b.score - a.score;
-                case 'score_asc':
-                    return a.score - b.score;
-                default:
-                    return 0;
-            }
-        });
-    }, [history, currentSort]);
+    // Use history directly from API (already sorted by server)
+    const sortedHistory = history;
 
     const handleViewDetails = (record: HistoryRecord) => {
         const attemptId = record.attemptId;
@@ -113,7 +101,7 @@ const TestReportsPage: React.FC = () => {
             <div
                 className="relative overflow-hidden bg-backgroundColor"
                 style={{
-                    
+
                     padding: '2rem 1.5rem'
                 }}
             >
@@ -149,7 +137,7 @@ const TestReportsPage: React.FC = () => {
                         <span className="text-gray-600 font-medium">Sort by:</span>
                         <Select
                             value={currentSort}
-                            onChange={setCurrentSort}
+                            onChange={onSortChange}
                             style={{ width: 180 }}
                             options={sortOptions}
                         />

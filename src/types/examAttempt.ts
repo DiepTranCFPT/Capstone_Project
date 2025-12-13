@@ -107,8 +107,9 @@ export interface SaveProgressPayload {
   answers: {
     examQuestionId: string;
     selectedAnswerId?: string | null; // Dùng cho MCQ
-    frqAnswerText?: string | null;    // Dùng cho FRQ
+    frqAnswerText?: string | null;    // Dùng cho FRQ   
   }[];
+  attemptSessionToken: string;
 }
 
 /**

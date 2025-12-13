@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { FRQ } from '~/types/question';
 import { getSubjectRenderModeByCodeAndName } from '~/configs/subjectRenderMode';
 import MathEditor from '~/components/common/MathEditor';
+import LatexRenderer from '~/components/common/LatexRenderer';
 
 interface FRQCardProps {
     question: FRQ;
@@ -172,7 +173,9 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
     if (cardMode === "latex") {
         return (
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="font-semibold text-gray-800 mb-4">{questionNumber}. {question.text}</h3>
+                <h3 className="font-semibold text-gray-800 mb-4">
+                    {questionNumber}. <LatexRenderer content={question.text} />
+                </h3>
 
                 {/* MathLive WYSIWYG Editor */}
                 <div className="mb-4">
@@ -205,7 +208,7 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
                             {questionNumber}. Question
                         </h3>
                         <div className="text-sm text-gray-700 whitespace-pre-line">
-                            {question.text}
+                            <LatexRenderer content={question.text} />
                         </div>
                     </div>
 
@@ -243,7 +246,9 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
     // Default normal mode
     return (
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="font-semibold text-gray-800 mb-4">{questionNumber}. {question.text}</h3>
+            <h3 className="font-semibold text-gray-800 mb-4">
+                {questionNumber}. <LatexRenderer content={question.text} />
+            </h3>
             <textarea
                 ref={textareaRef}
                 rows={6}

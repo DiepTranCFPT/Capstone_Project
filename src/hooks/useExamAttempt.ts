@@ -146,7 +146,7 @@ export const useExamAttempt = () => {
         if (res.data.code === 0 || res.data.code === 1000) {
           setSubmissionResult(res.data.data);
           setActiveAttempt(null); // Xóa bài thi đang làm
-          toast.success("Nộp bài thành công!");
+          toast.success("Submit exam successfully!");
           return res.data.data;
         } else {
           throw new Error(res.data.message || "Failed to submit attempt");
@@ -203,28 +203,144 @@ export const useExamAttempt = () => {
   }, []);
 
   /**
-   * Lấy kết quả chi tiết của một lần thi (subscribe).
+   * Subscribe to grading result via SSE (Server-Sent Events) using fetch with streaming.
+   * @param attemptId - The attempt ID to subscribe to
+   * @param onStatusUpdate - Callback for status updates (e.g., "Waiting for grading...")
+   * @returns Promise that resolves with the result when grading is complete
    */
-  const subscribeAttemptResult = useCallback(async (attemptId: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await ExamAttemptService.subscribe(attemptId);
-      // Response structure: { data: { attemptId, examId, score, ... } }
-      if (res.data) {
-        toast.success(" Result details are ready!");
-        setAttemptResultDetail(res.data as unknown as AttemptResultDetail);
-        return res.data as unknown as AttemptResultDetail;
-      } else {
-        throw new Error("Failed to load attempt result");
+  const subscribeAttemptResult = useCallback(
+    async (
+      attemptId: string,
+      onStatusUpdate?: (status: string) => void
+    ): Promise<AttemptResultDetail | null> => {
+      setLoading(true);
+      setError(null);
+
+      const API_URL = import.meta.env.VITE_API_URL;
+      const token = localStorage.getItem("token");
+      const sseUrl = `${API_URL}/exam-attempts/${attemptId}/subscribe`;
+
+      try {
+        const response = await fetch(sseUrl, {
+          method: "GET",
+          headers: {
+            "Accept": "text/event-stream",
+            "Authorization": `Bearer ${token}`,
+          },
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error("Failed to get response reader");
+        }
+
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) {
+            console.log("[SSE] Stream closed by server");
+            break;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+
+          // Parse SSE format: "event:xxx\ndata:yyy\n\n"
+          const lines = buffer.split("\n");
+          buffer = ""; // Reset buffer
+
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+
+            if (line === "") continue;
+
+            // Handle event line
+            if (line.startsWith("event:")) {
+              const eventType = line.substring(6).trim();
+              console.log("[SSE] Event type:", eventType);
+              continue;
+            }
+
+            // Handle data line
+            if (line.startsWith("data:")) {
+              const data = line.substring(5).trim();
+              console.log("[SSE] Received data:", data);
+
+              // Check if it's a status update (waiting message)
+              if (data.includes("Waiting") || data.includes("grading")) {
+                onStatusUpdate?.(data);
+                continue;
+              }
+
+              // Try to parse as JSON (final result)
+              try {
+                const result = JSON.parse(data);
+
+                // Check if result contains attemptId (indicates final result)
+                if (result && (result.attemptId || result.data?.attemptId)) {
+                  const finalResult = result.data || result;
+                  console.log("[SSE] Grading completed:", finalResult);
+
+                  reader.cancel();
+                  setLoading(false);
+                  setAttemptResultDetail(finalResult as AttemptResultDetail);
+                  toast.success("Result details are ready!");
+                  return finalResult as AttemptResultDetail;
+                }
+              } catch {
+                // Not JSON, treat as status message
+                onStatusUpdate?.(data);
+              }
+            } else {
+              // Keep unparsed line in buffer for next iteration
+              buffer = lines.slice(i).join("\n");
+              break;
+            }
+          }
+        }
+
+        // Stream ended without result - try to fetch directly
+        console.log("[SSE] Stream ended, fetching result directly...");
+        const res = await ExamAttemptService.getResult(attemptId);
+        if (res.data.code === 0 || res.data.code === 1000) {
+          setLoading(false);
+          setAttemptResultDetail(res.data.data);
+          toast.success("Result details are ready!");
+          return res.data.data;
+        }
+
+        setLoading(false);
+        setError("Failed to get grading result");
+        return null;
+      } catch (err) {
+        console.error("[SSE] Error:", err);
+        setLoading(false);
+        setError("Failed to connect to grading service");
+
+        // Fallback: try to fetch result directly
+        try {
+          const res = await ExamAttemptService.getResult(attemptId);
+          if (res.data.code === 0 || res.data.code === 1000) {
+            setAttemptResultDetail(res.data.data);
+            toast.success("Result details are ready!");
+            return res.data.data;
+          }
+        } catch {
+          // Ignore fallback error
+        }
+
+        return null;
       }
-    } catch (err) {
-      handleError(err, "Failed to load attempt result");
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   /**
    * Lưu tiến độ làm bài (thường dùng cho Auto-save hoặc nút "Lưu tạm").
@@ -337,11 +453,7 @@ export const useExamAttemptHistory = () => {
   const [pageInfo, setPageInfo] = useState<PageInfo<HistoryRecord> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sorts, setSorts] = useState<string[]>(["startTime_desc"]);
-
-  if (!sorts) {
-    setSorts(["startTime_desc"]);
-  }
+  const [currentSorts, setCurrentSorts] = useState<string[]>(["startTime:desc"]);
 
   const handleError = (err: unknown, defaultMessage: string) => {
     setLoading(false);
@@ -387,12 +499,19 @@ export const useExamAttemptHistory = () => {
     []
   );
 
+  // Initial load
   useEffect(() => {
-    fetchHistory(0, 10, ["startTime_desc"]); // Keep default sorting for initial load
+    fetchHistory(0, 10, currentSorts);
   }, [fetchHistory]);
 
+  // Handle sort change - call API with new sort
+  const handleSortChange = useCallback((newSorts: string[]) => {
+    setCurrentSorts(newSorts);
+    fetchHistory(0, pageInfo?.pageSize || 10, newSorts);
+  }, [fetchHistory, pageInfo?.pageSize]);
+
   const handlePageChange = (newPage: number, newSize: number) => {
-    fetchHistory(newPage - 1, newSize, ["startTime_desc"]);
+    fetchHistory(newPage - 1, newSize, currentSorts);
   };
 
   return {
@@ -402,7 +521,8 @@ export const useExamAttemptHistory = () => {
     error,
     fetchHistory,
     handlePageChange,
-    setSorts,
+    handleSortChange,
+    currentSorts,
   };
 };
 

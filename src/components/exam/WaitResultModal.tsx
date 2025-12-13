@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MdHourglassEmpty, MdCheckCircle, MdError, MdClose } from 'react-icons/md';
+import { MdHourglassEmpty, MdCheckCircle, MdClose } from 'react-icons/md';
 import { useExamAttempt } from '~/hooks/useExamAttempt';
-
+import { IoIosTime } from "react-icons/io";
 interface WaitResultModalProps {
     isOpen: boolean;
     attemptId: string;
@@ -18,12 +18,14 @@ const WaitResultModal: React.FC<WaitResultModalProps> = ({ isOpen, attemptId, on
     const { subscribeAttemptResult } = useExamAttempt();
     const [state, setState] = useState<ModalState>('asking');
     const [elapsedTime, setElapsedTime] = useState(0);
+    const [gradingStatus, setGradingStatus] = useState<string>('Connecting to grading service...');
 
     // Reset state when modal opens
     useEffect(() => {
         if (isOpen) {
             setState('asking');
             setElapsedTime(0);
+            setGradingStatus('Connecting to grading service...');
         }
     }, [isOpen]);
 
@@ -44,8 +46,11 @@ const WaitResultModal: React.FC<WaitResultModalProps> = ({ isOpen, attemptId, on
         }, 1000);
 
         try {
-            // Call subscribe API to wait for grading result
-            const result = await subscribeAttemptResult(attemptId);
+            // Call subscribe API with status update callback
+            const result = await subscribeAttemptResult(attemptId, (status) => {
+                // Update grading status from SSE
+                setGradingStatus(status);
+            });
             clearInterval(intervalId);
 
             if (result) {
@@ -126,7 +131,7 @@ const WaitResultModal: React.FC<WaitResultModalProps> = ({ isOpen, attemptId, on
                             Waiting for result...
                         </h2>
                         <p className="text-gray-600 mb-4">
-                            Please wait while the system grades your exam
+                            {gradingStatus}
                         </p>
                         <div className="text-3xl font-bold text-teal-600 mb-4">
                             {formatTime(elapsedTime)}
@@ -162,10 +167,10 @@ const WaitResultModal: React.FC<WaitResultModalProps> = ({ isOpen, attemptId, on
                 {state === 'timeout' && (
                     <div className="text-center">
                         <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-orange-100 flex items-center justify-center">
-                            <MdError className="text-4xl text-orange-600" />
+                            <IoIosTime className="text-4xl text-orange-600" />
                         </div>
                         <h2 className="text-2xl font-bold text-gray-800 mb-3">
-                            Error!
+                            Teacher will grade your exam
                         </h2>
                         <p className="text-gray-600 mb-6">
                             The wait time has exceeded. The result will be updated later, you can check it in your "History" section.
