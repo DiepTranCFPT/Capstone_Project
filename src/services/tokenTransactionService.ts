@@ -50,6 +50,12 @@ const TokenTransactionService = {
     return TokenTransactionService.getWithdrawRequests(params);
   },
 
+  // GET /api/admin/withdraw-requests/all
+  // Lấy tất cả yêu cầu rút tiền (Admin only, không phân trang)
+  getAllWithdrawRequests(): Promise<AxiosResponse<ApiResponse<WithdrawRequest[]>>> {
+    return axiosInstance.get(`/api/admin/withdraw-requests/all`);
+  },
+
   // GET /api/payment-method
   // Lấy danh sách phương thức thanh toán
   getPaymentMethods(): Promise<AxiosResponse<ApiResponse<PaymentMethod[]>>> {
