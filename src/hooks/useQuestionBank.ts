@@ -706,6 +706,34 @@ export const useQuestionBank = (teacherId?: string) => {
     }
   }, []);
 
+  // 🔹 Xóa nhiều câu hỏi cùng lúc (batch delete)
+  const batchDeleteQuestions = useCallback(async (questionIds: string[]): Promise<boolean> => {
+    if (questionIds.length === 0) {
+      message.warning("Vui lòng chọn ít nhất một câu hỏi để xóa");
+      return false;
+    }
+
+    try {
+      setLoading(true);
+      const res = await QuestionService.batchDelete(questionIds);
+      if (res.data.code === 0 || res.data.code === 1000) {
+        message.success(`Đã xóa thành công ${questionIds.length} câu hỏi`);
+        // Remove deleted questions from state
+        setQuestions((prev) => prev.filter((q) => !questionIds.includes(q.id)));
+        return true;
+      } else {
+        message.error(res.data.message || "Xóa câu hỏi thất bại!");
+        return false;
+      }
+    } catch (error) {
+      console.error("Failed to batch delete questions:", error);
+      message.error("Không thể xóa các câu hỏi đã chọn!");
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (teacherId) {
       fetchByUserId(teacherId);
@@ -722,6 +750,7 @@ export const useQuestionBank = (teacherId?: string) => {
     createQuestion,
     updateQuestion,
     deleteQuestion,
+    batchDeleteQuestions,
     fetchByUserId,
     // fetchByTopicId, // Method not available in service yet
     fetchBySubjectId,
