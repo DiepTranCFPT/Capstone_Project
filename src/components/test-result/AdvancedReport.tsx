@@ -21,6 +21,29 @@ const formatAiResponse = (text: string): string => {
     return text.replace(/(\d+)\.\s*\*\*/g, '\n\n$1. **');
 };
 
+// Helper function to recursively render LaTeX from React children
+const renderWithLatex = (children: React.ReactNode): React.ReactNode => {
+    if (typeof children === 'string') {
+        return <LatexRenderer content={children} />;
+    }
+    if (Array.isArray(children)) {
+        return children.map((child, index) => (
+            <React.Fragment key={index}>{renderWithLatex(child)}</React.Fragment>
+        ));
+    }
+    if (React.isValidElement(children)) {
+        // If it's a React element, clone it with processed children
+        const element = children as React.ReactElement<{ children?: React.ReactNode }>;
+        if (element.props.children) {
+            return React.cloneElement(element, {
+                ...element.props,
+                children: renderWithLatex(element.props.children)
+            });
+        }
+    }
+    return children;
+};
+
 interface QuestionDetail {
     question: string;
     userAnswer: string;
@@ -392,13 +415,26 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
                                                         <div className="prose prose-blue prose-sm max-w-none text-gray-600 leading-relaxed">
                                                             <ReactMarkdown
                                                                 components={{
-                                                                    p: ({ ...props }) => <p className="mb-3 last:mb-0" {...props} />,
+                                                                    p: ({ children }) => (
+                                                                        <p className="mb-3 last:mb-0">{renderWithLatex(children)}</p>
+                                                                    ),
                                                                     ul: ({ ...props }) => <ul className="list-disc list-outside ml-5 mb-3 space-y-1" {...props} />,
                                                                     ol: ({ ...props }) => <ol className="list-decimal list-outside ml-5 mb-3 space-y-1" {...props} />,
-                                                                    li: ({ ...props }) => <li className="pl-1" {...props} />,
-                                                                    strong: ({ ...props }) => <strong className="font-bold text-gray-800" {...props} />,
+                                                                    li: ({ children }) => (
+                                                                        <li className="pl-1">{renderWithLatex(children)}</li>
+                                                                    ),
+                                                                    strong: ({ children }) => (
+                                                                        <strong className="font-bold text-gray-800">{renderWithLatex(children)}</strong>
+                                                                    ),
+                                                                    em: ({ children }) => (
+                                                                        <em className="italic">{renderWithLatex(children)}</em>
+                                                                    ),
                                                                     code: ({ ...props }) => <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-pink-600 border border-gray-200" {...props} />,
-                                                                    blockquote: ({ ...props }) => <blockquote className="border-l-4 border-blue-200 pl-4 italic text-gray-500 my-4" {...props} />,
+                                                                    blockquote: ({ children }) => (
+                                                                        <blockquote className="border-l-4 border-blue-200 pl-4 italic text-gray-500 my-4">
+                                                                            {renderWithLatex(children)}
+                                                                        </blockquote>
+                                                                    ),
                                                                 }}
                                                             >
                                                                 {formatAiResponse(aiResponse)}
