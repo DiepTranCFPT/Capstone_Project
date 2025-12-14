@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import {
   UserOutlined,
   // SettingOutlined,
-  TrophyOutlined,
+  // TrophyOutlined,
   DashboardOutlined,
   ReadOutlined,
 
@@ -30,8 +30,8 @@ const adminMenu = [
   // { key: "/admin/mock-tests", label: "Mock Tests", icon: <FormOutlined /> },
   { key: "/admin/teachers", label: "Teacher", icon: <IdcardOutlined /> },
   // { key: "/admin/questions", label: "Questions", icon: <QuestionCircleOutlined /> },
-  { key: "/admin/certificates", label: "Certificates & Ranking", icon: <TrophyOutlined /> },
-  { key: "/admin/subscriptions", label: "Subscriptions & Payments", icon: <CreditCardOutlined /> },
+  // { key: "/admin/certificates", label: "Certificates & Ranking", icon: <TrophyOutlined /> },
+  { key: "/admin/subscriptions", label: "Withdraw Requests", icon: <CreditCardOutlined /> },
   // { key: "/settings", label: "Settings", icon: <SettingOutlined /> },
 ];
 

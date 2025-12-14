@@ -690,12 +690,46 @@ const DoTestPage: React.FC = () => {
                             <p className="text-gray-600 mb-8 max-w-md mx-auto">
                                 {error}
                             </p>
-                            <button
-                                onClick={() => window.location.reload()}
-                                className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
-                            >
-                                Try again
-                            </button>
+                            <div className="flex gap-4 justify-center">
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+                                >
+                                    Try again
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        // Clear all exam-related localStorage
+                                        localStorage.removeItem('activeExamAttempt');
+                                        localStorage.removeItem('examProgress');
+                                        localStorage.removeItem('answeredQuestions');
+                                        localStorage.removeItem('examAnswers');
+
+                                        // Clear exam-specific items
+                                        if (examId) {
+                                            localStorage.removeItem(`exam_attempt_${examId}`);
+                                            localStorage.removeItem(`exam_started_${activeExamData?.examAttemptId}`);
+                                            localStorage.removeItem(`exam_started_at_${activeExamData?.examAttemptId}`);
+                                            localStorage.removeItem(`exam_metadata_${examId}`);
+                                        }
+
+                                        // Clear any attempt-specific keys
+                                        if (activeExamData?.examAttemptId) {
+                                            localStorage.removeItem(`exam_started_${activeExamData.examAttemptId}`);
+                                            localStorage.removeItem(`exam_started_at_${activeExamData.examAttemptId}`);
+                                        }
+
+                                        // Clear exam progress using the hook
+                                        clearExamProgress();
+
+                                        // Navigate back to exam test page
+                                        navigate('/exam-test');
+                                    }}
+                                    className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+                                >
+                                    Back
+                                </button>
+                            </div>
                         </div>
                     ) : activeExamData ? (
                         <Tabs

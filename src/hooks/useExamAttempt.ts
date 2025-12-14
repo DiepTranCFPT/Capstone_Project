@@ -148,10 +148,22 @@ export const useExamAttempt = () => {
           setActiveAttempt(null); // Xóa bài thi đang làm
           toast.success("Submit exam successfully!");
           return res.data.data;
+        } else if (res.data.code === 1075) {
+          // Invalid exam session - account is taking test on different device
+          toast.error(res.data.message || "Invalid exam session, your account is currently taking this test on a different device.");
+          throw new Error(res.data.message || "Invalid exam session, your account is currently taking this test on a different device.");
         } else {
           throw new Error(res.data.message || "Failed to submit attempt");
         }
       } catch (err) {
+        const axiosError = err as { response?: { data?: { code?: number; message?: string } } };
+        // Check if the error response contains code 1075
+        if (axiosError.response?.data?.code === 1075) {
+          const message = axiosError.response.data.message || "Invalid exam session, your account is currently taking this test on a different device.";
+          toast.error(message);
+          setError(message);
+          throw new Error(message);
+        }
         const errorMessage = handleError(err, "Failed to submit attempt");
         throw new Error(errorMessage);
       } finally {
@@ -357,15 +369,23 @@ export const useExamAttempt = () => {
         if (res.data.code === 0 || res.data.code === 1000) {
           // Success - có thể return true để component biết đã lưu xong
           return true;
+        } else if (res.data.code === 1075) {
+          // Invalid exam session - account is taking test on different device
+          toast.error(res.data.message || "Invalid exam session, your account is currently taking this test on a different device.");
+          return false;
         } else {
           console.error("Save progress failed:", res.data.message, res.data);
           return false;
         }
       } catch (err) {
-        const axiosError = err as { response?: { data?: unknown; status?: number } };
+        const axiosError = err as { response?: { data?: { code?: number; message?: string }; status?: number } };
         console.error("Save progress error:", err);
         console.error("API Error Details:", axiosError.response?.data);
         console.error("API Status:", axiosError.response?.status);
+        // Check if the error response contains code 1075
+        if (axiosError.response?.data?.code === 1075) {
+          toast.error(axiosError.response.data.message || "Invalid exam session, your account is currently taking this test on a different device.");
+        }
         return false;
       } finally {
         setLoading(false);
