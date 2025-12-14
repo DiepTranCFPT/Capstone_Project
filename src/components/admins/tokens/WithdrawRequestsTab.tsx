@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Table, Button, Tag, Input, Select, Alert, Popconfirm, message } from "antd";
-import { SearchOutlined, FilterOutlined } from "@ant-design/icons";
+import { SearchOutlined, FilterOutlined, HistoryOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import type { WithdrawRequest } from "~/types/tokenTransaction";
 import { useAdminWithdrawRequests } from "~/hooks/useAdminWithdrawRequests";
@@ -12,11 +12,20 @@ const WithdrawRequestsTab: React.FC = () => {
     loading: withdrawLoading,
     error: withdrawError,
     fetchWithdrawRequests,
+    allRequests,
+    allLoading,
+    allError,
+    fetchAllWithdrawRequests,
   } = useAdminWithdrawRequests();
   const [searchWithdrawText, setSearchWithdrawText] = useState("");
   const [statusWithdrawFilter, setStatusWithdrawFilter] = useState<string>("all");
   const [filteredWithdrawRequests, setFilteredWithdrawRequests] = useState<WithdrawRequest[]>([]);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  
+  // History section states
+  const [historySearchText, setHistorySearchText] = useState("");
+  const [historyStatusFilter, setHistoryStatusFilter] = useState<string>("all");
+  const [filteredHistoryRequests, setFilteredHistoryRequests] = useState<WithdrawRequest[]>([]);
 
   // Fetch withdraw requests on mount
   useEffect(() => {
@@ -28,7 +37,8 @@ const WithdrawRequestsTab: React.FC = () => {
       params.status = statusWithdrawFilter;
     }
     fetchWithdrawRequests(params);
-  }, [fetchWithdrawRequests, statusWithdrawFilter]);
+    fetchAllWithdrawRequests();
+  }, [fetchWithdrawRequests, fetchAllWithdrawRequests, statusWithdrawFilter]);
 
   // Filter withdraw requests
   useEffect(() => {
@@ -52,6 +62,47 @@ const WithdrawRequestsTab: React.FC = () => {
     setFilteredWithdrawRequests(filtered);
   }, [withdrawRequests, searchWithdrawText, statusWithdrawFilter]);
 
+  // Filter withdraw history (only completed, approved, rejected, success)
+  useEffect(() => {
+    let filtered = allRequests.filter(request => {
+      const status = request.status?.toUpperCase();
+      return status === "COMPLETED" || status === "APPROVED" || status === "REJECTED" || status === "SUCCESS";
+    });
+
+    // Apply status filter
+    if (historyStatusFilter !== "all") {
+      filtered = filtered.filter(request => {
+        const requestStatus = request.status?.toUpperCase();
+        // Map SUCCESS to COMPLETED for filtering
+        if (historyStatusFilter === "COMPLETED") {
+          return requestStatus === "COMPLETED" || requestStatus === "SUCCESS";
+        }
+        return requestStatus === historyStatusFilter;
+      });
+    }
+
+    // Apply search filter
+    if (historySearchText) {
+      const keyword = historySearchText.toLowerCase();
+      filtered = filtered.filter(request =>
+        request.transactionId?.toLowerCase().includes(keyword) ||
+        request.teacherName?.toLowerCase().includes(keyword) ||
+        request.bankingNumber?.toLowerCase().includes(keyword) ||
+        request.nameBanking?.toLowerCase().includes(keyword) ||
+        request.amount?.toString().includes(historySearchText)
+      );
+    }
+
+    // Sort by created date (newest first)
+    filtered.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    setFilteredHistoryRequests(filtered);
+  }, [allRequests, historySearchText, historyStatusFilter]);
+
   const handleWithdrawSearch = (value: string) => {
     setSearchWithdrawText(value);
   };
@@ -69,7 +120,7 @@ const WithdrawRequestsTab: React.FC = () => {
 
   const handleMarkAsCompleted = async (record: WithdrawRequest) => {
     if (!record.transactionId) {
-      message.error("Không tìm thấy transactionId của yêu cầu rút tiền.");
+      message.error("Transaction ID not found.");
       return;
     }
     try {
@@ -77,33 +128,25 @@ const WithdrawRequestsTab: React.FC = () => {
       await TokenTransactionService.confirmWithdrawal({
         transactionId: record.transactionId,
         approved: true,
-        adminNote: "Đã chuyển tiền cho giáo viên",
+        adminNote: "Payment transferred to teacher",
       });
-      message.success("Đã xác nhận đã chuyển tiền cho giáo viên.");
-      // Reload danh sách theo filter hiện tại
+      message.success("Payment confirmed successfully.");
+      // Reload list with current filter
       await fetchWithdrawRequests({
         pageNo: 0,
         pageSize: 100,
         ...(statusWithdrawFilter !== "all" ? { status: statusWithdrawFilter } : {}),
       });
+      await fetchAllWithdrawRequests();
     } catch (error) {
-      // Log chi tiết lỗi để dễ debug, đồng thời tránh lỗi ESLint "no-unused-vars"
-      // Nếu không cần dùng `error`, có thể bỏ hẳn tham số: `catch { ... }`
-      console.error("Xác nhận rút tiền thất bại:", error);
-      message.error("Xác nhận rút tiền thất bại. Vui lòng thử lại.");
+      console.error("Failed to confirm withdrawal:", error);
+      message.error("Failed to confirm withdrawal. Please try again.");
     } finally {
       setConfirmingId(null);
     }
   };
 
   const withdrawRequestColumns: ColumnsType<WithdrawRequest> = [
-    {
-      title: "ID",
-      dataIndex: "transactionId",
-      key: "transactionId",
-      width: 220,
-      render: (text) => <span className="text-xs font-mono">{text}</span>,
-    },
     {
       title: "Teacher",
       dataIndex: "teacherName",
@@ -171,10 +214,10 @@ const WithdrawRequestsTab: React.FC = () => {
       fixed: "right",
       render: (_, record) => (
         <Popconfirm
-          title="Xác nhận đã chuyển tiền?"
-          description={`Bạn chắc chắn đã chuyển ${formatPrice(record.amount)} cho ${record.teacherName || "giáo viên này"}?`}
-          okText="Đã chuyển"
-          cancelText="Hủy"
+          title="Confirm payment transfer?"
+          description={`Are you sure you have transferred ${formatPrice(record.amount)} to ${record.teacherName || "this teacher"}?`}
+          okText="Confirm"
+          cancelText="Cancel"
           onConfirm={() => handleMarkAsCompleted(record)}
           disabled={record.status?.toUpperCase() !== "PENDING"}
         >
@@ -184,7 +227,7 @@ const WithdrawRequestsTab: React.FC = () => {
             disabled={record.status?.toUpperCase() !== "PENDING"}
             loading={confirmingId === record.transactionId}
           >
-            Đã chuyển tiền
+            Mark as Transferred
           </Button>
         </Popconfirm>
       ),
@@ -224,7 +267,7 @@ const WithdrawRequestsTab: React.FC = () => {
       {withdrawError && (
         <Alert
           type="error"
-          message="Không thể tải danh sách yêu cầu rút tiền"
+          message="Failed to load withdraw requests"
           description={withdrawError}
           className="mb-4"
           showIcon
@@ -283,6 +326,106 @@ const WithdrawRequestsTab: React.FC = () => {
         className="bg-white rounded-lg border border-gray-200 overflow-x-auto"
         scroll={{ x: 1000 }}
       />
+
+      {/* Withdraw History Section */}
+      <div className="mt-8">
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-4">
+            <HistoryOutlined className="text-blue-500 text-xl" />
+            <h3 className="text-lg font-semibold text-gray-800">Withdraw History</h3>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <Input.Search
+              placeholder="Search withdraw history..."
+              value={historySearchText}
+              onChange={(e) => setHistorySearchText(e.target.value)}
+              allowClear
+              className="max-w-md"
+              prefix={<SearchOutlined className="text-gray-400" />}
+            />
+            <Button
+              type="default"
+              onClick={fetchAllWithdrawRequests}
+              className="whitespace-nowrap"
+              loading={allLoading}
+            >
+              Refresh History
+            </Button>
+          </div>
+        </div>
+
+        {allError && (
+          <Alert
+            type="error"
+            message="Failed to load withdraw history"
+            description={allError}
+            className="mb-4"
+            showIcon
+          />
+        )}
+
+        {/* History Filter */}
+        <div className="flex flex-wrap gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <FilterOutlined className="text-gray-400" />
+            <span className="text-sm text-gray-600">Filter by:</span>
+          </div>
+          <Select
+            placeholder="Status"
+            value={historyStatusFilter}
+            onChange={setHistoryStatusFilter}
+            className="min-w-32"
+            options={[
+              { label: "All", value: "all" },
+              { label: "Completed", value: "COMPLETED" },
+              { label: "Success", value: "SUCCESS" },
+              { label: "Approved", value: "APPROVED" },
+              { label: "Rejected", value: "REJECTED" },
+            ]}
+          />
+          {(historyStatusFilter !== "all" || historySearchText) && (
+            <Button
+              type="text"
+              size="small"
+              onClick={() => {
+                setHistorySearchText("");
+                setHistoryStatusFilter("all");
+              }}
+              className="text-red-600 hover:bg-red-50 hover:text-red-700"
+            >
+              Clear filters
+            </Button>
+          )}
+        </div>
+
+        {/* History Table */}
+        <Table
+          columns={[
+            ...withdrawRequestColumns.filter(col => col.key !== "action"),
+            {
+              title: "Completed At",
+              dataIndex: "updatedAt",
+              key: "updatedAt",
+              width: 150,
+              render: (date) => date ? new Date(date).toLocaleDateString('en-US') : "N/A",
+            },
+          ]}
+          dataSource={filteredHistoryRequests}
+          rowKey="transactionId"
+          loading={allLoading}
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} withdraw history`,
+          }}
+          rowClassName="hover:bg-gray-50 transition-colors duration-200"
+          className="bg-white rounded-lg border border-gray-200 overflow-x-auto"
+          scroll={{ x: 1200 }}
+        />
+      </div>
     </>
   );
 };

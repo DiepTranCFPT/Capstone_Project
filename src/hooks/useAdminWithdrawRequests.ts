@@ -40,6 +40,10 @@ export const useAdminWithdrawRequests = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requests, setRequests] = useState<WithdrawRequest[]>([]);
+  
+  const [allLoading, setAllLoading] = useState(false);
+  const [allError, setAllError] = useState<string | null>(null);
+  const [allRequests, setAllRequests] = useState<WithdrawRequest[]>([]);
 
   const fetchWithdrawRequests = useCallback(async (filters?: AdminWithdrawFilters) => {
     try {
@@ -81,11 +85,55 @@ export const useAdminWithdrawRequests = () => {
     }
   }, []);
 
+  const fetchAllWithdrawRequests = useCallback(async () => {
+    try {
+      setAllLoading(true);
+      setAllError(null);
+
+      const response = await TokenTransactionService.getAllWithdrawRequests();
+      const responseData = response.data as ApiResponse<WithdrawRequest[]> | WithdrawRequest[];
+
+      const rawData =
+        Array.isArray(responseData) || !responseData
+          ? responseData
+          : (responseData as ApiResponse<WithdrawRequest[]>).data ?? responseData;
+
+      if (Array.isArray(rawData)) {
+        setAllRequests(rawData);
+        return rawData;
+      }
+
+      if (
+        rawData &&
+        typeof rawData === "object" &&
+        "content" in rawData &&
+        Array.isArray((rawData as { content?: unknown }).content)
+      ) {
+        const content = (rawData as { content: WithdrawRequest[] }).content;
+        setAllRequests(content);
+        return content;
+      }
+
+      setAllRequests([]);
+      return [];
+    } catch (err) {
+      setAllError(getErrorMessage(err, "Không thể tải tất cả yêu cầu rút tiền."));
+      setAllRequests([]);
+      return [];
+    } finally {
+      setAllLoading(false);
+    }
+  }, []);
+
   return {
     loading,
     error,
     requests,
     fetchWithdrawRequests,
+    allLoading,
+    allError,
+    allRequests,
+    fetchAllWithdrawRequests,
   };
 };
 
