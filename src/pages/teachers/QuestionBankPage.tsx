@@ -29,6 +29,7 @@ import { toast } from "~/components/common/Toast";
 import { useQuestionBank } from "~/hooks/useQuestionBank";
 import { useAuth } from "~/hooks/useAuth";
 import { useSubjects } from "~/hooks/useSubjects";
+import LatexRenderer from "~/components/common/LatexRenderer";
 
 const { Option } = Select;
 
@@ -578,7 +579,7 @@ const QuestionBankPage: React.FC = () => {
             <div>
               <h3 className="text-base font-semibold mb-2 text-gray-700">Question Text</h3>
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <p className="text-gray-800 whitespace-pre-wrap">{viewingQuestion.text}</p>
+                <LatexRenderer content={viewingQuestion.text} />
               </div>
             </div>
 
@@ -629,7 +630,9 @@ const QuestionBankPage: React.FC = () => {
                     >
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-gray-600">Choice {index + 1}:</span>
-                        <span className="text-gray-800 flex-1">{option.text}</span>
+                        <div className="text-gray-800 flex-1">
+                          <LatexRenderer content={option.text} />
+                        </div>
                         {option.isCorrect && (
                           <Tag color="success" className="ml-auto">
                             Correct Answer
@@ -647,7 +650,7 @@ const QuestionBankPage: React.FC = () => {
               <div>
                 <h3 className="text-base font-semibold mb-2 text-gray-700">Expected Answer</h3>
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <p className="text-gray-800 whitespace-pre-wrap">{viewingQuestion.expectedAnswer}</p>
+                  <LatexRenderer content={viewingQuestion.expectedAnswer} />
                 </div>
               </div>
             )}

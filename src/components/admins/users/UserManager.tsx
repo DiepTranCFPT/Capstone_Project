@@ -109,15 +109,15 @@ const UserManagement: React.FC = () => {
         const active = !!record.active;
         return (
           <Tag
-            color={active ? "success" : "error"}
+            color={active ? "success" : "success"}
             className="px-3 py-1 rounded-full font-medium"
           >
             <div className="flex items-center">
               <div
-                className={`w-2 h-2 rounded-full mr-2 ${active ? "bg-green-400" : "bg-red-400"
+                className={`w-2 h-2 rounded-full mr-2 ${active ? "bg-green-400" : "bg-green-400"
                   }`}
               />
-              {active ? "Active" : "Inactive"}
+              {active ? "Active" : "Active"}
             </div>
           </Tag>
         );
