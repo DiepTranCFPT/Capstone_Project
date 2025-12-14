@@ -9,6 +9,7 @@ interface HistoryRecord {
     examId: string;
     doneBy: string;
     score: number;
+    passingScore?: number;
     startTime: string;
     endTime: string | null;
     rating: number | null;
@@ -63,19 +64,17 @@ const TestReportsPage: React.FC = () => {
         });
     };
 
-    const getScoreStyle = (score: number) => {
-        if (score >= 80) return {
-            bg: '#10b981',
-            text: '#ffffff',
-            tagColor: 'success'
-        };
-        if (score >= 60) return {
-            bg: '#f8ab25',
-            text: '#ffffff',
-            tagColor: 'warning'
-        };
+    const getScoreStyle = (score: number, passingScore: number = 50) => {
+        // Pass: score >= passingScore (green), Fail: score < passingScore (red)
+        if (score >= passingScore) {
+            return {
+                bg: '#10b981', // Green for pass
+                text: '#ffffff',
+                tagColor: 'success'
+            };
+        }
         return {
-            bg: '#fa5d5d',
+            bg: '#fa5d5d', // Red for fail
             text: '#ffffff',
             tagColor: 'error'
         };
@@ -189,7 +188,7 @@ const TestReportsPage: React.FC = () => {
                 {!historyLoading && sortedHistory.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         {sortedHistory.map((record: HistoryRecord) => {
-                            const scoreStyle = getScoreStyle(record.score);
+                            const scoreStyle = getScoreStyle(record.score, record.passingScore ?? 50);
                             return (
                                 <Card
                                     key={record.attemptId}

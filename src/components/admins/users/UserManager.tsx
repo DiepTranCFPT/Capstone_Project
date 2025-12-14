@@ -12,7 +12,7 @@ import {
   Popconfirm,
   Tabs,
 } from "antd";
-import { SearchOutlined, PlusOutlined } from "@ant-design/icons";
+import { SearchOutlined } from "@ant-design/icons";
 import { RefreshCcw, Trash2, Shield } from "lucide-react";
 import { useAdminUsers } from "~/hooks/useAdminUsers";
 import UserService from "~/services/userService";
@@ -195,13 +195,13 @@ const UserManagement: React.FC = () => {
                   Refresh
                 </Button>
               </Tooltip>
-              <Button
+              {/* <Button
                 type="primary"
                 icon={<PlusOutlined />}
                 className="bg-blue-600 hover:bg-blue-700 border-0 shadow-sm px-4 h-9"
               >
                 Add User
-              </Button>
+              </Button> */}
             </Space>
           </div>
         </div>
