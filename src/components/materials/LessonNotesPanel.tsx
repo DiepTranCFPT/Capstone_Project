@@ -48,13 +48,13 @@ const LessonNotesPanel: React.FC<LessonNotesPanelProps> = ({
 
   const handleSaveNote = async () => {
     if (!lesson?.id || !userId) {
-      message.error("Không xác định được bài học hoặc người dùng.");
+      message.error("Unable to identify lesson or user.");
       return;
     }
 
     const trimmed = noteContent.trim();
     if (!trimmed) {
-      message.warning("Nội dung ghi chú không được để trống.");
+      message.warning("Note content cannot be empty.");
       return;
     }
 
@@ -63,7 +63,7 @@ const LessonNotesPanel: React.FC<LessonNotesPanelProps> = ({
     if (editingNoteId) {
       const updated = await updateNote(editingNoteId, { description: trimmed });
       if (updated) {
-        message.success("Đã cập nhật ghi chú.");
+        message.success("Note updated.");
         handleCancelEdit();
         await fetchNotesByLessonAndUser(lesson.id, userId);
       }
@@ -75,7 +75,7 @@ const LessonNotesPanel: React.FC<LessonNotesPanelProps> = ({
       });
 
       if (created) {
-        message.success("Đã lưu ghi chú.");
+        message.success("Note saved.");
         setNoteContent("");
         await fetchNotesByLessonAndUser(lesson.id, userId);
       }
@@ -98,13 +98,13 @@ const LessonNotesPanel: React.FC<LessonNotesPanelProps> = ({
     if (!editingNoteId) return;
     const trimmed = editingValue.trim();
     if (!trimmed) {
-      message.warning("Nội dung ghi chú không được để trống.");
+      message.warning("Note content cannot be empty.");
       return;
     }
     setNoteSubmitting(true);
     const result = await updateNote(editingNoteId, { description: trimmed });
     if (result) {
-      message.success("Đã cập nhật ghi chú.");
+      message.success("Note updated.");
       handleCancelEdit();
     }
     setNoteSubmitting(false);
@@ -119,7 +119,7 @@ const LessonNotesPanel: React.FC<LessonNotesPanelProps> = ({
     setDeleteLoading(true);
     const success = await deleteNote(noteToDelete.id);
     if (success) {
-      message.success("Đã xoá ghi chú.");
+      message.success("Note deleted.");
     }
     setDeleteLoading(false);
     setNoteToDelete(null);
@@ -133,12 +133,12 @@ const LessonNotesPanel: React.FC<LessonNotesPanelProps> = ({
     <div className="p-6 space-y-4">
       <div>
         <label className="block text-sm font-semibold text-gray-800 mb-2">
-          Ghi chú cho bài học này
+          Notes for this lesson
         </label>
         <textarea
           value={noteContent}
           onChange={(e) => setNoteContent(e.target.value)}
-          placeholder="Tóm tắt ý chính, điều bạn tâm đắc hoặc câu hỏi muốn ghi nhớ..."
+          placeholder="Summarize main ideas, things you like, or questions you want to remember..."
           className="w-full min-h-[140px] p-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y bg-gray-50"
         />
         {notesError && (
@@ -149,8 +149,8 @@ const LessonNotesPanel: React.FC<LessonNotesPanelProps> = ({
         <div className="mt-3 flex items-center justify-between">
           <p className="text-xs text-gray-500">
             {noteContent.trim().length > 0
-              ? `${noteContent.trim().length} ký tự`
-              : "Viết vài dòng để lần sau xem lại nhanh hơn."}
+              ? `${noteContent.trim().length} characters`
+              : "Write a few lines to review faster next time."}
           </p>
           <button
             type="button"
@@ -158,20 +158,20 @@ const LessonNotesPanel: React.FC<LessonNotesPanelProps> = ({
             disabled={notesLoading || noteSubmitting}
             className="px-4 py-2 bg-blue-600 text-white text-xs md:text-sm rounded-full shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-60"
           >
-            {noteSubmitting ? "Đang lưu..." : "Lưu ghi chú"}
+            {noteSubmitting ? "Saving..." : "Save note"}
           </button>
         </div>
       </div>
 
       <div className="pt-4 border-t border-gray-200">
         <h4 className="text-sm font-semibold text-gray-800 mb-2">
-          Ghi chú đã lưu
+          Saved notes
         </h4>
         {notesLoading && notes.length === 0 ? (
-          <p className="text-sm text-gray-500">Đang tải ghi chú...</p>
+          <p className="text-sm text-gray-500">Loading notes...</p>
         ) : notes.length === 0 ? (
           <p className="text-sm text-gray-500">
-            Chưa có ghi chú nào. Hãy bắt đầu bằng việc ghi lại vài ý quan trọng ở trên.
+            No notes yet. Start by writing down some important ideas above.
           </p>
         ) : (
           <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
@@ -247,15 +247,15 @@ const LessonNotesPanel: React.FC<LessonNotesPanelProps> = ({
         open={!!noteToDelete}
         onCancel={cancelDeleteNote}
         onOk={confirmDeleteNote}
-        okText="Xoá"
-        cancelText="Huỷ"
+        okText="Delete"
+        cancelText="Cancel"
         okButtonProps={{ danger: true, loading: deleteLoading }}
         cancelButtonProps={{ disabled: deleteLoading }}
         destroyOnClose
         centered
-        title="Xoá ghi chú"
+        title="Delete note"
       >
-        <p>Bạn có chắc chắn muốn xoá ghi chú này không?</p>
+        <p>Are you sure you want to delete this note?</p>
         {noteToDelete && (
           <p className="mt-2 rounded bg-gray-50 px-3 py-2 text-sm text-gray-600">
             {noteToDelete.description}

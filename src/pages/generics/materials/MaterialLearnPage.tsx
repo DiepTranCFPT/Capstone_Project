@@ -378,7 +378,7 @@ const MaterialLearnPage: React.FC = () => {
               />
             ) : (
               <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-                <p className="text-gray-500 text-lg">Chọn một bài học để bắt đầu</p>
+                <p className="text-gray-500 text-lg">Select a lesson to begin</p>
               </div>
             )}
           </div>
@@ -404,35 +404,35 @@ const MaterialLearnPage: React.FC = () => {
         }
         onCancel={() => setRatingModalOpen(false)}
         footer={null}
-        title="Đánh giá tài liệu học"
+        title="Rate Learning Material"
         centered
         destroyOnClose
       >
         {statistics && (
           <p className="text-sm text-gray-600 mb-3">
-            Điểm trung bình hiện tại:{" "}
+            Current average rating:{" "}
             <span className="font-semibold">
               {statistics.averageRating.toFixed(1)} / 5
             </span>{" "}
-            ({statistics.totalRatings} lượt đánh giá)
+            ({statistics.totalRatings} reviews)
           </p>
         )}
 
         {myRating && (
           <div className="rounded-lg bg-green-50 border border-green-200 p-4 text-sm text-gray-700 mb-3">
             <p className="font-semibold mb-1">
-              Bạn đã đánh giá: {myRating.rating}/5
+              You have rated: {myRating.rating}/5
             </p>
             {myRating.comment && <p>{myRating.comment}</p>}
             <p className="text-xs text-gray-600 mt-2">
-              Bạn có thể cập nhật lại đánh giá của mình bên dưới.
+              You can update your rating below.
             </p>
           </div>
         )}
         <div className="space-y-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Trải nghiệm của bạn thế nào?
+              How was your experience?
             </label>
             <div className="flex flex-col items-center gap-2 group">
               <Rate
@@ -455,14 +455,14 @@ const MaterialLearnPage: React.FC = () => {
                 </span>
                 <span>
                   {ratingValue >= 5
-                    ? "Rất hài lòng"
+                    ? "Very satisfied"
                     : ratingValue >= 4
-                      ? "Hài lòng"
+                      ? "Satisfied"
                       : ratingValue === 3
-                        ? "Bình thường"
+                        ? "Neutral"
                         : ratingValue === 2
-                          ? "Chưa hài lòng"
-                          : "Rất tệ"}
+                          ? "Dissatisfied"
+                          : "Very poor"}
                 </span>
               </div>
             </div>
@@ -470,7 +470,7 @@ const MaterialLearnPage: React.FC = () => {
           {(hasSelectedRating || ratingComment || myRating) && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nhận xét (tuỳ chọn)
+                Comments (optional)
               </label>
               <textarea
                 ref={commentRef}
@@ -478,7 +478,7 @@ const MaterialLearnPage: React.FC = () => {
                 value={ratingComment}
                 onChange={(e) => setRatingComment(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Hãy chia sẻ cảm nhận của bạn về tài liệu học này..."
+                placeholder="Please share your thoughts about this learning material..."
               />
             </div>
           )}
@@ -491,7 +491,7 @@ const MaterialLearnPage: React.FC = () => {
             onClick={handleSubmitRating}
             className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-60"
           >
-            {ratingLoading ? "Đang gửi..." : myRating ? "Cập nhật" : "Gửi đánh giá"}
+            {ratingLoading ? "Submitting..." : myRating ? "Update" : "Submit Rating"}
           </button>
         </div>
       </Modal>
