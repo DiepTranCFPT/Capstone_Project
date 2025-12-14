@@ -3,7 +3,7 @@ import type { AxiosResponse } from "axios";
 import type { ApiResponse } from "~/types/api";
 import type { PageInfo } from "~/types/pagination";
 import type { QuestionTopic } from "~/types/questionTopic";
-import type { QuestionBankItem, NewQuestion, QuestionV2PaginationResponse, QuestionImportResponse } from "~/types/question";
+import type { QuestionBankItem, NewQuestion, QuestionV2PaginationResponse, QuestionImportResponse, BatchDeleteQuestionsResponse } from "~/types/question";
 
 const QuestionService = {
   //  Lấy tất cả câu hỏi (có phân trang)
@@ -105,6 +105,14 @@ const QuestionService = {
       responseType: "blob",
     });
   },
-};
 
+  // Xóa nhiều câu hỏi cùng lúc (batch delete)
+  async batchDelete(
+    questionIds: string[]
+  ): Promise<AxiosResponse<BatchDeleteQuestionsResponse>> {
+    return axiosInstance.delete("/questions-v2/batch", {
+      data: questionIds,
+    });
+  },
+};
 export default QuestionService;

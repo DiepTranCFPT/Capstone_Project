@@ -21,6 +21,7 @@ import {
   UploadOutlined,
   DownloadOutlined,
   FileExcelOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import type { QuestionBankItem, NewQuestion, QuestionImportResponse } from "~/types/question";
 import type { ColumnsType } from "antd/es/table";
@@ -48,6 +49,7 @@ const QuestionBankPage: React.FC = () => {
     createQuestion,
     updateQuestion,
     deleteQuestion,
+    batchDeleteQuestions,
     fetchQuestions,
     fetchByUserId,
     getQuestionById,
@@ -90,6 +92,10 @@ const QuestionBankPage: React.FC = () => {
   const [importSkipErrors, setImportSkipErrors] = useState(false);
   const [importResult, setImportResult] = useState<QuestionImportResponse | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+
+  // Batch delete state
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [batchDeleteConfirmVisible, setBatchDeleteConfirmVisible] = useState(false);
 
   //  Filter states
   const [searchText, setSearchText] = useState("");
@@ -203,6 +209,30 @@ const QuestionBankPage: React.FC = () => {
   const cancelDelete = () => {
     setDeleteConfirmVisible(false);
     setQuestionToDelete(null);
+  };
+
+  // Batch delete handlers
+  const handleBatchDelete = () => {
+    if (selectedRowKeys.length === 0) {
+      return;
+    }
+    setBatchDeleteConfirmVisible(true);
+  };
+
+  const confirmBatchDelete = async () => {
+    const success = await batchDeleteQuestions(selectedRowKeys as string[]);
+    if (success) {
+      setSelectedRowKeys([]);
+    }
+    setBatchDeleteConfirmVisible(false);
+  };
+
+  const cancelBatchDelete = () => {
+    setBatchDeleteConfirmVisible(false);
+  };
+
+  const clearSelection = () => {
+    setSelectedRowKeys([]);
   };
 
   //  Lưu hoặc cập nhật câu hỏi
@@ -511,6 +541,34 @@ const QuestionBankPage: React.FC = () => {
         <Button onClick={clearFilters}>Clear Filters</Button>
       </div>
 
+      {/* Selection Bar */}
+      {selectedRowKeys.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-blue-700">
+              {selectedRowKeys.length} question(s) selected
+            </span>
+            <Button
+              type="text"
+              size="small"
+              icon={<CloseOutlined />}
+              onClick={clearSelection}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              Clear
+            </Button>
+          </div>
+          <Button
+            danger
+            type="primary"
+            icon={<DeleteOutlined />}
+            onClick={handleBatchDelete}
+          >
+            Delete Selected
+          </Button>
+        </div>
+      )}
+
       {/* Table */}
       <Table
         columns={columns}
@@ -518,6 +576,11 @@ const QuestionBankPage: React.FC = () => {
         rowKey="id"
         loading={loading}
         pagination={{ pageSize: 10 }}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: (keys) => setSelectedRowKeys(keys),
+          preserveSelectedRowKeys: true,
+        }}
       />
 
       {/* Add/Edit Modal */}
@@ -545,6 +608,29 @@ const QuestionBankPage: React.FC = () => {
         centered
       >
         <p>Are you sure you want to delete this question? This action cannot be undone.</p>
+      </Modal>
+
+      {/* Batch Delete Confirmation Modal */}
+      <Modal
+        open={batchDeleteConfirmVisible}
+        onCancel={cancelBatchDelete}
+        onOk={confirmBatchDelete}
+        title={
+          <div className="flex items-center gap-2">
+            <ExclamationCircleOutlined style={{ color: "#ff4d4f", fontSize: "20px" }} />
+            <span>Delete Multiple Questions</span>
+          </div>
+        }
+        okText="Delete All"
+        okType="danger"
+        cancelText="Cancel"
+        centered
+        confirmLoading={loading}
+      >
+        <p>
+          Are you sure you want to delete <strong>{selectedRowKeys.length}</strong> selected question(s)?
+          This action cannot be undone.
+        </p>
       </Modal>
 
       {/* View Question Details Modal */}

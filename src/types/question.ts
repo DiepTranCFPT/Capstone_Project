@@ -109,3 +109,10 @@ export interface QuestionImportResponse {
   errorMessages: string[];
   successQuestionIds: string[];
 }
+
+// Response type cho API batch delete questions
+export interface BatchDeleteQuestionsResponse {
+  code: number;
+  message: string;
+  data: string;
+}
