@@ -8,6 +8,7 @@ export const askAiExamQuestion = async (
     onComplete: () => void
 ) => {
     let lastProcessedIndex = 0;
+    let buffer = ''; // Buffer for incomplete lines
 
     try {
         await axiosInstance.post('/ai/exam-ask', payload, {
@@ -17,13 +18,15 @@ export const askAiExamQuestion = async (
                 const newContent = response.slice(lastProcessedIndex);
                 lastProcessedIndex = response.length;
 
-                // Process SSE format (data: prefix)
-                // Note: This simple split might break if a "data:" line is split across two chunks.
-                // For a robust implementation, we should buffer incomplete lines.
-                // However, for this task, we'll assume lines come in reasonably complete or accept minor glitches.
-                // To be safer, we can check for newlines.
+                // Combine buffer with new content to handle split lines
+                const textToProcess = buffer + newContent;
 
-                const lines = newContent.split('\n');
+                // Split by newlines, but keep the last part in buffer if incomplete
+                const lines = textToProcess.split('\n');
+
+                // The last element might be incomplete (no trailing newline), keep it in buffer
+                buffer = lines.pop() || '';
+
                 for (const line of lines) {
                     const trimmedLine = line.trim();
                     if (trimmedLine.startsWith('data:')) {
@@ -37,6 +40,17 @@ export const askAiExamQuestion = async (
                 }
             }
         });
+
+        // Process any remaining content in buffer after stream ends
+        if (buffer.trim()) {
+            const trimmedLine = buffer.trim();
+            if (trimmedLine.startsWith('data:')) {
+                const content = trimmedLine.slice(5).trimStart();
+                if (content) {
+                    onChunk(content + ' ');
+                }
+            }
+        }
 
         onComplete();
     } catch (error) {
@@ -51,6 +65,7 @@ export const askAiStudentDashboard = async (
     onComplete: () => void
 ) => {
     let lastProcessedIndex = 0;
+    let buffer = ''; // Buffer for incomplete lines
 
     try {
         await axiosInstance.post('/ai/students/dashboard', payload.message, {
@@ -63,7 +78,15 @@ export const askAiStudentDashboard = async (
                 const newContent = response.slice(lastProcessedIndex);
                 lastProcessedIndex = response.length;
 
-                const lines = newContent.split('\n');
+                // Combine buffer with new content to handle split lines
+                const textToProcess = buffer + newContent;
+
+                // Split by newlines, but keep the last part in buffer if incomplete
+                const lines = textToProcess.split('\n');
+
+                // The last element might be incomplete (no trailing newline), keep it in buffer
+                buffer = lines.pop() || '';
+
                 for (const line of lines) {
                     const trimmedLine = line.trim();
                     if (trimmedLine.startsWith('data:')) {
@@ -77,6 +100,17 @@ export const askAiStudentDashboard = async (
                 }
             }
         });
+
+        // Process any remaining content in buffer after stream ends
+        if (buffer.trim()) {
+            const trimmedLine = buffer.trim();
+            if (trimmedLine.startsWith('data:')) {
+                const content = trimmedLine.slice(5).trimStart();
+                if (content) {
+                    onChunk(content + ' ');
+                }
+            }
+        }
 
         onComplete();
     } catch (error) {
