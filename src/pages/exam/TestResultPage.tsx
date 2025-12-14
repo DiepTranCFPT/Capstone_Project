@@ -189,21 +189,21 @@ const TestResultPage: React.FC = () => {
             </main>
             {/* Review Request Modal */}
             <Modal
-                title="Yêu cầu phúc khảo"
-                visible={isReviewModalOpen}
+                title="Review Request"
+                open={isReviewModalOpen}
                 onCancel={handleCancelReviewRequest}
                 footer={[
                     <Button key="back" onClick={handleCancelReviewRequest}>
-                        Hủy
+                        Cancel
                     </Button>,
                     <Button key="submit" type="primary" loading={loading} onClick={handleSubmitReviewRequest}>
-                        Gửi Yêu Cầu
+                        Submit
                     </Button>,
                 ]}
             >
                 <Input.TextArea
                     rows={4}
-                    placeholder="Vui lòng nhập lý do bạn muốn phúc khảo..."
+                    placeholder="Please enter the reason for your review request..."
                     value={reviewReason}
                     onChange={(e) => setReviewReason(e.target.value)}
                 />

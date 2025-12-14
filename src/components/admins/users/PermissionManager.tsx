@@ -8,7 +8,6 @@ import {
   Tooltip,
   Card,
   Typography,
-  Popconfirm,
   Space,
   Select,
   Tabs,
@@ -16,8 +15,8 @@ import {
   Checkbox,
   Divider,
 } from 'antd';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import { RefreshCcw, Trash2, Shield, Users } from 'lucide-react';
+import { SearchOutlined } from '@ant-design/icons';
+import { RefreshCcw , Shield, Users } from 'lucide-react';
 import { usePermissions } from '~/hooks/usePermissions';
 import type { Permission } from '~/types/permission';
 import type { ColumnsType } from 'antd/es/table';
@@ -39,7 +38,6 @@ const PermissionManager: React.FC = () => {
     error,
     fetchPermissions,
     createPermission,
-    deletePermission,
     fetchPermissionsForRole,
     assignPermissions,
     revokePermissions,
@@ -81,15 +79,6 @@ const PermissionManager: React.FC = () => {
     }
   };
 
-  const handleDeletePermission = async (permissionName: string) => {
-    try {
-      await deletePermission(permissionName);
-    } catch (error) {
-      // Error is handled in the hook
-      console.error('Delete permission error:', error);
-    }
-  };
-
   const columns: ColumnsType<Permission> = [
     {
       title: 'Permission Name',
@@ -105,24 +94,6 @@ const PermissionManager: React.FC = () => {
       key: 'description',
       render: (description: string) => (
         <span className="text-gray-600">{description}</span>
-      ),
-    },
-    {
-      title: 'Action',
-      key: 'actions',
-      align: 'center',
-      render: (_: unknown, record: Permission) => (
-        <Popconfirm
-          title="Delete permission?"
-          description={`Bạn có chắc muốn xóa quyền "${record.name}"?`}
-          onConfirm={() => handleDeletePermission(record.name)}
-          okText="Delete"
-          cancelText="Cancel"
-        >
-          <button className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition">
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </Popconfirm>
       ),
     },
   ];
@@ -189,15 +160,7 @@ const PermissionManager: React.FC = () => {
               >
                 Refresh
               </Button>
-            </Tooltip>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setIsCreateModalVisible(true)}
-              className="bg-blue-600 hover:bg-blue-700 border-0 shadow-sm px-4 h-9"
-            >
-              Add Permission
-            </Button>
+            </Tooltip>         
           </Space>
         </div>
       </div>
@@ -422,14 +385,6 @@ const PermissionManager: React.FC = () => {
                 }}
               >
                 Cancel
-              </Button>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={loading}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Add Permission
               </Button>
             </Space>
           </Form.Item>
