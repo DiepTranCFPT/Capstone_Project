@@ -2,9 +2,9 @@ AP-LMS (Advanced Placement Learning Management System)
 
 AP-LMS là nền tảng quản lý học tập trực tuyến toàn diện, được thiết kế chuyên biệt để hỗ trợ học sinh ôn luyện các chứng chỉ Advanced Placement (AP). Hệ thống kết nối Học sinh, Giáo viên, Phụ huynh học tập trong một môi trường giáo dục tích hợp, hiện đại và thông minh.
 
-🌟 Tính năng nổi bật
+# 🌟 Tính năng nổi bật
 
-1. Phân quyền người dùng (Role-Based Access)
+# 1. Phân quyền người dùng (Role-Based Access)
 
 Hệ thống hỗ trợ 4 vai trò người dùng riêng biệt:
 
@@ -16,7 +16,7 @@ Phụ huynh (Parent): Liên kết tài khoản với con, theo dõi tiến độ
 
 Quản trị viên (Admin): Quản lý người dùng, duyệt hồ sơ giáo viên, quản lý nội dung hệ thống.
 
-2. Hệ thống Thi & Kiểm tra (Testing & Proctoring)
+# 2. Hệ thống Thi & Kiểm tra (Testing & Proctoring)
 
 Đa dạng định dạng: Hỗ trợ câu hỏi Trắc nghiệm (MCQ) và Tự luận (FRQ).
 
@@ -36,7 +36,7 @@ Tự động nộp bài nếu vi phạm quá số lần quy định.
 
 Lưu trữ thông minh: Cơ chế Auto-save và đồng bộ hóa dữ liệu liên tục, đảm bảo không mất bài làm khi rớt mạng.
 
-3. Học tập & Tài liệu
+# 3. Học tập & Tài liệu
 
 Lộ trình học tập (Learning Pathway): Gợi ý lộ trình dựa trên khối lớp và ngành học mục tiêu (CS, Business, Pre-Med, etc.).
 
@@ -44,7 +44,7 @@ Tài liệu học tập: Hỗ trợ video bài giảng (YouTube/Upload) và file
 
 AI Support: Chatbot hỗ trợ giải đáp thắc mắc và AI gợi ý chấm điểm cho giáo viên.
 
-4. Tài chính & Cộng đồng
+# 4. Tài chính & Cộng đồng
 
 Ví điện tử (Wallet): Tích hợp cổng thanh toán MoMo, quản lý số dư Token để mua khóa học/đề thi.
 
@@ -52,7 +52,7 @@ Cộng đồng (Community): Diễn đàn thảo luận, nhóm học tập.
 
 Gamification: Bảng xếp hạng (Leaderboard), Thách đấu Quiz (Quiz Battle).
 
-🛠️ Công nghệ sử dụng
+# 🛠️ Công nghệ sử dụng
 
 Dự án được xây dựng trên nền tảng công nghệ hiện đại, tối ưu hóa hiệu năng và trải nghiệm người dùng:
 
@@ -88,9 +88,9 @@ Formik + Yup: Quản lý Form và Validate dữ liệu.
 
 React Katex: Hiển thị công thức toán học.
 
-🚀 Hướng dẫn cài đặt và chạy dự án
+# 🚀 Hướng dẫn cài đặt và chạy dự án
 
-1. Yêu cầu tiên quyết
+# 1. Yêu cầu tiên quyết
 
 Đảm bảo máy tính của bạn đã cài đặt:
 
@@ -98,18 +98,18 @@ Node.js (Phiên bản v18 trở lên được khuyến nghị)
 
 Trình quản lý gói npm hoặc yarn.
 
-2. Cài đặt Dependencies
+# 2. Cài đặt Dependencies
 
 Mở terminal tại thư mục gốc của dự án và chạy lệnh:
 
-# Sử dụng npm
+Sử dụng npm
 npm install
 
-# Hoặc sử dụng yarn
+Hoặc sử dụng yarn
 yarn install
 
 
-3. Cấu hình biến môi trường
+# 3. Cấu hình biến môi trường
 
 Tạo file .env tại thư mục gốc của dự án và điền các thông tin cấu hình
 
@@ -119,14 +119,14 @@ VITE_GOOGLE_REDIRECT_URI=your_google_redirect_uri
 VITE_AUTH_URI=your_auth_uri
 
 
-4. Chạy dự án (Development)
+# 4. Chạy dự án (Development)
 
 Để khởi chạy ứng dụng ở môi trường development:
 
 npm run dev
 
 
-5. Build dự án (Production)
+# 5. Build dự án (Production)
 
 Để đóng gói ứng dụng cho môi trường production:
 
@@ -135,41 +135,7 @@ npm run build
 
 Kết quả build sẽ nằm trong thư mục dist.
 
-📂 Cấu trúc thư mục
 
-src/
-├── assets/             # Hình ảnh, icons, static files
-├── components/         # Các UI Components tái sử dụng
-│   ├── admins/         # Components dành riêng cho Admin
-│   ├── advisor/        # Components dành cho Cố vấn
-│   ├── auth/           # Login, Register, Forgot Password forms
-│   ├── common/         # Components chung (Toast, Loader, Modal...)
-│   ├── community/      # Forum, Threads, Groups
-│   ├── do-test/        # Giao diện làm bài thi (Timer, QuestionCard...)
-│   ├── exam/           # Chi tiết đề thi, Library
-│   ├── home/           # Các section trang chủ (Hero, Stats...)
-│   ├── parents/        # Dashboard phụ huynh, Link student
-│   ├── practice/       # Flashcard, Quiz components
-│   ├── students/       # Dashboard học sinh, Profile
-│   └── teachers/       # Quản lý lớp, chấm điểm, tạo đề
-├── configs/            # Cấu hình Axios, Antd theme
-├── context/            # Global Context (Auth, QuestionBank)
-├── data/               # Mock data (dữ liệu giả lập)
-├── hooks/              # Custom Hooks (Logic tái sử dụng)
-├── layout/             # Bố cục trang (Sidebar, Navbar, Footer)
-├── pages/              # Các trang chính (Page Views)
-├── routes/             # Cấu hình Routing
-├── services/           # API Services (gọi Axios tới Backend)
-├── styles/             # Global CSS
-├── types/              # TypeScript Type definitions
-├── utils/              # Các hàm tiện ích (Helpers)
-├── App.tsx             # Root Component & Routing setup
-└── main.tsx            # Entry point
-
-
-Đóng góp (Contributing)
-
-Chúng tôi hoan nghênh mọi đóng góp để cải thiện dự án AP-LMS.
 
 Fork dự án.
 
@@ -180,5 +146,3 @@ Commit thay đổi (git commit -m 'Thêm tính năng XYZ').
 Push lên branch (git push origin feature/TenTinhNang).
 
 Tạo Pull Request.
-
-Copyright © 2025 AP-LMS Team. All Rights Reserved.
