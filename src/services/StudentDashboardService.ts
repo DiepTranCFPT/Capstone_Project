@@ -1,5 +1,5 @@
 import axiosInstance from "~/configs/axios";
-import type { StudentExamStatisticsResponse, StudentFinancialStatisticsResponse, StudentOverallStatisticsResponse } from "~/types/studentDashboard";
+import type { StudentExamStatisticsResponse, StudentFinancialStatisticsResponse, StudentOverallStatisticsResponse, StudentRecommendResponse } from "~/types/studentDashboard";
 
 
 const StudentDashboardService = {
@@ -15,6 +15,11 @@ const StudentDashboardService = {
 
   async getExam(): Promise<StudentExamStatisticsResponse> {
     const response = await axiosInstance.get<StudentExamStatisticsResponse>("/student/dashboard/exam-stats");
+    return response.data;
+  },
+
+  async getRecommends(): Promise<StudentRecommendResponse> {
+    const response = await axiosInstance.get<StudentRecommendResponse>("/student/dashboard/recommends");
     return response.data;
   },
 };

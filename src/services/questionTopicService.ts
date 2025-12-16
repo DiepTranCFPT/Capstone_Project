@@ -13,7 +13,7 @@ export interface QuestionTopicPayload {
 const QuestionTopicService = {
   // Lấy tất cả Topic (có phân trang)
   async getAll(
-    params?: { pageNo?: number; pageSize?: number; keyword?: string }
+    params?: { pageNo?: number; pageSize?: number; keyword?: string; sorts?: string[] }
   ): Promise<
     AxiosResponse<
       | ApiResponse<QuestionTopic[]>
