@@ -90,19 +90,52 @@ const CommunityService = {
   },
 
   // POST /posts/{postId}/comments
+  // BE yêu cầu: postId (path), content & parentCommentId (query), image (multipart/form-data body)
+  // Lưu ý: BE luôn mong đợi multipart/form-data, kể cả khi không có image thì cũng gửi empty image field
   createPostComment(
     postId: string | number,
     payload: CreateCommunityCommentPayload
   ): Promise<AxiosResponse<ApiResponse<CommunityComment>>> {
-    return axiosInstance.post(`/posts/${postId}/comments`, payload);
+    const { content, parentCommentId, image } = payload;
+
+    // Query params: content, parentCommentId (optional)
+    const params: Record<string, string | number> = {};
+    if (content) params.content = content;
+    if (parentCommentId !== undefined && parentCommentId !== null) {
+      params.parenCommentId = parentCommentId; // BE dùng tên "parenCommentId" (thiếu chữ 't')
+    }
+
+    // Body: luôn gửi FormData với multipart/form-data (theo Swagger: -F 'image=')
+    const formData = new FormData();
+    if (image) {
+      formData.append("image", image);
+    } else {
+      // Gửi empty image field như Swagger yêu cầu
+      formData.append("image", "");
+    }
+
+    return axiosInstance.post(`/posts/${postId}/comments`, formData, {
+      params,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
   },
 
   // PUT /comments/{commentId}
+  // BE yêu cầu: gửi string trực tiếp trong body (ví dụ: "hay"), không phải object { content: "hay" }
+  // Content-Type: application/json
   updateComment(
     commentId: string | number,
     payload: Partial<CreateCommunityCommentPayload>
   ): Promise<AxiosResponse<ApiResponse<CommunityComment>>> {
-    return axiosInstance.put(`/comments/${commentId}`, payload);
+    // Gửi string content trực tiếp trong body (theo Swagger: -d '"hay"')
+    const content = payload.content || "";
+    return axiosInstance.put(`/comments/${commentId}`, content, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
   },
 
   // DELETE /comments/{commentId}
