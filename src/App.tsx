@@ -27,6 +27,14 @@ import MaterialsPage from "./pages/generics/materials/MaterialsPage";
 import MaterialsDetailPage from "./pages/generics/materials/MaterialsDetailPage";
 import MaterialLearnPage from "./pages/generics/materials/MaterialLearnPage";
 import CommunityPage from "./pages/community/CommunityPage";
+
+// --- Flashcard Imports ---
+import FlashcardsPage from "./pages/flashcards/FlashcardsPage";
+import FlashcardDetailPage from "./pages/flashcards/FlashcardDetailPage";
+import FlashcardCreatePage from "./pages/flashcards/FlashcardCreatePage";
+import FlashcardEditPage from "./pages/flashcards/FlashcardEditPage";
+import FlashcardQuizPage from "./pages/flashcards/FlashcardQuizPage";
+
 import StudentDashboardPage from "./pages/students/StudentDashboardPage";
 import StudentLayout from "./layout/students/StudentLayout";
 import AITutorPage from "./pages/students/AITutorPage";
@@ -181,6 +189,13 @@ function App() {
           <Route path="/wallet" element={<WalletPage />} />
           <Route path="/wallet/result" element={<PaymentResult />} />
           <Route path="/teacher-detail/:teacherId" element={<TeacherDetailPage />} />
+
+          {/* Flashcard routes */}
+          <Route path="/flashcards" element={<FlashcardsPage />} />
+          <Route path="/flashcards/create" element={<FlashcardCreatePage />} />
+          <Route path="/flashcards/:id" element={<FlashcardDetailPage />} />
+          <Route path="/flashcards/:id/edit" element={<FlashcardEditPage />} />
+          <Route path="/flashcards/:id/quiz" element={<FlashcardQuizPage />} />
         </Route>
 
         {/* Student routes with StudentLayout */}
