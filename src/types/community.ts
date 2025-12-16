@@ -42,3 +42,90 @@ export interface LeaderboardUser {
     subject?: string; // Optional for subject filter
     groupId?: number; // Optional for study group filter
 };
+
+// ===== API types cho backend community-controller =====
+
+// Community (nhóm học tập) lấy từ BE
+export interface Community {
+  id: string | number;
+  name: string;
+  description?: string;
+  avatar?: string;
+  bannerImage?: string;
+  memberCount?: number;
+  privacy?: "PUBLIC" | "PRIVATE" | string;
+  // Cho phép BE trả thêm field mà FE chưa khai báo
+  [key: string]: unknown;
+}
+
+// Payload update community: dùng Partial để linh hoạt
+export interface CommunityUpdatePayload {
+  name?: string;
+  description?: string;
+  avatar?: string;
+  bannerImage?: string;
+  privacy?: "PUBLIC" | "PRIVATE" | string;
+  [key: string]: unknown;
+}
+
+// Post (bài viết) trong community
+export interface CommunityPost {
+  id: string | number;
+  communityId: string | number;
+  title?: string;
+  content: string;
+  authorId?: string | number;
+  authorName?: string;
+  authorAvatar?: string;
+  likeCount?: number;
+  commentCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  // Cho phép đính kèm extra fields (attachments, tags, ...)
+  [key: string]: unknown;
+}
+
+// Payload tạo post mới (theo BE: title, content, image MultipartFile)
+export interface CreateCommunityPostPayload {
+  title: string;
+  content: string;
+  image?: File;
+  [key: string]: unknown;
+}
+
+// ===== Comment APIs cho post-controller & comment-controller =====
+
+export interface CommunityComment {
+  id: string | number;
+  postId: string | number;
+  content: string;
+  authorId?: string | number;
+  authorName?: string;
+  authorAvatar?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  replyCount?: number;
+  parentId?: string | number | null;
+  [key: string]: unknown;
+}
+
+export interface CreateCommunityCommentPayload {
+  content: string;
+  // nếu là reply cho comment khác
+  parentCommentId?: string | number | null;
+  [key: string]: unknown;
+}
+
+// Query khi gọi GET /communities
+export interface CommunityQueryParams {
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDir?: "ASC" | "DESC" | string;
+  [key: string]: unknown;
+}
+
+// Query khi search community
+export interface CommunitySearchParams extends CommunityQueryParams {
+  keyword?: string;
+}

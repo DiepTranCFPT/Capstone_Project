@@ -9,7 +9,7 @@ const { TextArea } = Input;
 interface CreateThreadModalProps {
     visible: boolean;
     onClose: () => void;
-    onSubmit: (values: { content: string, tags: string, image?: UploadFile }) => void;
+    onSubmit: (values: { title: string; content: string; imageFile?: File }) => void;
 };
 
 const getBase64 = (file: RcFile): Promise<string> =>
@@ -21,8 +21,8 @@ const getBase64 = (file: RcFile): Promise<string> =>
     });
 
 const CreateThreadModal: React.FC<CreateThreadModalProps> = ({ visible, onClose, onSubmit }) => {
+    const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
-    const [tags, setTags] = useState('');
     const [fileList, setFileList] = useState<UploadFile[]>([]);
 
     const [previewOpen, setPreviewOpen] = useState(false);
@@ -40,18 +40,26 @@ const CreateThreadModal: React.FC<CreateThreadModalProps> = ({ visible, onClose,
         setPreviewTitle(file.name || file.url!.substring(file.url!.lastIndexOf('/') + 1));
     };
 
-    const handleChange: UploadProps['onChange'] = ({ fileList: newFileList }) =>
+    const handleChange: UploadProps['onChange'] = ({ fileList: newFileList }) => {
         setFileList(newFileList);
+    };
 
     const handleSubmit = () => {
+        if (!title.trim()) {
+            message.error("Please enter a title for your thread.");
+            return;
+        }
         if (!content.trim()) {
             message.error("Please enter some content for your thread.");
             return;
         }
-        onSubmit({ content, tags, image: fileList.length > 0 ? fileList[0] : undefined });
+        const imageFile = fileList.length > 0 && fileList[0].originFileObj
+            ? (fileList[0].originFileObj as File)
+            : undefined;
+        onSubmit({ title, content, imageFile });
         // Reset form
+        setTitle('');
         setContent('');
-        setTags('');
         setFileList([]);
         onClose();
     };
@@ -80,16 +88,16 @@ const CreateThreadModal: React.FC<CreateThreadModalProps> = ({ visible, onClose,
                 ]}
             >
                 <div className="flex flex-col gap-4">
+                    <Input
+                        placeholder="Thread title"
+                        value={title}
+                        onChange={e => setTitle(e.target.value)}
+                    />
                     <TextArea
                         rows={5}
                         placeholder="What's on your mind?"
                         value={content}
                         onChange={e => setContent(e.target.value)}
-                    />
-                    <Input
-                        placeholder="Add tags, separated by commas (e.g., english,ielts,tips)"
-                        value={tags}
-                        onChange={e => setTags(e.target.value)}
                     />
                     <Upload
                         listType="picture-card" // Thay đổi kiểu hiển thị để có preview thumbnail
