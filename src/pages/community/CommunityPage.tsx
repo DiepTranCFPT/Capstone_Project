@@ -32,7 +32,7 @@ const CommunityPage: React.FC = () => {
         return url.startsWith("http") ? url : `${import.meta.env.VITE_API_URL}${url}`;
     }, [user]);
     const userDisplayName = useMemo(
-        () => (user ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "Người dùng" : "Người dùng"),
+        () => (user ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "User" : "User"),
         [user]
     );
 
@@ -97,7 +97,7 @@ const CommunityPage: React.FC = () => {
                 post.authorName ||
                 authorFullName ||
                 author?.username ||
-                "Người dùng";
+                "User";
 
             const avatarUrl =
                 (post.authorAvatar as string | undefined) ||
@@ -111,7 +111,8 @@ const CommunityPage: React.FC = () => {
                 (asAny.imgUrl as string | undefined);
 
             return {
-                id: Number(post.id),
+                id: Number(post.id) || 0, // Fallback nếu không convert được
+                postId: post.id, // Giữ nguyên ID gốc từ BE (UUID string) để dùng cho API
                 user: {
                     name: displayName,
                     avatar: resolveImageUrl(avatarUrl) ?? "https://i.pravatar.cc/150",

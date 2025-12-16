@@ -49,7 +49,7 @@ const CommunitySidebar: React.FC<CommunitySidebarProps> = ({
         </p>
         <div className="space-y-2">
           {communities.length === 0 && (
-            <div className="text-sm text-gray-500">Chưa có cộng đồng.</div>
+            <div className="text-sm text-gray-500">No communities yet.</div>
           )}
           {communities.map(renderCommunityItem)}
         </div>

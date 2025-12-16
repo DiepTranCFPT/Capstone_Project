@@ -10,6 +10,7 @@ export interface Comment {
 };
 export interface Thread {
     id: number;
+    postId: string | number; // ID gốc từ BE (có thể là UUID string) để dùng cho API
     user: { name: string; avatar: string };
     content: string;
     tags: string[];
@@ -102,6 +103,17 @@ export interface CommunityComment {
   authorId?: string | number;
   authorName?: string;
   authorAvatar?: string;
+  // Author object từ BE (có firstName, lastName, imgUrl, ...)
+  author?: {
+    id?: string | number;
+    firstName?: string;
+    lastName?: string;
+    username?: string;
+    imgUrl?: string;
+    avatar?: string;
+    email?: string;
+    [key: string]: unknown;
+  };
   createdAt?: string;
   updatedAt?: string;
   replyCount?: number;
@@ -110,9 +122,11 @@ export interface CommunityComment {
 }
 
 export interface CreateCommunityCommentPayload {
-  content: string;
+  content?: string;
   // nếu là reply cho comment khác
   parentCommentId?: string | number | null;
+  // ảnh đính kèm (multipart/form-data)
+  image?: File;
   [key: string]: unknown;
 }
 
