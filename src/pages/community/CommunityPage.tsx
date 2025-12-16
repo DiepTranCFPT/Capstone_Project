@@ -18,6 +18,7 @@ const CommunityPage: React.FC = () => {
         fetchCommunities,
         fetchCommunityPosts,
         createCommunityPost,
+        deletePost,
         communities,
         communityPosts,
         loading,
@@ -125,6 +126,7 @@ const CommunityPage: React.FC = () => {
                 commentsData: [],
                 groupId: post.communityId ? Number(post.communityId) : undefined,
                 groupName: communities.find((c) => String(c.id) === String(post.communityId))?.name,
+                authorId: post.authorId ?? (author as { id?: string | number } | undefined)?.id,
             };
         });
     }, [communityPosts, communities]);
@@ -200,7 +202,11 @@ const CommunityPage: React.FC = () => {
                             />
 
                             {/* posts */}
-                            <PostList loading={loading} threads={displayedThreads} />
+                            <PostList 
+                                loading={loading} 
+                                threads={displayedThreads}
+                                onDeletePost={deletePost}
+                            />
                         </section>
 
                         {/* Right sidebar */}

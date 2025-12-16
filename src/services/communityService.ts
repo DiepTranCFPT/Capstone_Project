@@ -151,6 +151,14 @@ const CommunityService = {
   ): Promise<AxiosResponse<ApiResponse<CommunityComment[]>>> {
     return axiosInstance.get(`/comments/${commentId}/replies`);
   },
+
+  // DELETE /posts/{postId}
+  // Xóa bài viết
+  deletePost(
+    postId: string | number
+  ): Promise<AxiosResponse<ApiResponse<null>>> {
+    return axiosInstance.delete(`/posts/${postId}`);
+  },
 };
 
 export default CommunityService;

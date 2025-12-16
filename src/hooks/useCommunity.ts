@@ -296,6 +296,30 @@ export const useCommunity = () => {
     []
   );
 
+  // DELETE /posts/{postId}
+  const deletePost = useCallback(
+    async (postId: string | number): Promise<void> => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        await CommunityService.deletePost(postId);
+
+        // Xóa post khỏi state
+        setCommunityPosts((prev) =>
+          prev.filter((p) => String(p.id) !== String(postId))
+        );
+      } catch (err) {
+        setError(
+          getErrorMessage(err, "Failed to delete post.")
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   return {
     loading,
     error,
@@ -308,6 +332,7 @@ export const useCommunity = () => {
     fetchCommunityPosts,
     createCommunityPost,
     updateCommunity,
+    deletePost,
   };
 };
 
