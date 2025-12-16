@@ -29,7 +29,7 @@ interface PixabayImage {
     tags: string;
 }
 
-const PIXABAY_API_KEY = "53747553-5aed3de4cd27301cd0327780d";
+const PIXABAY_API_KEY = import.meta.env.VITE_PIXABAY_API_KEY;
 
 const FlashcardCreatePage: React.FC = () => {
     const navigate = useNavigate();
