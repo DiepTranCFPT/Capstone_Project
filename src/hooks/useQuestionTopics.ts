@@ -14,7 +14,7 @@ export const useQuestionTopics = () => {
 
   // Lấy tất cả Topic (có phân trang)
   const fetchTopics = useCallback(
-    async (params?: { pageNo?: number; pageSize?: number; keyword?: string; sorts?: string[] }) => {
+    async (params?: { pageNo?: number; pageSize?: number; keyword?: string }) => {
       try {
         setLoading(true);
         const res = await QuestionTopicService.getAll(params);
@@ -22,7 +22,6 @@ export const useQuestionTopics = () => {
         console.log("[useQuestionTopics] Response.data:", res.data);
 
         let list: QuestionTopic[] = [];
-        let extractedPageInfo: PageInfo<QuestionTopic> | null = null;
 
         // Handle different response formats
         // Case 1: Direct array response
@@ -30,11 +29,9 @@ export const useQuestionTopics = () => {
           list = res.data as QuestionTopic[];
           console.log("[useQuestionTopics] Direct array response, count:", list.length);
         }
-        // Case 2: Direct object with items field (PageInfo at root)
+        // Case 2: Direct object with items field
         else if (res.data && typeof res.data === "object" && "items" in res.data && Array.isArray(res.data.items)) {
-          const page = res.data as unknown as PageInfo<QuestionTopic>;
-          list = page.items || [];
-          extractedPageInfo = page;
+          list = res.data.items as QuestionTopic[];
           console.log("[useQuestionTopics] Direct items array, count:", list.length);
         }
         // Case 3: Wrapped in ApiResponse with data field
@@ -49,7 +46,7 @@ export const useQuestionTopics = () => {
           else if (data && typeof data === "object" && ("items" in data || "content" in data)) {
             const page = data as PageInfo<QuestionTopic>;
             list = (page.items || page.content || []) as QuestionTopic[];
-            extractedPageInfo = page;
+            setPageInfo(page);
             console.log("[useQuestionTopics] ApiResponse<PageInfo>, count:", list.length);
           }
         }
@@ -65,15 +62,12 @@ export const useQuestionTopics = () => {
         }
 
         console.log("[useQuestionTopics] Final topics list:", list);
-        console.log("[useQuestionTopics] PageInfo:", extractedPageInfo);
         setTopics(list);
-        setPageInfo(extractedPageInfo);
-        return { items: list, pageInfo: extractedPageInfo };
+        return list;
       } catch (error) {
         // Ensure topics is always an array even on error
         setTopics([]);
-        setPageInfo(null);
-        toast.error("Failed to load topics!");
+        toast.error("Không thể tải danh sách chủ đề câu hỏi!");
         console.error("[useQuestionTopics] Error:", error);
         throw error;
       } finally {
@@ -93,7 +87,7 @@ export const useQuestionTopics = () => {
       return list;
     } catch (error) {
       setTopics([]);
-      toast.error("Failed to load your topics!");
+      toast.error("Không thể tải chủ đề câu hỏi của bạn!");
       console.error("[useQuestionTopics] fetchMyTopics Error:", error);
       throw error;
     } finally {
@@ -111,7 +105,7 @@ export const useQuestionTopics = () => {
       return list;
     } catch (error) {
       setTopics([]);
-      toast.error("Failed to load topics by subject!");
+      toast.error("Không thể tải chủ đề câu hỏi theo môn học!");
       console.error("[useQuestionTopics] fetchTopicsBySubject Error:", error);
       throw error;
     } finally {
@@ -126,12 +120,12 @@ export const useQuestionTopics = () => {
         setLoading(true);
         const res = await QuestionTopicService.create(data);
         const newTopic = res.data?.data || res.data;
-        toast.success("Create topic successfully!");
+        toast.success("Tạo chủ đề câu hỏi thành công!");
         // Refresh topics list
         await fetchTopics();
         return newTopic;
       } catch (error) {
-        toast.error("Failed to create topic!");
+        toast.error("Không thể tạo chủ đề câu hỏi!");
         console.error("[useQuestionTopics] createTopic Error:", error);
         throw error;
       } finally {
@@ -151,12 +145,12 @@ export const useQuestionTopics = () => {
         setLoading(true);
         const res = await QuestionTopicService.update(topicId, data);
         const updatedTopic = res.data?.data || res.data;
-        toast.success("Update topic successfully!");
+        toast.success("Cập nhật chủ đề câu hỏi thành công!");
         // Refresh topics list
         await fetchTopics();
         return updatedTopic;
       } catch (error) {
-        toast.error("Failed to update topic!");
+        toast.error("Không thể cập nhật chủ đề câu hỏi!");
         console.error("[useQuestionTopics] updateTopic Error:", error);
         throw error;
       } finally {
@@ -172,12 +166,12 @@ export const useQuestionTopics = () => {
       try {
         setLoading(true);
         const res = await QuestionTopicService.delete(topicId);
-        toast.success("Delete topic successfully!");
+        toast.success("Xóa chủ đề câu hỏi thành công!");
         // Refresh topics list
         await fetchTopics();
         return res.data?.data || res.data;
       } catch (error) {
-        toast.error("Failed to delete topic!");
+        toast.error("Không thể xóa chủ đề câu hỏi!");
         console.error("[useQuestionTopics] deleteTopic Error:", error);
         throw error;
       } finally {

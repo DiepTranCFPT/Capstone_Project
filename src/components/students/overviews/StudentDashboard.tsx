@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, Badge, Button, Spin, Empty } from 'antd';
 import {
   BookOutlined,
@@ -7,9 +7,7 @@ import {
   RightOutlined,
   BarChartOutlined,
   CheckCircleOutlined,
-  DollarOutlined,
-  BulbOutlined,
-  RobotOutlined
+  DollarOutlined
 } from '@ant-design/icons';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 // import CardAnalytics from './CardAnalytics';
@@ -17,40 +15,11 @@ import { useAuth } from '~/hooks/useAuth';
 import { useStudentDashboardStats } from '~/hooks/useStudentDashboardStats';
 import { useNavigate } from 'react-router-dom';
 import AIDashboardChatBubble from './AIDashboardChatBubble';
-import StudentDashboardService from '~/services/StudentDashboardService';
-import { toast } from '~/components/common/Toast';
-import ReactMarkdown from 'react-markdown';
 
 const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { stats, overall, financial, examStats, loading, refetch } = useStudentDashboardStats();
+  const { stats, overall, financial, examStats, loading } = useStudentDashboardStats();
   const navigate = useNavigate();
-
-  // State for on-demand AI recommendation
-  const [onDemandRecommend, setOnDemandRecommend] = useState<string | null>(null);
-  const [loadingRecommend, setLoadingRecommend] = useState(false);
-
-  // Handler to get AI recommendation immediately
-  const handleGetRecommendation = async () => {
-    setLoadingRecommend(true);
-    try {
-      const response = await StudentDashboardService.getRecommends();
-      if (response.code === 1000 || response.code === 0) {
-        toast.success('AI recommendation generated!');
-        // Refetch the dashboard stats to get the updated examStats.recommend
-        await refetch();
-        // Mark that we just updated (for UI badge)
-        setOnDemandRecommend('updated');
-      } else {
-        toast.error(response.message || 'Failed to get AI recommendation');
-      }
-    } catch (error) {
-      console.error('Error getting AI recommendation:', error);
-      toast.error('Failed to get AI recommendation. Please try again later.');
-    } finally {
-      setLoadingRecommend(false);
-    }
-  };
 
   // Transform topic performance for Radar Chart
   const topicData = React.useMemo(() => {
@@ -73,7 +42,7 @@ const StudentDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f4f7fd] p-6">
-      <div className="w-full mx-auto md:ml-0 ml-0">
+      <div className="max-w-7xl mx-auto md:ml-0 ml-0">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.firstName} {user?.lastName}</h1>
@@ -84,81 +53,6 @@ const StudentDashboard: React.FC = () => {
               Recommended focus based on your performance: <span className="font-bold ml-1">{stats.recommendedTopic}</span>
             </div>
           )}
-        </div>
-
-        {/* AI Recommendation Section - Now at the top */}
-        <div className="mb-8">
-          <Card
-            className="bg-white rounded-2xl shadow-lg border-0 hover:shadow-xl transition-all duration-300 border-l-4 border-l-blue-500"
-          >
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0">
-                <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center">
-                  <RobotOutlined className="text-3xl text-blue-600" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <BulbOutlined className="text-yellow-500 text-lg animate-pulse" />
-                    <span className="text-gray-900 font-semibold text-lg">AI Learning</span>
-                  </div>
-                  <button
-                    onClick={handleGetRecommendation}
-                    className='bg-backgroundColor hover:scale-105 transition-all duration-300 text-white py-2 px-4 rounded-md'
-                  >
-                    {loadingRecommend ? 'Analyzing...' : 'Get AI Advice Now'}
-                  </button>
-                </div>
-
-                {/* Display recommendation from examStats */}
-                {examStats?.recommend ? (
-                  <>
-                    <div className="text-gray-700 text-base leading-relaxed prose prose-sm max-w-none">
-                      <ReactMarkdown
-                        components={{
-                          strong: ({ children }) => (
-                            <span className="font-bold text-blue-600 bg-blue-50 px-1 rounded">
-                              {children}
-                            </span>
-                          ),
-                          p: ({ children }) => (
-                            <p className="mb-2 last:mb-0">{children}</p>
-                          ),
-                        }}
-                      >
-                        {examStats.recommend}
-                      </ReactMarkdown>
-                    </div>
-                    <div className="mt-3 flex items-center gap-2 flex-wrap">
-                      <div className="px-3 py-1 bg-blue-50 rounded-full border border-blue-200">
-                        <span className="text-blue-600 text-xs">✨ Personalized for you</span>
-                      </div>
-                      {onDemandRecommend && (
-                        <div className="px-3 py-1 bg-green-50 rounded-full border border-green-200">
-                          <span className="text-green-600 text-xs">🔄 Just updated</span>
-                        </div>
-                      )}
-                      {!onDemandRecommend && (
-                        <div className="px-3 py-1 bg-gray-50 rounded-full border border-gray-200">
-                          <span className="text-gray-500 text-xs">⏰ Auto-generated at 11:30 AM daily</span>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-4">
-                    <p className="text-gray-600 text-base mb-3">
-                      No recommendation available yet. Click the button above to get personalized advice from AI!
-                    </p>
-                    <p className="text-gray-400 text-sm">
-                      💡 AI automatically generates recommendations at 11:30 AM daily
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </Card>
         </div>
 
         {/* Quick Stats Row */}

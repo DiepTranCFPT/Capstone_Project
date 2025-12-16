@@ -17,8 +17,6 @@ import type {
   StartComboPayload,
   StartComboRandomPayload,
   StartSinglePayload,
-  TeacherExamAttemptQueryParams,
-  TeacherExamAttemptItem,
 } from "~/types/examAttempt";
 import type { ApiResponse } from "~/types/api";
 import type { PageInfo } from "~/types/pagination";
@@ -602,76 +600,5 @@ export const useTeacherReviewQueue = () => {
     loading,
     error,
     fetchReviewQueue
-  };
-};
-
-/**
- * Hook quản lý danh sách bài làm của học sinh (Teacher Exam Attempts).
- */
-export const useTeacherExamAttempts = () => {
-  const [attempts, setAttempts] = useState<TeacherExamAttemptItem[]>([]);
-  const [pageInfo, setPageInfo] = useState<PageInfo<TeacherExamAttemptItem> | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [currentSorts, setCurrentSorts] = useState<string[]>(["createdAt:desc"]);
-
-  const handleError = (err: unknown, defaultMessage: string) => {
-    setLoading(false);
-    const e = err as { response?: { data?: ApiResponse<unknown> } } & Error;
-    const apiMessage = e.response?.data?.message;
-    const message = apiMessage || e.message || defaultMessage;
-    setError(message);
-    toast.error(message);
-  };
-
-  const fetchTeacherExamAttempts = useCallback(
-    async (params?: TeacherExamAttemptQueryParams) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await ExamAttemptService.getTeacherExamAttempts(params);
-        if (res.data.code === 0 || res.data.code === 1000) {
-          const data = res.data.data;
-          // Kiểm tra structure trả về từ API
-          if (data.items) {
-            setAttempts(data.items);
-            setPageInfo(data);
-          } else if (Array.isArray(data)) {
-            setAttempts(data);
-            setPageInfo(null);
-          } else {
-            setAttempts([]);
-          }
-        } else {
-          throw new Error(res.data.message || "Failed to fetch teacher exam attempts");
-        }
-      } catch (err) {
-        handleError(err, "Failed to fetch teacher exam attempts");
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
-
-  // Handle sort change - call API with new sort
-  const handleSortChange = useCallback((newSorts: string[]) => {
-    setCurrentSorts(newSorts);
-    fetchTeacherExamAttempts({ pageNo: 0, pageSize: pageInfo?.pageSize || 10, sorts: newSorts });
-  }, [fetchTeacherExamAttempts, pageInfo?.pageSize]);
-
-  const handlePageChange = (newPage: number, newSize: number) => {
-    fetchTeacherExamAttempts({ pageNo: newPage - 1, pageSize: newSize, sorts: currentSorts });
-  };
-
-  return {
-    attempts,
-    pageInfo,
-    loading,
-    error,
-    fetchTeacherExamAttempts,
-    handlePageChange,
-    handleSortChange,
-    currentSorts,
   };
 };

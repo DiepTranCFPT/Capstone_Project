@@ -159,31 +159,3 @@ export interface ReviewQueueItem {
   status: string;
   rating: number;
 }
-
-/**
- * Param cho API /exam-attempts/teacher/exam-attempts
- */
-export interface TeacherExamAttemptQueryParams {
-  pageNo?: number;
-  pageSize?: number;
-  sorts?: string[];
-}
-
-/**
- * Item trong danh sách bài làm của học sinh (response của teacher/exam-attempts)
- */
-export interface TeacherExamAttemptItem {
-  attemptId: string;
-  subject: string;
-  title: string;
-  examId: string;
-  doneBy: string;
-  score: number;
-  passingScore: number;
-  startTime: string;
-  endTime: string;
-  status: string;
-  comment: string;
-  rating: number;
-  isLate: boolean;
-}
