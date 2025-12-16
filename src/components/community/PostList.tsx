@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Input, Button, Dropdown, message } from "antd";
+import { Input, Button, Dropdown, message, Modal } from "antd";
 import type { MenuProps } from "antd";
 import { FiMessageSquare, FiMoreVertical } from "react-icons/fi";
 import type { Thread, CommunityComment } from "~/types/community";
@@ -9,9 +9,10 @@ import { useAuth } from "~/hooks/useAuth";
 interface PostListProps {
   loading: boolean;
   threads: Thread[];
+  onDeletePost?: (postId: string | number) => Promise<void>;
 }
 
-const PostList: React.FC<PostListProps> = ({ loading, threads }) => {
+const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost }) => {
   const { user } = useAuth();
   const {
     loading: commentLoading,
@@ -30,6 +31,8 @@ const PostList: React.FC<PostListProps> = ({ loading, threads }) => {
   const [replyingCommentId, setReplyingCommentId] = useState<string | number | null>(null);
   const [replyTexts, setReplyTexts] = useState<Record<string, string>>({});
   const [expandedReplyIds, setExpandedReplyIds] = useState<Set<string>>(new Set());
+  const [postToDelete, setPostToDelete] = useState<Thread | null>(null);
+  const [deletingPost, setDeletingPost] = useState(false);
 
   const handleToggleComments = async (thread: Thread) => {
     const postId = thread.postId || thread.id;
@@ -111,11 +114,38 @@ const PostList: React.FC<PostListProps> = ({ loading, threads }) => {
     setEditCommentText("");
   };
 
-  const handleDeleteComment = async (comment: CommunityComment, postId: string | number) => {
-    if (!confirm("Are you sure you want to delete this comment?")) return;
+  const handleDeleteComment = (comment: CommunityComment, postId: string | number) => {
+    Modal.confirm({
+      title: "Delete comment",
+      content: "Are you sure you want to delete this comment?",
+      okText: "Delete",
+      okType: "danger",
+      cancelText: "Cancel",
+      centered: true,
+      onOk: async () => {
+        await deleteComment(comment.id, postId);
+        message.success("Comment deleted successfully.");
+      },
+    });
+  };
 
-    await deleteComment(comment.id, postId);
-    message.success("Comment deleted successfully.");
+  const handleDeletePostClick = (thread: Thread) => {
+    if (!onDeletePost) return;
+    setPostToDelete(thread);
+  };
+
+  const handleConfirmDeletePost = async () => {
+    if (!postToDelete || !onDeletePost) return;
+    try {
+      setDeletingPost(true);
+      await onDeletePost(postToDelete.postId || postToDelete.id);
+      message.success("Post deleted successfully.");
+      setPostToDelete(null);
+    } catch {
+      message.error("Failed to delete post. Please try again.");
+    } finally {
+      setDeletingPost(false);
+    }
   };
 
   const renderComment = (c: CommunityComment, postId: string | number) => {
@@ -314,31 +344,58 @@ const PostList: React.FC<PostListProps> = ({ loading, threads }) => {
       parentComments = commentList;
     }
 
+    const isOwnPost =
+      !!user &&
+      !!thread.authorId &&
+      String(thread.authorId) === String(user.id);
+    const postMenuItems: MenuProps["items"] = isOwnPost
+      ? [
+          {
+            key: "delete",
+            label: "Delete",
+            danger: true,
+            onClick: () => handleDeletePostClick(thread),
+          },
+        ]
+      : [];
+
     return (
       <div
         key={thread.id}
         className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"
       >
-        <div className="flex items-center gap-3">
-          <img
-            src={thread.user.avatar}
-            alt={thread.user.name}
-            className="w-10 h-10 rounded-full"
-          />
-          <div>
-            <p className="font-semibold text-gray-800">{thread.user.name}</p>
-            <div className="text-xs text-gray-500 flex items-center gap-2">
-              <span>10 minutes ago</span>
-              {thread.groupName && (
-                <>
-                  <span className="w-1 h-1 rounded-full bg-gray-300" />
-                  <span className="text-teal-600 text-xs">
-                    {thread.groupName}
-                  </span>
-                </>
-              )}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1">
+            <img
+              src={thread.user.avatar}
+              alt={thread.user.name}
+              className="w-10 h-10 rounded-full"
+            />
+            <div>
+              <p className="font-semibold text-gray-800">{thread.user.name}</p>
+              <div className="text-xs text-gray-500 flex items-center gap-2">
+                <span>10 minutes ago</span>
+                {thread.groupName && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-gray-300" />
+                    <span className="text-teal-600 text-xs">
+                      {thread.groupName}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
+          {isOwnPost && (
+            <Dropdown menu={{ items: postMenuItems }} trigger={["click"]}>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100"
+              >
+                <FiMoreVertical size={16} />
+              </button>
+            </Dropdown>
+          )}
         </div>
         <p className="mt-3 text-gray-700 leading-relaxed">{thread.content}</p>
         {thread.image && (
@@ -471,15 +528,43 @@ const PostList: React.FC<PostListProps> = ({ loading, threads }) => {
   };
 
   return (
-    <div className="space-y-4">
-      {loading && (
-        <div className="text-center py-6 text-gray-500">Loading posts...</div>
-      )}
-      {!loading && threads.map(renderPostCard)}
-      {!loading && threads.length === 0 && (
-        <div className="text-center py-10 text-gray-500">No posts yet.</div>
-      )}
-    </div>
+    <>
+      <div className="space-y-4">
+        {loading && (
+          <div className="text-center py-6 text-gray-500">Loading posts...</div>
+        )}
+        {!loading && threads.map(renderPostCard)}
+        {!loading && threads.length === 0 && (
+          <div className="text-center py-10 text-gray-500">No posts yet.</div>
+        )}
+      </div>
+
+      {/* Delete post confirmation modal */}
+      <Modal
+        open={!!postToDelete}
+        title="Delete post"
+        centered
+        onCancel={() => setPostToDelete(null)}
+        footer={[
+          <Button key="cancel" onClick={() => setPostToDelete(null)}>
+            Cancel
+          </Button>,
+          <Button
+            key="delete"
+            type="primary"
+            danger
+            loading={deletingPost}
+            onClick={() => void handleConfirmDeletePost()}
+          >
+            Delete
+          </Button>,
+        ]}
+      >
+        <p className="text-sm text-gray-700">
+          Are you sure you want to delete this post? This action cannot be undone.
+        </p>
+      </Modal>
+    </>
   );
 };
 

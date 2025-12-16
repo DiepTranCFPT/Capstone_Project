@@ -20,6 +20,7 @@ export interface Thread {
     commentsData: Comment[];
     groupId?: number;
     groupName?: string;
+    authorId?: string | number; // ID của người tạo post để check quyền xóa
 };
 
 export interface StudyGroup {

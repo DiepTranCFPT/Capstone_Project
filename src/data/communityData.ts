@@ -3,6 +3,7 @@ import type { LeaderboardUser } from '~/types/community';
 export const threads = [
     {
         id: 1,
+        postId: 1,
         user: { name: 'Sontung MTP', avatar: 'https://i.pravatar.cc/150?img=3' },
         content: "I just started practicing IELTS, because of the 6.0 test, I joined a practice test class at an English center, but I don't know anything, please share tips.",
         tags: ['english', 'Pneumonoultra', 'loremipsum'],
@@ -35,6 +36,7 @@ export const threads = [
     },
     {
         id: 2,
+        postId: 2,
         user: { name: 'John Doe', avatar: 'https://i.pravatar.cc/150?img=4' },
         content: "Anyone have good resources for learning React Hooks? I'm struggling with useEffect dependencies. Any help would be appreciated!",
         tags: ['react', 'javascript', 'frontend'],
@@ -45,6 +47,7 @@ export const threads = [
     },
     {
         id: 3,
+        postId: 3,
         user: { name: 'Jane Smith', avatar: 'https://i.pravatar.cc/150?img=2' },
         content: "Just finished a course on UI/UX design. It was amazing! I learned so much about creating user-centered designs. Highly recommend it to anyone interested in the field.",
         tags: ['ui', 'ux', 'design'],
