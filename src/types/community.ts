@@ -93,6 +93,29 @@ export interface CreateCommunityPostPayload {
   [key: string]: unknown;
 }
 
+// ===== Comment APIs cho post-controller & comment-controller =====
+
+export interface CommunityComment {
+  id: string | number;
+  postId: string | number;
+  content: string;
+  authorId?: string | number;
+  authorName?: string;
+  authorAvatar?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  replyCount?: number;
+  parentId?: string | number | null;
+  [key: string]: unknown;
+}
+
+export interface CreateCommunityCommentPayload {
+  content: string;
+  // nếu là reply cho comment khác
+  parentCommentId?: string | number | null;
+  [key: string]: unknown;
+}
+
 // Query khi gọi GET /communities
 export interface CommunityQueryParams {
   page?: number;

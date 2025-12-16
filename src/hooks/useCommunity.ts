@@ -257,6 +257,7 @@ export const useCommunity = () => {
     []
   );
 
+
   // PUT /communities/{communityId}
   const updateCommunity = useCallback(
     async (

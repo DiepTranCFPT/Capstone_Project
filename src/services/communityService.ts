@@ -5,8 +5,10 @@ import type { ApiResponse, PaginatedResponse } from "~/types/api";
 import type {
   Community,
   CommunityPost,
+  CommunityComment,
   CommunityUpdatePayload,
   CreateCommunityPostPayload,
+  CreateCommunityCommentPayload,
   CommunityQueryParams,
   CommunitySearchParams,
 } from "~/types/community";
@@ -76,6 +78,45 @@ const CommunityService = {
     AxiosResponse<ApiResponse<PaginatedResponse<Community> | Community[]>>
   > {
     return axiosInstance.get(`/communities/search`, { params });
+  },
+
+  // ===== Post / Comment controller APIs (post-controller & comment-controller) =====
+
+  // GET /posts/{postId}/comments
+  getPostComments(
+    postId: string | number
+  ): Promise<AxiosResponse<ApiResponse<CommunityComment[]>>> {
+    return axiosInstance.get(`/posts/${postId}/comments`);
+  },
+
+  // POST /posts/{postId}/comments
+  createPostComment(
+    postId: string | number,
+    payload: CreateCommunityCommentPayload
+  ): Promise<AxiosResponse<ApiResponse<CommunityComment>>> {
+    return axiosInstance.post(`/posts/${postId}/comments`, payload);
+  },
+
+  // PUT /comments/{commentId}
+  updateComment(
+    commentId: string | number,
+    payload: Partial<CreateCommunityCommentPayload>
+  ): Promise<AxiosResponse<ApiResponse<CommunityComment>>> {
+    return axiosInstance.put(`/comments/${commentId}`, payload);
+  },
+
+  // DELETE /comments/{commentId}
+  deleteComment(
+    commentId: string | number
+  ): Promise<AxiosResponse<ApiResponse<null>>> {
+    return axiosInstance.delete(`/comments/${commentId}`);
+  },
+
+  // GET /comments/{commentId}/replies
+  getCommentReplies(
+    commentId: string | number
+  ): Promise<AxiosResponse<ApiResponse<CommunityComment[]>>> {
+    return axiosInstance.get(`/comments/${commentId}/replies`);
   },
 };
 
