@@ -46,8 +46,18 @@ const usePostComments = () => {
         setError(null);
 
         const response = await CommunityService.getPostComments(postId);
-        const apiResponse = response.data as ApiResponse<CommunityComment[]>;
-        const comments = apiResponse.data || [];
+        const apiResponse = response.data as ApiResponse<unknown>;
+        const raw = apiResponse.data;
+
+        let comments: CommunityComment[] = [];
+        if (Array.isArray(raw)) {
+          comments = raw as CommunityComment[];
+        } else if (raw && typeof raw === "object" && "items" in (raw as any)) {
+          const items = (raw as any).items;
+          if (Array.isArray(items)) {
+            comments = items as CommunityComment[];
+          }
+        }
 
         const key = String(postId);
         setPostComments((prev) => ({
