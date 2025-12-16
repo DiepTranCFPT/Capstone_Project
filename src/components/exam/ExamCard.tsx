@@ -1,4 +1,5 @@
 import React from 'react'
+import { FaCoins } from 'react-icons/fa';
 import { FiBook, FiClock, FiFileText, FiLoader } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { useAuth } from '~/hooks/useAuth';
@@ -37,7 +38,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exams, onStartExam, isLoading = fal
                 <span className="flex items-center mr-2">
                     {'⭐'.repeat(Math.floor(exams.rating))} ({exams.rating})
                 </span>
-                <span className='flex items-center gap-1 text-md text-gray-700'>- {exams.tokenCost === 0 ? 'Free' : `${exams.tokenCost.toLocaleString('vi-VN')}`}  (VNĐ)</span>
+                <span className='flex items-center gap-1 text-yellow-500'>- {exams.tokenCost === 0 ? 'Free' : `${exams.tokenCost}`}<FaCoins />  (Tokens)</span>
             </div>
 
             {/* Subject */}

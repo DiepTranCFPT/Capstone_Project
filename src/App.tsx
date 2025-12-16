@@ -20,19 +20,13 @@ import ExamDetailsPage from "./pages/exam/ExamDetailsPage";
 import TestResultPage from "./pages/exam/TestResultPage";
 import DoTestPage from "./pages/exam/DoTestPage";
 import OngoingExamsPage from "./pages/exam/OngoingExamsPage";
+import PracticePage from "./pages/exam/PracticePage";
+import FRQPracticePage from "./pages/exam/FRQPracticePage";
 
 import MaterialsPage from "./pages/generics/materials/MaterialsPage";
 import MaterialsDetailPage from "./pages/generics/materials/MaterialsDetailPage";
 import MaterialLearnPage from "./pages/generics/materials/MaterialLearnPage";
 import CommunityPage from "./pages/community/CommunityPage";
-
-// --- Flashcard Imports ---
-import FlashcardsPage from "./pages/flashcards/FlashcardsPage";
-import FlashcardDetailPage from "./pages/flashcards/FlashcardDetailPage";
-import FlashcardCreatePage from "./pages/flashcards/FlashcardCreatePage";
-import FlashcardEditPage from "./pages/flashcards/FlashcardEditPage";
-import FlashcardQuizPage from "./pages/flashcards/FlashcardQuizPage";
-
 import StudentDashboardPage from "./pages/students/StudentDashboardPage";
 import StudentLayout from "./layout/students/StudentLayout";
 import AITutorPage from "./pages/students/AITutorPage";
@@ -74,7 +68,6 @@ import ClassAnalyticsPage from "./pages/teachers/ClassAnalyticsPage";
 import GradeSubmissionPage from "./pages/teachers/GradeSubmissionPage";
 import TeacherBookingRequestsPage from "./pages/teachers/TeacherBookingRequestsPage";
 import TeacherReviewQueuePage from "./pages/teachers/TeacherReviewQueuePage";
-import TeacherExamAttemptsPage from "./pages/teachers/TeacherExamAttemptsPage";
 
 // --- Parent Imports ---
 import ParentLayout from "./layout/parents/ParentLayout";
@@ -127,7 +120,11 @@ function App() {
         {/* Routes không có Layout (Navbar/Footer) */}
         <Route path="/do-test/:examId/:testType" element={<DoTestPage />} />
         <Route path="/do-test/combo/:attemptId" element={<DoTestPage />} />
-           
+        <Route
+          path="/do-test/:examId/:practiceType/:mode"
+          element={<PracticePage />}
+        />
+        <Route path="/practice-frq/:examId" element={<FRQPracticePage />} />
         {/* Auth routes */}
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
@@ -184,13 +181,6 @@ function App() {
           <Route path="/wallet" element={<WalletPage />} />
           <Route path="/wallet/result" element={<PaymentResult />} />
           <Route path="/teacher-detail/:teacherId" element={<TeacherDetailPage />} />
-
-          {/* Flashcard routes */}
-          <Route path="/flashcards" element={<FlashcardsPage />} />
-          <Route path="/flashcards/create" element={<FlashcardCreatePage />} />
-          <Route path="/flashcards/:id" element={<FlashcardDetailPage />} />
-          <Route path="/flashcards/:id/edit" element={<FlashcardEditPage />} />
-          <Route path="/flashcards/:id/quiz" element={<FlashcardQuizPage />} />
         </Route>
 
         {/* Student routes with StudentLayout */}
@@ -235,7 +225,6 @@ function App() {
           <Route path="template-details/:examId" element={<TeacherExamDetailsPage />} />
           <Route path="edit-template/:examId" element={<CreateExamPage />} />
           <Route path="review-queue" element={<TeacherReviewQueuePage />} />
-          <Route path="exam-attempts" element={<TeacherExamAttemptsPage />} />
           <Route
             path="grading/:submissionId"
             element={<GradeSubmissionPage />}

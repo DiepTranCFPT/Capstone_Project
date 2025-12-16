@@ -7,14 +7,17 @@ import {
   FaBook,
   FaUserGraduate,
   FaCertificate,
+  // FaCog,
   FaChartBar,
+  FaCoins,
   FaRobot,
+  // FaTrophy,
   FaBars
 } from "react-icons/fa";
 import { useAuth } from "~/hooks/useAuth";
 import { useWalletBalance } from "~/hooks/useWalletBalance";
 
-// Menu cho Student
+// Menu tạm thời cho Student
 const studentMenu = [
   {
     label: "Dashboard",
@@ -26,6 +29,21 @@ const studentMenu = [
     path: "/student/ai-tutor",
     icon: <FaRobot />,
   },
+  // {
+  //   label: "Find a Tutor",
+  //   path: "/student/find-tutor",
+  //   icon: <FaUserFriends />,
+  // },
+  // {
+  //   label: "My Bookings",
+  //   path: "/student/my-bookings",
+  //   icon: <FaCalendarCheck />,
+  // },
+  // {
+  //   label: "Quiz Battle",
+  //   path: "/student/quiz-battle",
+  //   icon: <FaTrophy />,
+  // },
   {
     label: "My Courses",
     path: "/student/my-courses",
@@ -41,6 +59,11 @@ const studentMenu = [
     path: "/student/test-reports",
     icon: <FaChartBar />,
   },
+  // {
+  //   label: "Settings",
+  //   path: "/student/settings",
+  //   icon: <FaCog />,
+  // },
 ];
 
 interface StudentSidebarProps {
@@ -147,11 +170,12 @@ export default function SidebarStudent({ mobileOpen = false, onMobileClose }: St
               <div>
                 <div className="text-sm font-semibold">{currentUser.firstName} {currentUser.lastName}</div>
                 <div className="text-[10px] text-gray-400">{currentUser.email}</div>
-                <div className="flex items-center text-sm font-medium text-green-600">
+                <div className="flex items-center text-sm text-yellow-500">
+                  <FaCoins className="mr-1" />
                   {balanceLoading ? (
                     <Spin size="small" />
                   ) : (
-                    <span>{tokenBalance?.toLocaleString('vi-VN') ?? currentUser.tokenBalance.toLocaleString('vi-VN')} VNĐ</span>
+                    <span>{tokenBalance ?? currentUser.tokenBalance} Tokens</span>
                   )}
                 </div>
               </div>
