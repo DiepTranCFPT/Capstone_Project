@@ -40,6 +40,11 @@ const FlashcardSetService = {
     getQuiz(id: string): Promise<AxiosResponse<FlashcardQuizResponse>> {
         return axiosInstance.get(`/flashcard-sets/${id}/quiz`);
     },
+
+    // GET /flashcard-sets/my-sets - Get flashcard sets created by current user
+    getMyFlashcardSets(params?: { page?: number; size?: number }): Promise<AxiosResponse<FlashcardSetListResponse>> {
+        return axiosInstance.get("/flashcard-sets/my-sets", { params });
+    },
 };
 
 export default FlashcardSetService;

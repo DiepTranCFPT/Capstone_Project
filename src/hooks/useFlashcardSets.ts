@@ -21,6 +21,7 @@ interface UseFlashcardSetsReturn {
 
     // Actions
     fetchFlashcardSets: (params?: FlashcardSetQuery) => Promise<void>;
+    fetchMyFlashcardSets: (params?: { page?: number; size?: number }) => Promise<void>;
     fetchFlashcardSetById: (id: string) => Promise<FlashcardSetDetail | null>;
     createFlashcardSet: (payload: CreateFlashcardSetRequest) => Promise<FlashcardSetDetail | null>;
     updateFlashcardSet: (id: string, payload: UpdateFlashcardSetRequest) => Promise<FlashcardSetDetail | null>;
@@ -223,6 +224,40 @@ export const useFlashcardSets = (): UseFlashcardSetsReturn => {
         }
     }, []);
 
+    // Fetch my flashcard sets (created by current user)
+    const fetchMyFlashcardSets = useCallback(async (params?: { page?: number; size?: number }) => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            const response = await FlashcardSetService.getMyFlashcardSets(params);
+            const data = response.data?.data;
+
+            if (data) {
+                setFlashcardSets(data.items || []);
+                setPageInfo({
+                    pageNo: data.pageNo,
+                    pageSize: data.pageSize,
+                    totalPage: data.totalPage,
+                    totalElement: data.totalElement,
+                    sortBy: data.sortBy,
+                });
+            }
+        } catch (err) {
+            console.error("Error fetching my flashcard sets:", err);
+            const axiosError = err as {
+                response?: {
+                    data?: { message?: string };
+                    status?: number;
+                };
+            };
+            setError(axiosError.response?.data?.message || "Failed to fetch your flashcard sets");
+            setFlashcardSets([]);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     // Clear error
     const clearError = useCallback(() => {
         setError(null);
@@ -245,6 +280,7 @@ export const useFlashcardSets = (): UseFlashcardSetsReturn => {
 
         // Actions
         fetchFlashcardSets,
+        fetchMyFlashcardSets,
         fetchFlashcardSetById,
         createFlashcardSet,
         updateFlashcardSet,
