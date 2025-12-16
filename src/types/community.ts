@@ -85,11 +85,11 @@ export interface CommunityPost {
   [key: string]: unknown;
 }
 
-// Payload tạo post mới
+// Payload tạo post mới (theo BE: title, content, image MultipartFile)
 export interface CreateCommunityPostPayload {
-  title?: string;
+  title: string;
   content: string;
-  attachments?: string[]; // tuỳ BE, có thể không dùng
+  image?: File;
   [key: string]: unknown;
 }
 

@@ -49,14 +49,48 @@ const extractFromPaginated = <T,>(
     };
   }
 
-  const paginated = raw as PaginatedResponse<T>;
-  return {
-    items: paginated.content || [],
-    pageInfo: {
-      totalElements: paginated.totalElements,
-      totalPages: paginated.totalPages,
-    },
-  };
+  const anyRaw = raw as any;
+
+  // Case 1: chuẩn PaginatedResponse { content, totalElements, totalPages }
+  if ("content" in anyRaw) {
+    const paginated = raw as PaginatedResponse<T>;
+    return {
+      items: paginated.content || [],
+      pageInfo: {
+        totalElements: paginated.totalElements,
+        totalPages: paginated.totalPages,
+      },
+    };
+  }
+
+  // Case 2: BE trả { items, totalElement } (như API posts hiện tại)
+  if ("items" in anyRaw) {
+    const items = (anyRaw.items || []) as T[];
+    const totalElements = typeof anyRaw.totalElements === "number"
+      ? anyRaw.totalElements
+      : typeof anyRaw.totalElement === "number"
+        ? anyRaw.totalElement
+        : items.length;
+
+    const totalPages = typeof anyRaw.totalPages === "number"
+      ? anyRaw.totalPages
+      : 1;
+
+    return {
+      items,
+      pageInfo: {
+        totalElements,
+        totalPages,
+      },
+    };
+  }
+
+  // Fallback: nếu data là object nhưng không đúng 2 dạng trên, cố gắng đọc như mảng
+  if (Array.isArray(anyRaw.data)) {
+    return { items: anyRaw.data as T[], pageInfo: null };
+  }
+
+  return { items: [], pageInfo: null };
 };
 
 export const useCommunity = () => {

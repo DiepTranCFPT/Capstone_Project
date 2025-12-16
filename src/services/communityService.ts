@@ -40,9 +40,21 @@ const CommunityService = {
     communityId: string | number,
     payload: CreateCommunityPostPayload
   ): Promise<AxiosResponse<ApiResponse<CommunityPost>>> {
+    const formData = new FormData();
+    formData.append("title", payload.title);
+    formData.append("content", payload.content);
+    if (payload.image) {
+      formData.append("image", payload.image);
+    }
+
     return axiosInstance.post(
       `/communities/${communityId}/posts`,
-      payload
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
     );
   },
 

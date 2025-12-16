@@ -1,152 +1,214 @@
 import { message } from "antd";
-import type { UploadFile } from "antd/es/upload/interface";
 import type React from "react";
-import { useState } from "react";
-import { FiMessageCircle, FiPlus, FiUser, FiUsers } from "react-icons/fi";
-import CreateGroupModal from "~/components/community/CreateGroupModal";
+import { useEffect, useMemo, useState } from "react";
+import { FiSearch, FiGlobe } from "react-icons/fi";
 import CreateThreadModal from "~/components/community/CreateThreadModal";
-import LeaderBoard from "~/components/community/Leaderboard";
-import StudyGroupCard from "~/components/community/StudyGroupCard";
-import ThreadCard from "~/components/community/ThreadCard";
-import { threads as initialThreads } from '~/data/communityData';
 import { useAuth } from "~/hooks/useAuth";
-import type { StudyGroup, Thread } from "~/types/community";
-import { PiRankingLight } from "react-icons/pi";
-const mockGroups: StudyGroup[] = [
-    { id: 1, name: 'IELTS 7.0 Aimers', description: 'Cùng nhau chia sẻ tài liệu và kinh nghiệm để đạt mục tiêu IELTS 7.0+', avatar: 'https://placehold.co/100x100/3CBCB2/FFFFFF?text=IELTS', bannerImage: '', memberCount: 120, tags: ['ielts', 'english'], privacy: 'public', members: [] },
-    { id: 2, name: 'ReactJS Developers VN', description: 'Nơi thảo luận về React, Next.js và hệ sinh thái Javascript.', avatar: 'https://placehold.co/100x100/F5A623/FFFFFF?text=React', bannerImage: '', memberCount: 450, tags: ['react', 'frontend'], privacy: 'public', members: [] },
-];
+import useCommunity from "~/hooks/useCommunity";
+import type { Thread } from "~/types/community";
+import CommunitySidebar from "~/components/community/CommunitySidebar";
+import PostComposer from "~/components/community/PostComposer";
+import PostList from "~/components/community/PostList";
+import CommunityInfoSidebar from "~/components/community/CommunityInfoSidebar";
 
 const CommunityPage: React.FC = () => {
 
     const { user } = useAuth();
-    const [threads, setThreads] = useState<Thread[]>(initialThreads);
+    const {
+        fetchCommunities,
+        fetchCommunityPosts,
+        createCommunityPost,
+        communities,
+        communityPosts,
+        loading,
+        error,
+    } = useCommunity();
+    const [selectedCommunityId, setSelectedCommunityId] = useState<string | number | null>(null);
     const [isThreadModalVisible, setIsThreadModalVisible] = useState(false);
-    const [isGroupModalVisible, setIsGroupModalVisible] = useState(false);
-    const [view, setView] = useState<'threads' | 'groups' | 'my-threads' | 'ranking'>('threads'); // State để quản lý view
+    const userAvatar = useMemo(() => {
+        const url = user?.imgUrl || (user as { avatar?: string } | undefined)?.avatar;
+        if (!url) return "https://i.pravatar.cc/150?u=community-default";
+        // Nếu backend trả về path tương đối thì prefix bằng API_URL, còn lại giữ nguyên
+        return url.startsWith("http") ? url : `${import.meta.env.VITE_API_URL}${url}`;
+    }, [user]);
+    const userDisplayName = useMemo(
+        () => (user ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "Người dùng" : "Người dùng"),
+        [user]
+    );
 
-    const displayedThreads = view === 'my-threads'
-        ? threads.filter(thread => thread.user.name === user?.firstName + ' ' + user?.lastName)
-        : threads;
+    // Lấy danh sách communities
+    useEffect(() => {
+        fetchCommunities({ page: 0, size: 10 });
+    }, [fetchCommunities]);
 
+    // Set community mặc định
+    useEffect(() => {
+        if (communities.length > 0 && !selectedCommunityId) {
+            setSelectedCommunityId(communities[0].id);
+        }
+    }, [communities, selectedCommunityId]);
 
-    const handleCreateThread = (values: { content: string, tags: string, image?: UploadFile }) => {
-        if (user) {
-            const newThread = {
-                id: threads.length + 1,
-                user: { name: user.firstName + ' ' + user.lastName, avatar: user.imgUrl || 'https://i.pravatar.cc/150' },
-                content: values.content,
-                tags: values.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-                likes: 0,
-                comments: 0,
-                image: values.image?.originFileObj ? URL.createObjectURL(values.image.originFileObj) : null,
+    // Lấy posts theo community đã chọn
+    useEffect(() => {
+        if (selectedCommunityId) {
+            fetchCommunityPosts(selectedCommunityId, { page: 0, size: 20 });
+        }
+    }, [selectedCommunityId, fetchCommunityPosts]);
+
+    // Thông báo lỗi nếu có
+    useEffect(() => {
+        if (error) {
+            message.error(error);
+        }
+    }, [error]);
+
+    // Chuẩn hoá posts từ API cho ThreadCard
+    const normalizedThreads = useMemo<Thread[]>(() => {
+        const apiBase = import.meta.env.VITE_API_URL || "";
+
+        const resolveImageUrl = (url?: string | null): string | null => {
+            if (!url) return null;
+            return url.startsWith("http") ? url : `${apiBase}${url}`;
+        };
+
+        return communityPosts.map((post) => {
+            const asAny = post as unknown as {
+                tags?: unknown;
+                image?: unknown;
+                imageUrl?: unknown;
+                imgUrl?: unknown;
+                author?: {
+                    firstName?: string;
+                    lastName?: string;
+                    username?: string;
+                    imgUrl?: string;
+                    avatar?: string;
+                };
+            };
+
+            const rawTags = asAny.tags;
+
+            const author = asAny.author;
+            const authorFullName = author
+                ? `${author.firstName ?? ""} ${author.lastName ?? ""}`.trim()
+                : "";
+
+            const displayName =
+                post.authorName ||
+                authorFullName ||
+                author?.username ||
+                "Người dùng";
+
+            const avatarUrl =
+                (post.authorAvatar as string | undefined) ||
+                author?.imgUrl ||
+                author?.avatar ||
+                "https://i.pravatar.cc/150";
+
+            const rawImage =
+                (asAny.image as string | undefined) ||
+                (asAny.imageUrl as string | undefined) ||
+                (asAny.imgUrl as string | undefined);
+
+            return {
+                id: Number(post.id),
+                user: {
+                    name: displayName,
+                    avatar: resolveImageUrl(avatarUrl) ?? "https://i.pravatar.cc/150",
+                },
+                content: post.content,
+                tags: Array.isArray(rawTags) ? (rawTags as string[]) : [],
+                likes: Number(post.likeCount ?? 0),
+                comments: Number(post.commentCount ?? 0),
+                image: resolveImageUrl(rawImage) as string | null,
                 commentsData: [],
-                groupId: undefined,
-                groupName: undefined
+                groupId: post.communityId ? Number(post.communityId) : undefined,
+                groupName: communities.find((c) => String(c.id) === String(post.communityId))?.name,
             };
-            // Thêm bài viết mới lên đầu danh sách
-            setThreads(prev => [newThread, ...prev]);
-            message.success("Your thread has been posted!");
-            setIsThreadModalVisible(false);
-        }
+        });
+    }, [communityPosts, communities]);
+
+    const displayedThreads = normalizedThreads;
+
+
+    const handleCreateThread = async (values: { title: string; content: string; imageFile?: File }) => {
+        if (!user || !selectedCommunityId) return;
+        await createCommunityPost(selectedCommunityId, {
+            title: values.title,
+            content: values.content,
+            image: values.imageFile,
+        });
+        message.success("Your thread has been posted!");
+        setIsThreadModalVisible(false);
     };
 
-    const handleCreateGroup = (values: { name: string, description: string, tags: string, privacy: 'public' | 'private', avatar?: UploadFile }) => {
-        if (user) {
-            const newGroup: StudyGroup = {
-                id: mockGroups.length + 1,
-                name: values.name,
-                description: values.description,
-                avatar: values.avatar?.originFileObj ? URL.createObjectURL(values.avatar.originFileObj) : '',
-                bannerImage: '',
-                memberCount: 0,
-                tags: values.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-                privacy: values.privacy,
-                members: [],
-            };
-            mockGroups.push(newGroup);
-            message.success("Your group has been created!");
-            setIsGroupModalVisible(false);
-        }
-    };
+    const currentCommunity = useMemo(
+        () => communities.find((c) => String(c.id) === String(selectedCommunityId)),
+        [communities, selectedCommunityId]
+    );
+
+    const onlineEstimate = useMemo(() => {
+        const members = Number(currentCommunity?.memberCount ?? 0);
+        return members > 0 ? Math.max(1, Math.round(members * 0.08)) : 0;
+    }, [currentCommunity]);
 
     return (
-        <div className="bg-gray-50 min-h-screen">
-            <main className="max-w-7xl mx-auto py-10 px-4">
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                    {/* col 1 navigation */}
-                    <aside className="hidden lg:block lg:col-span-1 self-start sticky top-10">
-                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                            <nav className="space-y-2">
-                                <button onClick={() => setView('threads')} className={`w-full flex items-center gap-3 px-3 py-2 hover:cursor-pointer rounded-md font-bold ${view === 'threads' ? 'text-teal-600 bg-teal-50' : 'text-gray-600 hover:bg-gray-100'}`}>
-                                    <FiMessageCircle /> Threads
-                                </button>
-                                <button onClick={() => setView('groups')} className={`w-full flex items-center gap-3 px-3 py-2 hover:cursor-pointer rounded-md font-bold ${view === 'groups' ? 'text-teal-600 bg-teal-50' : 'text-gray-600 hover:bg-gray-100'}`}>
-                                    <FiUsers /> Study Groups
-                                </button>
-                                <button onClick={() => setView('my-threads')} className={`w-full flex items-center gap-3 px-3 py-2 hover:cursor-pointer rounded-md font-bold ${view === 'my-threads' ? 'text-teal-600 bg-teal-50' : 'text-gray-600 hover:bg-gray-100'}`}>
-                                    <FiUser /> My Thread
-                                </button>
-                                <button onClick={() => setView('ranking')} className={`w-full flex items-center gap-3 px-3 py-2 hover:cursor-pointer rounded-md font-bold ${view === 'ranking' ? 'text-teal-600 bg-teal-50' : 'text-gray-600 hover:bg-gray-100'}`}>
-                                    <PiRankingLight /> Ranking
-                                </button>
-                            </nav>
+        <div className="bg-[#f5f7fb] min-h-screen">
+            <main className="max-w-7xl mx-auto py-6 px-4">
+                <div className="flex flex-col gap-6">
+                    {/* top search */}
+                    <div className="flex items-center gap-3">
+                        <div className="relative flex-1">
+                            <FiSearch className="absolute left-3 top-3 text-gray-400" />
+                            <input
+                                className="w-full pl-10 pr-4 py-2 rounded-full bg-white border border-gray-200 focus:outline-none focus:border-teal-400"
+                                placeholder="Search in community..."
+                            />
                         </div>
-                    </aside>
-                    {/* col 2 main feed */}
-                    <div className="col-span-1 lg:col-span-2 space-y-6">
-                        {/* Create Post - only for threads and groups */}
-                        {view !== 'ranking' && (
-                            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center gap-3">
-                                <img src={user?.imgUrl} alt="user" className="w-10 h-10 rounded-full" />
-                                {view === 'threads' ? (
-                                    <>
-                                        <div className="w-full bg-gray-100 rounded-full px-4 py-2 text-gray-500 cursor-pointer hover:bg-gray-200" onClick={() => setIsThreadModalVisible(true)}>
-                                            Add new thread...
-                                        </div>
-                                        <button onClick={() => setIsThreadModalVisible(true)} className="bg-teal-500 text-white p-2.5 rounded-full hover:bg-teal-600 hover:cursor-pointer"><FiPlus size={20} /></button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="w-full bg-gray-100 rounded-full px-4 py-2 text-gray-500 cursor-pointer hover:bg-gray-200" onClick={() => setIsGroupModalVisible(true)}>
-                                            Create a new study group...
-                                        </div>
-                                        <button onClick={() => setIsGroupModalVisible(true)} className="bg-teal-500 text-white p-2.5 rounded-full hover:bg-teal-600 hover:cursor-pointer"><FiPlus size={20} /></button>
-                                    </>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Content based on view */}
-                        {view === 'threads' ? (
-                            threads.map(thread => <ThreadCard key={thread.id} thread={thread} />)
-                        ) : view === 'my-threads' ? (
-                            displayedThreads.map(thread => <ThreadCard key={thread.id} thread={thread} />)
-                        ) : view === 'groups' ? (
-                            mockGroups.map(group => <StudyGroupCard key={group.id} group={group} />)
-                        ) : view === 'ranking' ? (
-                            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 animate-fade-in">
-                                <LeaderBoard />
-                            </div>
-                        ) : null}
-                        {displayedThreads.length === 0 && (
-                            <div className="text-center py-10">
-                                <p className="text-gray-500">No threads to display.</p>
-                            </div>
-                        )}
                     </div>
-                    {/* Col 3: Sidebar */}
-                    <aside className="col-span-1 space-y-6 self-start sticky top-10">
-                        <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200 text-center">
-                            <img src={user?.imgUrl} alt="user avatar" className="w-20 h-20 rounded-full mx-auto mb-3" />
-                            <h4 className="font-bold text-gray-800">{user?.firstName}</h4>
-                            <div className="flex justify-around text-center my-4">
-                                <div><p className="font-bold text-lg">5,432</p><p className="text-xs text-gray-500">Posts</p></div>
-                                <div><p className="font-bold text-lg">39</p><p className="text-xs text-gray-500">Followers</p></div>
-                                <div><p className="font-bold text-lg">4</p><p className="text-xs text-gray-500">Following</p></div>
+
+                    <div className="grid grid-cols-12 gap-6">
+                        {/* Left sidebar communities */}
+                        <CommunitySidebar
+                            communities={communities}
+                            selectedCommunityId={selectedCommunityId}
+                            onSelectCommunity={setSelectedCommunityId}
+                        />
+
+                        {/* Center content */}
+                        <section className="col-span-12 md:col-span-6 space-y-4">
+                            {/* hero */}
+                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-teal-50 flex items-center justify-center text-teal-600 text-2xl">
+                                    <FiGlobe />
+                                </div>
+                                <div className="flex-1">
+                                    <h2 className="text-xl font-bold text-gray-900">{currentCommunity?.name || "General Chat"}</h2>
+                                    <p className="text-sm text-gray-600">
+                                        {currentCommunity?.description || "Talk about anything and everything."}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    </aside>
+
+                            {/* post box */}
+                            <PostComposer
+                                userAvatar={userAvatar}
+                                userDisplayName={userDisplayName}
+                                communityName={currentCommunity?.name}
+                                onOpenComposer={() => setIsThreadModalVisible(true)}
+                            />
+
+                            {/* posts */}
+                            <PostList loading={loading} threads={displayedThreads} />
+                        </section>
+
+                        {/* Right sidebar */}
+                        <CommunityInfoSidebar
+                            description={currentCommunity?.description}
+                            memberCount={currentCommunity?.memberCount}
+                            onlineEstimate={onlineEstimate}
+                        />
+                    </div>
                 </div>
             </main>
             <CreateThreadModal
@@ -154,12 +216,7 @@ const CommunityPage: React.FC = () => {
                 onClose={() => setIsThreadModalVisible(false)}
                 onSubmit={handleCreateThread}
             />
-            <CreateGroupModal
-                visible={isGroupModalVisible}
-                onClose={() => setIsGroupModalVisible(false)}
-                onSubmit={handleCreateGroup}
-            />
         </div>
-    )
+    );
 };
 export default CommunityPage;
