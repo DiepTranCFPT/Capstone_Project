@@ -42,7 +42,7 @@ const StudentDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f4f7fd] p-6">
-      <div className="max-w-7xl mx-auto md:ml-0 ml-0">
+      <div className="w-full mx-auto md:ml-0 ml-0">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.firstName} {user?.lastName}</h1>

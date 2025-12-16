@@ -18,6 +18,7 @@ import { FileAddOutlined, MenuFoldOutlined, MenuUnfoldOutlined, TagsOutlined } f
 import { IoCheckmarkCircle } from "react-icons/io5";
 import { BsQuestionSquare } from "react-icons/bs";
 import { CiBoxList } from "react-icons/ci";
+import { FaBook } from "react-icons/fa";
 
 const teacherMenu = [
     { label: "Dashboard", path: "/teacher/dashboard", icon: <FaTachometerAlt /> },
@@ -28,6 +29,7 @@ const teacherMenu = [
     { label: "Create Template", path: "/teacher/create-template", icon: <FileAddOutlined /> },
     { label: "Review Queue", path: "/teacher/review-queue", icon: <CiBoxList /> },
     { label: "My Ratings", path: "/teacher/ratings", icon: <FaStar /> },
+    { label: "Exams Attempt", path: "/teacher/exam-attempts", icon: <FaBook /> },
     // { label: "Analytics", path: "/teacher/analytics", icon: <FaChartBar /> },
     // { label: "Tutor Profile", path: "/teacher/tutor-profile", icon: <FaBookOpen /> },
     // { label: "My Availability", path: "/teacher/availability", icon: <FaCalendarAlt /> },

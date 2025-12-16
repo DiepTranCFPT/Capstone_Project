@@ -18,6 +18,8 @@ import type {
   RequestReviewPayload,
   ReviewQueueQueryParams,
   ReviewQueueItem,
+  TeacherExamAttemptQueryParams,
+  TeacherExamAttemptItem,
 } from "~/types/examAttempt";
 
 /**
@@ -150,6 +152,16 @@ const ExamAttemptService = {
     params?: ReviewQueueQueryParams
   ): Promise<AxiosResponse<ApiResponse<PageInfo<ReviewQueueItem>>>> {
     return axiosInstance.get("/exam-attempts/teacher/review-queue", { params });
+  },
+
+  /**
+   * 🔹 Lấy danh sách các bài làm của học sinh (Giáo viên).
+   * GET /exam-attempts/teacher/exam-attempts
+   */
+  getTeacherExamAttempts(
+    params?: TeacherExamAttemptQueryParams
+  ): Promise<AxiosResponse<ApiResponse<PageInfo<TeacherExamAttemptItem>>>> {
+    return axiosInstance.get("/exam-attempts/teacher/exam-attempts", { params });
   },
 
 };
