@@ -151,7 +151,7 @@ const ExamsTrendingSection: React.FC = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-500">Token Cost</span>
-                    <span className="text-xs md:text-sm font-bold text-amber-600">{exam.tokenCost} 💰</span>
+                    <span className="text-xs md:text-sm font-bold text-amber-600">{exam.tokenCost.toLocaleString('vi-VN')} VNĐ</span>
                   </div>
                 </div>
 

@@ -419,6 +419,11 @@ const DoTestPage: React.FC = () => {
                     localStorage.removeItem(`exam_started_${examAttemptId}`);
                     localStorage.removeItem(`exam_started_at_${examAttemptId}`);
                 }
+
+                // Clear exam specific attempt data
+                if (examId) {
+                    localStorage.removeItem(`exam_attempt_${examId}`);
+                }
                 navigate(`/exam-test?showWaitModal=true&attemptId=${examAttemptId}`);
             } else {
                 // If submission failed, close modal anyway to prevent getting stuck
@@ -896,7 +901,7 @@ const DoTestPage: React.FC = () => {
                             <p className="text-gray-600 mb-6 leading-relaxed">
                                 {isSubmit
                                     ? 'Are you sure you want to submit the exam? This action cannot be undone.'
-                                    : 'Are you sure you want to cancel the exam? All progress will be lost.'
+                                    : 'Are you sure you want to cancel the exam? Your current answers will be submitted.'
                                 }
                             </p>
                             <div className="flex gap-3 justify-center">
@@ -909,10 +914,11 @@ const DoTestPage: React.FC = () => {
 
                                 {isCancel ? (
                                     <button
-                                        onClick={handleCancel}
-                                        className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-all duration-200 border border-red-400/60 hover:border-red-300 shadow-lg hover:shadow-xl"
+                                        onClick={handleSubmit}
+                                        disabled={isSubmitting}
+                                        className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-all duration-200 border border-red-400/60 hover:border-red-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        Confirm Cancel
+                                        {isSubmitting ? 'Submitting...' : 'Confirm Cancel'}
                                     </button>
                                 ) : (
                                     <button
