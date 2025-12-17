@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Button, Input, Card, Select, Switch, Table, Space, InputNumber, Tag, Tooltip } from "antd";
+import { Button, Input, Card, Select, Switch, Table, Space, InputNumber, Tag, Tooltip, Slider, Progress, Alert } from "antd";
 import { PlusOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { useParams, useNavigate } from "react-router-dom";
-import type { CreateExamRulePayload, CreateExamTemplatePayload, ExamRule } from "~/types/test";
+import type { CreateExamRulePayload, CreateExamTemplatePayload, ExamRule, ScoreMapping } from "~/types/test";
 // import { useAuth } from "~/hooks/useAuth";
 import { useExamTemplates } from "~/hooks/useExams";
 import { useSubjects } from "~/hooks/useSubjects";
@@ -37,6 +37,16 @@ const CreateExamPage: React.FC = () => {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
   const [tokenCost, setTokenCost] = useState<number>(0);
   const [rules, setRules] = useState<CreateExamRulePayload[]>([]);
+  const [totalQuestions, setTotalQuestions] = useState<number>(20); // Total desired questions
+
+  // Score Mapping state - default AP Score 1-5
+  const [scoreMapping, setScoreMapping] = useState<ScoreMapping>({
+    '5': { min: 90, max: 100 },
+    '4': { min: 75, max: 89 },
+    '3': { min: 60, max: 74 },
+    '2': { min: 45, max: 59 },
+    '1': { min: 0, max: 44 },
+  });
 
   // Rule form states
   const [showRuleForm, setShowRuleForm] = useState(false);
@@ -45,8 +55,9 @@ const CreateExamPage: React.FC = () => {
     topicName: '',
     difficultyName: 'Easy',
     questionType: 'mcq',
-    numberOfQuestions: 1,
+    numberOfQuestions: 0,
     points: 1,
+    percentage: 10, // Default 10%
   });
 
   // Error states
@@ -55,6 +66,7 @@ const CreateExamPage: React.FC = () => {
   const [passingScoreError, setPassingScoreError] = useState<string>('');
   const [rulesError, setRulesError] = useState<string>('');
   const [tokenCostError, setTokenCostError] = useState<string>('');
+  const [totalQuestionsError, setTotalQuestionsError] = useState<string>('');
 
   // Load template data when in edit mode
   useEffect(() => {
@@ -142,13 +154,76 @@ const CreateExamPage: React.FC = () => {
 
   const availableCount = useMemo(() => getAvailableCount(), [ruleForm, subjectQuestions]);
 
+  // Helper: count questions by topic + difficulty + type
+  const getTypeCountForDifficulty = (type: 'mcq' | 'frq') => {
+    if (!ruleForm.topicName || !ruleForm.difficultyName) return 0;
+    return subjectQuestions.filter(q =>
+      q.topic === ruleForm.topicName &&
+      q.difficulty?.toLowerCase() === ruleForm.difficultyName.toLowerCase() &&
+      q.type?.toLowerCase() === type
+    ).length;
+  };
+
+  // Calculate number of questions from percentage
+  const calculateQuestions = (percentage: number) => {
+    return Math.floor((percentage / 100) * totalQuestions);
+  };
+
+  // Total percentage of all rules
+  const totalPercentage = useMemo(() => {
+    return rules.reduce((sum, rule) => sum + (rule.percentage || 0), 0);
+  }, [rules]);
+
+  // Check if any rule exceeds available questions
+  const rulesWithAvailability = useMemo(() => {
+    return rules.map(rule => {
+      const filteredQuestions = subjectQuestions.filter(q =>
+        (q.topic === rule.topicName) &&
+        (q.difficulty?.toLowerCase() === rule.difficultyName.toLowerCase()) &&
+        (q.type?.toLowerCase() === rule.questionType.toLowerCase())
+      );
+      const available = filteredQuestions.length;
+      const needed = calculateQuestions(rule.percentage || 0);
+      return {
+        ...rule,
+        available,
+        needed,
+        isExceeded: needed > available
+      };
+    });
+  }, [rules, subjectQuestions, totalQuestions]);
+
+  // Check for any question availability errors
+  const hasAvailabilityErrors = useMemo(() => {
+    return rulesWithAvailability.some(r => r.isExceeded);
+  }, [rulesWithAvailability]);
+
+  // Calculate total points of all rules
+  const totalPoints = useMemo(() => {
+    return rules.reduce((sum, rule) => {
+      const numQuestions = calculateQuestions(rule.percentage || 0);
+      return sum + (numQuestions * (rule.points || 1));
+    }, 0);
+  }, [rules, totalQuestions]);
+
+  // Check if passingScore is valid (not greater than total points)
+  const hasPointsError = useMemo(() => {
+    if (rules.length === 0) return false;
+    // passingScore is %, totalPoints is absolute total points
+    // Score needed = passingScore% * totalPoints / 100
+    // Score needed must be <= totalPoints (always true)
+    // But if passingScore > 100%, that's an error
+    return passingScore > 100;
+  }, [passingScore, rules.length]);
+
   const resetRuleForm = () => {
     setRuleForm({
       topicName: '',
       difficultyName: 'Easy',
       questionType: 'mcq',
-      numberOfQuestions: 1,
+      numberOfQuestions: 0,
       points: 1,
+      percentage: 10,
     });
     setEditingRuleIndex(null);
   };
@@ -159,19 +234,36 @@ const CreateExamPage: React.FC = () => {
       return;
     }
 
-    if (ruleForm.numberOfQuestions > availableCount) {
-      toast.error(`Only ${availableCount} questions available for this criteria`);
+    const percentage = ruleForm.percentage || 0;
+    const calculatedQuestions = calculateQuestions(percentage);
+
+    if (calculatedQuestions > availableCount) {
+      toast.error(`Need ${calculatedQuestions} questions but only ${availableCount} available in bank`);
       return;
     }
 
+    // Check total percentage does not exceed 100%
+    const currentTotalPercentage = editingRuleIndex !== null
+      ? totalPercentage - (rules[editingRuleIndex]?.percentage || 0)
+      : totalPercentage;
+
+    if (currentTotalPercentage + percentage > 100) {
+      toast.error(`Total percentage cannot exceed 100% (current: ${currentTotalPercentage}%)`);
+      return;
+    }
+
+    // Update numberOfQuestions from percentage
+    const ruleToSave = {
+      ...ruleForm,
+      numberOfQuestions: calculatedQuestions,
+    };
+
     if (editingRuleIndex !== null) {
-      // Edit existing rule
       const newRules = [...rules];
-      newRules[editingRuleIndex] = { ...ruleForm };
+      newRules[editingRuleIndex] = ruleToSave;
       setRules(newRules);
     } else {
-      // Add new rule
-      setRules([...rules, { ...ruleForm }]);
+      setRules([...rules, ruleToSave]);
     }
 
     resetRuleForm();
@@ -220,7 +312,27 @@ const CreateExamPage: React.FC = () => {
       hasErrors = true;
     }
     if (tokenCost < 0) {
-      setTokenCostError('Token cost must be greater than 0');
+      setTokenCostError('Cost must be greater than 0');
+      hasErrors = true;
+    }
+    // Validate total percentage must be 100%
+    if (totalPercentage !== 100) {
+      setRulesError(`Total percentage must equal 100% (current: ${totalPercentage}%)`);
+      hasErrors = true;
+    }
+    // Validate no rule exceeds available questions
+    if (hasAvailabilityErrors) {
+      setRulesError('Some rules require more questions than available in the bank');
+      hasErrors = true;
+    }
+    // Validate totalQuestions
+    if (totalQuestions <= 0) {
+      setTotalQuestionsError('Total questions must be greater than 0');
+      hasErrors = true;
+    }
+    // Validate hasPointsError
+    if (hasPointsError) {
+      setPassingScoreError('Passing score cannot exceed 100%');
       hasErrors = true;
     }
 
@@ -244,6 +356,12 @@ const CreateExamPage: React.FC = () => {
         await updateTemplateDetails(examId, updateData);
         navigate('/teacher/templates');
       } else {
+        // Recalculate numberOfQuestions from percentage before sending API
+        const processedRules = rules.map(rule => ({
+          ...rule,
+          numberOfQuestions: calculateQuestions(rule.percentage || 0),
+        }));
+
         // Create new template
         const templateData: CreateExamTemplatePayload = {
           title: templateTitle.trim(),
@@ -252,8 +370,9 @@ const CreateExamPage: React.FC = () => {
           passingScore: passingScore,
           isActive: isActive,
           subjectId: selectedSubjectId,
-          rules: rules,
+          rules: processedRules,
           tokenCost: tokenCost,
+          scoreMapping: scoreMapping, // Add score mapping
         };
 
         await createNewTemplate(templateData);
@@ -267,12 +386,23 @@ const CreateExamPage: React.FC = () => {
         setSelectedSubjectId('');
         setRules([]);
         setTokenCost(0);
+        setTotalQuestions(20);
+        setScoreMapping({
+          '5': { min: 90, max: 100 },
+          '4': { min: 75, max: 89 },
+          '3': { min: 60, max: 74 },
+          '2': { min: 45, max: 59 },
+          '1': { min: 0, max: 44 },
+        });
 
         // Clear errors
         setTitleError('');
         setDurationError('');
         setPassingScoreError('');
         setRulesError('');
+        setTotalQuestionsError('');
+
+        navigate('/teacher/templates');
       }
     } catch (error) {
       console.error('Save template error:', error);
@@ -313,9 +443,27 @@ const CreateExamPage: React.FC = () => {
       ),
     },
     {
+      title: 'Ratio',
+      dataIndex: 'percentage',
+      key: 'percentage',
+      render: (percentage: number) => (
+        <Tag color="blue">{percentage}%</Tag>
+      ),
+    },
+    {
       title: 'Questions',
-      dataIndex: 'numberOfQuestions',
-      key: 'numberOfQuestions',
+      key: 'questions',
+      render: (_: unknown, __: CreateExamRulePayload, index: number) => {
+        const ruleInfo = rulesWithAvailability[index];
+        if (!ruleInfo) return '-';
+        return (
+          <Tooltip title={`Available: ${ruleInfo.available} questions`}>
+            <span className={ruleInfo.isExceeded ? 'text-red-500 font-medium' : 'text-green-600'}>
+              {ruleInfo.needed} {ruleInfo.isExceeded && '⚠️'}
+            </span>
+          </Tooltip>
+        );
+      },
     },
     {
       title: 'Points',
@@ -409,7 +557,7 @@ const CreateExamPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Passing Score (%) *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Passing Score *</label>
                 <Input
                   type="number"
                   placeholder="70"
@@ -447,7 +595,7 @@ const CreateExamPage: React.FC = () => {
               )} */}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Token Cost *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Cost *</label>
               <Input
                 type="number"
                 placeholder="0"
@@ -459,6 +607,55 @@ const CreateExamPage: React.FC = () => {
                 status={tokenCostError ? 'error' : ''}
               />
               {tokenCostError && <div className="text-red-500 text-sm mt-1">{tokenCostError}</div>}
+            </div>
+
+            {/* Score Mapping Configuration */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Score Mapping (AP Score)
+                <Tooltip title="Score mapping">
+                  <InfoCircleOutlined className="ml-1 text-gray-400" />
+                </Tooltip>
+              </label>
+              <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                {Object.entries(scoreMapping)
+                  .sort(([a], [b]) => Number(b) - Number(a)) // Sort from 5 to 1
+                  .map(([grade, range]) => (
+                    <div key={grade} className="flex items-center gap-3">
+                      <Tag color="blue" className="w-8 text-center font-bold">{grade}</Tag>
+                      <div className="flex items-center gap-2">
+                        <InputNumber
+                          min={0}
+                          max={100}
+                          value={range.min}
+                          onChange={(value) => {
+                            setScoreMapping(prev => ({
+                              ...prev,
+                              [grade]: { ...prev[grade], min: value || 0 }
+                            }));
+                          }}
+                          style={{ width: 70 }}
+                          size="small"
+                        />
+                        <span className="text-gray-500">-</span>
+                        <InputNumber
+                          min={0}
+                          max={100}
+                          value={range.max}
+                          onChange={(value) => {
+                            setScoreMapping(prev => ({
+                              ...prev,
+                              [grade]: { ...prev[grade], max: value || 100 }
+                            }));
+                          }}
+                          style={{ width: 70 }}
+                          size="small"
+                        />
+                        <span className="text-xs text-gray-500">%</span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
@@ -473,65 +670,94 @@ const CreateExamPage: React.FC = () => {
 
         {/* Rules Management */}
         {!isEditMode && (
-        <Card title="Question Rules" className="shadow-sm">
-          <div className="space-y-4">
-            {!showRuleForm ? (
-              <Button
-                type="dashed"
-                icon={<PlusOutlined />}
-                onClick={() => setShowRuleForm(true)}
-                block
-                disabled={!selectedSubjectId}
-              >
-                Add Rule
-              </Button>
-            ) : (
-              <Card size="small" className="border-dashed">
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Topic Name *</label>
-                    <Select
-                      placeholder="Select a topic"
-                      value={ruleForm.topicName || undefined}
-                      onChange={(value) => setRuleForm({ ...ruleForm, topicName: value })}
-                      showSearch
-                      optionFilterProp="children"
-                      style={{ width: '100%' }}
-                      loading={loadingQuestions}
-                    >
-                      {topics.map((topic) => {
-                        const stats = questionStats[topic.name];
-                        const count = stats ? stats.total : 0;
-                        return (
-                          <Select.Option key={topic.id} value={topic.name}>
-                            <div className="flex justify-between items-center">
-                              <span>{topic.name}</span>
-                              <Tag color={count > 0 ? "blue" : "default"}>{count} Qs</Tag>
-                            </div>
-                          </Select.Option>
-                        );
-                      })}
-                    </Select>
+          <Card title="Question Rules" className="shadow-sm">
+            <div className="space-y-4">
+              {/* Total Questions Input */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Total Questions *
+                      <Tooltip title="Total number of questions will be divided by the ratio % of each rule">
+                        <InfoCircleOutlined className="ml-1 text-gray-400" />
+                      </Tooltip>
+                    </label>
+                    <InputNumber
+                      min={1}
+                      max={100}
+                      value={totalQuestions}
+                      onChange={(value) => {
+                        setTotalQuestions(value || 20);
+                        if (totalQuestionsError) setTotalQuestionsError('');
+                      }}
+                      style={{ width: 120 }}
+                      status={totalQuestionsError ? 'error' : ''}
+                    />
+                    {totalQuestionsError && <div className="text-red-500 text-xs mt-1">{totalQuestionsError}</div>}
                   </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-500">Allocated ratio</div>
+                    <Progress
+                      percent={totalPercentage}
+                      status={totalPercentage === 100 ? 'success' : totalPercentage > 100 ? 'exception' : 'active'}
+                      size="small"
+                      style={{ width: 150 }}
+                    />
+                  </div>
+                </div>
+                {totalPercentage !== 100 && rules.length > 0 && (
+                  <Alert
+                    message={totalPercentage < 100
+                      ? `Missing ${100 - totalPercentage}% allocation`
+                      : `Exceeds ${totalPercentage - 100}%`
+                    }
+                    type={totalPercentage > 100 ? 'error' : 'warning'}
+                    showIcon
+                    className="mt-3"
+                  />
+                )}
+                {rules.length > 0 && (
+                  <div className="mt-3 p-3 bg-blue-50 rounded-lg flex justify-between items-center">
+                    <span className="text-sm text-gray-700">
+                      Total points: <strong>{totalPoints}</strong> points
+                      | Passing score ({passingScore}%): <strong>{Math.ceil(totalPoints * passingScore / 100)}</strong> points
+                    </span>
+                  </div>
+                )}
+              </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+              {!showRuleForm ? (
+                <Button
+                  type="dashed"
+                  icon={<PlusOutlined />}
+                  onClick={() => setShowRuleForm(true)}
+                  block
+                  disabled={!selectedSubjectId}
+                >
+                  Add Rule
+                </Button>
+              ) : (
+                <Card size="small" className="border-dashed">
+                  <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Difficulty</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Topic Name *</label>
                       <Select
-                        value={ruleForm.difficultyName}
-                        onChange={(value) => setRuleForm({ ...ruleForm, difficultyName: value })}
+                        placeholder="Select a topic"
+                        value={ruleForm.topicName || undefined}
+                        onChange={(value) => setRuleForm({ ...ruleForm, topicName: value })}
+                        showSearch
+                        optionFilterProp="children"
                         style={{ width: '100%' }}
+                        loading={loadingQuestions}
                       >
-                        {['Easy', 'Medium', 'Hard'].map(diff => {
-                          const topicStats = questionStats[ruleForm.topicName];
-                          const count = topicStats ? topicStats[diff.toLowerCase() as 'easy' | 'medium' | 'hard'] : 0;
+                        {topics.map((topic) => {
+                          const stats = questionStats[topic.name];
+                          const count = stats ? stats.total : 0;
                           return (
-                            <Select.Option key={diff} value={diff}>
+                            <Select.Option key={topic.id} value={topic.name}>
                               <div className="flex justify-between items-center">
-                                <span>{diff}</span>
-                                {ruleForm.topicName && (
-                                  <span className="text-xs text-gray-500">({count})</span>
-                                )}
+                                <span>{topic.name}</span>
+                                <Tag color={count > 0 ? "blue" : "default"}>{count} Qs</Tag>
                               </div>
                             </Select.Option>
                           );
@@ -539,100 +765,137 @@ const CreateExamPage: React.FC = () => {
                       </Select>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Question Type</label>
-                      <Select
-                        value={ruleForm.questionType}
-                        onChange={(value) => setRuleForm({ ...ruleForm, questionType: value })}
-                        style={{ width: '100%' }}
-                      >
-                        <Select.Option value="mcq">
-                          <div className="flex justify-between items-center">
-                            <span>MCQ</span>
-                            {ruleForm.topicName && (
-                              <span className="text-xs text-gray-500">
-                                ({questionStats[ruleForm.topicName]?.mcq || 0})
-                              </span>
-                            )}
-                          </div>
-                        </Select.Option>
-                        <Select.Option value="frq">
-                          <div className="flex justify-between items-center">
-                            <span>FRQ</span>
-                            {ruleForm.topicName && (
-                              <span className="text-xs text-gray-500">
-                                ({questionStats[ruleForm.topicName]?.frq || 0})
-                              </span>
-                            )}
-                          </div>
-                        </Select.Option>
-                      </Select>
-                    </div>
-                  </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Difficulty</label>
+                        <Select
+                          value={ruleForm.difficultyName}
+                          onChange={(value) => setRuleForm({ ...ruleForm, difficultyName: value })}
+                          style={{ width: '100%' }}
+                        >
+                          {['Easy', 'Medium', 'Hard'].map(diff => {
+                            const topicStats = questionStats[ruleForm.topicName];
+                            const count = topicStats ? topicStats[diff.toLowerCase() as 'easy' | 'medium' | 'hard'] : 0;
+                            return (
+                              <Select.Option key={diff} value={diff}>
+                                <div className="flex justify-between items-center">
+                                  <span>{diff}</span>
+                                  {ruleForm.topicName && (
+                                    <span className="text-xs text-gray-500">({count})</span>
+                                  )}
+                                </div>
+                              </Select.Option>
+                            );
+                          })}
+                        </Select>
+                      </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Number of Questions
-                        <Tooltip title={`Available: ${availableCount}`}>
-                          <InfoCircleOutlined className="ml-1 text-gray-400" />
-                        </Tooltip>
-                      </label>
-                      <InputNumber
-                        min={1}
-                        max={availableCount > 0 ? availableCount : 1}
-                        value={ruleForm.numberOfQuestions}
-                        onChange={(value) => setRuleForm({ ...ruleForm, numberOfQuestions: value || 1 })}
-                        style={{ width: '100%' }}
-                        status={ruleForm.numberOfQuestions > availableCount ? 'warning' : ''}
-                      />
-                      {ruleForm.numberOfQuestions > availableCount && (
-                        <div className="text-orange-500 text-xs mt-1">
-                          Only {availableCount} available
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Question Type</label>
+                        <Select
+                          value={ruleForm.questionType}
+                          onChange={(value) => setRuleForm({ ...ruleForm, questionType: value })}
+                          style={{ width: '100%' }}
+                        >
+                          <Select.Option value="mcq">
+                            <div className="flex justify-between items-center">
+                              <span>MCQ</span>
+                              {ruleForm.topicName && ruleForm.difficultyName && (
+                                <span className="text-xs text-gray-500">
+                                  ({getTypeCountForDifficulty('mcq')})
+                                </span>
+                              )}
+                            </div>
+                          </Select.Option>
+                          <Select.Option value="frq">
+                            <div className="flex justify-between items-center">
+                              <span>FRQ</span>
+                              {ruleForm.topicName && ruleForm.difficultyName && (
+                                <span className="text-xs text-gray-500">
+                                  ({getTypeCountForDifficulty('frq')})
+                                </span>
+                              )}
+                            </div>
+                          </Select.Option>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Percentage (%)
+                          <Tooltip title={`Equivalent: ${calculateQuestions(ruleForm.percentage || 0)} questions | Available: ${availableCount} questions`}>
+                            <InfoCircleOutlined className="ml-1 text-gray-400" />
+                          </Tooltip>
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <Slider
+                            min={5}
+                            max={100}
+                            step={5}
+                            value={ruleForm.percentage || 10}
+                            onChange={(value) => setRuleForm({ ...ruleForm, percentage: value })}
+                            style={{ flex: 1 }}
+                          />
+                          <InputNumber
+                            min={1}
+                            max={100}
+                            value={ruleForm.percentage || 10}
+                            onChange={(value) => setRuleForm({ ...ruleForm, percentage: value || 10 })}
+                            style={{ width: 70 }}
+                            formatter={(value) => `${value}%`}
+                            parser={(value) => Number(value?.replace('%', '') || 10)}
+                          />
                         </div>
-                      )}
+                        <div className={`text-xs mt-1 ${calculateQuestions(ruleForm.percentage || 0) > availableCount ? 'text-red-500' : 'text-gray-500'}`}>
+                          → {calculateQuestions(ruleForm.percentage || 0)} questions
+                          {calculateQuestions(ruleForm.percentage || 0) > availableCount &&
+                            ` (⚠️ exceeds ${availableCount} available)`
+                          }
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Points per question</label>
+                        <InputNumber
+                          min={1}
+                          value={ruleForm.points}
+                          onChange={(value) => setRuleForm({ ...ruleForm, points: value || 1 })}
+                          style={{ width: '100%' }}
+                        />
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Points per Question</label>
-                      <InputNumber
-                        min={1}
-                        value={ruleForm.points}
-                        onChange={(value) => setRuleForm({ ...ruleForm, points: value || 1 })}
-                        style={{ width: '100%' }}
-                      />
+                    <div className="flex gap-2">
+                      <Button
+                        type="primary"
+                        onClick={handleAddRule}
+                        size="small"
+                        disabled={calculateQuestions(ruleForm.percentage || 0) > availableCount || calculateQuestions(ruleForm.percentage || 0) === 0}
+                      >
+                        {editingRuleIndex !== null ? 'Update Rule' : 'Add Rule'}
+                      </Button>
+                      <Button onClick={() => { setShowRuleForm(false); resetRuleForm(); }} size="small">
+                        Cancel
+                      </Button>
                     </div>
                   </div>
+                </Card>
+              )}
 
-                  <div className="flex gap-2">
-                    <Button
-                      type="primary"
-                      onClick={handleAddRule}
-                      size="small"
-                      disabled={availableCount === 0 || ruleForm.numberOfQuestions > availableCount}
-                    >
-                      {editingRuleIndex !== null ? 'Update Rule' : 'Add Rule'}
-                    </Button>
-                    <Button onClick={() => { setShowRuleForm(false); resetRuleForm(); }} size="small">
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            )}
+              {rules && (
+                <Table
+                  columns={ruleColumns}
+                  dataSource={rules?.map((rule, index) => ({ ...rule, key: index }))}
+                  pagination={false}
+                  size="small"
+                />
+              )}
 
-            {rules && (
-              <Table
-                columns={ruleColumns}
-                dataSource={rules?.map((rule, index) => ({ ...rule, key: index }))}
-                pagination={false}
-                size="small"
-              />
-            )}
-
-            {rulesError && <div className="text-red-500 text-sm mt-2">{rulesError}</div>}
-          </div>
-        </Card>
+              {rulesError && <div className="text-red-500 text-sm mt-2">{rulesError}</div>}
+            </div>
+          </Card>
         )}
       </div>
     </div>

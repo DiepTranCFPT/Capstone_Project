@@ -100,10 +100,18 @@ export interface ExamRule {
   questionType: 'mcq' | 'frq'; // Hoặc bất cứ type nào API hỗ trợ
   numberOfQuestions: number;
   points: number;
+  percentage?: number;
 }
 
 // Dùng khi tạo mới 1 quy tắc (không cần id)
-export type CreateExamRulePayload = Omit<ExamRule, 'id'>;
+export interface CreateExamRulePayload {
+  topicName: string;
+  difficultyName: 'Easy' | 'Medium' | 'Hard';
+  questionType: 'mcq' | 'frq';
+  numberOfQuestions: number;
+  points: number;
+  percentage?: number; // Frontend-only field
+}
 
 export interface ExamTemplateSubject {
   id: string;
@@ -126,6 +134,8 @@ export interface ExamTemplate {
   averageRating: number;
   totalRatings: number;
   totalTakers: number;
+  totalQuestions?: number; // Frontend-only: tổng số câu hỏi mong muốn (để tính percentage)
+  scoreMapping?: ScoreMapping; // Mapping điểm sang mức (AP Score, Grade...)
 }
 
 export interface MyExamTemplatePageData {
@@ -135,6 +145,7 @@ export interface MyExamTemplatePageData {
   totalElement: number;
   sortBy: string[];
   items: ExamTemplate[];
+  scoreMapping?: ScoreMapping;
 }
 
 // Dùng khi tạo mới 1 khuôn mẫu
@@ -148,6 +159,7 @@ export interface CreateExamTemplatePayload {
   subjectId: string; // API của bạn có vẻ dùng subjectNames
   rules: CreateExamRulePayload[];
   tokenCost: number;
+  scoreMapping?: ScoreMapping;
 }
 
 export interface PageInfo<T> {
@@ -315,3 +327,13 @@ export interface ExamRatingsQueryParams {
   pageSize?: number;
   sorts?: string[];
 }
+
+
+
+export interface ScoreRange {
+  min: number;
+  max: number;
+}
+
+// Mapping từ tên mức điểm ("1", "2", "A", "B"...) sang khoảng điểm
+export type ScoreMapping = Record<string, ScoreRange>;
