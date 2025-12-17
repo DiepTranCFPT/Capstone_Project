@@ -59,9 +59,10 @@ const QuestionService = {
 
   //  Lấy danh sách câu hỏi được tạo bởi user
   async getByUserId(
-    userId: string
-  ): Promise<AxiosResponse<ApiResponse<QuestionBankItem[]>>> {
-    return axiosInstance.get(`/questions-v2/created-by/${userId}`);
+    userId: string,
+    params?: { pageNo?: number; pageSize?: number; keyword?: string }
+  ): Promise<AxiosResponse<ApiResponse<PageInfo<QuestionBankItem> | QuestionBankItem[]>>> {
+    return axiosInstance.get(`/questions-v2/created-by/${userId}`, { params });
   },
 
   //  Lấy tất cả Topic câu hỏi

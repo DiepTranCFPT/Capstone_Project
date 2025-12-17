@@ -49,7 +49,17 @@ const extractFromPaginated = <T,>(
     };
   }
 
-  const anyRaw = raw as any;
+  type MaybePaginatedLike = {
+    content?: T[];
+    items?: T[];
+    totalElements?: number;
+    totalElement?: number;
+    totalPages?: number;
+    data?: T[];
+    [key: string]: unknown;
+  };
+
+  const anyRaw = raw as MaybePaginatedLike;
 
   // Case 1: chuẩn PaginatedResponse { content, totalElements, totalPages }
   if ("content" in anyRaw) {
@@ -320,6 +330,63 @@ export const useCommunity = () => {
     []
   );
 
+  // POST /posts/{postId}/vote
+  const votePost = useCallback(
+    async (postId: string | number, value: number): Promise<CommunityPost | null> => {
+      try {
+        setError(null);
+
+        const response = await CommunityService.votePost(postId, value);
+        const apiResponse = response.data as ApiResponse<CommunityPost>;
+        const updatedPost = apiResponse.data;
+
+        // Nếu BE trả post mới thì merge vào state,
+        // nếu không (data rỗng) thì tự tăng vote/like trong state
+        setCommunityPosts((prev) =>
+          prev.map((p) => {
+            if (String(p.id) !== String(postId)) return p;
+
+            if (updatedPost) {
+              return { ...p, ...updatedPost };
+            }
+
+            const asAny = p as unknown as {
+              voteCount?: number;
+              userVoteValue?: number;
+            };
+
+            const currentVote =
+              typeof asAny.voteCount === "number"
+                ? asAny.voteCount
+                : typeof p.likeCount === "number"
+                  ? p.likeCount
+                  : 0;
+
+            const prevUserVoteValue =
+              typeof asAny.userVoteValue === "number" ? asAny.userVoteValue : 0;
+            const newUserVoteValue = value; // value là vote mới của user: -1 | 0 | 1
+
+            // Tổng điểm vote thay đổi theo (new - old)
+            const newVote = currentVote - prevUserVoteValue + newUserVoteValue;
+
+            return {
+              ...p,
+              likeCount: newVote,
+              voteCount: newVote,
+              userVoteValue: newUserVoteValue,
+            };
+          })
+        );
+
+        return updatedPost ?? null;
+      } catch (err) {
+        setError(getErrorMessage(err, "Failed to vote post."));
+        return null;
+      }
+    },
+    []
+  );
+
   return {
     loading,
     error,
@@ -333,6 +400,7 @@ export const useCommunity = () => {
     createCommunityPost,
     updateCommunity,
     deletePost,
+    votePost,
   };
 };
 
