@@ -30,7 +30,6 @@ import { toast } from "~/components/common/Toast";
 import { useQuestionBank } from "~/hooks/useQuestionBank";
 import { useAuth } from "~/hooks/useAuth";
 import { useSubjects } from "~/hooks/useSubjects";
-import { useQuestionTopics } from "~/hooks/useQuestionTopics";
 import LatexRenderer from "~/components/common/LatexRenderer";
 
 const { Option } = Select;
@@ -70,7 +69,7 @@ const QuestionBankPage: React.FC = () => {
   );
 
   // Hook quản lý topics
-  const { topics, fetchTopicsBySubject } = useQuestionTopics();
+ 
 
   //  Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -548,18 +547,6 @@ const QuestionBankPage: React.FC = () => {
           ))}
         </Select>
         <Select
-          value={selectedTopic}
-          onChange={setSelectedTopic}
-          className="w-48"
-        >
-          <Option value="All Topics">All Topics</Option>
-          {topicOptions.map((topic) => (
-            <Option key={topic} value={topic}>
-              {topic}
-            </Option>
-          ))}
-        </Select>
-        <Select
           value={selectedDifficulty}
           onChange={setSelectedDifficulty}
           className="w-48"
@@ -579,24 +566,6 @@ const QuestionBankPage: React.FC = () => {
           <Option value="all">All Types</Option>
           <Option value="mcq">MCQ</Option>
           <Option value="frq">FRQ</Option>
-        </Select>
-        <Select
-          value={sorts === 'createAt:desc' ? 'desc' : 'asc'}
-          onChange={(value) => setSorts(`createAt:${value}`)}
-          className="w-48"
-        >
-          <Option value="desc">Newest First</Option>
-          <Option value="asc">Oldest First</Option>
-        </Select>
-        <Select
-          value={pageSize}
-          onChange={(value) => setPageSize(value)}
-          className="w-32"
-        >
-          <Option value={10}>10 / page</Option>
-          <Option value={20}>20 / page</Option>
-          <Option value={50}>50 / page</Option>
-          <Option value={100}>100 / page</Option>
         </Select>
         <Button onClick={clearFilters}>Clear Filters</Button>
       </div>
