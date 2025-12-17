@@ -1,12 +1,20 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { message } from "antd";
 import QuestionService from "~/services/QuestionService";
 import axiosInstance from "~/configs/axios";
 import type { QuestionBankItem, NewQuestion, QuestionOption } from "~/types/question";
 
-export const useQuestionBank = (teacherId?: string) => {
+type QuestionBankPageMeta = {
+  pageNo: number;
+  pageSize: number;
+  totalElement: number;
+  totalPage?: number;
+};
+
+export const useQuestionBank = () => {
   const [questions, setQuestions] = useState<QuestionBankItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pageMeta, setPageMeta] = useState<QuestionBankPageMeta | null>(null);
 
   const sanitizeQuestion = useCallback((raw: unknown): QuestionBankItem | null => {
     if (!raw || typeof raw !== "object") {
@@ -298,6 +306,44 @@ export const useQuestionBank = (teacherId?: string) => {
     [sanitizeQuestion]
   );
 
+  const extractPageMeta = useCallback((payload: unknown): QuestionBankPageMeta | null => {
+    const unwrap = (val: unknown): Record<string, unknown> | null => {
+      if (!val || typeof val !== "object") return null;
+      return val as Record<string, unknown>;
+    };
+
+    const record = unwrap(payload) ?? unwrap((payload as Record<string, unknown> | undefined)?.data) ?? null;
+    if (!record) return null;
+
+    const pageNo = typeof record.pageNo === "number" ? record.pageNo : 0;
+    const pageSize = typeof record.pageSize === "number" ? record.pageSize : 10;
+
+    const totalElement =
+      typeof record.totalElement === "number"
+        ? record.totalElement
+        : typeof record.totalElements === "number"
+          ? record.totalElements
+          : typeof record.total === "number"
+            ? record.total
+            : NaN;
+
+    if (!Number.isFinite(totalElement)) return null;
+
+    const totalPage =
+      typeof record.totalPage === "number"
+        ? record.totalPage
+        : typeof record.totalPages === "number"
+          ? record.totalPages
+          : undefined;
+
+    return {
+      pageNo,
+      pageSize,
+      totalElement,
+      totalPage,
+    };
+  }, []);
+
   // 🔹 Lấy tất cả câu hỏi (phân trang, tìm kiếm)
   const fetchQuestions = useCallback(async (params?: {
     pageNo?: number;
@@ -307,14 +353,15 @@ export const useQuestionBank = (teacherId?: string) => {
     try {
       setLoading(true);
       const res = await QuestionService.getAll(params);
-      setQuestions(normalizeQuestions(res.data?.data)); // getAll trả về PageInfo
+      setQuestions(normalizeQuestions(res.data?.data)); // getAll trả về PageInfo / PaginationResponse
+      setPageMeta(extractPageMeta(res.data?.data));
     } catch (error) {
       message.error("Không thể tải danh sách câu hỏi!");
       console.error(error);
     } finally {
       setLoading(false);
     }
-  }, [normalizeQuestions]);
+  }, [normalizeQuestions, extractPageMeta]);
 
   // 🔹 Lấy chi tiết câu hỏi
   // Note: Backend currently returns answers with only id and content: null
@@ -627,18 +674,19 @@ export const useQuestionBank = (teacherId?: string) => {
   }, [normalizeQuestions]);
 
   // 🔹 Lấy theo userId (thay cho teacherId)
-  const fetchByUserId = useCallback(async (userId: string) => {
+  const fetchByUserId = useCallback(async (userId: string, params?: { pageNo?: number; pageSize?: number; keyword?: string }) => {
     try {
       setLoading(true);
-      const res = await QuestionService.getByUserId(userId);
+      const res = await QuestionService.getByUserId(userId, params);
       setQuestions(normalizeQuestions(res.data?.data));
+      setPageMeta(extractPageMeta(res.data?.data));
     } catch (error) {
       message.error("Không thể tải câu hỏi theo người dùng!");
       console.error(error);
     } finally {
       setLoading(false);
     }
-  }, [normalizeQuestions]);
+  }, [normalizeQuestions, extractPageMeta]);
 
   // 🔹 Tải template import câu hỏi
   const downloadImportTemplate = useCallback(async () => {
@@ -734,17 +782,10 @@ export const useQuestionBank = (teacherId?: string) => {
     }
   }, []);
 
-  useEffect(() => {
-    if (teacherId) {
-      fetchByUserId(teacherId);
-    } else {
-      fetchQuestions();
-    }
-  }, [teacherId, fetchByUserId, fetchQuestions]);
-
   return {
     questions,
     loading,
+    pageMeta,
     fetchQuestions,
     getQuestionById,
     createQuestion,

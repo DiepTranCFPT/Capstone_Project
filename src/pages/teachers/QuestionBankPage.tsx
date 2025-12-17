@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Button,
   Table,
@@ -46,6 +46,7 @@ const QuestionBankPage: React.FC = () => {
   const {
     questions: questionBank,
     loading,
+    pageMeta,
     createQuestion,
     updateQuestion,
     deleteQuestion,
@@ -55,7 +56,7 @@ const QuestionBankPage: React.FC = () => {
     getQuestionById,
     downloadImportTemplate,
     importQuestions,
-  } = useQuestionBank(teacherId);
+  } = useQuestionBank();
 
   const difficultyOptions = useMemo(
     () => [
@@ -104,6 +105,26 @@ const QuestionBankPage: React.FC = () => {
   const [selectedSubject, setSelectedSubject] =
     useState<string>("All Subjects");
   const [selectedTopic, setSelectedTopic] = useState<string>("All Topics");
+
+  // Pagination state (controlled) - giúp chuyển trang ổn định dù dataSource thay đổi do filter/sort
+  const [tablePagination, setTablePagination] = useState({
+    current: 1,
+    pageSize: 10,
+  });
+
+  const { current, pageSize } = tablePagination;
+
+  // Server-side pagination: mỗi lần đổi trang / pageSize / search thì gọi lại API
+  useEffect(() => {
+    const pageNo = Math.max(0, current - 1);
+    const keyword = searchText.trim() ? searchText.trim() : undefined;
+
+    if (teacherId) {
+      fetchByUserId(teacherId, { pageNo, pageSize, keyword });
+    } else {
+      fetchQuestions({ pageNo, pageSize, keyword });
+    }
+  }, [teacherId, current, pageSize, searchText, fetchByUserId, fetchQuestions]);
 
   //  Đóng modal
   const handleCloseModal = () => {
@@ -255,9 +276,17 @@ const QuestionBankPage: React.FC = () => {
       // Only fetch and close modal on success
       // Use fetchByUserId if teacherId exists, otherwise fetch all
       if (teacherId) {
-        await fetchByUserId(teacherId);
+        await fetchByUserId(teacherId, {
+          pageNo: Math.max(0, tablePagination.current - 1),
+          pageSize: tablePagination.pageSize,
+          keyword: searchText.trim() ? searchText.trim() : undefined,
+        });
       } else {
-        await fetchQuestions();
+        await fetchQuestions({
+          pageNo: Math.max(0, tablePagination.current - 1),
+          pageSize: tablePagination.pageSize,
+          keyword: searchText.trim() ? searchText.trim() : undefined,
+        });
       }
       setIsModalOpen(false);
     } catch (err) {
@@ -274,6 +303,7 @@ const QuestionBankPage: React.FC = () => {
     setSelectedType("all");
     setSelectedSubject("All Subjects");
     setSelectedTopic("All Topics");
+    setTablePagination((prev) => ({ ...prev, current: 1 }));
   };
 
   // � Import Excel handlers
@@ -320,9 +350,17 @@ const QuestionBankPage: React.FC = () => {
       // Refresh questions list after successful import
       if (result && result.successCount > 0) {
         if (teacherId) {
-          await fetchByUserId(teacherId);
+          await fetchByUserId(teacherId, {
+            pageNo: Math.max(0, tablePagination.current - 1),
+            pageSize: tablePagination.pageSize,
+            keyword: searchText.trim() ? searchText.trim() : undefined,
+          });
         } else {
-          await fetchQuestions();
+          await fetchQuestions({
+            pageNo: Math.max(0, tablePagination.current - 1),
+            pageSize: tablePagination.pageSize,
+            keyword: searchText.trim() ? searchText.trim() : undefined,
+          });
         }
       }
     } catch (error) {
@@ -381,6 +419,11 @@ const QuestionBankPage: React.FC = () => {
     selectedTopic,
     selectedType,
   ]);
+
+  // Khi thay đổi filter/search, reset về trang 1 để tránh bị kẹt ở trang không còn dữ liệu
+  useEffect(() => {
+    setTablePagination((prev) => ({ ...prev, current: 1 }));
+  }, [searchText, selectedSubject, selectedDifficulty, selectedTopic, selectedType]);
 
   // 🧾 Cấu hình cột bảng
   const columns: ColumnsType<QuestionBankItem> = [
@@ -575,7 +618,17 @@ const QuestionBankPage: React.FC = () => {
         dataSource={filteredData}
         rowKey="id"
         loading={loading}
-        pagination={{ pageSize: 10 }}
+        pagination={{
+          current: tablePagination.current,
+          pageSize: tablePagination.pageSize,
+          total: pageMeta?.totalElement ?? filteredData.length,
+          showSizeChanger: true,
+          pageSizeOptions: [10, 20, 50, 100],
+          onChange: (page, pageSize) => {
+            setTablePagination({ current: page, pageSize });
+          },
+          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} questions`,
+        }}
         rowSelection={{
           selectedRowKeys,
           onChange: (keys) => setSelectedRowKeys(keys),
