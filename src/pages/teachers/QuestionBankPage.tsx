@@ -67,15 +67,8 @@ const QuestionBankPage: React.FC = () => {
     []
   );
 
-  const topicOptions = useMemo(() => {
-    const result = new Set<string>();
-    (questionBank || []).forEach((question) => {
-      if (question.topic) {
-        result.add(question.topic);
-      }
-    });
-    return Array.from(result);
-  }, [questionBank]);
+  // Hook quản lý topics
+ 
 
   //  Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -547,18 +540,6 @@ const QuestionBankPage: React.FC = () => {
           <Option value="Mathematics">Mathematics</Option>
           <Option value="Physics">Physics</Option>
           <Option value="History">History</Option>
-        </Select>
-        <Select
-          value={selectedTopic}
-          onChange={setSelectedTopic}
-          className="w-48"
-        >
-          <Option value="All Topics">All Topics</Option>
-          {topicOptions.map((topic) => (
-            <Option key={topic} value={topic}>
-              {topic}
-            </Option>
-          ))}
         </Select>
         <Select
           value={selectedDifficulty}
