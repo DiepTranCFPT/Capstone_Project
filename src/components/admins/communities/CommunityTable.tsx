@@ -1,6 +1,7 @@
 import React from "react";
 import { Table, Button, Tooltip, Space } from "antd";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { EditOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 import type { ColumnsType } from "antd/es/table";
 import type { Community } from "~/types/community";
 
@@ -17,11 +18,20 @@ const CommunityTable: React.FC<CommunityTableProps> = ({
   onEdit,
   onDelete,
 }) => {
+  const navigate = useNavigate();
+
   // Helper function để normalize text và loại bỏ duplicate
   const normalizeText = (text: string): string => {
     if (!text || typeof text !== "string") return "";
     const parts = text.split(/,\s*/).map(s => s.trim()).filter(s => s);
     return Array.from(new Set(parts)).join(", ");
+  };
+
+  const handleViewCommunity = (communityId: string | number) => {
+    // Navigate đến trang community và tự động chọn community này
+    navigate(`/community`, { 
+      state: { selectedCommunityId: communityId } 
+    });
   };
 
   const columns: ColumnsType<Community> = [
@@ -63,6 +73,14 @@ const CommunityTable: React.FC<CommunityTableProps> = ({
       align: "center",
       render: (_: unknown, record: Community) => (
         <Space size="small">
+          <Tooltip title="View Community">
+            <Button
+              type="text"
+              icon={<EyeOutlined />}
+              onClick={() => handleViewCommunity(record.id)}
+              className="text-green-500 hover:bg-green-50"
+            />
+          </Tooltip>
           <Tooltip title="Edit">
             <Button
               type="text"

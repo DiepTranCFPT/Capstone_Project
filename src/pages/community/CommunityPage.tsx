@@ -1,6 +1,7 @@
 import { message } from "antd";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { FiSearch, FiGlobe } from "react-icons/fi";
 import CreateThreadModal from "~/components/community/CreateThreadModal";
 import { useAuth } from "~/hooks/useAuth";
@@ -10,9 +11,10 @@ import CommunitySidebar from "~/components/community/CommunitySidebar";
 import PostComposer from "~/components/community/PostComposer";
 import PostList from "~/components/community/PostList";
 import CommunityInfoSidebar from "~/components/community/CommunityInfoSidebar";
+import { getHighestPriorityRole } from "~/utils/roleUtils";
 
 const CommunityPage: React.FC = () => {
-
+    const location = useLocation();
     const { user } = useAuth();
     const {
         fetchCommunities,
@@ -43,12 +45,20 @@ const CommunityPage: React.FC = () => {
         fetchCommunities({ page: 0, size: 10 });
     }, [fetchCommunities]);
 
-    // Set community mặc định
+    // Set community mặc định hoặc từ navigation state
     useEffect(() => {
+        // Kiểm tra nếu có state từ navigation (từ admin page)
+        const state = location.state as { selectedCommunityId?: string | number } | null;
+        if (state?.selectedCommunityId) {
+            setSelectedCommunityId(state.selectedCommunityId);
+            return;
+        }
+        
+        // Nếu không có state, chọn community đầu tiên
         if (communities.length > 0 && !selectedCommunityId) {
             setSelectedCommunityId(communities[0].id);
         }
-    }, [communities, selectedCommunityId]);
+    }, [communities, selectedCommunityId, location.state]);
 
     // Lấy posts theo community đã chọn
     useEffect(() => {
@@ -125,7 +135,22 @@ const CommunityPage: React.FC = () => {
                 : 0;
 
             // Lấy role từ author (có thể là role hoặc roles)
-            const userRole = author?.role ?? author?.roles ?? undefined;
+            // Nếu post được tạo bởi user hiện tại, ưu tiên lấy role từ user hiện tại
+            let userRole = author?.role ?? author?.roles ?? undefined;
+            
+            // Nếu post là của user hiện tại và không có role từ author, lấy từ user hiện tại
+            if (!userRole && user && String(post.authorId) === String(user.id)) {
+                const userWithRole = user as { role?: string | string[]; roles?: string | string[] };
+                userRole = userWithRole?.role ?? userWithRole?.roles ?? undefined;
+            }
+            
+            // Lấy role có độ ưu tiên cao nhất nếu user có nhiều roles
+            if (userRole) {
+                const highestRole = getHighestPriorityRole(userRole);
+                if (highestRole) {
+                    userRole = highestRole;
+                }
+            }
 
             return {
                 id: Number(post.id) || 0, // Fallback nếu không convert được
@@ -149,7 +174,7 @@ const CommunityPage: React.FC = () => {
                 createdAt: post.createdAt,
             };
         });
-    }, [communityPosts, communities]);
+    }, [communityPosts, communities, user]);
 
     const displayedThreads = normalizedThreads;
 

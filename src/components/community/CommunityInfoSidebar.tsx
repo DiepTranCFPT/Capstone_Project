@@ -33,15 +33,7 @@ const CommunityInfoSidebar: React.FC<CommunityInfoSidebarProps> = ({
           </div>
         </div>
       </div>
-      <div className="bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl text-white p-5 shadow-lg">
-        <h4 className="text-lg font-bold mb-2">Premium Member?</h4>
-        <p className="text-sm text-purple-100">
-          Unlock exclusive badges and AI posting features.
-        </p>
-        <button className="mt-4 w-full bg-white text-purple-700 font-semibold py-2 rounded-full hover:bg-purple-50">
-          Upgrade Now
-        </button>
-      </div>
+
     </aside>
   );
 };

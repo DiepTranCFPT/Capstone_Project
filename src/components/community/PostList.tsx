@@ -6,6 +6,7 @@ import { IoCaretUpSharp, IoCaretDownSharp } from "react-icons/io5";
 import type { Thread, CommunityComment } from "~/types/community";
 import usePostComments from "~/hooks/usePostComments";
 import { useAuth } from "~/hooks/useAuth";
+import { getHighestPriorityRole } from "~/utils/roleUtils";
 
 interface PostListProps {
   loading: boolean;
@@ -111,8 +112,10 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
   const renderRoleBadge = (role?: string | string[]): React.ReactNode => {
     if (!role) return null;
     
-    const roles = Array.isArray(role) ? role : [role];
-    if (roles.length === 0) return null;
+    // Lấy role có độ ưu tiên cao nhất
+    const highestRole = getHighestPriorityRole(role);
+    
+    if (!highestRole) return null;
 
     const ROLE_BADGES: Record<
       string,
@@ -140,11 +143,9 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
       },
     };
 
-    // Lấy role đầu tiên để hiển thị
-    const firstRole = roles[0].toUpperCase();
     const cfg =
-      ROLE_BADGES[firstRole] ?? ({
-        label: firstRole,
+      ROLE_BADGES[highestRole] ?? ({
+        label: highestRole,
         dotColor: "bg-gray-400",
         pillClass: "border-gray-500/40 text-gray-200 bg-gray-500/10",
       } satisfies (typeof ROLE_BADGES)[string]);
