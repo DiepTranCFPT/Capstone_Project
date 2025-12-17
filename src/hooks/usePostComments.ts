@@ -337,17 +337,84 @@ const usePostComments = () => {
         setLoading(true);
         setError(null);
 
+        console.log("Calling API to delete comment:", commentId);
         await CommunityService.deleteComment(commentId);
+        console.log("API delete successful, updating UI");
 
         const key = String(postId);
-        setPostComments((prev) => ({
-          ...prev,
-          [key]: (prev[key] || []).filter(
-            (c) => String(c.id) !== String(commentId)
-          ),
-        }));
+        const commentIdStr = String(commentId);
+        
+        setPostComments((prev) => {
+          const existing = prev[key] || [];
+          console.log("Before delete - comments count:", existing.length);
+          console.log("Deleting comment ID:", commentIdStr);
+          
+          // Tìm comment bị xóa để xác định xem nó có phải là reply không
+          const deletedComment = existing.find((c) => String(c.id) === commentIdStr);
+          const isReply = deletedComment && extractParentId(deletedComment as CommentWithParentId) !== null;
+          const parentIdOfDeleted = isReply ? extractParentId(deletedComment as CommentWithParentId) : null;
+          
+          // Xóa comment và tất cả replies của nó
+          const filtered = existing.filter((c) => {
+            const cId = String(c.id);
+            const cParentId = extractParentId(c as CommentWithParentId);
+            const parentIdStr = cParentId !== null && cParentId !== undefined ? String(cParentId) : null;
+            
+            // Xóa comment chính (id khớp)
+            if (cId === commentIdStr) {
+              console.log("Removing comment with ID:", cId);
+              return false;
+            }
+            
+            // Xóa tất cả replies có parentId = commentId
+            if (parentIdStr === commentIdStr) {
+              console.log("Removing reply with parentId:", parentIdStr, "comment ID:", cId);
+              return false;
+            }
+            
+            return true;
+          });
+          
+          // Nếu xóa reply, cập nhật replyCount của parent comment
+          if (isReply && parentIdOfDeleted !== null) {
+            const parentIdStr = String(parentIdOfDeleted);
+            const updated = filtered.map((c) => {
+              if (String(c.id) === parentIdStr) {
+                // Đếm lại số replies thực tế
+                const actualReplies = filtered.filter((r) => {
+                  const rParentId = extractParentId(r as CommentWithParentId);
+                  return rParentId !== null && String(rParentId) === parentIdStr;
+                });
+                return {
+                  ...c,
+                  replyCount: actualReplies.length,
+                };
+              }
+              return c;
+            });
+            
+            console.log("After delete - comments count:", updated.length);
+            console.log("Updated parent comment replyCount");
+            
+            return {
+              ...prev,
+              [key]: updated,
+            };
+          }
+          
+          console.log("After delete - comments count:", filtered.length);
+          
+          return {
+            ...prev,
+            [key]: filtered,
+          };
+        });
       } catch (err) {
-        setError(getErrorMessage(err, "Failed to delete comment."));
+        const errorMsg = getErrorMessage(err, "Failed to delete comment.");
+        console.error("Delete comment error:", errorMsg, err);
+        setError(errorMsg);
+        // Throw error để component có thể catch và hiển thị message
+        throw new Error(errorMsg);
       } finally {
         setLoading(false);
       }

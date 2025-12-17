@@ -36,6 +36,8 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
   const [postToDelete, setPostToDelete] = useState<Thread | null>(null);
   const [deletingPost, setDeletingPost] = useState(false);
   const [userVoteByPostId, setUserVoteByPostId] = useState<Record<string, number>>({});
+  const [commentToDelete, setCommentToDelete] = useState<{ comment: CommunityComment; postId: string | number } | null>(null);
+  const [deletingComment, setDeletingComment] = useState(false);
 
   type CommentWithPossibleParentIds = CommunityComment & {
     parentCommentId?: string | number | null;
@@ -201,18 +203,32 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
   };
 
   const handleDeleteComment = (comment: CommunityComment, postId: string | number) => {
-    Modal.confirm({
-      title: "Delete comment",
-      content: "Are you sure you want to delete this comment?",
-      okText: "Delete",
-      okType: "danger",
-      cancelText: "Cancel",
-      centered: true,
-      onOk: async () => {
-        await deleteComment(comment.id, postId);
-        message.success("Comment deleted successfully.");
-      },
-    });
+    console.log("handleDeleteComment called", { commentId: comment.id, postId });
+    setCommentToDelete({ comment, postId });
+  };
+
+  const handleConfirmDeleteComment = async () => {
+    if (!commentToDelete) return;
+    const { comment, postId } = commentToDelete;
+    try {
+      setDeletingComment(true);
+      console.log("Deleting comment:", comment.id, "from post:", postId);
+      await deleteComment(comment.id, postId);
+      message.success("Comment deleted successfully.");
+      setCommentToDelete(null);
+      
+      // Đóng expanded replies nếu comment bị xóa là parent
+      setExpandedReplyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(String(comment.id));
+        return next;
+      });
+    } catch (error) {
+      console.error("Failed to delete comment:", error);
+      message.error("Failed to delete comment. Please try again.");
+    } finally {
+      setDeletingComment(false);
+    }
   };
 
   const handleDeletePostClick = (thread: Thread) => {
@@ -260,18 +276,25 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
       (String(c.authorId) === String(user.id) ||
         String(author?.id) === String(user.id));
 
+    const handleMenuClick = (key: string) => {
+      console.log("Menu clicked:", key);
+      if (key === "edit") {
+        handleEditComment(c);
+      } else if (key === "delete") {
+        handleDeleteComment(c, postId);
+      }
+    };
+
     const menuItems: MenuProps["items"] = isOwnComment
       ? [
           {
             key: "edit",
             label: "Edit",
-            onClick: () => handleEditComment(c),
           },
           {
             key: "delete",
             label: "Delete",
             danger: true,
-            onClick: () => handleDeleteComment(c, postId),
           },
         ]
       : [];
@@ -335,7 +358,10 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
                 )}
               </div>
               {isOwnComment && !isEditing && (
-                <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
+                <Dropdown 
+                  menu={{ items: menuItems, onClick: ({ key }) => handleMenuClick(key) }} 
+                  trigger={["click"]}
+                >
                   <button
                     type="button"
                     className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100"
@@ -595,9 +621,12 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
                   });
                 }
                 
-                const replyCount = c.replyCount || replies.length;
+                // Ưu tiên dùng replies.length thực tế từ state, fallback về replyCount từ BE
+                const actualReplyCount = replies.length;
+                const replyCount = actualReplyCount > 0 ? actualReplyCount : (c.replyCount || 0);
                 const isRepliesExpanded = expandedReplyIds.has(String(c.id));
-                const hasReplies = replyCount > 0 || replies.length > 0;
+                // Chỉ hiển thị nút replies nếu thực sự còn replies
+                const hasReplies = actualReplyCount > 0;
 
                 return (
                   <div key={c.id} className="space-y-1">
@@ -704,6 +733,32 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
       >
         <p className="text-sm text-gray-700">
           Are you sure you want to delete this post? This action cannot be undone.
+        </p>
+      </Modal>
+
+      {/* Delete comment confirmation modal */}
+      <Modal
+        open={!!commentToDelete}
+        title="Delete comment"
+        centered
+        onCancel={() => setCommentToDelete(null)}
+        footer={[
+          <Button key="cancel" onClick={() => setCommentToDelete(null)}>
+            Cancel
+          </Button>,
+          <Button
+            key="delete"
+            type="primary"
+            danger
+            loading={deletingComment}
+            onClick={() => void handleConfirmDeleteComment()}
+          >
+            Delete
+          </Button>,
+        ]}
+      >
+        <p className="text-sm text-gray-700">
+          Are you sure you want to delete this comment? This action cannot be undone.
         </p>
       </Modal>
     </>
