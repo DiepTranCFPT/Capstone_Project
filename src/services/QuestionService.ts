@@ -57,7 +57,7 @@ const QuestionService = {
     return axiosInstance.get("/questions-v2/search", { params });
   },
 
-  //  Lấy danh sách câu hỏi được tạo bởi user
+  //  Lấy danh sách câu hỏi được tạo bởi user (có phân trang và sorting)
   async getByUserId(
     userId: string,
     params?: { pageNo?: number; pageSize?: number; keyword?: string }
@@ -77,9 +77,9 @@ const QuestionService = {
     // Note: endpoint provided by backend spec
     return axiosInstance.get(`/question-topics`, { params });
   },
-  // Lấy tất cả câu hỏi v2 (có phân trang)
+  // Lấy tất cả câu hỏi v2 (có phân trang và sorting)
   async getAllV2(
-    params?: { pageNo?: number; pageSize?: number }
+    params?: { pageNo?: number; pageSize?: number; type?: string; sorts?: string }
   ): Promise<AxiosResponse<ApiResponse<QuestionV2PaginationResponse>>> {
     return axiosInstance.get("/questions-v2", { params });
   },

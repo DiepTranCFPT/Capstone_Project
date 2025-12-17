@@ -673,6 +673,7 @@ export const useQuestionBank = () => {
     }
   }, [normalizeQuestions]);
 
+
   // 🔹 Lấy theo userId (thay cho teacherId)
   const fetchByUserId = useCallback(async (userId: string, params?: { pageNo?: number; pageSize?: number; keyword?: string }) => {
     try {
@@ -785,7 +786,9 @@ export const useQuestionBank = () => {
   return {
     questions,
     loading,
+
     pageMeta,
+
     fetchQuestions,
     getQuestionById,
     createQuestion,

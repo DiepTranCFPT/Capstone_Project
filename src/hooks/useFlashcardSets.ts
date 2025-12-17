@@ -26,6 +26,7 @@ interface UseFlashcardSetsReturn {
     createFlashcardSet: (payload: CreateFlashcardSetRequest) => Promise<FlashcardSetDetail | null>;
     updateFlashcardSet: (id: string, payload: UpdateFlashcardSetRequest) => Promise<FlashcardSetDetail | null>;
     deleteFlashcardSet: (id: string) => Promise<boolean>;
+    updateVisibility: (id: string) => Promise<boolean>;
     fetchQuiz: (id: string) => Promise<FlashcardQuizQuestion[] | null>;
     clearError: () => void;
     clearCurrentFlashcardSet: () => void;
@@ -258,6 +259,40 @@ export const useFlashcardSets = (): UseFlashcardSetsReturn => {
         }
     }, []);
 
+    // Update visibility
+    const updateVisibility = useCallback(async (id: string): Promise<boolean> => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            await FlashcardSetService.updateVisibility(id);
+
+            // Toggle visibility in list
+            setFlashcardSets(prev => prev.map(item =>
+                item.id === id ? { ...item, public: !item.public } : item
+            ));
+
+            // Toggle visibility in current if it's the same
+            if (currentFlashcardSet?.id === id) {
+                setCurrentFlashcardSet(prev => prev ? { ...prev, public: !prev.public } : null);
+            }
+
+            return true;
+        } catch (err) {
+            console.error("Error updating visibility:", err);
+            const axiosError = err as {
+                response?: {
+                    data?: { message?: string };
+                    status?: number;
+                };
+            };
+            setError(axiosError.response?.data?.message || "Failed to update visibility");
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    }, [currentFlashcardSet?.id]);
+
     // Clear error
     const clearError = useCallback(() => {
         setError(null);
@@ -285,6 +320,7 @@ export const useFlashcardSets = (): UseFlashcardSetsReturn => {
         createFlashcardSet,
         updateFlashcardSet,
         deleteFlashcardSet,
+        updateVisibility,
         fetchQuiz,
         clearError,
         clearCurrentFlashcardSet,
