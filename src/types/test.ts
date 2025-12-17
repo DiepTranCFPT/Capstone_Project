@@ -236,6 +236,7 @@ export interface ActiveExam {
   belongTo: string;
   attemptSessionToken: string;
   questions: ActiveExamQuestion[];
+  remainTime?: number;
 }
 
 // 2. Types cho API /exam-test/submit/{attemptId}
