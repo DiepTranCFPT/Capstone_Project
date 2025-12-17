@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Button,
   Table,
@@ -30,6 +30,7 @@ import { toast } from "~/components/common/Toast";
 import { useQuestionBank } from "~/hooks/useQuestionBank";
 import { useAuth } from "~/hooks/useAuth";
 import { useSubjects } from "~/hooks/useSubjects";
+import { useQuestionTopics } from "~/hooks/useQuestionTopics";
 import LatexRenderer from "~/components/common/LatexRenderer";
 
 const { Option } = Select;
@@ -46,6 +47,13 @@ const QuestionBankPage: React.FC = () => {
   const {
     questions: questionBank,
     loading,
+    total,
+    pageNo,
+    setPageNo,
+    pageSize,
+    setPageSize,
+    sorts,
+    setSorts,
     createQuestion,
     updateQuestion,
     deleteQuestion,
@@ -57,6 +65,7 @@ const QuestionBankPage: React.FC = () => {
     importQuestions,
   } = useQuestionBank(teacherId);
 
+
   const difficultyOptions = useMemo(
     () => [
       { value: "easy", label: "Easy" },
@@ -66,15 +75,8 @@ const QuestionBankPage: React.FC = () => {
     []
   );
 
-  const topicOptions = useMemo(() => {
-    const result = new Set<string>();
-    (questionBank || []).forEach((question) => {
-      if (question.topic) {
-        result.add(question.topic);
-      }
-    });
-    return Array.from(result);
-  }, [questionBank]);
+  // Hook quản lý topics
+  const { topics, fetchTopicsBySubject } = useQuestionTopics();
 
   //  Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -104,6 +106,32 @@ const QuestionBankPage: React.FC = () => {
   const [selectedSubject, setSelectedSubject] =
     useState<string>("All Subjects");
   const [selectedTopic, setSelectedTopic] = useState<string>("All Topics");
+
+  // Lấy topics khi subject thay đổi
+  useEffect(() => {
+    if (selectedSubject && selectedSubject !== "All Subjects") {
+      const subject = subjects.find(s => s.name === selectedSubject);
+      if (subject?.id) {
+        fetchTopicsBySubject(subject.id);
+      }
+    }
+  }, [selectedSubject, subjects, fetchTopicsBySubject]);
+
+  // Topic options từ API
+  const topicOptions = useMemo(() => {
+    if (selectedSubject === "All Subjects") {
+      // Nếu chưa chọn subject, lấy từ questionBank
+      const result = new Set<string>();
+      (questionBank || []).forEach((question) => {
+        if (question.topic) {
+          result.add(question.topic);
+        }
+      });
+      return Array.from(result);
+    }
+    // Nếu đã chọn subject, lấy từ API
+    return topics.map(t => t.name);
+  }, [selectedSubject, topics, questionBank]);
 
   //  Đóng modal
   const handleCloseModal = () => {
@@ -421,7 +449,7 @@ const QuestionBankPage: React.FC = () => {
         return <Tag color={color}>{difficulty}</Tag>;
       },
     },
-    { title: "Created At", dataIndex: "createdAt", key: "createdAt" },
+
     {
       title: "Action",
       key: "action",
@@ -496,14 +524,18 @@ const QuestionBankPage: React.FC = () => {
         />
         <Select
           value={selectedSubject}
-          onChange={setSelectedSubject}
+          onChange={(value) => {
+            setSelectedSubject(value);
+            setSelectedTopic("All Topics"); // Reset topic khi đổi subject
+          }}
           className="w-48"
         >
           <Option value="All Subjects">All Subjects</Option>
-          <Option value="Biology">Biology</Option>
-          <Option value="Mathematics">Mathematics</Option>
-          <Option value="Physics">Physics</Option>
-          <Option value="History">History</Option>
+          {subjects.map((subject) => (
+            <Option key={subject.id} value={subject.name}>
+              {subject.name}
+            </Option>
+          ))}
         </Select>
         <Select
           value={selectedTopic}
@@ -537,6 +569,24 @@ const QuestionBankPage: React.FC = () => {
           <Option value="all">All Types</Option>
           <Option value="mcq">MCQ</Option>
           <Option value="frq">FRQ</Option>
+        </Select>
+        <Select
+          value={sorts === 'createAt:desc' ? 'desc' : 'asc'}
+          onChange={(value) => setSorts(`createAt:${value}`)}
+          className="w-48"
+        >
+          <Option value="desc">Newest First</Option>
+          <Option value="asc">Oldest First</Option>
+        </Select>
+        <Select
+          value={pageSize}
+          onChange={(value) => setPageSize(value)}
+          className="w-32"
+        >
+          <Option value={10}>10 / page</Option>
+          <Option value={20}>20 / page</Option>
+          <Option value={50}>50 / page</Option>
+          <Option value={100}>100 / page</Option>
         </Select>
         <Button onClick={clearFilters}>Clear Filters</Button>
       </div>
@@ -575,7 +625,19 @@ const QuestionBankPage: React.FC = () => {
         dataSource={filteredData}
         rowKey="id"
         loading={loading}
-        pagination={{ pageSize: 10 }}
+        pagination={{
+          current: pageNo + 1,
+          pageSize: pageSize,
+          total: total,
+          showSizeChanger: false,
+          showTotal: (total) => `Total ${total} questions`,
+          onChange: (page) => {
+            setPageNo(page - 1);
+            if (teacherId) {
+              fetchByUserId(teacherId, { pageNo: page - 1, pageSize, sorts });
+            }
+          },
+        }}
         rowSelection={{
           selectedRowKeys,
           onChange: (keys) => setSelectedRowKeys(keys),

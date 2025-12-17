@@ -7,6 +7,10 @@ import type { QuestionBankItem, NewQuestion, QuestionOption } from "~/types/ques
 export const useQuestionBank = (teacherId?: string) => {
   const [questions, setQuestions] = useState<QuestionBankItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [pageNo, setPageNo] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [sorts, setSorts] = useState<string>('createAt:desc'); // Single string, not array
 
   const sanitizeQuestion = useCallback((raw: unknown): QuestionBankItem | null => {
     if (!raw || typeof raw !== "object") {
@@ -626,12 +630,26 @@ export const useQuestionBank = (teacherId?: string) => {
     }
   }, [normalizeQuestions]);
 
-  // 🔹 Lấy theo userId (thay cho teacherId)
-  const fetchByUserId = useCallback(async (userId: string) => {
+  // Lấy theo userId (thay cho teacherId) - hỗ trợ phân trang
+  const fetchByUserId = useCallback(async (
+    userId: string,
+    params?: { pageNo?: number; pageSize?: number; sorts?: string }
+  ) => {
     try {
       setLoading(true);
-      const res = await QuestionService.getByUserId(userId);
-      setQuestions(normalizeQuestions(res.data?.data));
+      const res = await QuestionService.getByUserId(userId, params);
+      const data = res.data?.data as unknown as { items?: unknown[]; totalElement?: number } | unknown[];
+
+      // Handle both array response and paginated response
+      if (Array.isArray(data)) {
+        setQuestions(normalizeQuestions(data));
+        setTotal(data.length);
+      } else if (data && typeof data === 'object' && 'items' in data) {
+        setQuestions(normalizeQuestions(data.items));
+        setTotal(data.totalElement || 0);
+      } else {
+        setQuestions(normalizeQuestions(data));
+      }
     } catch (error) {
       message.error("Không thể tải câu hỏi theo người dùng!");
       console.error(error);
@@ -745,6 +763,13 @@ export const useQuestionBank = (teacherId?: string) => {
   return {
     questions,
     loading,
+    total,
+    pageNo,
+    setPageNo,
+    pageSize,
+    setPageSize,
+    sorts,
+    setSorts,
     fetchQuestions,
     getQuestionById,
     createQuestion,
