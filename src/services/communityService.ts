@@ -152,6 +152,18 @@ const CommunityService = {
     return axiosInstance.get(`/comments/${commentId}/replies`);
   },
 
+  // POST /posts/{postId}/vote
+  // Vote / like một bài viết
+  // Swagger: required query param `value` (integer)
+  votePost(
+    postId: string | number,
+    value: number
+  ): Promise<AxiosResponse<ApiResponse<CommunityPost>>> {
+    return axiosInstance.post(`/posts/${postId}/vote`, null, {
+      params: { value },
+    });
+  },
+
   // DELETE /posts/{postId}
   // Xóa bài viết
   deletePost(

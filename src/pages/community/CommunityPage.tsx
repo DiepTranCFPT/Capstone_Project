@@ -19,6 +19,7 @@ const CommunityPage: React.FC = () => {
         fetchCommunityPosts,
         createCommunityPost,
         deletePost,
+        votePost,
         communities,
         communityPosts,
         loading,
@@ -78,6 +79,8 @@ const CommunityPage: React.FC = () => {
                 image?: unknown;
                 imageUrl?: unknown;
                 imgUrl?: unknown;
+                voteCount?: unknown;
+                userVoteValue?: unknown;
                 author?: {
                     firstName?: string;
                     lastName?: string;
@@ -111,6 +114,14 @@ const CommunityPage: React.FC = () => {
                 (asAny.imageUrl as string | undefined) ||
                 (asAny.imgUrl as string | undefined);
 
+            const rawVoteCount = typeof asAny.voteCount === "number"
+                ? (asAny.voteCount as number)
+                : undefined;
+
+            const rawUserVoteValue = typeof asAny.userVoteValue === "number"
+                ? (asAny.userVoteValue as number)
+                : 0;
+
             return {
                 id: Number(post.id) || 0, // Fallback nếu không convert được
                 postId: post.id, // Giữ nguyên ID gốc từ BE (UUID string) để dùng cho API
@@ -120,13 +131,15 @@ const CommunityPage: React.FC = () => {
                 },
                 content: post.content,
                 tags: Array.isArray(rawTags) ? (rawTags as string[]) : [],
-                likes: Number(post.likeCount ?? 0),
+                // Ưu tiên voteCount từ BE, fallback về likeCount cũ nếu có
+                likes: Number(rawVoteCount ?? post.likeCount ?? 0),
                 comments: Number(post.commentCount ?? 0),
                 image: resolveImageUrl(rawImage) as string | null,
                 commentsData: [],
                 groupId: post.communityId ? Number(post.communityId) : undefined,
                 groupName: communities.find((c) => String(c.id) === String(post.communityId))?.name,
                 authorId: post.authorId ?? (author as { id?: string | number } | undefined)?.id,
+                userVoteValue: rawUserVoteValue,
             };
         });
     }, [communityPosts, communities]);
@@ -143,6 +156,11 @@ const CommunityPage: React.FC = () => {
         });
         message.success("Your thread has been posted!");
         setIsThreadModalVisible(false);
+    };
+
+    const handleVotePost = async (postId: string | number, value: number) => {
+        // value: +1 khi like, -1 khi bỏ like
+        await votePost(postId, value);
     };
 
     const currentCommunity = useMemo(
@@ -206,6 +224,7 @@ const CommunityPage: React.FC = () => {
                                 loading={loading} 
                                 threads={displayedThreads}
                                 onDeletePost={deletePost}
+                                onVotePost={handleVotePost}
                             />
                         </section>
 

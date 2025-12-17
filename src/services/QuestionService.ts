@@ -60,8 +60,8 @@ const QuestionService = {
   //  Lấy danh sách câu hỏi được tạo bởi user (có phân trang và sorting)
   async getByUserId(
     userId: string,
-    params?: { pageNo?: number; pageSize?: number; sorts?: string }
-  ): Promise<AxiosResponse<ApiResponse<QuestionBankItem[]>>> {
+    params?: { pageNo?: number; pageSize?: number; keyword?: string }
+  ): Promise<AxiosResponse<ApiResponse<PageInfo<QuestionBankItem> | QuestionBankItem[]>>> {
     return axiosInstance.get(`/questions-v2/created-by/${userId}`, { params });
   },
 

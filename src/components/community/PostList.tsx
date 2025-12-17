@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input, Button, Dropdown, message, Modal } from "antd";
 import type { MenuProps } from "antd";
 import { FiMessageSquare, FiMoreVertical } from "react-icons/fi";
+import { IoCaretUpSharp, IoCaretDownSharp } from "react-icons/io5";
 import type { Thread, CommunityComment } from "~/types/community";
 import usePostComments from "~/hooks/usePostComments";
 import { useAuth } from "~/hooks/useAuth";
@@ -10,9 +11,10 @@ interface PostListProps {
   loading: boolean;
   threads: Thread[];
   onDeletePost?: (postId: string | number) => Promise<void>;
+  onVotePost?: (postId: string | number, value: number) => Promise<void>;
 }
 
-const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost }) => {
+const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onVotePost }) => {
   const { user } = useAuth();
   const {
     loading: commentLoading,
@@ -33,6 +35,38 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost }) =
   const [expandedReplyIds, setExpandedReplyIds] = useState<Set<string>>(new Set());
   const [postToDelete, setPostToDelete] = useState<Thread | null>(null);
   const [deletingPost, setDeletingPost] = useState(false);
+  const [userVoteByPostId, setUserVoteByPostId] = useState<Record<string, number>>({});
+
+  type CommentWithPossibleParentIds = CommunityComment & {
+    parentCommentId?: string | number | null;
+    parenCommentId?: string | number | null;
+  };
+
+  const getNormalizedParentId = (comment: CommunityComment): string | number | null | undefined => {
+    const extended = comment as CommentWithPossibleParentIds;
+    return comment.parentId ?? extended.parentCommentId ?? extended.parenCommentId;
+  };
+
+  const formatCompactNumber = (num: number): string => {
+    try {
+      return new Intl.NumberFormat("en", {
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }).format(num);
+    } catch {
+      return String(num);
+    }
+  };
+
+  // Khởi tạo vote của user theo dữ liệu từ BE (userVoteValue)
+  useEffect(() => {
+    const next: Record<string, number> = {};
+    threads.forEach((t) => {
+      const pid = t.postId || t.id;
+      next[String(pid)] = typeof t.userVoteValue === "number" ? t.userVoteValue : 0;
+    });
+    setUserVoteByPostId(next);
+  }, [threads]);
 
   const handleToggleComments = async (thread: Thread) => {
     const postId = thread.postId || thread.id;
@@ -316,19 +350,23 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost }) =
     const commentsForPost = postComments[String(postId)] || [];
     const commentList = Array.isArray(commentsForPost) ? commentsForPost : [];
     const currentCommentText = commentTexts[String(postId)] || "";
+    const currentUserVoteValue =
+      typeof userVoteByPostId[String(postId)] === "number"
+        ? userVoteByPostId[String(postId)]
+        : typeof thread.userVoteValue === "number"
+          ? thread.userVoteValue
+          : 0;
 
     // Phân loại comments: parent comments (không có parentId) và replies (có parentId)
     // Sau khi normalize trong usePostComments, parentId đã được set từ parenCommentId rồi
-    let parentComments = commentList.filter(
-      (c) => {
-        const parentId = c.parentId ?? (c as any).parentCommentId ?? (c as any).parenCommentId;
-        return !parentId || parentId === null || parentId === undefined;
-      }
-    );
+    let parentComments = commentList.filter((c) => {
+      const parentId = getNormalizedParentId(c);
+      return parentId === null || parentId === undefined;
+    });
     const repliesMap = new Map<string, CommunityComment[]>();
     commentList.forEach((c) => {
       // Normalize parentId: check cả parenCommentId từ BE
-      const parentId = c.parentId ?? (c as any).parentCommentId ?? (c as any).parenCommentId;
+      const parentId = getNormalizedParentId(c);
       if (parentId !== null && parentId !== undefined) {
         const parentKey = String(parentId).trim();
         if (!repliesMap.has(parentKey)) {
@@ -361,7 +399,7 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost }) =
 
     return (
       <div
-        key={thread.id}
+        key={thread.postId || thread.id}
         className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"
       >
         <div className="flex items-center justify-between gap-3">
@@ -408,6 +446,52 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost }) =
           </div>
         )}
         <div className="mt-4 flex items-center gap-4 text-gray-500 text-sm">
+          {/* Vote control (up/down) */}
+          <div className="inline-flex items-center rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+            <button
+              type="button"
+              className={`w-9 h-9 flex items-center justify-center transition-all ${
+                currentUserVoteValue === 1
+                  ? "bg-teal-50 text-teal-600"
+                  : "text-gray-500 hover:bg-gray-50"
+              }`}
+              onClick={() => {
+                if (!onVotePost) return;
+                const pid = thread.postId || thread.id;
+                const current = currentUserVoteValue;
+                const nextValue = current === 1 ? 0 : 1;
+                void onVotePost(pid, nextValue);
+                setUserVoteByPostId((prev) => ({ ...prev, [String(pid)]: nextValue }));
+              }}
+              aria-label="Upvote"
+              title="Upvote"
+            >
+              <IoCaretUpSharp size={18} />
+            </button>
+            <div className="px-2 py-1 text-xs font-semibold text-gray-700 min-w-10 text-center select-none">
+              {formatCompactNumber(Number(thread.likes ?? 0))}
+            </div>
+            <button
+              type="button"
+              className={`w-9 h-9 flex items-center justify-center transition-all ${
+                currentUserVoteValue === -1
+                  ? "bg-rose-50 text-rose-600"
+                  : "text-gray-500 hover:bg-gray-50"
+              }`}
+              onClick={() => {
+                if (!onVotePost) return;
+                const pid = thread.postId || thread.id;
+                const current = currentUserVoteValue;
+                const nextValue = current === -1 ? 0 : -1;
+                void onVotePost(pid, nextValue);
+                setUserVoteByPostId((prev) => ({ ...prev, [String(pid)]: nextValue }));
+              }}
+              aria-label="Downvote"
+              title="Downvote"
+            >
+              <IoCaretDownSharp size={18} />
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => void handleToggleComments(thread)}
@@ -445,7 +529,7 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost }) =
                 // So sánh cả 3 trường: parentId, parentCommentId, parenCommentId
                 if (replies.length === 0) {
                   replies = commentList.filter((cmt) => {
-                    const cmtParentId = cmt.parentId ?? (cmt as any).parentCommentId ?? (cmt as any).parenCommentId;
+                    const cmtParentId = getNormalizedParentId(cmt);
                     if (cmtParentId === null || cmtParentId === undefined) return false;
                     // So sánh cả string và number để đảm bảo khớp
                     return String(cmtParentId).trim() === parentIdKey || 

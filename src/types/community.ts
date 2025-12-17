@@ -21,6 +21,8 @@ export interface Thread {
     groupId?: number;
     groupName?: string;
     authorId?: string | number; // ID của người tạo post để check quyền xóa
+    // Giá trị vote của user hiện tại (theo BE: userVoteValue)
+    userVoteValue?: number;
 };
 
 export interface StudyGroup {
