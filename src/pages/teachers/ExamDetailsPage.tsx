@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Button, Card, Tag, Descriptions, Table, Typography, Space, Divider, Spin, Modal, Select, InputNumber, Tooltip, Slider } from "antd";
+import { Button, Card, Tag, Descriptions, Table, Typography, Space, Divider, Spin, Modal, Select, InputNumber, Form, Tooltip } from "antd";
 import { EditOutlined, ArrowLeftOutlined, ClockCircleOutlined, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { useNavigate, useParams } from "react-router-dom";
 import { useExamTemplates } from "~/hooks/useExams";
@@ -18,26 +18,15 @@ const ExamDetailsPage: React.FC = () => {
   const { questions: subjectQuestions, fetchBySubjectId, loading: loadingQuestions } = useQuestionBank();
 
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [showRuleForm, setShowRuleForm] = useState(false);
+  const [ruleModalVisible, setRuleModalVisible] = useState(false);
   const [editingRule, setEditingRule] = useState<{ id: string; data: CreateExamRulePayload } | null>(null);
+  const [ruleForm] = Form.useForm();
 
-  // Inline rule form state (similar to CreateExamPage)
-  const [ruleForm, setRuleForm] = useState<CreateExamRulePayload>({
-    topicName: '',
-    difficultyName: 'Easy',
-    questionType: 'mcq',
-    numberOfQuestions: 0,
-    points: 1,
-    percentage: 10, // Mặc định 10%
-  });
-
-  // Tổng số câu hỏi mong muốn (lấy từ template hoặc mặc định 20)
-  const totalQuestions = currentTemplate?.totalQuestions || 20;
-
-  // Tính số câu hỏi từ percentage
-  const calculateQuestions = (percentage: number) => {
-    return Math.floor((percentage / 100) * totalQuestions);
-  };
+  // Watch form values for validation
+  const topicName = Form.useWatch('topicName', ruleForm);
+  const difficultyName = Form.useWatch('difficultyName', ruleForm);
+  const questionType = Form.useWatch('questionType', ruleForm);
+  const numberOfQuestions = Form.useWatch('numberOfQuestions', ruleForm);
 
   useEffect(() => {
     if (examId) {
@@ -79,27 +68,17 @@ const ExamDetailsPage: React.FC = () => {
 
   // Get available count for current form selection
   const availableCount = useMemo(() => {
-    if (!ruleForm.topicName) return 0;
+    if (!topicName) return 0;
 
     // Filter the actual questions list to get the precise count
     const filteredQuestions = subjectQuestions.filter(q =>
-      (q.topic === ruleForm.topicName) &&
-      (!ruleForm.difficultyName || q.difficulty?.toLowerCase() === ruleForm.difficultyName.toLowerCase()) &&
-      (!ruleForm.questionType || q.type?.toLowerCase() === ruleForm.questionType.toLowerCase())
+      (q.topic === topicName) &&
+      (!difficultyName || q.difficulty?.toLowerCase() === difficultyName.toLowerCase()) &&
+      (!questionType || q.type?.toLowerCase() === questionType.toLowerCase())
     );
 
     return filteredQuestions.length;
-  }, [subjectQuestions, ruleForm.topicName, ruleForm.difficultyName, ruleForm.questionType]);
-
-  // Helper: đếm số câu hỏi theo topic + difficulty + type
-  const getTypeCountForDifficulty = (type: 'mcq' | 'frq') => {
-    if (!ruleForm.topicName || !ruleForm.difficultyName) return 0;
-    return subjectQuestions.filter(q =>
-      q.topic === ruleForm.topicName &&
-      q.difficulty?.toLowerCase() === ruleForm.difficultyName.toLowerCase() &&
-      q.type?.toLowerCase() === type
-    ).length;
-  };
+  }, [subjectQuestions, topicName, difficultyName, questionType]);
 
   const handleEdit = () => {
     navigate(`/teacher/edit-template/${examId}`);
@@ -133,14 +112,8 @@ const ExamDetailsPage: React.FC = () => {
 
   const handleAddRule = () => {
     setEditingRule(null);
-    setRuleForm({
-      topicName: '',
-      difficultyName: 'Easy',
-      questionType: 'mcq',
-      numberOfQuestions: 1,
-      points: 1,
-    });
-    setShowRuleForm(true);
+    ruleForm.resetFields();
+    setRuleModalVisible(true);
   };
 
   const handleEditRule = (rule: ExamRule) => {
@@ -153,15 +126,14 @@ const ExamDetailsPage: React.FC = () => {
         points: rule.points,
       }
     });
-    setRuleForm({
+    ruleForm.setFieldsValue({
       topicName: rule.topicName,
       difficultyName: rule.difficultyName,
       questionType: rule.questionType,
       numberOfQuestions: rule.numberOfQuestions,
       points: rule.points,
-      percentage: rule.percentage || 10, // Lấy percentage từ rule hoặc mặc định 10%
     });
-    setShowRuleForm(true);
+    setRuleModalVisible(true);
   };
 
   const handleDeleteRule = async (ruleId: string) => {
@@ -169,58 +141,39 @@ const ExamDetailsPage: React.FC = () => {
     await removeRule(examId, ruleId);
   };
 
-  const handleSaveRule = async () => {
+  const handleRuleModalOk = async () => {
     try {
-      const calculatedQuestions = calculateQuestions(ruleForm.percentage || 0);
+      const values = await ruleForm.validateFields();
 
-      // Validation
-      if (!ruleForm.topicName) {
-        return;
-      }
-      if (calculatedQuestions > availableCount) {
-        return;
-      }
-      if (calculatedQuestions === 0) {
+      // Additional validation for available questions
+      if (values.numberOfQuestions > availableCount) {
+        ruleForm.setFields([
+          {
+            name: 'numberOfQuestions',
+            errors: [`Only ${availableCount} questions available`],
+          },
+        ]);
         return;
       }
 
       if (!examId) return;
 
-      // Prepare rule data with calculated numberOfQuestions
-      const ruleData = {
-        ...ruleForm,
-        numberOfQuestions: calculatedQuestions,
-      };
-
       if (editingRule) {
-        await updateRule(examId, editingRule.id, ruleData);
+        await updateRule(examId, editingRule.id, values);
       } else {
-        await addRule(examId, ruleData);
+        await addRule(examId, values);
       }
-      setShowRuleForm(false);
-      setRuleForm({
-        topicName: '',
-        difficultyName: 'Easy',
-        questionType: 'mcq',
-        numberOfQuestions: 0,
-        points: 1,
-        percentage: 10,
-      });
+      setRuleModalVisible(false);
+      ruleForm.resetFields();
       setEditingRule(null);
     } catch (error) {
       console.error('Rule operation error:', error);
     }
   };
 
-  const handleCancelRule = () => {
-    setShowRuleForm(false);
-    setRuleForm({
-      topicName: '',
-      difficultyName: 'Easy',
-      questionType: 'mcq',
-      numberOfQuestions: 1,
-      points: 1,
-    });
+  const handleRuleModalCancel = () => {
+    setRuleModalVisible(false);
+    ruleForm.resetFields();
     setEditingRule(null);
   };
 
@@ -255,8 +208,8 @@ const ExamDetailsPage: React.FC = () => {
       key: 'difficulty',
       render: (difficulty: string) => (
         <span className={`px-2 py-1 rounded text-xs font-medium ${difficulty === 'Easy' ? 'bg-green-100 text-green-800' :
-          difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-red-100 text-red-800'
+            difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+              'bg-red-100 text-red-800'
           }`}>
           {difficulty}
         </span>
@@ -282,6 +235,11 @@ const ExamDetailsPage: React.FC = () => {
       title: 'Points',
       dataIndex: 'points',
       key: 'points',
+    },
+    {
+      title: 'Token Cost',
+      dataIndex: 'tokenCost',
+      key: 'tokenCost',
     },
     {
       title: 'Actions',
@@ -335,7 +293,7 @@ const ExamDetailsPage: React.FC = () => {
                 </Space>
               </Descriptions.Item>
               <Descriptions.Item label="Passing Score">
-                {currentTemplate.passingScore}
+                {currentTemplate.passingScore}%
               </Descriptions.Item>
               <Descriptions.Item label="Total Rules">
                 {currentTemplate.rules?.length || 0}
@@ -346,7 +304,7 @@ const ExamDetailsPage: React.FC = () => {
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Token Cost">
-                {currentTemplate.tokenCost === 0 ? 'Free' : `${currentTemplate.tokenCost.toLocaleString('vi-VN')} VNĐ`}
+                {currentTemplate.tokenCost === 0 ? 'Free' : `${currentTemplate.tokenCost} 💰`}
               </Descriptions.Item>
               <Descriptions.Item label="Average Rating">
                 ⭐ {currentTemplate.averageRating?.toFixed(1) || 'N/A'}
@@ -370,195 +328,26 @@ const ExamDetailsPage: React.FC = () => {
                 </div>
               </>
             )}
-
-            {/* Score Mapping Display */}
-            {currentTemplate.scoreMapping && Object.keys(currentTemplate.scoreMapping).length > 0 && (
-              <>
-                <Divider />
-                <div>
-                  <Text strong>Score Mapping (AP Score):</Text>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {Object.entries(currentTemplate.scoreMapping)
-                      .sort(([a], [b]) => Number(b) - Number(a))
-                      .map(([grade, range]) => (
-                        <Tag key={grade} color="blue">
-                          <span className="font-bold">{grade}</span>: {range.min}-{range.max}%
-                        </Tag>
-                      ))}
-                  </div>
-                </div>
-              </>
-            )}
           </Card>
 
           {/* Template Rules */}
           <Card title="Question Generation Rules">
-            <div className="space-y-4">
-              {!showRuleForm ? (
-                <Button
-                  type="dashed"
-                  icon={<PlusOutlined />}
-                  onClick={handleAddRule}
-                  block
-                >
-                  Add Rule
-                </Button>
-              ) : (
-                <Card size="small" className="border-dashed">
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Topic Name *</label>
-                      <Select
-                        placeholder="Select a topic"
-                        value={ruleForm.topicName || undefined}
-                        onChange={(value) => setRuleForm({ ...ruleForm, topicName: value })}
-                        showSearch
-                        optionFilterProp="children"
-                        style={{ width: '100%' }}
-                        loading={loadingQuestions}
-                      >
-                        {questionTopics.map((topic) => {
-                          const stats = questionStats[topic.name];
-                          const count = stats ? stats.total : 0;
-                          return (
-                            <Select.Option key={topic.id} value={topic.name}>
-                              <div className="flex justify-between items-center">
-                                <span>{topic.name}</span>
-                                <Tag color={count > 0 ? "blue" : "default"}>{count} Qs</Tag>
-                              </div>
-                            </Select.Option>
-                          );
-                        })}
-                      </Select>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Difficulty</label>
-                        <Select
-                          value={ruleForm.difficultyName}
-                          onChange={(value) => setRuleForm({ ...ruleForm, difficultyName: value })}
-                          style={{ width: '100%' }}
-                        >
-                          {['Easy', 'Medium', 'Hard'].map(diff => {
-                            const topicStats = questionStats[ruleForm.topicName];
-                            const count = topicStats ? topicStats[diff.toLowerCase() as 'easy' | 'medium' | 'hard'] : 0;
-                            return (
-                              <Select.Option key={diff} value={diff}>
-                                <div className="flex justify-between items-center">
-                                  <span>{diff}</span>
-                                  {ruleForm.topicName && (
-                                    <span className="text-xs text-gray-500">({count})</span>
-                                  )}
-                                </div>
-                              </Select.Option>
-                            );
-                          })}
-                        </Select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Question Type</label>
-                        <Select
-                          value={ruleForm.questionType}
-                          onChange={(value) => setRuleForm({ ...ruleForm, questionType: value })}
-                          style={{ width: '100%' }}
-                        >
-                          <Select.Option value="mcq">
-                            <div className="flex justify-between items-center">
-                              <span>MCQ</span>
-                              {ruleForm.topicName && ruleForm.difficultyName && (
-                                <span className="text-xs text-gray-500">
-                                  ({getTypeCountForDifficulty('mcq')})
-                                </span>
-                              )}
-                            </div>
-                          </Select.Option>
-                          <Select.Option value="frq">
-                            <div className="flex justify-between items-center">
-                              <span>FRQ</span>
-                              {ruleForm.topicName && ruleForm.difficultyName && (
-                                <span className="text-xs text-gray-500">
-                                  ({getTypeCountForDifficulty('frq')})
-                                </span>
-                              )}
-                            </div>
-                          </Select.Option>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Percentage (%)
-                          <Tooltip title={`Equivalent: ${calculateQuestions(ruleForm.percentage || 0)} questions | Available: ${availableCount} questions`}>
-                            <InfoCircleOutlined className="ml-1 text-gray-400" />
-                          </Tooltip>
-                        </label>
-                        <div className="flex items-center gap-3">
-                          <Slider
-                            min={5}
-                            max={100}
-                            step={5}
-                            value={ruleForm.percentage || 10}
-                            onChange={(value) => setRuleForm({ ...ruleForm, percentage: value })}
-                            style={{ flex: 1 }}
-                          />
-                          <InputNumber
-                            min={1}
-                            max={100}
-                            value={ruleForm.percentage || 10}
-                            onChange={(value) => setRuleForm({ ...ruleForm, percentage: value || 10 })}
-                            style={{ width: 70 }}
-                            formatter={(value) => `${value}%`}
-                            parser={(value) => Number(value?.replace('%', '') || 10)}
-                          />
-                        </div>
-                        <div className={`text-xs mt-1 ${calculateQuestions(ruleForm.percentage || 0) > availableCount ? 'text-red-500' : 'text-gray-500'}`}>
-                          → {calculateQuestions(ruleForm.percentage || 0)} questions
-                          {calculateQuestions(ruleForm.percentage || 0) > availableCount &&
-                            ` (⚠️ exceeds ${availableCount} available)`
-                          }
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Điểm mỗi câu</label>
-                        <InputNumber
-                          min={1}
-                          value={ruleForm.points}
-                          onChange={(value) => setRuleForm({ ...ruleForm, points: value || 1 })}
-                          style={{ width: '100%' }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        type="primary"
-                        onClick={handleSaveRule}
-                        size="small"
-                        disabled={!ruleForm.topicName || calculateQuestions(ruleForm.percentage || 0) > availableCount || calculateQuestions(ruleForm.percentage || 0) === 0}
-                      >
-                        {editingRule !== null ? 'Update Rule' : 'Add Rule'}
-                      </Button>
-                      <Button onClick={handleCancelRule} size="small">
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              )}
-
-              <Table
-                columns={ruleColumns}
-                dataSource={currentTemplate.rules?.map((rule, index) => ({ ...rule, key: index })) || []}
-                pagination={false}
-                size="small"
-                locale={{ emptyText: 'No rules defined' }}
-              />
+            <div className="mb-4">
+              <Button
+                type="dashed"
+                icon={<PlusOutlined />}
+                onClick={handleAddRule}
+              >
+                Add Rule
+              </Button>
             </div>
+            <Table
+              columns={ruleColumns}
+              dataSource={currentTemplate.rules?.map((rule, index) => ({ ...rule, key: index })) || []}
+              pagination={false}
+              size="small"
+              locale={{ emptyText: 'No rules defined' }}
+            />
           </Card>
         </div>
 
@@ -586,8 +375,8 @@ const ExamDetailsPage: React.FC = () => {
                 </Tag>
               </div>
               <div className="flex justify-between">
-                <Text>Cost:</Text>
-                <Text strong>{currentTemplate.tokenCost === 0 ? 'Free' : `${currentTemplate.tokenCost.toLocaleString('vi-VN')} VNĐ`}</Text>
+                <Text>Token Cost:</Text>
+                <Text strong>{currentTemplate.tokenCost === 0 ? 'Free' : `${currentTemplate.tokenCost} 💰`}</Text>
               </div>
               <div className="flex justify-between">
                 <Text>Average Rating:</Text>
@@ -664,6 +453,143 @@ const ExamDetailsPage: React.FC = () => {
       >
         <p>Are you sure you want to delete <strong>"{currentTemplate?.title}"</strong>?</p>
         <p className="text-red-600 text-sm mt-2">This action cannot be undone.</p>
+      </Modal>
+
+      {/* Rule Modal */}
+      <Modal
+        title={editingRule ? "Edit Rule" : "Add Rule"}
+        open={ruleModalVisible}
+        onOk={handleRuleModalOk}
+        onCancel={handleRuleModalCancel}
+        okText={editingRule ? "Update" : "Add"}
+        okButtonProps={{ disabled: numberOfQuestions > availableCount }}
+      >
+        <Form
+          form={ruleForm}
+          layout="vertical"
+          initialValues={{
+            topicName: '',
+            difficultyName: 'Easy',
+            questionType: 'mcq',
+            numberOfQuestions: 1,
+            points: 1,
+          }}
+        >
+          <Form.Item
+            name="topicName"
+            label="Topic Name"
+            rules={[{ required: true, message: 'Please select topic name' }]}
+          >
+            <Select
+              placeholder="Select a topic"
+              showSearch
+              optionFilterProp="children"
+              loading={loadingQuestions}
+            >
+              {questionTopics.map((topic) => {
+                const stats = questionStats[topic.name];
+                const count = stats ? stats.total : 0;
+                return (
+                  <Select.Option key={topic.id} value={topic.name}>
+                    <div className="flex justify-between items-center">
+                      <span>{topic.name}</span>
+                      <Tag color={count > 0 ? "blue" : "default"}>{count} Qs</Tag>
+                    </div>
+                  </Select.Option>
+                );
+              })}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="difficultyName"
+            label="Difficulty"
+            rules={[{ required: true, message: 'Please select difficulty' }]}
+          >
+            <Select>
+              {['Easy', 'Medium', 'Hard'].map(diff => {
+                const topicStats = questionStats[topicName];
+                const count = topicStats ? topicStats[diff.toLowerCase() as 'easy' | 'medium' | 'hard'] : 0;
+                return (
+                  <Select.Option key={diff} value={diff}>
+                    <div className="flex justify-between items-center">
+                      <span>{diff}</span>
+                      {topicName && (
+                        <span className="text-xs text-gray-500">({count})</span>
+                      )}
+                    </div>
+                  </Select.Option>
+                );
+              })}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="questionType"
+            label="Question Type"
+            rules={[{ required: true, message: 'Please select question type' }]}
+          >
+            <Select>
+              <Select.Option value="mcq">
+                <div className="flex justify-between items-center">
+                  <span>MCQ</span>
+                  {topicName && (
+                    <span className="text-xs text-gray-500">
+                      ({questionStats[topicName]?.mcq || 0})
+                    </span>
+                  )}
+                </div>
+              </Select.Option>
+              <Select.Option value="frq">
+                <div className="flex justify-between items-center">
+                  <span>FRQ</span>
+                  {topicName && (
+                    <span className="text-xs text-gray-500">
+                      ({questionStats[topicName]?.frq || 0})
+                    </span>
+                  )}
+                </div>
+              </Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="numberOfQuestions"
+            label={
+              <span>
+                Number of Questions
+                <Tooltip title={`Available: ${availableCount}`}>
+                  <InfoCircleOutlined className="ml-1 text-gray-400" />
+                </Tooltip>
+              </span>
+            }
+            rules={[
+              { required: true, message: 'Please enter number of questions' },
+              {
+                validator: async (_, value) => {
+                  if (value > availableCount) {
+                    return Promise.reject(new Error(`Only ${availableCount} questions available`));
+                  }
+                  return Promise.resolve();
+                }
+              }
+            ]}
+          >
+            <InputNumber
+              min={1}
+              max={availableCount > 0 ? availableCount : 1}
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="points"
+            label="Points per Question"
+            rules={[{ required: true, message: 'Please enter points' }]}
+          >
+            <InputNumber min={1} style={{ width: '100%' }} />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

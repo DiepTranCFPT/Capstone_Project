@@ -3,8 +3,6 @@ import { message } from "antd";
 import type { QuestionV2, QuestionV2PaginationResponse } from "~/types/question";
 import QuestionService from "~/services/QuestionService";
 
-export type SortOrder = 'createAt:desc' | 'createAt:asc';
-
 export const useQuestionBankV2 = (questionType?: 'mcq' | 'frq') => {
   const [questions, setQuestions] = useState<QuestionV2[]>([]);
   const [loading, setLoading] = useState(false);
@@ -12,16 +10,11 @@ export const useQuestionBankV2 = (questionType?: 'mcq' | 'frq') => {
   const [pageNo, setPageNo] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
-  const [sorts, setSorts] = useState<SortOrder[]>(['createAt:desc']); // Default sort by newest
 
   const fetchQuestions = useCallback(async () => {
     setLoading(true);
     try {
-      const params: { pageNo: number; pageSize: number; type?: string; sorts?: string } = {
-        pageNo,
-        pageSize,
-        sorts: sorts[0], // Send as single string, not array
-      };
+      const params: { pageNo: number; pageSize: number; type?: string } = { pageNo, pageSize };
       if (questionType) {
         params.type = questionType;
       }
@@ -43,7 +36,7 @@ export const useQuestionBankV2 = (questionType?: 'mcq' | 'frq') => {
     } finally {
       setLoading(false);
     }
-  }, [pageNo, pageSize, questionType, sorts]);
+  }, [pageNo, pageSize, questionType]);
 
   useEffect(() => {
     fetchQuestions();
@@ -58,8 +51,6 @@ export const useQuestionBankV2 = (questionType?: 'mcq' | 'frq') => {
     setPageNo,
     pageSize,
     setPageSize,
-    sorts,
-    setSorts,
     fetchQuestions,
   };
 };

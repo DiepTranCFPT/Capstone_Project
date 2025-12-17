@@ -24,12 +24,12 @@ const TokenConfirmationModal: React.FC<TokenConfirmationModalProps> = ({
                 <h3 className="text-xl font-bold text-gray-800 mb-4">Confirm Test Start</h3>
                 {exam && (
                     <p className="text-red-500 mb-6">
-                        This test, "{exam.title}", costs {exam.tokenCost.toLocaleString('vi-VN')} VNĐ. Do you want to continue?
+                        This test, "{exam.title}", costs {exam.tokenCost} tokens. Do you want to continue?
                     </p>
                 )}
                 {combinedExam && (
                     <p className="text-red-500 mb-6">
-                        This combined test costs {combinedExam.totalCost.toLocaleString('vi-VN')} VNĐ. Do you want to continue?
+                        This combined test costs {combinedExam.totalCost} tokens. Do you want to continue?
                     </p>
                 )}
                 <div className="flex justify-end space-x-4">

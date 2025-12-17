@@ -30,7 +30,6 @@ import { toast } from "~/components/common/Toast";
 import { useQuestionBank } from "~/hooks/useQuestionBank";
 import { useAuth } from "~/hooks/useAuth";
 import { useSubjects } from "~/hooks/useSubjects";
-import { useQuestionTopics } from "~/hooks/useQuestionTopics";
 import LatexRenderer from "~/components/common/LatexRenderer";
 
 const { Option } = Select;
@@ -59,7 +58,6 @@ const QuestionBankPage: React.FC = () => {
     importQuestions,
   } = useQuestionBank();
 
-
   const difficultyOptions = useMemo(
     () => [
       { value: "easy", label: "Easy" },
@@ -69,8 +67,15 @@ const QuestionBankPage: React.FC = () => {
     []
   );
 
-  // Hook quản lý topics
-  const { topics, fetchTopicsBySubject } = useQuestionTopics();
+  const topicOptions = useMemo(() => {
+    const result = new Set<string>();
+    (questionBank || []).forEach((question) => {
+      if (question.topic) {
+        result.add(question.topic);
+      }
+    });
+    return Array.from(result);
+  }, [questionBank]);
 
   //  Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -459,7 +464,7 @@ const QuestionBankPage: React.FC = () => {
         return <Tag color={color}>{difficulty}</Tag>;
       },
     },
-
+    { title: "Created At", dataIndex: "createdAt", key: "createdAt" },
     {
       title: "Action",
       key: "action",
@@ -534,18 +539,14 @@ const QuestionBankPage: React.FC = () => {
         />
         <Select
           value={selectedSubject}
-          onChange={(value) => {
-            setSelectedSubject(value);
-            setSelectedTopic("All Topics"); // Reset topic khi đổi subject
-          }}
+          onChange={setSelectedSubject}
           className="w-48"
         >
           <Option value="All Subjects">All Subjects</Option>
-          {subjects.map((subject) => (
-            <Option key={subject.id} value={subject.name}>
-              {subject.name}
-            </Option>
-          ))}
+          <Option value="Biology">Biology</Option>
+          <Option value="Mathematics">Mathematics</Option>
+          <Option value="Physics">Physics</Option>
+          <Option value="History">History</Option>
         </Select>
         <Select
           value={selectedTopic}
@@ -579,24 +580,6 @@ const QuestionBankPage: React.FC = () => {
           <Option value="all">All Types</Option>
           <Option value="mcq">MCQ</Option>
           <Option value="frq">FRQ</Option>
-        </Select>
-        <Select
-          value={sorts === 'createAt:desc' ? 'desc' : 'asc'}
-          onChange={(value) => setSorts(`createAt:${value}`)}
-          className="w-48"
-        >
-          <Option value="desc">Newest First</Option>
-          <Option value="asc">Oldest First</Option>
-        </Select>
-        <Select
-          value={pageSize}
-          onChange={(value) => setPageSize(value)}
-          className="w-32"
-        >
-          <Option value={10}>10 / page</Option>
-          <Option value={20}>20 / page</Option>
-          <Option value={50}>50 / page</Option>
-          <Option value={100}>100 / page</Option>
         </Select>
         <Button onClick={clearFilters}>Clear Filters</Button>
       </div>
