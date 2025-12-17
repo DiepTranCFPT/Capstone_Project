@@ -137,11 +137,11 @@ const MyFlashcardSetsPage: React.FC = () => {
                                         </div>
 
                                         <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-                                            <span className={`text-xs px-2 py-1 rounded-full ${set.public
+                                            <span className={`text-xs px-2 py-1 rounded-full ${set.visible
                                                 ? "bg-green-100 text-green-700"
                                                 : "bg-gray-100 text-gray-600"
                                                 }`}>
-                                                {set.public ? "Public" : "Private"}
+                                                {set.visible ? "Public" : "Private"}
                                             </span>
                                             <span className="text-xs text-gray-400">
                                                 {new Date(set.createdAt).toLocaleDateString("en-US", {

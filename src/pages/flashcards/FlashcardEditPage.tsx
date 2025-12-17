@@ -45,7 +45,7 @@ const FlashcardEditPage: React.FC = () => {
 
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [isPublic, setIsPublic] = useState(true);
+    const [isVisible, setIsVisible] = useState(true);
     const [cards, setCards] = useState<CardFormData[]>([]);
     const [isInitialized, setIsInitialized] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -72,7 +72,7 @@ const FlashcardEditPage: React.FC = () => {
         if (currentFlashcardSet && !isInitialized) {
             setTitle(currentFlashcardSet.title);
             setDescription(currentFlashcardSet.description || "");
-            setIsPublic(currentFlashcardSet.public);
+            setIsVisible(currentFlashcardSet.visible);
 
             // Convert flashcards to form data
             const existingCards: CardFormData[] = currentFlashcardSet.flashcards
@@ -200,7 +200,7 @@ const FlashcardEditPage: React.FC = () => {
         const payload = {
             title: title.trim(),
             description: description.trim(),
-            isPublic,
+            isVisible,
             cards: validCards.map(({ term, definition, imageUrl }) => ({
                 term: term.trim(),
                 definition: definition.trim(),
@@ -259,17 +259,17 @@ const FlashcardEditPage: React.FC = () => {
                         <div className="flex items-center gap-4">
                             {/* Public Toggle */}
                             <div className="flex items-center gap-2">
-                                {isPublic ? (
+                                {isVisible ? (
                                     <FaGlobe className="w-4 h-4 text-teal-600" />
                                 ) : (
                                     <FaLock className="w-4 h-4 text-gray-400" />
                                 )}
                                 <span className="text-sm text-gray-600">
-                                    {isPublic ? "Public" : "Private"}
+                                    {isVisible ? "Public" : "Private"}
                                 </span>
                                 <Switch
-                                    checked={isPublic}
-                                    onChange={setIsPublic}
+                                    checked={isVisible}
+                                    onChange={setIsVisible}
                                     size="small"
                                 />
                             </div>

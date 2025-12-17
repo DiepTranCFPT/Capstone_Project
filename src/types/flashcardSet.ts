@@ -56,7 +56,7 @@ export interface FlashcardSetListItem {
     viewCount: number;
     author: FlashcardAuthor;
     createdAt: string;
-    public: boolean;
+    visible: boolean;
 }
 
 // Flashcard Set (detail - with flashcards)
@@ -90,14 +90,14 @@ export interface CreateFlashcardSetRequest {
     title: string;
     description: string;
     cards: CreateFlashcardRequest[];
-    isPublic: boolean;
+    isVisible: boolean;
 }
 
 export interface UpdateFlashcardSetRequest {
     title?: string;
     description?: string;
     cards?: CreateFlashcardRequest[];
-    isPublic?: boolean;
+    isVisible: boolean;
 }
 
 // Response types
