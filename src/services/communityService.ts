@@ -237,6 +237,14 @@ const CommunityService = {
   ): Promise<AxiosResponse<ApiResponse<null>>> {
     return axiosInstance.delete(`/posts/${postId}`);
   },
+
+  // PUT /posts/{postId}/pin
+  // Pin/Unpin một bài viết (chỉ admin)
+  pinPost(
+    postId: string | number
+  ): Promise<AxiosResponse<ApiResponse<CommunityPost>>> {
+    return axiosInstance.put(`/posts/${postId}/pin`);
+  },
 };
 
 export default CommunityService;

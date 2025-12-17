@@ -1,6 +1,9 @@
 import type React from "react";
 import { FiPlus } from "react-icons/fi";
 
+// Avatar mặc định thống nhất cho tất cả user chưa có ảnh
+const DEFAULT_AVATAR = "https://i.pravatar.cc/150?u=default-user";
+
 interface PostComposerProps {
   userAvatar: string;
   userDisplayName: string;
@@ -17,9 +20,12 @@ const PostComposer: React.FC<PostComposerProps> = ({
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3">
       <img
-        src={userAvatar}
+        src={userAvatar || DEFAULT_AVATAR}
         alt={userDisplayName}
         className="w-10 h-10 rounded-full object-cover bg-gray-200"
+        onError={(e) => {
+          (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
+        }}
       />
       <button
         onClick={onOpenComposer}

@@ -161,6 +161,7 @@ function App() {
           <Route path="subscriptions" element={<TokenPaymentManagerPage />} />
           <Route path="subjects" element={<SubjectManagerPage />} />
           <Route path="communities" element={<CommunityManagerPage />} />
+          <Route path="community" element={<CommunityPage />} />
         </Route>
 
         {/* Main routes with Layout */}
@@ -248,6 +249,7 @@ function App() {
           <Route path="analytics" element={<ClassAnalyticsPage />} />
           <Route path="ratings" element={<TeacherRatingsViewPage />} />
           <Route path="wallet" element={<MyWalletPage />} />
+          <Route path="community" element={<CommunityPage />} />
         </Route>
 
         {/* Parent routes with ParentLayout */}
@@ -263,6 +265,7 @@ function App() {
           <Route path="student/:studentId" element={<StudentDetailPage />} />
           <Route path="billing" element={<ParentBillingPage />} />
           <Route path="wallet" element={<ParentBillingPage />} />
+          <Route path="community" element={<CommunityPage />} />
         </Route>
 
         {/* Advisor routes with AdvisorLayout */}

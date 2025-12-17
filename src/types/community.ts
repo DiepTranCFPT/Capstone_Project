@@ -27,6 +27,8 @@ export interface Thread {
     userRole?: string | string[];
     // Thời gian tạo post
     createdAt?: string;
+    // Post có được pin không (chỉ admin mới có quyền pin)
+    isPinned?: boolean;
 };
 
 export interface StudyGroup {
@@ -89,6 +91,7 @@ export interface CommunityPost {
   commentCount?: number;
   createdAt?: string;
   updatedAt?: string;
+  isPinned?: boolean; // Post có được pin không
   // Cho phép đính kèm extra fields (attachments, tags, ...)
   [key: string]: unknown;
 }

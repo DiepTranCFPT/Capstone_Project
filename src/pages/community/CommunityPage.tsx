@@ -22,6 +22,7 @@ const CommunityPage: React.FC = () => {
         createCommunityPost,
         deletePost,
         votePost,
+        pinPost,
         communities,
         communityPosts,
         loading,
@@ -29,9 +30,12 @@ const CommunityPage: React.FC = () => {
     } = useCommunity();
     const [selectedCommunityId, setSelectedCommunityId] = useState<string | number | null>(null);
     const [isThreadModalVisible, setIsThreadModalVisible] = useState(false);
+    // Avatar mặc định thống nhất cho tất cả user chưa có ảnh
+    const DEFAULT_AVATAR = "https://i.pravatar.cc/150?u=default-user";
+    
     const userAvatar = useMemo(() => {
         const url = user?.imgUrl || (user as { avatar?: string } | undefined)?.avatar;
-        if (!url) return "https://i.pravatar.cc/150?u=community-default";
+        if (!url) return DEFAULT_AVATAR;
         // Nếu backend trả về path tương đối thì prefix bằng API_URL, còn lại giữ nguyên
         return url.startsWith("http") ? url : `${import.meta.env.VITE_API_URL}${url}`;
     }, [user]);
@@ -119,7 +123,7 @@ const CommunityPage: React.FC = () => {
                 (post.authorAvatar as string | undefined) ||
                 author?.imgUrl ||
                 author?.avatar ||
-                "https://i.pravatar.cc/150";
+                DEFAULT_AVATAR;
 
             const rawImage =
                 (asAny.image as string | undefined) ||
@@ -133,6 +137,11 @@ const CommunityPage: React.FC = () => {
             const rawUserVoteValue = typeof asAny.userVoteValue === "number"
                 ? (asAny.userVoteValue as number)
                 : 0;
+
+            // Lấy isPinned từ post
+            const isPinned = typeof (post as { isPinned?: boolean }).isPinned === "boolean"
+                ? (post as { isPinned?: boolean }).isPinned
+                : false;
 
             // Lấy role từ author (có thể là role hoặc roles)
             // Nếu post được tạo bởi user hiện tại, ưu tiên lấy role từ user hiện tại
@@ -157,7 +166,7 @@ const CommunityPage: React.FC = () => {
                 postId: post.id, // Giữ nguyên ID gốc từ BE (UUID string) để dùng cho API
                 user: {
                     name: displayName,
-                    avatar: resolveImageUrl(avatarUrl) ?? "https://i.pravatar.cc/150",
+                    avatar: resolveImageUrl(avatarUrl) ?? DEFAULT_AVATAR,
                 },
                 content: post.content,
                 tags: Array.isArray(rawTags) ? (rawTags as string[]) : [],
@@ -172,6 +181,7 @@ const CommunityPage: React.FC = () => {
                 userVoteValue: rawUserVoteValue,
                 userRole: userRole,
                 createdAt: post.createdAt,
+                isPinned: isPinned,
             };
         });
     }, [communityPosts, communities, user]);
@@ -193,6 +203,14 @@ const CommunityPage: React.FC = () => {
     const handleVotePost = async (postId: string | number, value: number) => {
         // value: +1 khi like, -1 khi bỏ like
         await votePost(postId, value);
+    };
+
+    const handlePinPost = async (postId: string | number) => {
+        await pinPost(postId);
+        // Re-fetch posts để đảm bảo data đồng bộ với backend
+        if (selectedCommunityId) {
+            await fetchCommunityPosts(selectedCommunityId, { page: 0, size: 100 });
+        }
     };
 
     const currentCommunity = useMemo(
@@ -257,6 +275,7 @@ const CommunityPage: React.FC = () => {
                                 threads={displayedThreads}
                                 onDeletePost={deletePost}
                                 onVotePost={handleVotePost}
+                                onPinPost={handlePinPost}
                             />
                         </section>
 

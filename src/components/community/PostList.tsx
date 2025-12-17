@@ -1,22 +1,37 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Input, Button, Dropdown, message, Modal } from "antd";
 import type { MenuProps } from "antd";
 import { FiMessageSquare, FiMoreVertical } from "react-icons/fi";
 import { IoCaretUpSharp, IoCaretDownSharp } from "react-icons/io5";
+import { PushpinOutlined } from "@ant-design/icons";
 import type { Thread, CommunityComment } from "~/types/community";
 import usePostComments from "~/hooks/usePostComments";
 import { useAuth } from "~/hooks/useAuth";
 import { getHighestPriorityRole } from "~/utils/roleUtils";
+
+// Avatar mặc định thống nhất cho tất cả user chưa có ảnh
+const DEFAULT_AVATAR = "https://i.pravatar.cc/150?u=default-user";
 
 interface PostListProps {
   loading: boolean;
   threads: Thread[];
   onDeletePost?: (postId: string | number) => Promise<void>;
   onVotePost?: (postId: string | number, value: number) => Promise<void>;
+  onPinPost?: (postId: string | number) => Promise<void>;
 }
 
-const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onVotePost }) => {
+const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onVotePost, onPinPost }) => {
   const { user } = useAuth();
+  
+  // Kiểm tra xem user có phải admin không
+  const isAdmin = useMemo(() => {
+    if (!user) return false;
+    const userWithRole = user as { role?: string | string[]; roles?: string | string[] };
+    const roles = userWithRole?.role ?? userWithRole?.roles;
+    if (!roles) return false;
+    const rolesArray = Array.isArray(roles) ? roles : [roles];
+    return rolesArray.some((r) => r.toUpperCase() === "ADMIN");
+  }, [user]);
   const {
     loading: commentLoading,
     postComments,
@@ -322,11 +337,18 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
       c.authorAvatar ||
       author?.imgUrl ||
       author?.avatar ||
-      "https://i.pravatar.cc/150";
+      null;
 
     const apiBase = import.meta.env.VITE_API_URL || "";
-    const resolvedAvatar =
-      avatarUrl.startsWith("http") ? avatarUrl : `${apiBase}${avatarUrl}`;
+    let resolvedAvatar = DEFAULT_AVATAR;
+    
+    if (avatarUrl) {
+      if (avatarUrl.startsWith("http")) {
+        resolvedAvatar = avatarUrl;
+      } else {
+        resolvedAvatar = `${apiBase}${avatarUrl}`;
+      }
+    }
 
     const isOwnComment =
       user &&
@@ -365,9 +387,12 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
       <div key={c.id} className="py-2">
         <div className="flex items-start gap-2 text-sm text-gray-700">
           <img
-            src={resolvedAvatar}
+            src={resolvedAvatar || DEFAULT_AVATAR}
             alt={displayName}
             className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
+            }}
           />
           <div className="flex-1">
             <div className="flex items-center justify-between gap-2">
@@ -524,28 +549,64 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
       !!user &&
       !!thread.authorId &&
       String(thread.authorId) === String(user.id);
-    const postMenuItems: MenuProps["items"] = isOwnPost
-      ? [
-          {
-            key: "delete",
-            label: "Delete",
-            danger: true,
-            onClick: () => handleDeletePostClick(thread),
-          },
-        ]
-      : [];
+    
+    const isPinned = thread.isPinned ?? false;
+    
+    const postMenuItems: MenuProps["items"] = [];
+    
+    // Thêm nút pin/unpin cho admin
+    if (isAdmin && onPinPost) {
+      postMenuItems.push({
+        key: "pin",
+        label: isPinned ? "Unpin post" : "Pin post",
+        icon: <PushpinOutlined />,
+        onClick: async () => {
+          if (onPinPost) {
+            try {
+              await onPinPost(postId);
+              message.success(isPinned ? "Post unpinned successfully" : "Post pinned successfully");
+            } catch {
+              message.error("Failed to pin/unpin post");
+            }
+          }
+        },
+      });
+    }
+    
+    // Thêm nút delete cho chủ post
+    if (isOwnPost) {
+      postMenuItems.push({
+        key: "delete",
+        label: "Delete",
+        danger: true,
+        onClick: () => handleDeletePostClick(thread),
+      });
+    }
 
     return (
       <div
         key={thread.postId || thread.id}
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"
+        className={`bg-white rounded-2xl border shadow-sm p-4 transition-all ${
+          isPinned 
+            ? "border-teal-400 border-2 bg-gradient-to-br from-teal-50/50 to-teal-100/30 shadow-md" 
+            : "border-gray-100"
+        }`}
       >
+        {isPinned && (
+          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-teal-200/50">
+            <PushpinOutlined className="text-teal-600 text-base" />
+            <span className="text-xs font-semibold text-teal-700">Pinned Post</span>
+          </div>
+        )}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1">
             <img
-              src={thread.user.avatar}
+              src={thread.user.avatar || DEFAULT_AVATAR}
               alt={thread.user.name}
               className="w-10 h-10 rounded-full"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
+              }}
             />
             <div>
               <div className="flex items-center gap-2">
@@ -565,7 +626,7 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
               </div>
             </div>
           </div>
-          {isOwnPost && (
+          {(isAdmin || isOwnPost) && postMenuItems.length > 0 && (
             <Dropdown menu={{ items: postMenuItems }} trigger={["click"]}>
               <button
                 type="button"
@@ -755,13 +816,20 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
     );
   };
 
+  // Sắp xếp threads: pinned posts lên đầu
+  const sortedThreads = useMemo(() => {
+    const pinned = threads.filter((t) => t.isPinned);
+    const unpinned = threads.filter((t) => !t.isPinned);
+    return [...pinned, ...unpinned];
+  }, [threads]);
+
   return (
     <>
       <div className="space-y-4">
         {loading && (
           <div className="text-center py-6 text-gray-500">Loading posts...</div>
         )}
-        {!loading && threads.map(renderPostCard)}
+        {!loading && sortedThreads.map(renderPostCard)}
         {!loading && threads.length === 0 && (
           <div className="text-center py-10 text-gray-500">No posts yet.</div>
         )}

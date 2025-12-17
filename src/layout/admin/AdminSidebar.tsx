@@ -15,6 +15,7 @@ import {
   IdcardOutlined,
   CreditCardOutlined,
   TeamOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
 import { getCurrentUserApi } from "~/services/authService";
 import type { User } from "~/types/user";
@@ -31,6 +32,7 @@ const adminMenu = [
   // { key: "/admin/mock-tests", label: "Mock Tests", icon: <FormOutlined /> },
   { key: "/admin/teachers", label: "Teacher", icon: <IdcardOutlined /> },
   { key: "/admin/communities", label: "Communities", icon: <TeamOutlined /> },
+  { key: "/admin/community", label: "Community", icon: <MessageOutlined /> },
   // { key: "/admin/questions", label: "Questions", icon: <QuestionCircleOutlined /> },
   // { key: "/admin/certificates", label: "Certificates & Ranking", icon: <TrophyOutlined /> },
   { key: "/admin/subscriptions", label: "Withdraw Requests", icon: <CreditCardOutlined /> },
