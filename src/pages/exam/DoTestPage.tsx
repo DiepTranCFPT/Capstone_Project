@@ -134,21 +134,7 @@ const DoTestPage: React.FC = () => {
         if (!activeExamData) return 3600;
 
         const examAttemptId = activeExamData.examAttemptId;
-        const durationInSeconds = activeExamData.durationInMinute * 60;
-
-        // Priority 1: Use remainTime from API (cross-device resume)
-        // remainTime is returned in SECONDS from the API
-        if (activeExamData.remainTime && activeExamData.remainTime > 0) {
-
-            // Store the timestamp when we received remainTime and its value
-            // This allows calculateRemainingTime to properly track elapsed time
-            localStorage.setItem(`exam_remaintime_received_at_${examAttemptId}`, Date.now().toString());
-            localStorage.setItem(`exam_remaintime_value_${examAttemptId}`, activeExamData.remainTime.toString());
-
-            return activeExamData.remainTime;
-        }
-
-        // Priority 2: Check if we already have cross-device resume data stored
+        // Priority 1: Check if we already have cross-device resume data stored (or passed from OngoingExams)
         const remainTimeReceivedAtStr = localStorage.getItem(`exam_remaintime_received_at_${examAttemptId}`);
         const remainTimeValueStr = localStorage.getItem(`exam_remaintime_value_${examAttemptId}`);
 
@@ -158,8 +144,23 @@ const DoTestPage: React.FC = () => {
             const now = Date.now();
             const elapsedSinceReceived = Math.floor((now - remainTimeReceivedAt) / 1000);
             const remaining = remainTimeValue - elapsedSinceReceived;
-            console.log('[DoTestPage] Using stored remainTime:', remainTimeValue, '- elapsed:', elapsedSinceReceived, '= remaining:', remaining);
+            // console.log('[DoTestPage] INIT Priority 1 (Stored keys):', { remainTimeValue, elapsedSinceReceived, remaining });
             return Math.max(0, remaining);
+        }
+
+        const durationInSeconds = activeExamData.durationInMinute * 60;
+
+        // Priority 2: Use remainTime from API (cross-device resume)
+        // remainTime is returned in SECONDS from the API
+        if (activeExamData.remainTime && activeExamData.remainTime > 0) {
+
+            // Store the timestamp when we received remainTime and its value
+            // This allows calculateRemainingTime to properly track elapsed time
+            localStorage.setItem(`exam_remaintime_received_at_${examAttemptId}`, Date.now().toString());
+            localStorage.setItem(`exam_remaintime_value_${examAttemptId}`, activeExamData.remainTime.toString());
+
+            // console.log('[DoTestPage] INIT Priority 2 (API remainTime):', activeExamData.remainTime);
+            return activeExamData.remainTime;
         }
 
         // Priority 3: Calculate from localStorage timestamp (same device resume)
@@ -173,6 +174,7 @@ const DoTestPage: React.FC = () => {
         }
 
         // Priority 4: Use full duration (fresh start)
+        // Priority 4: Use full duration (fresh start)
         return durationInSeconds;
     });
 
@@ -183,19 +185,7 @@ const DoTestPage: React.FC = () => {
         const examAttemptId = activeExamData.examAttemptId;
         const durationInSeconds = activeExamData.durationInMinute * 60;
 
-        // Priority 1: Use remainTime from API (cross-device resume)
-        if (activeExamData.remainTime && activeExamData.remainTime > 0) {
-            console.log('[DoTestPage] Updating remainingTime from API:', activeExamData.remainTime, 'seconds');
-
-            // Store the timestamp when we received remainTime and its value
-            localStorage.setItem(`exam_remaintime_received_at_${examAttemptId}`, Date.now().toString());
-            localStorage.setItem(`exam_remaintime_value_${examAttemptId}`, activeExamData.remainTime.toString());
-
-            setRemainingTime(activeExamData.remainTime);
-            return;
-        }
-
-        // Priority 2: Check if we already have cross-device resume data stored
+        // Priority 1: Check if we already have cross-device resume data stored
         const remainTimeReceivedAtStr = localStorage.getItem(`exam_remaintime_received_at_${examAttemptId}`);
         const remainTimeValueStr = localStorage.getItem(`exam_remaintime_value_${examAttemptId}`);
 
@@ -205,8 +195,20 @@ const DoTestPage: React.FC = () => {
             const now = Date.now();
             const elapsedSinceReceived = Math.floor((now - remainTimeReceivedAt) / 1000);
             const remaining = remainTimeValue - elapsedSinceReceived;
-            console.log('[DoTestPage] Updating from stored remainTime:', remainTimeValue, '- elapsed:', elapsedSinceReceived, '= remaining:', remaining);
+            // console.log('[DoTestPage] Updating from stored remainTime:', remainTimeValue, '- elapsed:', elapsedSinceReceived, '= remaining:', remaining);
             setRemainingTime(Math.max(0, remaining));
+            return;
+        }
+
+        // Priority 2: Use remainTime from API (cross-device resume)
+        if (activeExamData.remainTime && activeExamData.remainTime > 0) {
+            // console.log('[DoTestPage] Updating remainingTime from API:', activeExamData.remainTime, 'seconds');
+
+            // Store the timestamp when we received remainTime and its value
+            localStorage.setItem(`exam_remaintime_received_at_${examAttemptId}`, Date.now().toString());
+            localStorage.setItem(`exam_remaintime_value_${examAttemptId}`, activeExamData.remainTime.toString());
+
+            setRemainingTime(activeExamData.remainTime);
             return;
         }
 
