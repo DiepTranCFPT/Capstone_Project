@@ -312,7 +312,7 @@ const CreateExamPage: React.FC = () => {
       hasErrors = true;
     }
     if (tokenCost < 0) {
-      setTokenCostError('Token cost must be greater than 0');
+      setTokenCostError( 'Cost must be greater than 0');
       hasErrors = true;
     }
     // Validate tổng percentage phải = 100%
@@ -443,7 +443,7 @@ const CreateExamPage: React.FC = () => {
       ),
     },
     {
-      title: 'Tỉ lệ',
+      title: 'Ratio',
       dataIndex: 'percentage',
       key: 'percentage',
       render: (percentage: number) => (
@@ -451,7 +451,7 @@ const CreateExamPage: React.FC = () => {
       ),
     },
     {
-      title: 'Số câu',
+      title: 'Questions',
       key: 'questions',
       render: (_: unknown, __: CreateExamRulePayload, index: number) => {
         const ruleInfo = rulesWithAvailability[index];
@@ -466,7 +466,7 @@ const CreateExamPage: React.FC = () => {
       },
     },
     {
-      title: 'Điểm',
+      title: 'Points',
       dataIndex: 'points',
       key: 'points',
     },
@@ -557,7 +557,7 @@ const CreateExamPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Passing Score (%) *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Passing Score *</label>
                 <Input
                   type="number"
                   placeholder="70"
@@ -595,7 +595,7 @@ const CreateExamPage: React.FC = () => {
               )} */}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Token Cost *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Cost *</label>
               <Input
                 type="number"
                 placeholder="0"
@@ -613,7 +613,7 @@ const CreateExamPage: React.FC = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Score Mapping (AP Score)
-                <Tooltip title="Cấu hình khoảng điểm tương ứng với mỗi mức AP Score">
+                <Tooltip title="Score mapping">
                   <InfoCircleOutlined className="ml-1 text-gray-400" />
                 </Tooltip>
               </label>
@@ -674,11 +674,11 @@ const CreateExamPage: React.FC = () => {
             <div className="space-y-4">
               {/* Total Questions Input */}
               <div className="bg-blue-50 p-4 rounded-lg">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 mb-2">
                   <div className="flex-1">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Tổng số câu hỏi mong muốn *
-                      <Tooltip title="Tổng số câu hỏi sẽ được chia theo tỉ lệ % của mỗi rule">
+                      Total Questions *
+                      <Tooltip title="Total number of questions will be divided by the ratio % of each rule">
                         <InfoCircleOutlined className="ml-1 text-gray-400" />
                       </Tooltip>
                     </label>
@@ -696,7 +696,7 @@ const CreateExamPage: React.FC = () => {
                     {totalQuestionsError && <div className="text-red-500 text-xs mt-1">{totalQuestionsError}</div>}
                   </div>
                   <div className="text-right">
-                    <div className="text-sm text-gray-500">Tỉ lệ đã phân bổ</div>
+                    <div className="text-sm text-gray-500">Allocated ratio</div>
                     <Progress
                       percent={totalPercentage}
                       status={totalPercentage === 100 ? 'success' : totalPercentage > 100 ? 'exception' : 'active'}
@@ -708,8 +708,8 @@ const CreateExamPage: React.FC = () => {
                 {totalPercentage !== 100 && rules.length > 0 && (
                   <Alert
                     message={totalPercentage < 100
-                      ? `Còn thiếu ${100 - totalPercentage}% chưa phân bổ`
-                      : `Vượt quá ${totalPercentage - 100}%`
+                      ? `Missing ${100 - totalPercentage}% allocation`
+                      : `Exceeds ${totalPercentage - 100}%`
                     }
                     type={totalPercentage > 100 ? 'error' : 'warning'}
                     showIcon
@@ -719,8 +719,8 @@ const CreateExamPage: React.FC = () => {
                 {rules.length > 0 && (
                   <div className="mt-3 p-3 bg-blue-50 rounded-lg flex justify-between items-center">
                     <span className="text-sm text-gray-700">
-                      📊 Tổng điểm: <strong>{totalPoints}</strong> điểm
-                      | Điểm cần đạt ({passingScore}%): <strong>{Math.ceil(totalPoints * passingScore / 100)}</strong> điểm
+                      Total points: <strong>{totalPoints}</strong> points
+                      | Passing score ({passingScore}%): <strong>{Math.ceil(totalPoints * passingScore / 100)}</strong> points
                     </span>
                   </div>
                 )}
@@ -849,15 +849,15 @@ const CreateExamPage: React.FC = () => {
                           />
                         </div>
                         <div className={`text-xs mt-1 ${calculateQuestions(ruleForm.percentage || 0) > availableCount ? 'text-red-500' : 'text-gray-500'}`}>
-                          → {calculateQuestions(ruleForm.percentage || 0)} câu hỏi
+                          → {calculateQuestions(ruleForm.percentage || 0)} questions
                           {calculateQuestions(ruleForm.percentage || 0) > availableCount &&
-                            ` (⚠️ vượt quá ${availableCount} câu có sẵn)`
+                            ` (⚠️ exceeds ${availableCount} available)`
                           }
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Điểm mỗi câu</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Points per question</label>
                         <InputNumber
                           min={1}
                           value={ruleForm.points}

@@ -240,12 +240,13 @@ export interface ActiveExam {
   id: string; // Exam ID
   title: string;
   subject: ExamSubjectInfo;
-  examAttemptId: string; // ID của lần làm bài này
+  examAttemptId: string; // ID of this attempt
   durationInMinute: number;
   passingScore: number;
   belongTo: string;
   attemptSessionToken: string;
   questions: ActiveExamQuestion[];
+  remainTime?: number; // Remaining time in SECONDS (returned when resuming on different device)
 }
 
 // 2. Types cho API /exam-test/submit/{attemptId}

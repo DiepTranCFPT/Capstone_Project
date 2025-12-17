@@ -274,12 +274,12 @@ const ExamDetailsPage: React.FC = () => {
       ),
     },
     {
-      title: 'Số câu',
+      title: 'Questions',
       dataIndex: 'numberOfQuestions',
       key: 'numberOfQuestions',
     },
     {
-      title: 'Điểm',
+      title: 'Points',
       dataIndex: 'points',
       key: 'points',
     },
@@ -335,7 +335,7 @@ const ExamDetailsPage: React.FC = () => {
                 </Space>
               </Descriptions.Item>
               <Descriptions.Item label="Passing Score">
-                {currentTemplate.passingScore}%
+                {currentTemplate.passingScore}
               </Descriptions.Item>
               <Descriptions.Item label="Total Rules">
                 {currentTemplate.rules?.length || 0}
@@ -346,7 +346,7 @@ const ExamDetailsPage: React.FC = () => {
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Token Cost">
-                {currentTemplate.tokenCost === 0 ? 'Free' : `${currentTemplate.tokenCost} 💰`}
+                {currentTemplate.tokenCost === 0 ? 'Free' : `${currentTemplate.tokenCost.toLocaleString('vi-VN')} VNĐ`}
               </Descriptions.Item>
               <Descriptions.Item label="Average Rating">
                 ⭐ {currentTemplate.averageRating?.toFixed(1) || 'N/A'}
@@ -491,8 +491,8 @@ const ExamDetailsPage: React.FC = () => {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Tỉ lệ phần trăm (%)
-                          <Tooltip title={`Tương đương: ${calculateQuestions(ruleForm.percentage || 0)} câu | Có sẵn: ${availableCount} câu`}>
+                          Percentage (%)
+                          <Tooltip title={`Equivalent: ${calculateQuestions(ruleForm.percentage || 0)} questions | Available: ${availableCount} questions`}>
                             <InfoCircleOutlined className="ml-1 text-gray-400" />
                           </Tooltip>
                         </label>
@@ -516,9 +516,9 @@ const ExamDetailsPage: React.FC = () => {
                           />
                         </div>
                         <div className={`text-xs mt-1 ${calculateQuestions(ruleForm.percentage || 0) > availableCount ? 'text-red-500' : 'text-gray-500'}`}>
-                          → {calculateQuestions(ruleForm.percentage || 0)} câu hỏi
+                          → {calculateQuestions(ruleForm.percentage || 0)} questions
                           {calculateQuestions(ruleForm.percentage || 0) > availableCount &&
-                            ` (⚠️ vượt quá ${availableCount} câu có sẵn)`
+                            ` (⚠️ exceeds ${availableCount} available)`
                           }
                         </div>
                       </div>
@@ -586,8 +586,8 @@ const ExamDetailsPage: React.FC = () => {
                 </Tag>
               </div>
               <div className="flex justify-between">
-                <Text>Token Cost:</Text>
-                <Text strong>{currentTemplate.tokenCost === 0 ? 'Free' : `${currentTemplate.tokenCost} 💰`}</Text>
+                <Text>Cost:</Text>
+                <Text strong>{currentTemplate.tokenCost === 0 ? 'Free' : `${currentTemplate.tokenCost.toLocaleString('vi-VN')} VNĐ`}</Text>
               </div>
               <div className="flex justify-between">
                 <Text>Average Rating:</Text>

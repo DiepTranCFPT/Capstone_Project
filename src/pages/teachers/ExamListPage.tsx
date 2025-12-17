@@ -78,10 +78,10 @@ const ExamListPage: React.FC = () => {
       title: 'Passing Score',
       dataIndex: 'passingScore',
       key: 'passingScore',
-      render: (score: number) => `${score}%`,
+      render: (score: number) => `${score}`,
     },
     {
-      title: 'Token Cost',
+      title: 'Cost',
       dataIndex: 'tokenCost',
       key: 'tokenCost',
       render: (tokenCost: number) => 
