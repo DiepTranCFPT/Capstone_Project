@@ -43,7 +43,7 @@ export const useOngoingExams = () => {
               // Get metadata from localStorage
               const metadataStr = localStorage.getItem(`exam_metadata_${attemptData.examId}`);
               const metadata = metadataStr ? JSON.parse(metadataStr) : {};
-              
+
               exams.push({
                 examId: attemptData.examId,
                 attemptId: attemptData.examAttemptId,
@@ -79,7 +79,7 @@ export const useOngoingExams = () => {
               // Get metadata from localStorage
               const metadataStr = localStorage.getItem(`exam_metadata_${activeAttempt.examId || 'combo'}`);
               const metadata = metadataStr ? JSON.parse(metadataStr) : {};
-              
+
               exams.push({
                 examId: activeAttempt.examId || 'combo',
                 attemptId: activeAttempt.examAttemptId,
@@ -105,7 +105,7 @@ export const useOngoingExams = () => {
   // Smart resume with API sync
   const resumeExamWithSync = useCallback(async (exam: OngoingExam) => {
     if (isResuming) return;
-    
+
     setIsResuming(true);
     toast.loading('Syncing data...', { autoClose: 2000 });
 
@@ -119,13 +119,13 @@ export const useOngoingExams = () => {
             result = await startSingleAttempt({ templateId: exam.metadata.templateIds[0] });
           }
           break;
-        
+
         case 'combo':
           if (exam.metadata?.templateIds?.length) {
             result = await startComboAttempt({ templateIds: exam.metadata.templateIds });
           }
           break;
-        
+
         case 'random-combo':
           if (exam.metadata?.subjectIds?.length) {
             result = await startComboRandomAttempt({ subjectIds: exam.metadata.subjectIds });
@@ -136,16 +136,24 @@ export const useOngoingExams = () => {
       if (result) {
         // Store the fresh data with saved answers
         localStorage.setItem('activeExamAttempt', JSON.stringify(result));
-        
+
+        // Sync remaining time to ensure timer doesn't reset
+        if (exam.remainingTime > 0) {
+          // Use result.examAttemptId in case the API returns a different/new ID
+          // This ensures DoTestPage reads the correct keys corresponding to the active attempt
+          localStorage.setItem(`exam_remaintime_received_at_${result.examAttemptId}`, Date.now().toString());
+          localStorage.setItem(`exam_remaintime_value_${result.examAttemptId}`, exam.remainingTime.toString());
+        }
+
         // Store metadata for future resume
         localStorage.setItem(`exam_metadata_${exam.examId}`, JSON.stringify({
           examType: exam.examType,
           templateIds: exam.metadata?.templateIds,
           subjectIds: exam.metadata?.subjectIds
         }));
-        
+
         toast.success('Sync successfully! Redirecting to exam...', { autoClose: 1500 });
-        
+
         // Redirect based on exam type
         setTimeout(() => {
           if (exam.examType === 'single') {
@@ -158,7 +166,13 @@ export const useOngoingExams = () => {
         // Fallback to old behavior if API fails
         console.warn('API resume failed, falling back to localStorage');
         // toast.warning('Không thể đồng bộ, sử dụng dữ liệu local...', { autoClose: 2000 });
-        
+
+        // Sync remaining time to ensure timer doesn't reset
+        if (exam.remainingTime > 0) {
+          localStorage.setItem(`exam_remaintime_received_at_${exam.attemptId}`, Date.now().toString());
+          localStorage.setItem(`exam_remaintime_value_${exam.attemptId}`, exam.remainingTime.toString());
+        }
+
         setTimeout(() => {
           if (exam.examType === 'single') {
             window.location.href = `/do-test/${exam.examId}/full`;
@@ -170,7 +184,7 @@ export const useOngoingExams = () => {
     } catch (error) {
       console.error('Error resuming exam:', error);
       toast.error('Error when resuming exam', { autoClose: 3000 });
-      
+
       // Fallback to old behavior
       setTimeout(() => {
         if (exam.examType === 'single') {
