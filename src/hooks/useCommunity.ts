@@ -63,14 +63,14 @@ const extractFromPaginated = <T,>(
 
   // Case 1: chuẩn PaginatedResponse { content, totalElements, totalPages }
   if ("content" in anyRaw) {
-    const paginated = raw as PaginatedResponse<T>;
-    return {
-      items: paginated.content || [],
-      pageInfo: {
-        totalElements: paginated.totalElements,
-        totalPages: paginated.totalPages,
-      },
-    };
+  const paginated = raw as PaginatedResponse<T>;
+  return {
+    items: paginated.content || [],
+    pageInfo: {
+      totalElements: paginated.totalElements,
+      totalPages: paginated.totalPages,
+    },
+  };
   }
 
   // Case 2: BE trả { items, totalElement } (như API posts hiện tại)
@@ -387,6 +387,59 @@ export const useCommunity = () => {
     []
   );
 
+  // PUT /posts/{postId}/pin
+  // Pin/Unpin một bài viết (chỉ admin)
+  const pinPost = useCallback(
+    async (postId: string | number): Promise<CommunityPost | null> => {
+      try {
+        setError(null);
+
+        const response = await CommunityService.pinPost(postId);
+        const apiResponse = response.data as ApiResponse<CommunityPost | string>;
+        const updatedPost = apiResponse.data;
+
+        // Backend có thể trả về string hoặc object
+        // Nếu là object và có isPinned, dùng nó
+        // Nếu không, toggle isPinned trong state
+        const isPostObject = updatedPost && typeof updatedPost === "object" && !Array.isArray(updatedPost);
+        
+        setCommunityPosts((prev) => {
+          const updated = prev.map((p) => {
+            if (String(p.id) !== String(postId)) return p;
+            
+            if (isPostObject) {
+              // Nếu BE trả về object, merge vào
+              const postObj = updatedPost as CommunityPost;
+              return { ...p, ...postObj };
+            } else {
+              // Nếu BE trả về string hoặc null, toggle isPinned
+              const currentPinned = (p as { isPinned?: boolean }).isPinned ?? false;
+              return { ...p, isPinned: !currentPinned };
+            }
+          });
+          
+          // Sắp xếp: pinned posts lên đầu
+          const pinned = updated.filter((p) => {
+            const isPinned = (p as { isPinned?: boolean }).isPinned;
+            return isPinned === true;
+          });
+          const unpinned = updated.filter((p) => {
+            const isPinned = (p as { isPinned?: boolean }).isPinned;
+            return isPinned !== true;
+          });
+          
+          return [...pinned, ...unpinned];
+        });
+
+        return isPostObject ? (updatedPost as CommunityPost) : null;
+      } catch (err) {
+        setError(getErrorMessage(err, "Failed to pin/unpin post."));
+        return null;
+      }
+    },
+    []
+  );
+
   return {
     loading,
     error,
@@ -401,6 +454,7 @@ export const useCommunity = () => {
     updateCommunity,
     deletePost,
     votePost,
+    pinPost,
   };
 };
 

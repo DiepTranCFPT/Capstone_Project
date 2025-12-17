@@ -14,7 +14,7 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '~/hooks/useAuth';
 import { Avatar, Button } from 'antd';
-import { FileAddOutlined, MenuFoldOutlined, MenuUnfoldOutlined, TagsOutlined } from '@ant-design/icons';
+import { FileAddOutlined, MenuFoldOutlined, MenuUnfoldOutlined, TagsOutlined, TeamOutlined } from '@ant-design/icons';
 import { IoCheckmarkCircle } from "react-icons/io5";
 import { BsQuestionSquare } from "react-icons/bs";
 import { CiBoxList } from "react-icons/ci";
@@ -30,6 +30,7 @@ const teacherMenu = [
     { label: "Review Queue", path: "/teacher/review-queue", icon: <CiBoxList /> },
     { label: "My Ratings", path: "/teacher/ratings", icon: <FaStar /> },
     { label: "Exams Attempt", path: "/teacher/exam-attempts", icon: <FaBook /> },
+    { label: "Community", path: "/teacher/community", icon: <TeamOutlined /> },
     // { label: "Analytics", path: "/teacher/analytics", icon: <FaChartBar /> },
     // { label: "Tutor Profile", path: "/teacher/tutor-profile", icon: <FaBookOpen /> },
     // { label: "My Availability", path: "/teacher/availability", icon: <FaCalendarAlt /> },

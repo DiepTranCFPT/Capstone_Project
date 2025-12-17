@@ -59,6 +59,7 @@ import TeacherManagerPage from "./pages/admins/TeacherManagerPage";
 import UserManagerPage from "./pages/admins/UserManagerPage";
 import CertificatesRankingManagerPage from "./pages/admins/CertificatesRankingManagerPage";
 import SubjectManagerPage from "./pages/admins/SubjectManagerPage";
+import CommunityManagerPage from "./pages/admins/CommunityManagerPage";
 
 // --- Teacher Imports ---
 import TeacherLayout from "./layout/teachers/TeacherLayout";
@@ -159,6 +160,8 @@ function App() {
           <Route path="users" element={<UserManagerPage />} />
           <Route path="subscriptions" element={<TokenPaymentManagerPage />} />
           <Route path="subjects" element={<SubjectManagerPage />} />
+          <Route path="communities" element={<CommunityManagerPage />} />
+          <Route path="community" element={<CommunityPage />} />
         </Route>
 
         {/* Main routes with Layout */}
@@ -246,6 +249,7 @@ function App() {
           <Route path="analytics" element={<ClassAnalyticsPage />} />
           <Route path="ratings" element={<TeacherRatingsViewPage />} />
           <Route path="wallet" element={<MyWalletPage />} />
+          <Route path="community" element={<CommunityPage />} />
         </Route>
 
         {/* Parent routes with ParentLayout */}
@@ -261,6 +265,7 @@ function App() {
           <Route path="student/:studentId" element={<StudentDetailPage />} />
           <Route path="billing" element={<ParentBillingPage />} />
           <Route path="wallet" element={<ParentBillingPage />} />
+          <Route path="community" element={<CommunityPage />} />
         </Route>
 
         {/* Advisor routes with AdvisorLayout */}

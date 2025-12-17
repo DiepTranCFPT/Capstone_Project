@@ -11,7 +11,7 @@ import {
 import { useAuth } from '~/hooks/useAuth';
 import { useNotifications } from '~/hooks/useNotifications';
 import { Avatar, Button, Badge } from 'antd';
-import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
+import { MenuFoldOutlined, MenuUnfoldOutlined, TeamOutlined } from '@ant-design/icons';
 
 type ParentMenuItem = {
     label: string;
@@ -24,6 +24,7 @@ const parentMenu: ParentMenuItem[] = [
     { label: "Notifications", path: "/parent/notifications", icon: <FaBell /> },
     { label: "Link Student", path: "/parent/link-student", icon: <FaUserPlus /> },
     { label: "List of children", path: "/parent/children", icon: <FaUsers /> },
+    { label: "Community", path: "/parent/community", icon: <TeamOutlined /> },
     { label: "Wallet", path: "/parent/wallet", icon: <FaWallet /> },
 ];
 

@@ -1,21 +1,37 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Input, Button, Dropdown, message, Modal } from "antd";
 import type { MenuProps } from "antd";
 import { FiMessageSquare, FiMoreVertical } from "react-icons/fi";
 import { IoCaretUpSharp, IoCaretDownSharp } from "react-icons/io5";
+import { PushpinOutlined } from "@ant-design/icons";
 import type { Thread, CommunityComment } from "~/types/community";
 import usePostComments from "~/hooks/usePostComments";
 import { useAuth } from "~/hooks/useAuth";
+import { getHighestPriorityRole } from "~/utils/roleUtils";
+
+// Avatar mặc định thống nhất cho tất cả user chưa có ảnh
+const DEFAULT_AVATAR = "https://i.pravatar.cc/150?u=default-user";
 
 interface PostListProps {
   loading: boolean;
   threads: Thread[];
   onDeletePost?: (postId: string | number) => Promise<void>;
   onVotePost?: (postId: string | number, value: number) => Promise<void>;
+  onPinPost?: (postId: string | number) => Promise<void>;
 }
 
-const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onVotePost }) => {
+const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onVotePost, onPinPost }) => {
   const { user } = useAuth();
+  
+  // Kiểm tra xem user có phải admin không
+  const isAdmin = useMemo(() => {
+    if (!user) return false;
+    const userWithRole = user as { role?: string | string[]; roles?: string | string[] };
+    const roles = userWithRole?.role ?? userWithRole?.roles;
+    if (!roles) return false;
+    const rolesArray = Array.isArray(roles) ? roles : [roles];
+    return rolesArray.some((r) => r.toUpperCase() === "ADMIN");
+  }, [user]);
   const {
     loading: commentLoading,
     postComments,
@@ -36,6 +52,9 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
   const [postToDelete, setPostToDelete] = useState<Thread | null>(null);
   const [deletingPost, setDeletingPost] = useState(false);
   const [userVoteByPostId, setUserVoteByPostId] = useState<Record<string, number>>({});
+  const [commentToDelete, setCommentToDelete] = useState<{ comment: CommunityComment; postId: string | number } | null>(null);
+  const [deletingComment, setDeletingComment] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date()); // Để force re-render mỗi phút
 
   type CommentWithPossibleParentIds = CommunityComment & {
     parentCommentId?: string | number | null;
@@ -58,6 +77,104 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
     }
   };
 
+  // Format thời gian relative (ví dụ: "10 minutes ago", "2 hours ago")
+  const formatTimeAgo = (dateString?: string | null): string => {
+    if (!dateString) return "Just now";
+    
+    try {
+      const date = new Date(dateString);
+      const now = currentTime; // Dùng currentTime để force re-render mỗi phút
+      const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+      
+      if (diffInSeconds < 60) {
+        return "Just now";
+      }
+      
+      const diffInMinutes = Math.floor(diffInSeconds / 60);
+      if (diffInMinutes < 60) {
+        return `${diffInMinutes} ${diffInMinutes === 1 ? "minute" : "minutes"} ago`;
+      }
+      
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) {
+        return `${diffInHours} ${diffInHours === 1 ? "hour" : "hours"} ago`;
+      }
+      
+      const diffInDays = Math.floor(diffInHours / 24);
+      if (diffInDays < 7) {
+        return `${diffInDays} ${diffInDays === 1 ? "day" : "days"} ago`;
+      }
+      
+      const diffInWeeks = Math.floor(diffInDays / 7);
+      if (diffInWeeks < 4) {
+        return `${diffInWeeks} ${diffInWeeks === 1 ? "week" : "weeks"} ago`;
+      }
+      
+      const diffInMonths = Math.floor(diffInDays / 30);
+      if (diffInMonths < 12) {
+        return `${diffInMonths} ${diffInMonths === 1 ? "month" : "months"} ago`;
+      }
+      
+      const diffInYears = Math.floor(diffInDays / 365);
+      return `${diffInYears} ${diffInYears === 1 ? "year" : "years"} ago`;
+    } catch (error) {
+      console.error("Error formatting time:", error);
+      return "Just now";
+    }
+  };
+
+  // Helper function để render role badge
+  const renderRoleBadge = (role?: string | string[]): React.ReactNode => {
+    if (!role) return null;
+    
+    // Lấy role có độ ưu tiên cao nhất
+    const highestRole = getHighestPriorityRole(role);
+    
+    if (!highestRole) return null;
+
+    const ROLE_BADGES: Record<
+      string,
+      { label: string; dotColor: string; pillClass: string }
+    > = {
+      ADMIN: {
+        label: "Admin",
+        dotColor: "bg-red-500",
+        pillClass: "border-red-500/50 text-red-300 bg-red-500/10",
+      },
+      TEACHER: {
+        label: "Teacher",
+        dotColor: "bg-blue-500",
+        pillClass: "border-blue-500/50 text-blue-300 bg-blue-500/10",
+      },
+      PARENT: {
+        label: "Parent",
+        dotColor: "bg-emerald-400",
+        pillClass: "border-emerald-400/50 text-emerald-200 bg-emerald-500/10",
+      },
+      STUDENT: {
+        label: "Student",
+        dotColor: "bg-purple-400",
+        pillClass: "border-purple-400/50 text-purple-200 bg-purple-500/10",
+      },
+    };
+
+    const cfg =
+      ROLE_BADGES[highestRole] ?? ({
+        label: highestRole,
+        dotColor: "bg-gray-400",
+        pillClass: "border-gray-500/40 text-gray-200 bg-gray-500/10",
+      } satisfies (typeof ROLE_BADGES)[string]);
+
+    return (
+      <span
+        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${cfg.pillClass} ml-2`}
+      >
+        <span className={`w-1.5 h-1.5 rounded-full mr-1 ${cfg.dotColor}`} />
+        {cfg.label}
+      </span>
+    );
+  };
+
   // Khởi tạo vote của user theo dữ liệu từ BE (userVoteValue)
   useEffect(() => {
     const next: Record<string, number> = {};
@@ -67,6 +184,15 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
     });
     setUserVoteByPostId(next);
   }, [threads]);
+
+  // Cập nhật thời gian mỗi phút để hiển thị real-time
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Cập nhật mỗi 60 giây (1 phút)
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleToggleComments = async (thread: Thread) => {
     const postId = thread.postId || thread.id;
@@ -149,18 +275,32 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
   };
 
   const handleDeleteComment = (comment: CommunityComment, postId: string | number) => {
-    Modal.confirm({
-      title: "Delete comment",
-      content: "Are you sure you want to delete this comment?",
-      okText: "Delete",
-      okType: "danger",
-      cancelText: "Cancel",
-      centered: true,
-      onOk: async () => {
-        await deleteComment(comment.id, postId);
-        message.success("Comment deleted successfully.");
-      },
-    });
+    console.log("handleDeleteComment called", { commentId: comment.id, postId });
+    setCommentToDelete({ comment, postId });
+  };
+
+  const handleConfirmDeleteComment = async () => {
+    if (!commentToDelete) return;
+    const { comment, postId } = commentToDelete;
+    try {
+      setDeletingComment(true);
+      console.log("Deleting comment:", comment.id, "from post:", postId);
+      await deleteComment(comment.id, postId);
+      message.success("Comment deleted successfully.");
+      setCommentToDelete(null);
+      
+      // Đóng expanded replies nếu comment bị xóa là parent
+      setExpandedReplyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(String(comment.id));
+        return next;
+      });
+    } catch (error) {
+      console.error("Failed to delete comment:", error);
+      message.error("Failed to delete comment. Please try again.");
+    } finally {
+      setDeletingComment(false);
+    }
   };
 
   const handleDeletePostClick = (thread: Thread) => {
@@ -197,29 +337,43 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
       c.authorAvatar ||
       author?.imgUrl ||
       author?.avatar ||
-      "https://i.pravatar.cc/150";
+      null;
 
     const apiBase = import.meta.env.VITE_API_URL || "";
-    const resolvedAvatar =
-      avatarUrl.startsWith("http") ? avatarUrl : `${apiBase}${avatarUrl}`;
+    let resolvedAvatar = DEFAULT_AVATAR;
+    
+    if (avatarUrl) {
+      if (avatarUrl.startsWith("http")) {
+        resolvedAvatar = avatarUrl;
+      } else {
+        resolvedAvatar = `${apiBase}${avatarUrl}`;
+      }
+    }
 
     const isOwnComment =
       user &&
       (String(c.authorId) === String(user.id) ||
         String(author?.id) === String(user.id));
 
+    const handleMenuClick = (key: string) => {
+      console.log("Menu clicked:", key);
+      if (key === "edit") {
+        handleEditComment(c);
+      } else if (key === "delete") {
+        handleDeleteComment(c, postId);
+      }
+    };
+
     const menuItems: MenuProps["items"] = isOwnComment
       ? [
           {
             key: "edit",
             label: "Edit",
-            onClick: () => handleEditComment(c),
           },
           {
             key: "delete",
             label: "Delete",
             danger: true,
-            onClick: () => handleDeleteComment(c, postId),
           },
         ]
       : [];
@@ -233,14 +387,20 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
       <div key={c.id} className="py-2">
         <div className="flex items-start gap-2 text-sm text-gray-700">
           <img
-            src={resolvedAvatar}
+            src={resolvedAvatar || DEFAULT_AVATAR}
             alt={displayName}
             className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
+            }}
           />
           <div className="flex-1">
             <div className="flex items-center justify-between gap-2">
               <div className="flex-1">
                 <span className="font-semibold mr-1">{displayName}:</span>
+                {renderRoleBadge(
+                  (c.author as { role?: string | string[] } | undefined)?.role
+                )}
                 {isEditing ? (
                   <div className="mt-1 space-y-2">
                     <Input
@@ -280,7 +440,10 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
                 )}
               </div>
               {isOwnComment && !isEditing && (
-                <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
+                <Dropdown 
+                  menu={{ items: menuItems, onClick: ({ key }) => handleMenuClick(key) }} 
+                  trigger={["click"]}
+                >
                   <button
                     type="button"
                     className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100"
@@ -386,33 +549,72 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
       !!user &&
       !!thread.authorId &&
       String(thread.authorId) === String(user.id);
-    const postMenuItems: MenuProps["items"] = isOwnPost
-      ? [
-          {
-            key: "delete",
-            label: "Delete",
-            danger: true,
-            onClick: () => handleDeletePostClick(thread),
-          },
-        ]
-      : [];
+    
+    const isPinned = thread.isPinned ?? false;
+    
+    const postMenuItems: MenuProps["items"] = [];
+    
+    // Thêm nút pin/unpin cho admin
+    if (isAdmin && onPinPost) {
+      postMenuItems.push({
+        key: "pin",
+        label: isPinned ? "Unpin post" : "Pin post",
+        icon: <PushpinOutlined />,
+        onClick: async () => {
+          if (onPinPost) {
+            try {
+              await onPinPost(postId);
+              message.success(isPinned ? "Post unpinned successfully" : "Post pinned successfully");
+            } catch {
+              message.error("Failed to pin/unpin post");
+            }
+          }
+        },
+      });
+    }
+    
+    // Thêm nút delete cho chủ post
+    if (isOwnPost) {
+      postMenuItems.push({
+        key: "delete",
+        label: "Delete",
+        danger: true,
+        onClick: () => handleDeletePostClick(thread),
+      });
+    }
 
     return (
       <div
         key={thread.postId || thread.id}
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"
+        className={`bg-white rounded-2xl border shadow-sm p-4 transition-all ${
+          isPinned 
+            ? "border-teal-400 border-2 bg-gradient-to-br from-teal-50/50 to-teal-100/30 shadow-md" 
+            : "border-gray-100"
+        }`}
       >
+        {isPinned && (
+          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-teal-200/50">
+            <PushpinOutlined className="text-teal-600 text-base" />
+            <span className="text-xs font-semibold text-teal-700">Pinned Post</span>
+          </div>
+        )}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1">
             <img
-              src={thread.user.avatar}
+              src={thread.user.avatar || DEFAULT_AVATAR}
               alt={thread.user.name}
               className="w-10 h-10 rounded-full"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
+              }}
             />
             <div>
-              <p className="font-semibold text-gray-800">{thread.user.name}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-gray-800">{thread.user.name}</p>
+                {renderRoleBadge(thread.userRole)}
+              </div>
               <div className="text-xs text-gray-500 flex items-center gap-2">
-                <span>10 minutes ago</span>
+                <span>{formatTimeAgo(thread.createdAt)}</span>
                 {thread.groupName && (
                   <>
                     <span className="w-1 h-1 rounded-full bg-gray-300" />
@@ -424,7 +626,7 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
               </div>
             </div>
           </div>
-          {isOwnPost && (
+          {(isAdmin || isOwnPost) && postMenuItems.length > 0 && (
             <Dropdown menu={{ items: postMenuItems }} trigger={["click"]}>
               <button
                 type="button"
@@ -537,9 +739,12 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
                   });
                 }
                 
-                const replyCount = c.replyCount || replies.length;
+                // Ưu tiên dùng replies.length thực tế từ state, fallback về replyCount từ BE
+                const actualReplyCount = replies.length;
+                const replyCount = actualReplyCount > 0 ? actualReplyCount : (c.replyCount || 0);
                 const isRepliesExpanded = expandedReplyIds.has(String(c.id));
-                const hasReplies = replyCount > 0 || replies.length > 0;
+                // Chỉ hiển thị nút replies nếu thực sự còn replies
+                const hasReplies = actualReplyCount > 0;
 
                 return (
                   <div key={c.id} className="space-y-1">
@@ -611,13 +816,20 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
     );
   };
 
+  // Sắp xếp threads: pinned posts lên đầu
+  const sortedThreads = useMemo(() => {
+    const pinned = threads.filter((t) => t.isPinned);
+    const unpinned = threads.filter((t) => !t.isPinned);
+    return [...pinned, ...unpinned];
+  }, [threads]);
+
   return (
     <>
       <div className="space-y-4">
         {loading && (
           <div className="text-center py-6 text-gray-500">Loading posts...</div>
         )}
-        {!loading && threads.map(renderPostCard)}
+        {!loading && sortedThreads.map(renderPostCard)}
         {!loading && threads.length === 0 && (
           <div className="text-center py-10 text-gray-500">No posts yet.</div>
         )}
@@ -646,6 +858,32 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
       >
         <p className="text-sm text-gray-700">
           Are you sure you want to delete this post? This action cannot be undone.
+        </p>
+      </Modal>
+
+      {/* Delete comment confirmation modal */}
+      <Modal
+        open={!!commentToDelete}
+        title="Delete comment"
+        centered
+        onCancel={() => setCommentToDelete(null)}
+        footer={[
+          <Button key="cancel" onClick={() => setCommentToDelete(null)}>
+            Cancel
+          </Button>,
+          <Button
+            key="delete"
+            type="primary"
+            danger
+            loading={deletingComment}
+            onClick={() => void handleConfirmDeleteComment()}
+          >
+            Delete
+          </Button>,
+        ]}
+      >
+        <p className="text-sm text-gray-700">
+          Are you sure you want to delete this comment? This action cannot be undone.
         </p>
       </Modal>
     </>
