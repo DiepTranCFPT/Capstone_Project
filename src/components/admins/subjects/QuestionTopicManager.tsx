@@ -33,7 +33,6 @@ const QuestionTopicManager: React.FC = () => {
         pageInfo,
         loading,
         fetchTopics,
-        fetchTopicsBySubject,
         createTopic,
         updateTopic,
         deleteTopic,
@@ -46,7 +45,6 @@ const QuestionTopicManager: React.FC = () => {
     const [editingTopic, setEditingTopic] = useState<QuestionTopic | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [deletingTopicId, setDeletingTopicId] = useState<string | null>(null);
-    const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
     const [form] = Form.useForm();
 
     // Pagination & Sorting state
@@ -70,17 +68,13 @@ const QuestionTopicManager: React.FC = () => {
             sorts.push(`${sortField}:${order}`);
         }
 
-        if (selectedSubject) {
-            await fetchTopicsBySubject(selectedSubject);
-        } else {
-            await fetchTopics({
-                pageNo: pagination.current - 1, // API uses 0-based page
-                pageSize: pagination.pageSize,
-                keyword: searchText || undefined,
-                sorts: sorts.length > 0 ? sorts : undefined,
-            });
-        }
-    }, [fetchTopics, fetchTopicsBySubject, pagination.current, pagination.pageSize, searchText, sortField, sortOrder, selectedSubject]);
+        await fetchTopics({
+            pageNo: pagination.current - 1, // API uses 0-based page
+            pageSize: pagination.pageSize,
+            keyword: searchText || undefined,
+            sorts: sorts.length > 0 ? sorts : undefined,
+        });
+    }, [fetchTopics, pagination.current, pagination.pageSize, searchText, sortField, sortOrder]);
 
     useEffect(() => {
         loadTopics();
@@ -113,11 +107,6 @@ const QuestionTopicManager: React.FC = () => {
     const handleSearch = (value: string) => {
         setSearchText(value);
         setPagination((prev) => ({ ...prev, current: 1 })); // Reset to first page
-    };
-
-    const handleSubjectFilter = (value: string | null) => {
-        setSelectedSubject(value);
-        setPagination((prev) => ({ ...prev, current: 1 }));
     };
 
     const handleAddTopic = () => {
@@ -281,24 +270,6 @@ const QuestionTopicManager: React.FC = () => {
                             prefix={<SearchOutlined className="text-gray-400" />}
                             loading={loading}
                         />
-                        <Select
-                            placeholder="Filter by Subject"
-                            allowClear
-                            showSearch
-                            optionFilterProp="label"
-                            onChange={handleSubjectFilter}
-                            className="w-full sm:w-48"
-                            value={selectedSubject}
-                            filterOption={(input, option) =>
-                                (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
-                            }
-                        >
-                            {subjects.map((subject) => (
-                                <Select.Option key={subject.id} value={subject.id} label={subject.name}>
-                                    {subject.name}
-                                </Select.Option>
-                            ))}
-                        </Select>
                         <Button
                             type="primary"
                             icon={<PlusOutlined />}
@@ -399,6 +370,5 @@ const QuestionTopicManager: React.FC = () => {
         </div>
     );
 };
-
 
 export default QuestionTopicManager;

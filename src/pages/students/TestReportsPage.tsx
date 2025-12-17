@@ -4,11 +4,6 @@ import { FileTextOutlined, ClockCircleOutlined, TrophyOutlined, CalendarOutlined
 import { useNavigate } from 'react-router-dom';
 import { useExamAttemptHistory } from '~/hooks/useExamAttempt';
 
-interface ApResult {
-    scaledScore: number;
-    qualificationMessage: string;
-}
-
 interface HistoryRecord {
     attemptId: string;
     examId: string;
@@ -21,7 +16,6 @@ interface HistoryRecord {
     title?: string;
     status?: 'COMPLETED' | 'PENDING_GRADING';
     isLate?: boolean;
-    apResult?: ApResult;
 }
 
 // Primary color: #3CBCB2
@@ -230,19 +224,6 @@ const TestReportsPage: React.FC = () => {
                                             >
                                                 {record.score}
                                             </div>
-                                            {record.apResult && record.apResult.scaledScore && (
-                                                <div
-                                                    className="text-sm font-semibold px-3 py-1 rounded-full ml-2"
-                                                    style={{
-                                                        backgroundColor: 'rgba(255,255,255,0.3)',
-                                                        color: 'white',
-                                                        backdropFilter: 'blur(4px)'
-                                                    }}
-                                                    title={record.apResult.qualificationMessage}
-                                                >
-                                                    AP: {record.apResult.scaledScore}
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
 

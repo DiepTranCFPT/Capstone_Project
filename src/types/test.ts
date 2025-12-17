@@ -100,35 +100,16 @@ export interface ExamRule {
   questionType: 'mcq' | 'frq'; // Hoặc bất cứ type nào API hỗ trợ
   numberOfQuestions: number;
   points: number;
-  percentage?: number; // Frontend-only: tỉ lệ % cho topic này (0-100)
 }
 
 // Dùng khi tạo mới 1 quy tắc (không cần id)
-// Frontend sẽ dùng percentage, tính ra numberOfQuestions trước khi gửi API
-export interface CreateExamRulePayload {
-  topicName: string;
-  difficultyName: 'Easy' | 'Medium' | 'Hard';
-  questionType: 'mcq' | 'frq';
-  numberOfQuestions: number;
-  points: number;
-  percentage?: number; // Frontend-only field
-}
+export type CreateExamRulePayload = Omit<ExamRule, 'id'>;
 
 export interface ExamTemplateSubject {
   id: string;
   name: string;
   description: string;
 }
-
-// Score range cho mỗi mức điểm (ví dụ: AP Score 1-5)
-export interface ScoreRange {
-  min: number;
-  max: number;
-}
-
-// Mapping từ tên mức điểm ("1", "2", "A", "B"...) sang khoảng điểm
-export type ScoreMapping = Record<string, ScoreRange>;
-
 // Đại diện cho 1 khuôn mẫu đề thi
 export interface ExamTemplate {
   id: string;
@@ -145,8 +126,6 @@ export interface ExamTemplate {
   averageRating: number;
   totalRatings: number;
   totalTakers: number;
-  totalQuestions?: number; // Frontend-only: tổng số câu hỏi mong muốn (để tính percentage)
-  scoreMapping?: ScoreMapping; // Mapping điểm sang mức (AP Score, Grade...)
 }
 
 export interface MyExamTemplatePageData {
@@ -169,7 +148,6 @@ export interface CreateExamTemplatePayload {
   subjectId: string; // API của bạn có vẻ dùng subjectNames
   rules: CreateExamRulePayload[];
   tokenCost: number;
-  scoreMapping?: ScoreMapping; // Mapping điểm sang mức (AP Score, Grade...)
 }
 
 export interface PageInfo<T> {
@@ -240,13 +218,12 @@ export interface ActiveExam {
   id: string; // Exam ID
   title: string;
   subject: ExamSubjectInfo;
-  examAttemptId: string; // ID of this attempt
+  examAttemptId: string; // ID của lần làm bài này
   durationInMinute: number;
   passingScore: number;
   belongTo: string;
   attemptSessionToken: string;
   questions: ActiveExamQuestion[];
-  remainTime?: number; // Remaining time in SECONDS (returned when resuming on different device)
 }
 
 // 2. Types cho API /exam-test/submit/{attemptId}

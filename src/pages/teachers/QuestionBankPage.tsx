@@ -58,7 +58,6 @@ const QuestionBankPage: React.FC = () => {
     importQuestions,
   } = useQuestionBank();
 
-
   const difficultyOptions = useMemo(
     () => [
       { value: "easy", label: "Easy" },
@@ -458,7 +457,7 @@ const QuestionBankPage: React.FC = () => {
         return <Tag color={color}>{difficulty}</Tag>;
       },
     },
-
+    { title: "Created At", dataIndex: "createdAt", key: "createdAt" },
     {
       title: "Action",
       key: "action",
@@ -533,18 +532,14 @@ const QuestionBankPage: React.FC = () => {
         />
         <Select
           value={selectedSubject}
-          onChange={(value) => {
-            setSelectedSubject(value);
-            setSelectedTopic("All Topics"); // Reset topic khi đổi subject
-          }}
+          onChange={setSelectedSubject}
           className="w-48"
         >
           <Option value="All Subjects">All Subjects</Option>
-          {subjects.map((subject) => (
-            <Option key={subject.id} value={subject.name}>
-              {subject.name}
-            </Option>
-          ))}
+          <Option value="Biology">Biology</Option>
+          <Option value="Mathematics">Mathematics</Option>
+          <Option value="Physics">Physics</Option>
+          <Option value="History">History</Option>
         </Select>
         <Select
           value={selectedDifficulty}

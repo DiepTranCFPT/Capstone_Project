@@ -37,7 +37,7 @@ const FlashcardCreatePage: React.FC = () => {
 
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [isVisible, setIsVisible] = useState(true);
+    const [isPublic, setIsPublic] = useState(true);
     const [cards, setCards] = useState<CardFormData[]>([
         { tempId: crypto.randomUUID(), term: "", definition: "", imageUrl: "" },
         { tempId: crypto.randomUUID(), term: "", definition: "", imageUrl: "" },
@@ -157,7 +157,7 @@ const FlashcardCreatePage: React.FC = () => {
         const payload = {
             title: title.trim(),
             description: description.trim(),
-            isVisible,
+            isPublic,
             cards: validCards.map(({ term, definition, imageUrl }) => ({
                 term: term.trim(),
                 definition: definition.trim(),
@@ -193,17 +193,17 @@ const FlashcardCreatePage: React.FC = () => {
                         <div className="flex items-center gap-4">
                             {/* Public Toggle */}
                             <div className="flex items-center gap-2">
-                                {isVisible ? (
+                                {isPublic ? (
                                     <FaGlobe className="w-4 h-4 text-teal-600" />
                                 ) : (
                                     <FaLock className="w-4 h-4 text-gray-400" />
                                 )}
                                 <span className="text-sm text-gray-600">
-                                    {isVisible ? "Public" : "Private"}
+                                    {isPublic ? "Public" : "Private"}
                                 </span>
                                 <Switch
-                                    checked={isVisible}
-                                    onChange={setIsVisible}
+                                    checked={isPublic}
+                                    onChange={setIsPublic}
                                     size="small"
                                 />
                             </div>

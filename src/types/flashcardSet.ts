@@ -90,14 +90,14 @@ export interface CreateFlashcardSetRequest {
     title: string;
     description: string;
     cards: CreateFlashcardRequest[];
-    isVisible: boolean;
+    isPublic: boolean;
 }
 
 export interface UpdateFlashcardSetRequest {
     title?: string;
     description?: string;
     cards?: CreateFlashcardRequest[];
-    isVisible?: boolean;
+    isPublic?: boolean;
 }
 
 // Response types

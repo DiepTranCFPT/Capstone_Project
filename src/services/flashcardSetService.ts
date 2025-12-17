@@ -45,11 +45,6 @@ const FlashcardSetService = {
     getMyFlashcardSets(params?: { page?: number; size?: number }): Promise<AxiosResponse<FlashcardSetListResponse>> {
         return axiosInstance.get("/flashcard-sets/my-sets", { params });
     },
-
-    // PATCH /flashcard-sets/{id}/visibility - Update flashcard set visibility
-    updateVisibility(id: string): Promise<AxiosResponse<ApiResponse<string>>> {
-        return axiosInstance.patch(`/flashcard-sets/${id}/visibility`);
-    },
 };
 
 export default FlashcardSetService;
