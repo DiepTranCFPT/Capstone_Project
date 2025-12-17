@@ -25,6 +25,8 @@ export interface Thread {
     userVoteValue?: number;
     // Role của user (ADMIN, TEACHER, PARENT, STUDENT)
     userRole?: string | string[];
+    // Thời gian tạo post
+    createdAt?: string;
 };
 
 export interface StudyGroup {

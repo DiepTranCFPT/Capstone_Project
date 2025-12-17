@@ -59,6 +59,7 @@ import TeacherManagerPage from "./pages/admins/TeacherManagerPage";
 import UserManagerPage from "./pages/admins/UserManagerPage";
 import CertificatesRankingManagerPage from "./pages/admins/CertificatesRankingManagerPage";
 import SubjectManagerPage from "./pages/admins/SubjectManagerPage";
+import CommunityManagerPage from "./pages/admins/CommunityManagerPage";
 
 // --- Teacher Imports ---
 import TeacherLayout from "./layout/teachers/TeacherLayout";
@@ -159,6 +160,7 @@ function App() {
           <Route path="users" element={<UserManagerPage />} />
           <Route path="subscriptions" element={<TokenPaymentManagerPage />} />
           <Route path="subjects" element={<SubjectManagerPage />} />
+          <Route path="communities" element={<CommunityManagerPage />} />
         </Route>
 
         {/* Main routes with Layout */}

@@ -146,6 +146,7 @@ const CommunityPage: React.FC = () => {
                 authorId: post.authorId ?? (author as { id?: string | number } | undefined)?.id,
                 userVoteValue: rawUserVoteValue,
                 userRole: userRole,
+                createdAt: post.createdAt,
             };
         });
     }, [communityPosts, communities]);

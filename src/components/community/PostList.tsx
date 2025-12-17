@@ -38,6 +38,7 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
   const [userVoteByPostId, setUserVoteByPostId] = useState<Record<string, number>>({});
   const [commentToDelete, setCommentToDelete] = useState<{ comment: CommunityComment; postId: string | number } | null>(null);
   const [deletingComment, setDeletingComment] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date()); // Để force re-render mỗi phút
 
   type CommentWithPossibleParentIds = CommunityComment & {
     parentCommentId?: string | number | null;
@@ -57,6 +58,52 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
       }).format(num);
     } catch {
       return String(num);
+    }
+  };
+
+  // Format thời gian relative (ví dụ: "10 minutes ago", "2 hours ago")
+  const formatTimeAgo = (dateString?: string | null): string => {
+    if (!dateString) return "Just now";
+    
+    try {
+      const date = new Date(dateString);
+      const now = currentTime; // Dùng currentTime để force re-render mỗi phút
+      const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+      
+      if (diffInSeconds < 60) {
+        return "Just now";
+      }
+      
+      const diffInMinutes = Math.floor(diffInSeconds / 60);
+      if (diffInMinutes < 60) {
+        return `${diffInMinutes} ${diffInMinutes === 1 ? "minute" : "minutes"} ago`;
+      }
+      
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) {
+        return `${diffInHours} ${diffInHours === 1 ? "hour" : "hours"} ago`;
+      }
+      
+      const diffInDays = Math.floor(diffInHours / 24);
+      if (diffInDays < 7) {
+        return `${diffInDays} ${diffInDays === 1 ? "day" : "days"} ago`;
+      }
+      
+      const diffInWeeks = Math.floor(diffInDays / 7);
+      if (diffInWeeks < 4) {
+        return `${diffInWeeks} ${diffInWeeks === 1 ? "week" : "weeks"} ago`;
+      }
+      
+      const diffInMonths = Math.floor(diffInDays / 30);
+      if (diffInMonths < 12) {
+        return `${diffInMonths} ${diffInMonths === 1 ? "month" : "months"} ago`;
+      }
+      
+      const diffInYears = Math.floor(diffInDays / 365);
+      return `${diffInYears} ${diffInYears === 1 ? "year" : "years"} ago`;
+    } catch (error) {
+      console.error("Error formatting time:", error);
+      return "Just now";
     }
   };
 
@@ -121,6 +168,15 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
     });
     setUserVoteByPostId(next);
   }, [threads]);
+
+  // Cập nhật thời gian mỗi phút để hiển thị real-time
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Cập nhật mỗi 60 giây (1 phút)
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleToggleComments = async (thread: Thread) => {
     const postId = thread.postId || thread.id;
@@ -496,7 +552,7 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
                 {renderRoleBadge(thread.userRole)}
               </div>
               <div className="text-xs text-gray-500 flex items-center gap-2">
-                <span>10 minutes ago</span>
+                <span>{formatTimeAgo(thread.createdAt)}</span>
                 {thread.groupName && (
                   <>
                     <span className="w-1 h-1 rounded-full bg-gray-300" />

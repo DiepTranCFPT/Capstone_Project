@@ -16,11 +16,47 @@ import type {
 const CommunityService = {
   // PUT /communities/{communityId}
   // Cập nhật thông tin community
+  // API yêu cầu multipart/form-data với name, description, privacy trong query params hoặc form-data
   updateCommunity(
     communityId: string | number,
     payload: CommunityUpdatePayload
   ): Promise<AxiosResponse<ApiResponse<Community>>> {
-    return axiosInstance.put(`/communities/${communityId}`, payload);
+    const formData = new FormData();
+    
+    // Thêm các field vào formData
+    if (payload.name) {
+      formData.append("name", payload.name);
+    }
+    if (payload.description !== undefined) {
+      formData.append("description", payload.description || "");
+    }
+    if (payload.privacy) {
+      formData.append("privacy", payload.privacy);
+    }
+    if (payload.avatar) {
+      formData.append("avatar", payload.avatar);
+    }
+    if (payload.bannerImage) {
+      formData.append("bannerImage", payload.bannerImage);
+    }
+    
+    // Gửi với query params cho name, description, privacy (theo Swagger)
+    const params = new URLSearchParams();
+    if (payload.name) {
+      params.append("name", payload.name);
+    }
+    if (payload.description !== undefined) {
+      params.append("description", payload.description || "");
+    }
+    if (payload.privacy) {
+      params.append("privacy", payload.privacy);
+    }
+    
+    return axiosInstance.put(`/communities/${communityId}?${params.toString()}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
   },
 
   // GET /communities/{communityId}/posts
@@ -58,6 +94,36 @@ const CommunityService = {
         },
       }
     );
+  },
+
+  // POST /communities
+  // Tạo community mới
+  // API yêu cầu: name, description (query params), subjectId (optional), image (multipart/form-data)
+  createCommunity(
+    payload: {
+      name: string;
+      description: string;
+      subjectId?: string | number;
+      image?: File;
+    }
+  ): Promise<AxiosResponse<ApiResponse<Community>>> {
+    const formData = new FormData();
+    if (payload.image) {
+      formData.append("image", payload.image);
+    }
+
+    const params = new URLSearchParams();
+    params.append("name", payload.name);
+    params.append("description", payload.description);
+    if (payload.subjectId) {
+      params.append("subjectId", String(payload.subjectId));
+    }
+
+    return axiosInstance.post(`/communities?${params.toString()}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
   },
 
   // GET /communities
