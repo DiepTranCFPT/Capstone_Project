@@ -58,6 +58,58 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
     }
   };
 
+  // Helper function để render role badge
+  const renderRoleBadge = (role?: string | string[]): React.ReactNode => {
+    if (!role) return null;
+    
+    const roles = Array.isArray(role) ? role : [role];
+    if (roles.length === 0) return null;
+
+    const ROLE_BADGES: Record<
+      string,
+      { label: string; dotColor: string; pillClass: string }
+    > = {
+      ADMIN: {
+        label: "Admin",
+        dotColor: "bg-red-500",
+        pillClass: "border-red-500/50 text-red-300 bg-red-500/10",
+      },
+      TEACHER: {
+        label: "Teacher",
+        dotColor: "bg-blue-500",
+        pillClass: "border-blue-500/50 text-blue-300 bg-blue-500/10",
+      },
+      PARENT: {
+        label: "Parent",
+        dotColor: "bg-emerald-400",
+        pillClass: "border-emerald-400/50 text-emerald-200 bg-emerald-500/10",
+      },
+      STUDENT: {
+        label: "Student",
+        dotColor: "bg-purple-400",
+        pillClass: "border-purple-400/50 text-purple-200 bg-purple-500/10",
+      },
+    };
+
+    // Lấy role đầu tiên để hiển thị
+    const firstRole = roles[0].toUpperCase();
+    const cfg =
+      ROLE_BADGES[firstRole] ?? ({
+        label: firstRole,
+        dotColor: "bg-gray-400",
+        pillClass: "border-gray-500/40 text-gray-200 bg-gray-500/10",
+      } satisfies (typeof ROLE_BADGES)[string]);
+
+    return (
+      <span
+        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${cfg.pillClass} ml-2`}
+      >
+        <span className={`w-1.5 h-1.5 rounded-full mr-1 ${cfg.dotColor}`} />
+        {cfg.label}
+      </span>
+    );
+  };
+
   // Khởi tạo vote của user theo dữ liệu từ BE (userVoteValue)
   useEffect(() => {
     const next: Record<string, number> = {};
@@ -241,6 +293,9 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
             <div className="flex items-center justify-between gap-2">
               <div className="flex-1">
                 <span className="font-semibold mr-1">{displayName}:</span>
+                {renderRoleBadge(
+                  (c.author as { role?: string | string[] } | undefined)?.role
+                )}
                 {isEditing ? (
                   <div className="mt-1 space-y-2">
                     <Input
@@ -410,7 +465,10 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
               className="w-10 h-10 rounded-full"
             />
             <div>
-              <p className="font-semibold text-gray-800">{thread.user.name}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-gray-800">{thread.user.name}</p>
+                {renderRoleBadge(thread.userRole)}
+              </div>
               <div className="text-xs text-gray-500 flex items-center gap-2">
                 <span>10 minutes ago</span>
                 {thread.groupName && (

@@ -23,6 +23,8 @@ export interface Thread {
     authorId?: string | number; // ID của người tạo post để check quyền xóa
     // Giá trị vote của user hiện tại (theo BE: userVoteValue)
     userVoteValue?: number;
+    // Role của user (ADMIN, TEACHER, PARENT, STUDENT)
+    userRole?: string | string[];
 };
 
 export interface StudyGroup {

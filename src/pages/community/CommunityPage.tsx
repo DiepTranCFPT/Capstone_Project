@@ -87,6 +87,8 @@ const CommunityPage: React.FC = () => {
                     username?: string;
                     imgUrl?: string;
                     avatar?: string;
+                    role?: string | string[];
+                    roles?: string | string[];
                 };
             };
 
@@ -122,6 +124,9 @@ const CommunityPage: React.FC = () => {
                 ? (asAny.userVoteValue as number)
                 : 0;
 
+            // Lấy role từ author (có thể là role hoặc roles)
+            const userRole = author?.role ?? author?.roles ?? undefined;
+
             return {
                 id: Number(post.id) || 0, // Fallback nếu không convert được
                 postId: post.id, // Giữ nguyên ID gốc từ BE (UUID string) để dùng cho API
@@ -140,6 +145,7 @@ const CommunityPage: React.FC = () => {
                 groupName: communities.find((c) => String(c.id) === String(post.communityId))?.name,
                 authorId: post.authorId ?? (author as { id?: string | number } | undefined)?.id,
                 userVoteValue: rawUserVoteValue,
+                userRole: userRole,
             };
         });
     }, [communityPosts, communities]);

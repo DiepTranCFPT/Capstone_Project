@@ -63,14 +63,14 @@ const extractFromPaginated = <T,>(
 
   // Case 1: chuẩn PaginatedResponse { content, totalElements, totalPages }
   if ("content" in anyRaw) {
-    const paginated = raw as PaginatedResponse<T>;
-    return {
-      items: paginated.content || [],
-      pageInfo: {
-        totalElements: paginated.totalElements,
-        totalPages: paginated.totalPages,
-      },
-    };
+  const paginated = raw as PaginatedResponse<T>;
+  return {
+    items: paginated.content || [],
+    pageInfo: {
+      totalElements: paginated.totalElements,
+      totalPages: paginated.totalPages,
+    },
+  };
   }
 
   // Case 2: BE trả { items, totalElement } (như API posts hiện tại)

@@ -90,14 +90,62 @@ const UserManagement: React.FC = () => {
         if (!Array.isArray(roles) || roles.length === 0) {
           return <span className="text-gray-400">-</span>;
         }
+
+        const ROLE_BADGES: Record<
+          string,
+          { label: string; dotColor: string; pillClass: string }
+        > = {
+          ADMIN: {
+            label: "Admin",
+            dotColor: "bg-red-500",
+            pillClass:
+              "border-red-500/50 text-red-300 bg-red-500/10",
+          },
+          TEACHER: {
+            label: "Teacher",
+            dotColor: "bg-blue-500",
+            pillClass:
+              "border-blue-500/50 text-blue-300 bg-blue-500/10",
+          },
+          PARENT: {
+            label: "Parent",
+            dotColor: "bg-emerald-400",
+            pillClass:
+              "border-emerald-400/50 text-emerald-200 bg-emerald-500/10",
+          },
+          STUDENT: {
+            label: "Student",
+            dotColor: "bg-purple-400",
+            pillClass:
+              "border-purple-400/50 text-purple-200 bg-purple-500/10",
+          },
+        };
+
         return (
-          <>
-            {roles.map((role: string) => (
-              <Tag color="blue" key={role} className="capitalize">
-                {role}
-              </Tag>
-            ))}
-          </>
+          <div className="flex flex-wrap gap-1.5">
+            {roles.map((role: string) => {
+              const upper = role.toUpperCase();
+              const cfg =
+                ROLE_BADGES[upper] ?? ({
+                  label: upper,
+                  dotColor: "bg-gray-400",
+                  pillClass:
+                    "border-gray-500/40 text-gray-200 bg-gray-500/10",
+                } satisfies (typeof ROLE_BADGES)[string]);
+
+              return (
+                <span
+                  key={role}
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${cfg.pillClass}`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full mr-1 ${cfg.dotColor}`}
+                  />
+                  {cfg.label}
+                </span>
+              );
+            })}
+          </div>
         );
       },
     },
