@@ -94,15 +94,7 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
         }
     }, [savedAnswer]); // Only depend on savedAnswer
 
-    // Notify parent about saved answer on initial mount
-    useEffect(() => {
-        if (savedAnswer && savedAnswer.trim() !== '' && onAnswerChange && isInitialMountRef.current) {
-            onAnswerChange(questionNumber - 1, true, {
-                selectedAnswerId: undefined,
-                frqAnswerText: savedAnswer.trim() || undefined
-            });
-        }
-    }, []); // Empty dependency array - only run once on mount
+    
 
     // Notify parent when answerText changes (skip on initial mount and when syncing)
     useEffect(() => {
