@@ -660,10 +660,12 @@ export const useQuestionBank = () => {
   // }, [normalizeQuestions]);
 
   // 🔹 Lấy theo môn học (subjectId)
-  const fetchBySubjectId = useCallback(async (subjectId: string) => {
+  const fetchBySubjectId = useCallback(async (subjectId: string, params?: { pageNo?: number; pageSize?: number }) => {
     try {
       setLoading(true);
-      const res = await QuestionService.getBySubjectId(subjectId);
+      // Use large pageSize to get all questions for statistics calculation
+      const queryParams = { pageSize: 1000, ...params };
+      const res = await QuestionService.getBySubjectId(subjectId, queryParams);
       setQuestions(normalizeQuestions(res.data?.data));
     } catch (error) {
       message.error("Không thể tải câu hỏi theo môn học!");
