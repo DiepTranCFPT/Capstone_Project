@@ -21,6 +21,12 @@ interface WalletSummary {
   pendingAmount: number;
 }
 
+export interface IncomeChartPoint {
+  label: string; // ví dụ: "Jan 2025" hoặc "05/2025"
+  monthKey: string; // dạng YYYY-MM để dễ sort
+  total: number; // tổng thu nhập trong tháng
+}
+
 const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -217,6 +223,7 @@ export const useTeacherWallet = () => {
     monthlyIncome: 0,
     pendingAmount: 0,
   });
+  const [incomeChartData, setIncomeChartData] = useState<IncomeChartPoint[]>([]);
 
   const fetchTransactions = useCallback(async (): Promise<void> => {
     try {
@@ -254,6 +261,53 @@ export const useTeacherWallet = () => {
 
       const summary = calculateWalletSummary(transactionsData, balanceData);
       setWalletSummary(summary);
+
+      // Chuẩn hóa dữ liệu cho biểu đồ thu nhập theo tháng (12 tháng gần nhất)
+      const now = new Date();
+      const monthsBack = 12;
+
+      // Tạo map YYYY-MM -> tổng thu nhập
+      const incomeByMonth = new Map<string, number>();
+
+      transactionsData.forEach((t) => {
+        if (!t.createdAt) return;
+        if (getTransactionType(t.type, t.amount) !== "income") return;
+
+        const date = new Date(t.createdAt);
+        const year = date.getFullYear();
+        const month = date.getMonth(); // 0-11
+
+        const diffMonths =
+          (now.getFullYear() - year) * 12 +
+          (now.getMonth() - month);
+
+        // Chỉ lấy trong 12 tháng gần nhất (kể cả tháng hiện tại)
+        if (diffMonths < 0 || diffMonths >= monthsBack) return;
+
+        const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
+        const prev = incomeByMonth.get(monthKey) ?? 0;
+        incomeByMonth.set(monthKey, prev + Math.abs(t.amount));
+      });
+
+      // Tạo danh sách 12 tháng gần nhất theo thứ tự thời gian tăng dần
+      const chartPoints: IncomeChartPoint[] = [];
+      for (let i = monthsBack - 1; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const year = date.getFullYear();
+        const monthIndex = date.getMonth(); // 0-11
+        const monthKey = `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
+        const label = date.toLocaleString("en-US", {
+          month: "short",
+          year: "2-digit",
+        });
+        chartPoints.push({
+          label,
+          monthKey,
+          total: incomeByMonth.get(monthKey) ?? 0,
+        });
+      }
+
+      setIncomeChartData(chartPoints);
     } catch (err: unknown) {
       const axiosError = err as {
         response?: { data?: { message?: string } };
@@ -282,6 +336,7 @@ export const useTeacherWallet = () => {
     error,
     transactions,
     walletSummary,
+    incomeChartData,
     refetch: fetchTransactions,
   };
 };

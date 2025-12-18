@@ -59,6 +59,14 @@ const CommunityService = {
     });
   },
 
+  // DELETE /communities/{communityId}
+  // Xóa một community theo ID
+  deleteCommunity(
+    communityId: string | number
+  ): Promise<AxiosResponse<ApiResponse<null>>> {
+    return axiosInstance.delete(`/communities/${communityId}`);
+  },
+
   // GET /communities/{communityId}/posts
   // Lấy danh sách bài viết theo community
   getCommunityPosts(

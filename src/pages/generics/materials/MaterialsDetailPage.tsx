@@ -12,13 +12,6 @@ const MaterialsDetailPage: React.FC = () => {
         day: "2-digit",
       })
     : "";
-  const highlights = [
-    "Build powerful, fast, user-friendly and reactive web apps.",
-    "Master fundamental concepts behind structuring React projects.",
-    "Create reusable components that you can use in all your projects.",
-    "Learn to build complex applications with state management and routing.",
-  ];
-  
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -98,22 +91,6 @@ const MaterialsDetailPage: React.FC = () => {
               thumbnail: material.thumbnail,
               fileImage: (material as unknown as { fileImage?: string }).fileImage,
             }} />
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              What you'll learn
-            </h2>
-            <div className="space-y-3">
-              {highlights.map((item) => (
-                <div key={item} className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs mt-0.5 flex-shrink-0">
-                    ✓
-                  </span>
-                  <p className="text-gray-700 text-sm leading-relaxed">{item}</p>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>

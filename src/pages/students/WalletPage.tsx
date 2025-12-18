@@ -9,17 +9,12 @@ import type { CreatePaymentResponse, TransactionResponse } from "~/types/momoPay
 import type { UserTokenTransaction } from "~/types/tokenTransaction";
 import TopStatus from "~/components/students/wallet/TopStatus";
 import TopUpForm from "~/components/students/wallet/TopUpForm";
-import DemoCardsGrid from "~/components/students/wallet/DemoCardsGrid";
+
 import TransactionsSection from "~/components/students/wallet/TransactionsSection";
 
 const quickAmounts = [200_000, 500_000, 1_000_000, 2_000_000];
 
-const demoCards = [
-  { id: 1, title: "STEM Investment Package", change: "+2.4%", desc: "Weekly increase" },
-  { id: 2, title: "Learning Resources Fund", change: "+2.4%", desc: "Safe category" },
-  { id: 3, title: "Premium Tutoring", change: "+2.4%", desc: "Prepaid" },
-  { id: 4, title: "Mock Test Premium", change: "+2.4%", desc: "Activated" },
-];
+
 
 const WalletPage = () => {
   const { user } = useAuth();
@@ -285,8 +280,7 @@ const WalletPage = () => {
           </div>
         </div>
 
-        {/* Cards row */}
-        <DemoCardsGrid cards={demoCards} />
+
 
         {/* Transactions */}
         <TransactionsSection

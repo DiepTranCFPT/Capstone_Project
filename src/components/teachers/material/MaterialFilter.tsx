@@ -83,9 +83,9 @@ const MaterialFilter: React.FC<Props> = ({ materials, setFilteredData, onSearchK
 
   return (
     <div className="flex flex-wrap gap-3 mb-4 items-center">
-      {/* Ô tìm kiếm */}
+      {/* Search input */}
       <Input
-        placeholder="Tìm kiếm tài liệu..."
+        placeholder="Search materials..."
         value={searchText}
         onChange={(e) => setSearchText(e.target.value)}
         onPressEnter={() => onSearchKeyword?.(searchText.trim())}
@@ -94,45 +94,45 @@ const MaterialFilter: React.FC<Props> = ({ materials, setFilteredData, onSearchK
         prefix={<SearchOutlined className="text-gray-400" />}
       />
 
-      {/* Biểu tượng lọc */}
+      {/* Filter icon and label */}
       <div className="flex items-center gap-2">
         <FilterOutlined className="text-gray-400" />
-        <span className="text-sm text-gray-600">Lọc theo:</span>
+        <span className="text-sm text-gray-600">Filter by:</span>
       </div>
 
-      {/* Lọc theo trạng thái */}
+      {/* Filter by status */}
       <Select
-        placeholder="Trạng thái"
+        placeholder="Status"
         value={statusFilter}
         onChange={setStatusFilter}
         className="min-w-32"
         options={[
-          { label: "Tất cả trạng thái", value: "all" },
-          { label: "Công khai", value: "public" },
-          { label: "Riêng tư", value: "private" },
+          { label: "All statuses", value: "all" },
+          { label: "Public", value: "public" },
+          { label: "Private", value: "private" },
         ]}
       />
 
-      {/* Lọc theo loại tài liệu */}
+      {/* Filter by material type */}
       <Select
-        placeholder="Loại tài liệu"
+        placeholder="Type"
         value={typeFilter}
         onChange={setTypeFilter}
         className="min-w-32"
         options={[
-          { label: "Tất cả loại", value: "all" },
+          { label: "All types", value: "all" },
           ...uniqueTypes.map((type) => ({ label: type, value: type })),
         ]}
       />
 
-      {/* Lọc theo môn học */}
+      {/* Filter by subject */}
       <Select
-        placeholder="Môn học"
+        placeholder="Subject"
         value={subjectFilter}
         onChange={setSubjectFilter}
         className="min-w-32"
         options={[
-          { label: "Tất cả môn học", value: "all" },
+          { label: "All subjects", value: "all" },
           ...uniqueSubjects.map((subject) => ({
             label: subject,
             value: subject,
@@ -140,14 +140,14 @@ const MaterialFilter: React.FC<Props> = ({ materials, setFilteredData, onSearchK
         ]}
       />
 
-      {/* Lọc theo tác giả */}
+      {/* Filter by author */}
       <Select
-        placeholder="Tác giả"
+        placeholder="Author"
         value={authorFilter}
         onChange={setAuthorFilter}
         className="min-w-32"
         options={[
-          { label: "Tất cả tác giả", value: "all" },
+          { label: "All authors", value: "all" },
           ...uniqueAuthors.map((author) => ({
             label: author,
             value: author,
@@ -155,7 +155,7 @@ const MaterialFilter: React.FC<Props> = ({ materials, setFilteredData, onSearchK
         ]}
       />
 
-      {/* Nút xóa bộ lọc */}
+      {/* Reset filters button */}
       {(statusFilter !== "all" ||
         typeFilter !== "all" ||
         subjectFilter !== "all" ||
@@ -167,7 +167,7 @@ const MaterialFilter: React.FC<Props> = ({ materials, setFilteredData, onSearchK
           onClick={resetFilters}
           className="text-red-600 hover:bg-red-50 hover:text-red-700"
         >
-          Xóa bộ lọc
+          Clear filters
         </Button>
       )}
 

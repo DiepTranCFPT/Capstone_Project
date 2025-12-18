@@ -11,12 +11,30 @@ import RecentTokenTransactions from '~/components/admins/dashboard/RecentTokenTr
 const AdminDashboardPage: React.FC = () => {
     const { stats, loading } = useDashboardStats();
     const { stats: examStats, loading: examLoading } = useAdminExamStats();
-    const { revenue, loading: revenueLoading, error: revenueError } = useRevenueSystem();
-    
-    // Revenue chart filters
+
+    // Revenue filters (dùng chung cho Total Revenue và Revenue Chart)
     const [selectedYear, setSelectedYear] = useState<string>("");
     const [selectedMonth, setSelectedMonth] = useState<string>("");
     const [selectedDay, setSelectedDay] = useState<string>("");
+
+    // Params truyền vào hook useRevenueSystem: 
+    // - Nếu chỉ chọn year -> tổng năm đó
+    // - Nếu chọn thêm month -> tổng tháng đó
+    // - Nếu chọn thêm day -> tổng ngày đó
+    const revenueParams = useMemo(() => {
+        if (!selectedYear) {
+            // Khi chưa chọn năm, để undefined để BE trả tổng hệ thống mặc định
+            return undefined;
+        }
+
+        return {
+            year: selectedYear,
+            month: selectedMonth || undefined,
+            day: selectedDay || undefined,
+        };
+    }, [selectedYear, selectedMonth, selectedDay]);
+
+    const { revenue, loading: revenueLoading, error: revenueError } = useRevenueSystem(revenueParams);
 
     // Generate years (current year and 5 years back)
     const years = useMemo(() => {

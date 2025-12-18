@@ -28,7 +28,7 @@ export interface Thread {
     // Thời gian tạo post
     createdAt?: string;
     // Post có được pin không (chỉ admin mới có quyền pin)
-    isPinned?: boolean;
+    pinned?: boolean;
 };
 
 export interface StudyGroup {
@@ -91,8 +91,9 @@ export interface CommunityPost {
   commentCount?: number;
   createdAt?: string;
   updatedAt?: string;
-  isPinned?: boolean; // Post có được pin không
-  // Cho phép đính kèm extra fields (attachments, tags, ...)
+  // Cờ pin từ BE
+  pinned?: boolean; 
+
   [key: string]: unknown;
 }
 
@@ -133,9 +134,7 @@ export interface CommunityComment {
 
 export interface CreateCommunityCommentPayload {
   content?: string;
-  // nếu là reply cho comment khác
   parentCommentId?: string | number | null;
-  // ảnh đính kèm (multipart/form-data)
   image?: File;
   [key: string]: unknown;
 }

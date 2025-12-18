@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   FiTrendingUp,
   FiArrowUpRight,
@@ -6,6 +6,15 @@ import {
   FiClock,
   FiLoader,
 } from "react-icons/fi";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { useTeacherWallet } from "~/hooks/useTeacherWallet";
 import AddPaymentMethodModal from "~/components/teachers/wallet/AddPaymentMethodModal";
 import WithdrawMoneyModal from "~/components/teachers/wallet/WithdrawMoneyModal";
@@ -18,10 +27,11 @@ const formatCurrency = (amount: number): string => {
 };
 
 const MyWalletPage = () => {
-  const { loading, error, transactions, walletSummary, refetch } = useTeacherWallet();
+  const { loading, error, transactions, walletSummary, incomeChartData, refetch } = useTeacherWallet();
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isAddPaymentMethodModalOpen, setIsAddPaymentMethodModalOpen] = useState(false);
   const [showAllTransactions, setShowAllTransactions] = useState(false);
+  const [chartRange, setChartRange] = useState<6 | 12>(12);
 
   const summaryCards = [
     {
@@ -47,6 +57,12 @@ const MyWalletPage = () => {
   const visibleTransactions = showAllTransactions
     ? transactions
     : transactions.slice(0, 5);
+
+  const displayedChartData = useMemo(() => {
+    if (!incomeChartData || incomeChartData.length === 0) return [];
+    const sliceCount = chartRange === 6 ? 6 : 12;
+    return incomeChartData.slice(-sliceCount);
+  }, [incomeChartData, chartRange]);
   return (
     <section className="min-h-screen bg-slate-50/80 p-6 md:p-10">
       <div className="mx-auto w-full max-w-6xl space-y-10">
@@ -107,22 +123,80 @@ const MyWalletPage = () => {
           </div>
         )}
 
-        {/* Chart placeholder */}
+        {/* Income chart */}
         <div className="rounded-3xl bg-white p-6 shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-slate-800">Income Chart</h3>
-              <p className="text-sm text-slate-400">Track last 6 months</p>
+              <p className="text-sm text-slate-400">
+                Track income over the last {chartRange} months
+              </p>
             </div>
-            <select className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600">
-              <option>Last 6 months</option>
-              <option>Last 12 months</option>
+            <select
+              className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600"
+              value={chartRange}
+              onChange={(e) => setChartRange(Number(e.target.value) === 6 ? 6 : 12)}
+            >
+              <option value={6}>Last 6 months</option>
+              <option value={12}>Last 12 months</option>
             </select>
           </div>
           <div className="mt-6 h-64 w-full rounded-2xl bg-gradient-to-b from-emerald-50 to-white p-6">
-            <div className="h-full rounded-2xl border border-dashed border-emerald-200 flex items-center justify-center text-sm text-slate-400">
-              Chart will display when actual data is integrated
-            </div>
+            {loading ? (
+              <div className="h-full flex items-center justify-center text-slate-400 gap-2">
+                <FiLoader className="animate-spin" />
+                <span>Loading income data...</span>
+              </div>
+            ) : !displayedChartData || displayedChartData.length === 0 ? (
+              <div className="h-full rounded-2xl border border-dashed border-emerald-200 flex items-center justify-center text-sm text-slate-400">
+                No income data available yet
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={displayedChartData}
+                  margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#bbf7d0" />
+                  <XAxis
+                    dataKey="label"
+                    stroke="#6b7280"
+                    style={{ fontSize: "12px" }}
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    style={{ fontSize: "12px" }}
+                    tickFormatter={(value) => {
+                      if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+                      if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
+                      return value.toString();
+                    }}
+                  />
+                  <RechartsTooltip
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                    }}
+                    formatter={(value: number) =>
+                      new Intl.NumberFormat("vi-VN", {
+                        style: "currency",
+                        currency: "VND",
+                      }).format(value)
+                    }
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    dot={{ fill: "#10b981", r: 4 }}
+                    activeDot={{ r: 6 }}
+                    name="Income"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 

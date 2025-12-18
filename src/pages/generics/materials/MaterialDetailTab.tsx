@@ -423,16 +423,6 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
                   <p className="text-gray-700 leading-relaxed text-base">{material.description}</p>
                 </div>
 
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">What Will You Learn?</h3>
-                  <p className="text-gray-700 leading-relaxed text-base">
-                    Quickly synergize cutting-edge scenarios and professional
-                    results. Assertively deliver cross-media results before
-                    client-centric results. Uniquely initiate intuitive communities
-                    through process-centric internal or "organic" sources.
-                  </p>
-                </div>
-                
                 <div className="pt-4">
                   {isRegistered ? (
                     <button

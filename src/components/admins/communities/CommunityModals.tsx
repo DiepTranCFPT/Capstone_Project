@@ -198,15 +198,20 @@ export const DeleteCommunityModal: React.FC<DeleteModalProps> = ({
   onCancel,
   onConfirm,
 }) => {
+  const [loading, setLoading] = useState(false);
+
   const handleConfirm = async () => {
     if (!communityId) return;
     try {
-      // TODO: Implement delete community API if available
-      message.warning("Delete community feature is not yet implemented in the API");
+      setLoading(true);
+      await CommunityService.deleteCommunity(communityId);
+      message.success("Community deleted successfully");
       onConfirm();
     } catch (error) {
       message.error("Failed to delete community");
       console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -219,6 +224,7 @@ export const DeleteCommunityModal: React.FC<DeleteModalProps> = ({
       okText="Delete"
       cancelText="Cancel"
       okType="danger"
+      confirmLoading={loading}
     >
       <p>Are you sure you want to delete this community? This action cannot be undone.</p>
     </Modal>

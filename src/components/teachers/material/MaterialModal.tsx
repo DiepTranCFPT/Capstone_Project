@@ -13,7 +13,8 @@ export interface MaterialFormValues
   price?: number;
 }
 
-const quickPriceAmounts = [0, 50_000, 100_000, 200_000, 500_000];
+// Các mức giá chọn nhanh (không bao gồm Free để tránh hiển thị nút "Free")
+const quickPriceAmounts = [50_000, 100_000, 200_000, 500_000];
 
 interface MaterialModalProps {
   open: boolean;
