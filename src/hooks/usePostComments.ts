@@ -327,6 +327,77 @@ const usePostComments = () => {
     []
   );
 
+  // POST /comments/{commentId}/vote
+  const voteComment = useCallback(
+    async (
+      commentId: string | number,
+      postId: string | number,
+      value: number
+    ): Promise<CommunityComment | null> => {
+      try {
+        setError(null);
+
+        const response = await CommunityService.voteComment(commentId, value);
+        const apiResponse = response.data as ApiResponse<CommunityComment>;
+        const updatedComment = apiResponse.data;
+
+        const key = String(postId);
+
+        setPostComments((prev) => {
+          const existing = prev[key] || [];
+
+          const nextList = existing.map((c) => {
+            if (String(c.id) !== String(commentId)) return c;
+
+            if (updatedComment) {
+              return { ...c, ...updatedComment };
+            }
+
+            const anyC = c as unknown as {
+              voteCount?: number;
+              likeCount?: number;
+              userVoteValue?: number;
+            };
+
+            const currentVote =
+              typeof anyC.voteCount === "number"
+                ? anyC.voteCount
+                : typeof anyC.likeCount === "number"
+                  ? anyC.likeCount
+                  : 0;
+
+            const prevUserVoteValue =
+              typeof anyC.userVoteValue === "number"
+                ? anyC.userVoteValue
+                : 0;
+            const newUserVoteValue = value;
+
+            const newVote =
+              currentVote - prevUserVoteValue + newUserVoteValue;
+
+            return {
+              ...c,
+              likeCount: newVote,
+              voteCount: newVote,
+              userVoteValue: newUserVoteValue,
+            } as CommunityComment;
+          });
+
+          return {
+            ...prev,
+            [key]: nextList,
+          };
+        });
+
+        return updatedComment ?? null;
+      } catch (err) {
+        setError(getErrorMessage(err, "Failed to vote comment."));
+        return null;
+      }
+    },
+    []
+  );
+
   // DELETE /comments/{commentId}
   const deleteComment = useCallback(
     async (
@@ -544,6 +615,7 @@ const usePostComments = () => {
     createPostComment,
     updateComment,
     deleteComment,
+    voteComment,
     fetchCommentReplies,
     loadRepliesForComment,
   };
