@@ -15,24 +15,13 @@ import type {
 
 const CommunityService = {
   // PUT /communities/{communityId}
-  // Cập nhật thông tin community
-  // API yêu cầu multipart/form-data với name, description, privacy trong query params hoặc form-data
   updateCommunity(
     communityId: string | number,
     payload: CommunityUpdatePayload
   ): Promise<AxiosResponse<ApiResponse<Community>>> {
     const formData = new FormData();
-    
-    // Thêm các field vào formData
-    if (payload.name) {
-      formData.append("name", payload.name);
-    }
-    if (payload.description !== undefined) {
-      formData.append("description", payload.description || "");
-    }
-    if (payload.privacy) {
-      formData.append("privacy", payload.privacy);
-    }
+
+    // Gửi file qua form-data, text qua query params để tránh duplicate ở BE
     if (payload.avatar) {
       formData.append("avatar", payload.avatar);
     }
@@ -40,7 +29,6 @@ const CommunityService = {
       formData.append("bannerImage", payload.bannerImage);
     }
     
-    // Gửi với query params cho name, description, privacy (theo Swagger)
     const params = new URLSearchParams();
     if (payload.name) {
       params.append("name", payload.name);
