@@ -40,6 +40,7 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
     updateComment,
     deleteComment,
     loadRepliesForComment,
+    voteComment,
   } = usePostComments();
 
   const [openPostIds, setOpenPostIds] = useState<Set<string | number>>(new Set());
@@ -49,6 +50,7 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
   const [editCommentText, setEditCommentText] = useState<string>("");
   const [replyingCommentId, setReplyingCommentId] = useState<string | number | null>(null);
   const [replyTexts, setReplyTexts] = useState<Record<string, string>>({});
+  const [replyImages, setReplyImages] = useState<Record<string, File | null>>({});
   const [expandedReplyIds, setExpandedReplyIds] = useState<Set<string>>(new Set());
   const [postToDelete, setPostToDelete] = useState<Thread | null>(null);
   const [deletingPost, setDeletingPost] = useState(false);
@@ -231,11 +233,15 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
     const content = (replyTexts[replyKey] || "").trim();
     if (!content) return;
 
+    const image = replyImages[replyKey] || undefined;
+
     await createPostComment(postId, { 
       content,
-      parentCommentId: comment.id 
+      parentCommentId: comment.id,
+      image,
     });
     setReplyTexts((prev) => ({ ...prev, [replyKey]: "" }));
+    setReplyImages((prev) => ({ ...prev, [replyKey]: null }));
     setReplyingCommentId(null);
 
     // Mở replies của parent sau khi thêm
@@ -313,6 +319,22 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
   const handleDeletePostClick = (thread: Thread) => {
     if (!onDeletePost) return;
     setPostToDelete(thread);
+  };
+
+  const handleVoteComment = async (
+    comment: CommunityComment,
+    postId: string | number,
+    value: number
+  ) => {
+    const anyComment = comment as unknown as { userVoteValue?: number };
+    const current =
+      typeof anyComment.userVoteValue === "number"
+        ? anyComment.userVoteValue
+        : 0;
+
+    // Nếu người dùng click lại cùng 1 hướng thì bỏ vote (set 0)
+    const nextValue = current === value ? 0 : value;
+    await voteComment(comment.id, postId, nextValue);
   };
 
   const handleConfirmDeletePost = async () => {
@@ -404,6 +426,23 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
     const isReplying = replyingCommentId === c.id;
     const replyKey = `${postId}-${c.id}`;
     const currentReplyText = replyTexts[replyKey] || "";
+    const currentReplyImage = replyImages[replyKey] || null;
+
+    const voteInfo = c as unknown as {
+      voteCount?: number;
+      likeCount?: number;
+      userVoteValue?: number;
+    };
+    const commentScore =
+      typeof voteInfo.voteCount === "number"
+        ? voteInfo.voteCount
+        : typeof voteInfo.likeCount === "number"
+          ? voteInfo.likeCount
+          : 0;
+    const commentUserVote =
+      typeof voteInfo.userVoteValue === "number"
+        ? voteInfo.userVoteValue
+        : 0;
 
     return (
       <div key={c.id} className="py-2">
@@ -490,8 +529,40 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
               </div>
             )}
             
-            {/* Reply button và input */}
+            {/* Vote + Reply button */}
             <div className="mt-1 flex items-center gap-4 text-xs text-gray-500">
+              <div className="inline-flex items-center rounded-full border border-gray-200 bg-white overflow-hidden shadow-sm">
+                <button
+                  type="button"
+                  className={`w-7 h-7 flex items-center justify-center transition-all ${
+                    commentUserVote === 1
+                      ? "bg-teal-50 text-teal-600"
+                      : "text-gray-500 hover:bg-gray-50"
+                  }`}
+                  onClick={() => void handleVoteComment(c, postId, 1)}
+                  aria-label="Upvote comment"
+                  title="Upvote comment"
+                >
+                  <IoCaretUpSharp size={14} />
+                </button>
+                <div className="px-2 py-0.5 text-[11px] font-semibold text-gray-700 min-w-8 text-center select-none">
+                  {commentScore}
+                </div>
+                <button
+                  type="button"
+                  className={`w-7 h-7 flex items-center justify-center transition-all ${
+                    commentUserVote === -1
+                      ? "bg-rose-50 text-rose-600"
+                      : "text-gray-500 hover:bg-gray-50"
+                  }`}
+                  onClick={() => void handleVoteComment(c, postId, -1)}
+                  aria-label="Downvote comment"
+                  title="Downvote comment"
+                >
+                  <IoCaretDownSharp size={14} />
+                </button>
+              </div>
+
               <button
                 type="button"
                 onClick={() => {
@@ -510,31 +581,79 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
 
             {/* Reply input box */}
             {isReplying && (
-              <div className="mt-2 flex items-center gap-2">
-                <Input
-                  size="small"
-                  placeholder={`Reply to ${displayName}...`}
-                  value={currentReplyText}
-                  onChange={(e) =>
-                    setReplyTexts((prev) => ({
-                      ...prev,
-                      [replyKey]: e.target.value,
-                    }))
-                  }
-                  onPressEnter={(e) => {
-                    e.preventDefault();
-                    void handleReplyComment(c, postId);
-                  }}
-                  autoFocus
-                />
-                <Button
-                  size="small"
-                  type="primary"
-                  className="bg-teal-500 hover:bg-teal-600"
-                  onClick={() => void handleReplyComment(c, postId)}
-                >
-                  Send
-                </Button>
+              <div className="mt-2 space-y-1">
+                <div className="flex items-center gap-2">
+                  {/* Hidden file input for reply image */}
+                  <input
+                    id={`reply-image-${replyKey}`}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null;
+                      setReplyImages((prev) => ({
+                        ...prev,
+                        [replyKey]: file,
+                      }));
+                    }}
+                  />
+                  <Button
+                    size="small"
+                    type="default"
+                    className="flex items-center justify-center !p-0 w-8 h-8"
+                    onClick={() => {
+                      const input = document.getElementById(
+                        `reply-image-${replyKey}`
+                      ) as HTMLInputElement | null;
+                      input?.click();
+                    }}
+                  >
+                    <FiImage className="text-teal-500" size={16} />
+                  </Button>
+                  <Input
+                    size="small"
+                    placeholder={`Reply to ${displayName}...`}
+                    value={currentReplyText}
+                    onChange={(e) =>
+                      setReplyTexts((prev) => ({
+                        ...prev,
+                        [replyKey]: e.target.value,
+                      }))
+                    }
+                    onPressEnter={(e) => {
+                      e.preventDefault();
+                      void handleReplyComment(c, postId);
+                    }}
+                    autoFocus
+                  />
+                  <Button
+                    size="small"
+                    type="primary"
+                    className="bg-teal-500 hover:bg-teal-600"
+                    onClick={() => void handleReplyComment(c, postId)}
+                  >
+                    Send
+                  </Button>
+                </div>
+                {currentReplyImage && (
+                  <div className="flex items-center gap-2 text-[11px] text-gray-500 ml-10">
+                    <span className="text-teal-600">
+                      {currentReplyImage.name}
+                    </span>
+                    <button
+                      type="button"
+                      className="text-red-500 hover:underline"
+                      onClick={() =>
+                        setReplyImages((prev) => ({
+                          ...prev,
+                          [replyKey]: null,
+                        }))
+                      }
+                    >
+                      Xoá ảnh
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

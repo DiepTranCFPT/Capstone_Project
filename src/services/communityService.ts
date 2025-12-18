@@ -226,6 +226,17 @@ const CommunityService = {
     });
   },
 
+  // POST /comments/{commentId}/vote
+  // Vote cho comment
+  voteComment(
+    commentId: string | number,
+    value: number
+  ): Promise<AxiosResponse<ApiResponse<CommunityComment>>> {
+    return axiosInstance.post(`/comments/${commentId}/vote`, null, {
+      params: { value },
+    });
+  },
+
   // DELETE /posts/{postId}
   // Xóa bài viết
   deletePost(
