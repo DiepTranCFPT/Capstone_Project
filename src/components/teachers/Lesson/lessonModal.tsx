@@ -84,25 +84,25 @@ const LessonModal: React.FC<LessonModalProps> = ({
     const hasPdf = Boolean(previewLesson.file);
     const pdfName = previewLesson.file ? extractFileName(previewLesson.file) : "";
 
-    return (
+      return (
       <div className="space-y-4">
         <Typography.Title level={4} className="!mb-2">
           {previewLesson.name ?? previewLesson.title ?? "Lesson"}
         </Typography.Title>
         <div className="rounded-xl overflow-hidden bg-black">
           {(loadingPreviewDetail || previewVideoLoading) ? (
-            <div className="text-white text-center py-16">Đang tải nội dung...</div>
+          <div className="text-white text-center py-16">Loading content...</div>
           ) : previewVideoUrl ? (
             <video
               controls
               className="w-full h-full aspect-video"
               src={previewVideoUrl}
             >
-              Trình duyệt của bạn không hỗ trợ video.
+              Your browser does not support the video tag.
             </video>
           ) : (
             <div className="text-white text-center py-16">
-              Không có video để hiển thị.
+              No video available.
             </div>
           )}
         </div>
@@ -113,7 +113,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
           </div>
         )}
         <div>
-          <Typography.Title level={5}>Tài liệu PDF</Typography.Title>
+          <Typography.Title level={5}>PDF Material</Typography.Title>
           {hasPdf ? (
             <Button
               type="primary"
@@ -133,7 +133,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
                   setTimeout(() => window.URL.revokeObjectURL(url), 5000);
                 } catch (error) {
                   console.error("Open PDF error:", error);
-                  message.error("Không thể mở tài liệu.");
+                  message.error("Unable to open material.");
                 } finally {
                   setPdfOpening(false);
                 }
@@ -143,7 +143,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
             </Button>
           ) : (
             <Typography.Paragraph className="text-gray-500 mb-0">
-              Chưa có tài liệu PDF.
+              No PDF document.
             </Typography.Paragraph>
           )}
         </div>
@@ -153,22 +153,33 @@ const LessonModal: React.FC<LessonModalProps> = ({
   const [form] = Form.useForm<LessonFormFields>();
   const canCreate = useMemo(() => Boolean(material), [material]);
 
-  // Sắp xếp lessons theo thời gian tạo - bài tạo trước đứng trước, xuống dần
+  // Sắp xếp lessons theo thứ tự mong muốn:
+  // 1. Ưu tiên field "order" nếu backend trả về (order nhỏ hơn đứng trên)
+  // 2. Nếu không có "order", dùng "createdAt" (bài cũ hơn đứng trên)
+  // 3. Nếu cả hai đều không có thông tin sắp xếp, giữ nguyên thứ tự từ backend
   const sortedLessons = useMemo(() => {
     return [...lessons].sort((a, b) => {
-      // Nếu cả hai đều có createdAt, sắp xếp theo thời gian tạo
-      if (a.createdAt && b.createdAt) {
-        const timeA = new Date(a.createdAt).getTime();
-        const timeB = new Date(b.createdAt).getTime();
-        return timeA - timeB; // Bài tạo trước (time nhỏ hơn) đứng trước
+      const hasOrderA = typeof a.order === "number";
+      const hasOrderB = typeof b.order === "number";
+
+      if (hasOrderA && hasOrderB) {
+        return (a.order as number) - (b.order as number);
       }
-      
-      // Nếu chỉ một trong hai có createdAt, bài có createdAt đứng trước
-      if (a.createdAt && !b.createdAt) return -1;
-      if (!a.createdAt && b.createdAt) return 1;
-      
-      // Nếu cả hai đều không có createdAt, giữ nguyên thứ tự (hoặc sắp xếp theo id)
-      return a.id.localeCompare(b.id);
+      if (hasOrderA && !hasOrderB) return -1;
+      if (!hasOrderA && hasOrderB) return 1;
+
+      const hasCreatedA = Boolean(a.createdAt);
+      const hasCreatedB = Boolean(b.createdAt);
+
+      if (hasCreatedA && hasCreatedB) {
+        const timeA = new Date(a.createdAt as string).getTime();
+        const timeB = new Date(b.createdAt as string).getTime();
+        return timeA - timeB;
+      }
+      if (hasCreatedA && !hasCreatedB) return -1;
+      if (!hasCreatedA && hasCreatedB) return 1;
+
+      return 0;
     });
   }, [lessons]);
 
@@ -241,7 +252,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
       });
     } catch (error) {
       console.error("Fetch lesson detail error:", error);
-      message.error("Không thể tải thông tin bài học. Vui lòng thử lại.");
+      message.error("Unable to load lesson information. Please try again.");
       const fallbackFileList = buildInitialUploadList(lesson.file);
       const fallbackVideoList = buildInitialUploadList(lesson.video ?? lesson.url);
       resetFormState({
@@ -310,10 +321,10 @@ const LessonModal: React.FC<LessonModalProps> = ({
         url: editingLesson?.url ?? VIDEO_PLACEHOLDER_URL,
       };
 
-      // Yêu cầu bắt buộc phải có video
+      // Require lesson video
       if (!payload.video) {
         form.setFields([
-          { name: "video", errors: ["Vui lòng tải video bài giảng"] },
+          { name: "video", errors: ["Please upload the lesson video"] },
         ]);
         return;
       }
@@ -454,23 +465,23 @@ const LessonModal: React.FC<LessonModalProps> = ({
           <Form.Item
             label="Name"
             name="name"
-            rules={[{ required: true, message: "Vui lòng nhập tên bài học" }]}
+            rules={[{ required: true, message: "Please enter lesson name" }]}
           >
-            <Input placeholder="Nhập tên bài học" />
+            <Input placeholder="Enter lesson name" />
           </Form.Item>
 
           <Form.Item
             label="Description"
             name="description"
           >
-            <Input.TextArea placeholder="Nhập mô tả" rows={3} />
+            <Input.TextArea placeholder="Enter description" rows={3} />
           </Form.Item>
 
           <Form.Item
-            label="Video bài giảng"
+            label="Lesson video"
             required
             name="video"
-            help="Tải lên video bài học (mp4, webm, ...)"
+            help="Upload lesson video (mp4, webm, ...)"
           >
             <Upload
               multiple={false}
@@ -484,14 +495,14 @@ const LessonModal: React.FC<LessonModalProps> = ({
                 form.setFieldsValue({ video: [] });
               }}
             >
-              <Button icon={<UploadOutlined />}>Chọn video</Button>
+              <Button icon={<UploadOutlined />}>Choose video</Button>
             </Upload>
           </Form.Item>
 
           <Form.Item
-            label="Tài liệu PDF"
+            label="PDF material"
             name="file"
-            help="Tải lên file PDF ghi chú quan trọng"
+            help="Upload PDF file with important notes"
           >
             <Upload
               multiple={false}
@@ -505,7 +516,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
                 form.setFieldsValue({ file: [] });
               }}
             >
-              <Button icon={<UploadOutlined />}>Chọn PDF</Button>
+              <Button icon={<UploadOutlined />}>Choose PDF</Button>
             </Upload>
           </Form.Item>
         </Form>
