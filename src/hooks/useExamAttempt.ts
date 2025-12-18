@@ -260,7 +260,7 @@ export const useExamAttempt = () => {
           const { done, value } = await reader.read();
 
           if (done) {
-            console.log("[SSE] Stream closed by server");
+            // console.log("[SSE] Stream closed by server");
             break;
           }
 
@@ -321,7 +321,7 @@ export const useExamAttempt = () => {
         }
 
         // Stream ended without result - try to fetch directly
-        console.log("[SSE] Stream ended, fetching result directly...");
+        // console.log("[SSE] Stream ended, fetching result directly...");
         const res = await ExamAttemptService.getResult(attemptId);
         if (res.data.code === 0 || res.data.code === 1000) {
           setLoading(false);
@@ -376,14 +376,16 @@ export const useExamAttempt = () => {
           toast.error(res.data.message || "Invalid exam session, your account is currently taking this test on a different device.");
           return false;
         } else {
-          console.error("Save progress failed:", res.data.message, res.data);
+          // console.error("Save progress failed:", res.data.message, res.data);
+          toast.error("Save progress failed: " + res.data.message);
           return false;
         }
       } catch (err) {
         const axiosError = err as { response?: { data?: { code?: number; message?: string }; status?: number } };
-        console.error("Save progress error:", err);
-        console.error("API Error Details:", axiosError.response?.data);
-        console.error("API Status:", axiosError.response?.status);
+        // console.error("Save progress error:", err);
+        // console.error("API Error Details:", axiosError.response?.data);
+        // console.error("API Status:", axiosError.response?.status);
+        toast.error("Save progress failed: " + axiosError.response?.data?.message);
         // Check if the error response contains code 1075
         if (axiosError.response?.data?.code === 1075) {
           toast.error(axiosError.response.data.message || "Invalid exam session, your account is currently taking this test on a different device.");

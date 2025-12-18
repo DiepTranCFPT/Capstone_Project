@@ -166,13 +166,29 @@ export const useEnhancedExamPersistence = () => {
     setIsAutoSaving(true);
 
     try {
-      // Save to localStorage (backup) - always succeeds if possible
-      const localSaved = saveToLocalStorage(answers, answeredQuestions, remainingTime, attemptId, examId);
+      // Save to localStorage first (backup) - always succeeds if possible
+      let localSaved = saveToLocalStorage(answers, answeredQuestions, remainingTime, attemptId, examId);
 
       // Save to server if we have attemptId and not skipping server sync
       let serverSaved = true;
       if (attemptId && !skipServerSync && attemptSessionToken) {
         serverSaved = await saveToServer(attemptId, answers, answeredQuestions, attemptSessionToken);
+
+        // If server saved successfully, update localStorage with serverLastSync timestamp
+        // This is crucial for detecting "user changed answer on web after mobile sync"
+        if (serverSaved) {
+          // Re-save to localStorage with the new serverLastSync timestamp
+          const progressStr = localStorage.getItem(STORAGE_KEYS.PROGRESS);
+          if (progressStr) {
+            try {
+              const progress = JSON.parse(progressStr);
+              progress.serverLastSync = Date.now();
+              localStorage.setItem(STORAGE_KEYS.PROGRESS, JSON.stringify(progress));
+            } catch (e) {
+              console.error('Failed to update serverLastSync in localStorage:', e);
+            }
+          }
+        }
 
         // If server failed but local saved, mark as having unsynced changes
         if (!serverSaved && localSaved) {

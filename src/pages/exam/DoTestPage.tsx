@@ -328,6 +328,8 @@ const DoTestPage: React.FC = () => {
     useEffect(() => {
         if (!activeExamData || sortedQuestions.length === 0) return;
 
+        // 🥈 Load localStorage progress first to check timestamp
+        const savedProgress = loadExamProgress();
 
         // 🥇 Priority 1: Cross-device savedAnswer from API
         const apiAnswers: Record<string, { selectedAnswerId?: string; frqAnswerText?: string }> = {};
@@ -343,23 +345,49 @@ const DoTestPage: React.FC = () => {
             }
         });
 
-        // 🎯 If there are API answers (mobile->web), use them
-        if (Object.keys(apiAnswers).length > 0) {
+        // 🎯 Check if localStorage has NEWER data than API (user changed answer on web after mobile sync)
+        // If localStorage exists and has answers, compare to decide which source to use
+        const hasLocalStorageAnswers = savedProgress && savedProgress.answers && Object.keys(savedProgress.answers).length > 0;
+        const hasApiAnswers = Object.keys(apiAnswers).length > 0;
+
+        // If both sources have data, prefer localStorage if it was saved more recently (serverLastSync exists)
+        // This handles the case: mobile saves → web loads → web changes answer → reload
+        if (hasLocalStorageAnswers && hasApiAnswers) {
+            // Check if localStorage was synced to server (means user made changes on this device)
+            const localStorageHasServerSync = savedProgress.serverLastSync && savedProgress.serverLastSync > 0;
+
+            if (localStorageHasServerSync) {
+                // User made changes on web after loading from mobile, use localStorage
+                console.log('[DoTestPage] Using localStorage answers (user made changes on web after mobile sync)');
+                // Fall through to localStorage loading logic below
+            } else {
+                // No server sync recorded, this is fresh load from mobile - use API answers
+                // console.log('[DoTestPage] Using API answers (fresh cross-device sync from mobile)');
+                setAnswers(apiAnswers);
+                setAnsweredQuestions(answeredSet);
+
+                // ⏱️ Timer logic: localStorage saved time → API duration → default
+                if (savedProgress && savedProgress.remainingTime != null && savedProgress.remainingTime > 0) {
+                    setRemainingTime(savedProgress.remainingTime);
+                } else if (activeExamData.durationInMinute) {
+                    setRemainingTime(activeExamData.durationInMinute * 60);
+                }
+                return; // 🚫 Don't load from localStorage
+            }
+        } else if (hasApiAnswers && !hasLocalStorageAnswers) {
+            // Only API has answers (first time loading from mobile)
+            // console.log('[DoTestPage] Using API answers (no localStorage data)');
             setAnswers(apiAnswers);
             setAnsweredQuestions(answeredSet);
 
-            // ⏱️ Timer logic: localStorage saved time → API duration → default
-            const savedProgress = loadExamProgress();
-            if (savedProgress && savedProgress.remainingTime != null && savedProgress.remainingTime > 0) {
-                setRemainingTime(savedProgress.remainingTime);
-            } else if (activeExamData.durationInMinute) {
+            // ⏱️ Timer logic
+            if (activeExamData.durationInMinute) {
                 setRemainingTime(activeExamData.durationInMinute * 60);
             }
-            return; // 🚫 Don't load from localStorage
+            return;
         }
 
-        // 🥈 Priority 2: localStorage backup (ongoing exams)
-        const savedProgress = loadExamProgress();
+        // 🥈 Priority 2: localStorage backup (ongoing exams or user made changes after mobile sync)
 
         if (!savedProgress || !savedProgress.answers || Object.keys(savedProgress.answers).length === 0) {
             return;
