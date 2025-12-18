@@ -102,10 +102,12 @@ export const useQuestionTopics = () => {
   }, []);
 
   // Lấy Topic theo SubjectId
-  const fetchTopicsBySubject = useCallback(async (subjectId: string) => {
+  const fetchTopicsBySubject = useCallback(async (subjectId: string, params?: { pageNo?: number; pageSize?: number }) => {
     try {
       setLoading(true);
-      const res = await QuestionTopicService.getBySubjectId(subjectId);
+      // Use large pageSize to get all topics for the subject
+      const queryParams = { pageSize: 1000, ...params };
+      const res = await QuestionTopicService.getBySubjectId(subjectId, queryParams);
       const list = res.data?.data || res.data || [];
       setTopics(list);
       return list;

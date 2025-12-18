@@ -45,9 +45,10 @@ const QuestionService = {
 
   //  Lấy danh sách câu hỏi theo subjectId
   async getBySubjectId(
-    subjectId: string
+    subjectId: string,
+    params?: { pageNo?: number; pageSize?: number }
   ): Promise<AxiosResponse<ApiResponse<QuestionBankItem[]>>> {
-    return axiosInstance.get(`/questions-v2/subject/${subjectId}`);
+    return axiosInstance.get(`/questions-v2/subject/${subjectId}`, { params });
   },
 
   //  Tìm kiếm câu hỏi (search)

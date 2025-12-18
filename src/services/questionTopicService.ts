@@ -30,9 +30,10 @@ const QuestionTopicService = {
 
   // Lấy Topic theo SubjectId
   async getBySubjectId(
-    subjectId: string
+    subjectId: string,
+    params?: { pageNo?: number; pageSize?: number }
   ): Promise<AxiosResponse<ApiResponse<QuestionTopic[]>>> {
-    return axiosInstance.get(`/question-topics/by-subject/${subjectId}`);
+    return axiosInstance.get(`/question-topics/by-subject/${subjectId}`, { params });
   },
 
   // Tạo Topic mới
