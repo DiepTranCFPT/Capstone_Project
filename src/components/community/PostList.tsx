@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Input, Button, Dropdown, message, Modal } from "antd";
 import type { MenuProps } from "antd";
-import { FiMessageSquare, FiMoreVertical } from "react-icons/fi";
+import { FiMessageSquare, FiMoreVertical, FiImage } from "react-icons/fi";
 import { IoCaretUpSharp, IoCaretDownSharp } from "react-icons/io5";
 import { PushpinOutlined } from "@ant-design/icons";
 import type { Thread, CommunityComment } from "~/types/community";
@@ -44,6 +44,7 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
 
   const [openPostIds, setOpenPostIds] = useState<Set<string | number>>(new Set());
   const [commentTexts, setCommentTexts] = useState<Record<string, string>>({});
+  const [commentImages, setCommentImages] = useState<Record<string, File | null>>({});
   const [editingCommentId, setEditingCommentId] = useState<string | number | null>(null);
   const [editCommentText, setEditCommentText] = useState<string>("");
   const [replyingCommentId, setReplyingCommentId] = useState<string | number | null>(null);
@@ -211,12 +212,18 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
   };
 
   const handleSubmitComment = async (thread: Thread) => {
-    const content = (commentTexts[String(thread.postId || thread.id)] || "").trim();
+    const postId = thread.postId || thread.id;
+    const key = String(postId);
+
+    const content = (commentTexts[key] || "").trim();
     if (!content) return;
 
-    const postId = thread.postId || thread.id;
-    await createPostComment(postId, { content });
-    setCommentTexts((prev) => ({ ...prev, [String(postId)]: "" }));
+    const image = commentImages[key] || undefined;
+
+    await createPostComment(postId, { content, image });
+
+    setCommentTexts((prev) => ({ ...prev, [key]: "" }));
+    setCommentImages((prev) => ({ ...prev, [key]: null }));
   };
 
   const handleReplyComment = async (comment: CommunityComment, postId: string | number) => {
@@ -334,20 +341,35 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
       "User";
 
     const avatarUrl =
-      c.authorAvatar ||
-      author?.imgUrl ||
-      author?.avatar ||
+      c.authorAvatar || author?.imgUrl || author?.avatar || null;
+
+    // Ảnh đính kèm trong comment (BE có thể đặt tên khác nhau)
+    const anyComment = c as unknown as {
+      imgUrl?: string;
+      image?: string;
+      imageUrl?: string;
+      commentImageUrl?: string;
+    };
+    const rawCommentImage =
+      anyComment.imgUrl ||
+      anyComment.image ||
+      anyComment.imageUrl ||
+      anyComment.commentImageUrl ||
       null;
 
     const apiBase = import.meta.env.VITE_API_URL || "";
     let resolvedAvatar = DEFAULT_AVATAR;
-    
     if (avatarUrl) {
-      if (avatarUrl.startsWith("http")) {
-        resolvedAvatar = avatarUrl;
-      } else {
-        resolvedAvatar = `${apiBase}${avatarUrl}`;
-      }
+      resolvedAvatar = avatarUrl.startsWith("http")
+        ? avatarUrl
+        : `${apiBase}${avatarUrl}`;
+    }
+
+    let resolvedCommentImage: string | null = null;
+    if (rawCommentImage) {
+      resolvedCommentImage = rawCommentImage.startsWith("http")
+        ? rawCommentImage
+        : `${apiBase}${rawCommentImage}`;
     }
 
     const isOwnComment =
@@ -429,7 +451,10 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
                     {(() => {
                       if (typeof c.content === "string") {
                         let contentStr = c.content;
-                        if (contentStr.startsWith('"') && contentStr.endsWith('"')) {
+                        if (
+                          contentStr.startsWith('"') &&
+                          contentStr.endsWith('"')
+                        ) {
                           contentStr = contentStr.slice(1, -1);
                         }
                         return contentStr;
@@ -453,6 +478,17 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
                 </Dropdown>
               )}
             </div>
+
+            {/* Hiển thị ảnh comment (nếu có) */}
+            {resolvedCommentImage && (
+              <div className="mt-2 ml-0">
+                <img
+                  src={resolvedCommentImage}
+                  alt="comment attachment"
+                  className="max-h-56 rounded-xl border border-gray-100 object-cover"
+                />
+              </div>
+            )}
             
             {/* Reply button và input */}
             <div className="mt-1 flex items-center gap-4 text-xs text-gray-500">
@@ -512,7 +548,9 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
     const isOpen = openPostIds.has(postId);
     const commentsForPost = postComments[String(postId)] || [];
     const commentList = Array.isArray(commentsForPost) ? commentsForPost : [];
-    const currentCommentText = commentTexts[String(postId)] || "";
+    const postKey = String(postId);
+    const currentCommentText = commentTexts[postKey] || "";
+    const currentCommentImage = commentImages[postKey] || null;
     const currentUserVoteValue =
       typeof userVoteByPostId[String(postId)] === "number"
         ? userVoteByPostId[String(postId)]
@@ -786,29 +824,75 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
                 );
               })}
 
-            {/* Comment input */}
-            <div className="flex items-center gap-2 pt-2">
-              <Input
-                placeholder="Write a comment..."
-                value={currentCommentText}
-                onChange={(e) =>
-                  setCommentTexts((prev) => ({
-                    ...prev,
-                    [String(postId)]: e.target.value,
-                  }))
-                }
-                onPressEnter={(e) => {
-                  e.preventDefault();
-                  void handleSubmitComment(thread);
-                }}
-              />
-              <Button
-                type="primary"
-                className="bg-teal-500 hover:bg-teal-600"
-                onClick={() => void handleSubmitComment(thread)}
-              >
-                Send
-              </Button>
+            {/* Comment input + image upload */}
+            <div className="flex flex-col gap-2 pt-2">
+              <div className="flex items-center gap-2">
+                {/* Hidden file input, trigger bằng nút icon */}
+                <input
+                  id={`comment-image-${postKey}`}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    setCommentImages((prev) => ({
+                      ...prev,
+                      [postKey]: file,
+                    }));
+                  }}
+                />
+
+                <Button
+                  type="default"
+                  className="flex items-center justify-center !p-0 w-9 h-9"
+                  onClick={() => {
+                    const input = document.getElementById(
+                      `comment-image-${postKey}`
+                    ) as HTMLInputElement | null;
+                    input?.click();
+                  }}
+                >
+                  <FiImage className="text-teal-500" size={18} />
+                </Button>
+
+                <Input
+                  placeholder="Write a comment..."
+                  value={currentCommentText}
+                  onChange={(e) =>
+                    setCommentTexts((prev) => ({
+                      ...prev,
+                      [postKey]: e.target.value,
+                    }))
+                  }
+                  onPressEnter={(e) => {
+                    e.preventDefault();
+                    void handleSubmitComment(thread);
+                  }}
+                />
+                <Button
+                  type="primary"
+                  className="bg-teal-500 hover:bg-teal-600"
+                  onClick={() => void handleSubmitComment(thread)}
+                >
+                  Send
+                </Button>
+              </div>
+              {currentCommentImage && (
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span className="text-teal-600">
+                    {currentCommentImage.name}
+                  </span>
+                  <button
+                    type="button"
+                    className="text-red-500 hover:underline"
+                    onClick={() =>
+                      setCommentImages((prev) => ({ ...prev, [postKey]: null }))
+                    }
+                  >
+                    Xoá ảnh
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
