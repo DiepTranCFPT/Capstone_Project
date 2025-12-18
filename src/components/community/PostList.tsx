@@ -550,7 +550,7 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
       !!thread.authorId &&
       String(thread.authorId) === String(user.id);
     
-    const isPinned = thread.isPinned ?? false;
+    const isPinned = thread.pinned ?? false;
     
     const postMenuItems: MenuProps["items"] = [];
     
@@ -818,8 +818,8 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
 
   // Sắp xếp threads: pinned posts lên đầu
   const sortedThreads = useMemo(() => {
-    const pinned = threads.filter((t) => t.isPinned);
-    const unpinned = threads.filter((t) => !t.isPinned);
+    const pinned = threads.filter((t) => t.pinned);
+    const unpinned = threads.filter((t) => !t.pinned);
     return [...pinned, ...unpinned];
   }, [threads]);
 

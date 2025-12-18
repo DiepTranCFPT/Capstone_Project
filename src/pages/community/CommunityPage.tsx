@@ -138,10 +138,13 @@ const CommunityPage: React.FC = () => {
                 ? (asAny.userVoteValue as number)
                 : 0;
 
-            // Lấy isPinned từ post
-            const isPinned = typeof (post as { isPinned?: boolean }).isPinned === "boolean"
-                ? (post as { isPinned?: boolean }).isPinned
-                : false;
+            // Lấy pinned từ post (BE dùng field `pinned`, nhưng vẫn fallback từ isPinned nếu còn)
+            const pinned =
+              typeof (post as { pinned?: boolean }).pinned === "boolean"
+                ? (post as { pinned?: boolean }).pinned
+                : typeof (post as { isPinned?: boolean }).isPinned === "boolean"
+                  ? (post as { isPinned?: boolean }).isPinned
+                  : false;
 
             // Lấy role từ author (có thể là role hoặc roles)
             // Nếu post được tạo bởi user hiện tại, ưu tiên lấy role từ user hiện tại
@@ -181,7 +184,7 @@ const CommunityPage: React.FC = () => {
                 userVoteValue: rawUserVoteValue,
                 userRole: userRole,
                 createdAt: post.createdAt,
-                isPinned: isPinned,
+                pinned: pinned,
             };
         });
     }, [communityPosts, communities, user]);

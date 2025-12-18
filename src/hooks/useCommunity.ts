@@ -210,7 +210,19 @@ export const useCommunity = () => {
           apiResponse.data
         );
 
-        setCommunityPosts(items);
+        // Đồng bộ field pin: ưu tiên `pinned`, fallback từ `isPinned` (trong trường hợp cũ)
+        const normalizedItems = items.map((p) => {
+          const anyPost = p as unknown as { pinned?: boolean; isPinned?: boolean };
+          const pinned =
+            typeof anyPost.pinned === "boolean"
+              ? anyPost.pinned
+              : typeof anyPost.isPinned === "boolean"
+                ? anyPost.isPinned
+                : false;
+          return { ...p, pinned };
+        });
+
+        setCommunityPosts(normalizedItems);
         setTotalElements(pageInfo?.totalElements ?? items.length);
         setTotalPages(pageInfo?.totalPages ?? 1);
 
@@ -399,8 +411,8 @@ export const useCommunity = () => {
         const updatedPost = apiResponse.data;
 
         // Backend có thể trả về string hoặc object
-        // Nếu là object và có isPinned, dùng nó
-        // Nếu không, toggle isPinned trong state
+        // Nếu là object và có pinned/isPinned, dùng nó
+        // Nếu không, toggle pinned trong state
         const isPostObject = updatedPost && typeof updatedPost === "object" && !Array.isArray(updatedPost);
         
         setCommunityPosts((prev) => {
@@ -408,27 +420,34 @@ export const useCommunity = () => {
             if (String(p.id) !== String(postId)) return p;
             
             if (isPostObject) {
-              // Nếu BE trả về object, merge vào
+              // Nếu BE trả về object, merge vào và chuẩn hóa pinned từ pinned/isPinned
               const postObj = updatedPost as CommunityPost;
-              return { ...p, ...postObj };
+              const anyPost = postObj as unknown as { pinned?: boolean; isPinned?: boolean };
+              const pinned =
+                typeof anyPost.pinned === "boolean"
+                  ? anyPost.pinned
+                  : typeof anyPost.isPinned === "boolean"
+                    ? anyPost.isPinned
+                    : (p as { pinned?: boolean }).pinned ?? false;
+              return { ...p, ...postObj, pinned };
             } else {
-              // Nếu BE trả về string hoặc null, toggle isPinned
-              const currentPinned = (p as { isPinned?: boolean }).isPinned ?? false;
-              return { ...p, isPinned: !currentPinned };
+              // Nếu BE trả về string hoặc null, toggle pinned
+              const currentPinned = (p as { pinned?: boolean }).pinned ?? false;
+              return { ...p, pinned: !currentPinned };
             }
           });
           
           // Sắp xếp: pinned posts lên đầu
-          const pinned = updated.filter((p) => {
-            const isPinned = (p as { isPinned?: boolean }).isPinned;
-            return isPinned === true;
+          const pinnedPosts = updated.filter((p) => {
+            const pinned = (p as { pinned?: boolean }).pinned;
+            return pinned === true;
           });
-          const unpinned = updated.filter((p) => {
-            const isPinned = (p as { isPinned?: boolean }).isPinned;
-            return isPinned !== true;
+          const unpinnedPosts = updated.filter((p) => {
+            const pinned = (p as { pinned?: boolean }).pinned;
+            return pinned !== true;
           });
           
-          return [...pinned, ...unpinned];
+          return [...pinnedPosts, ...unpinnedPosts];
         });
 
         return isPostObject ? (updatedPost as CommunityPost) : null;
