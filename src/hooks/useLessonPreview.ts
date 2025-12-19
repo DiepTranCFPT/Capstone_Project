@@ -69,11 +69,11 @@ export default function useLessonPreview() {
         setPreviewVideoUrl(assetUrl);
       } else {
         setPreviewVideoUrl(null);
-        message.error("Không tìm thấy video bài học.");
+        message.error("Lesson video not found.");
       }
     } catch (error) {
       console.error("Load video asset error:", error);
-      message.error("Không tải được video bài học.");
+      message.error("Unable to load lesson video.");
       setPreviewVideoUrl(null);
     } finally {
       setPreviewVideoLoading(false);
@@ -91,7 +91,7 @@ export default function useLessonPreview() {
       await loadPreviewVideo(detail);
     } catch (error) {
       console.error("Fetch preview detail error:", error);
-      message.error("Không thể tải chi tiết bài học.");
+      message.error("Unable to load lesson details.");
       await loadPreviewVideo(lesson);
     } finally {
       setLoadingPreviewDetail(false);

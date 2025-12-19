@@ -77,14 +77,14 @@ const LessonModal: React.FC<LessonModalProps> = ({
     if (!previewLesson) {
       return (
         <div className="py-8 text-center text-gray-500">
-          Không tìm thấy thông tin bài học.
+          Lesson information not found.
         </div>
       );
     }
     const hasPdf = Boolean(previewLesson.file);
     const pdfName = previewLesson.file ? extractFileName(previewLesson.file) : "";
 
-      return (
+    return (
       <div className="space-y-4">
         <Typography.Title level={4} className="!mb-2">
           {previewLesson.name ?? previewLesson.title ?? "Lesson"}
@@ -139,7 +139,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
                 }
               }}
             >
-              Xem {pdfName}
+              View {pdfName}
             </Button>
           ) : (
             <Typography.Paragraph className="text-gray-500 mb-0">
@@ -397,43 +397,43 @@ const LessonModal: React.FC<LessonModalProps> = ({
                       )}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <Tooltip title="Xem bài học">
+                      <Tooltip title="View lesson">
                         <Button
                           type="text"
                           size="small"
                           icon={<EyeOutlined />}
                           onClick={() => openPreview(lesson)}
-                          aria-label="Xem bài học"
+                          aria-label="View lesson"
                         />
                       </Tooltip>
                       {onUpdateLesson ? (
-                        <Tooltip title="Sửa bài học">
+                        <Tooltip title="Edit lesson">
                           <Button
                             type="text"
                             size="small"
                             icon={<EditOutlined />}
                             onClick={() => openEditModal(lesson)}
-                            aria-label="Sửa bài học"
+                            aria-label="Edit lesson"
                           />
                         </Tooltip>
                       ) : null}
                       {onDeleteLesson ? (
                         <Popconfirm
-                          title="Xóa bài học?"
-                          description="Hành động này không thể hoàn tác."
-                          okText="Xóa"
-                          cancelText="Hủy"
+                          title="Delete lesson?"
+                          description="This action cannot be undone."
+                          okText="Delete"
+                          cancelText="Cancel"
                           okButtonProps={{ danger: true, loading: deletingLessonId === lesson.id }}
                           onConfirm={() => handleDelete(lesson.id)}
                         >
-                          <Tooltip title="Xóa bài học">
+                          <Tooltip title="Delete lesson">
                             <Button
                               type="text"
                               danger
                               size="small"
                               icon={<DeleteOutlined />}
                               loading={deletingLessonId === lesson.id}
-                              aria-label="Xóa bài học"
+                              aria-label="Delete lesson"
                             />
                           </Tooltip>
                         </Popconfirm>

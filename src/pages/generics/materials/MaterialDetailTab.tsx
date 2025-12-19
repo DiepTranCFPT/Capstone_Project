@@ -124,7 +124,7 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
         // Chỉ log lỗi nếu không phải 400 (Bad Request) - có thể do user không tồn tại
         const axiosError = err as { response?: { status?: number } };
         if (axiosError.response?.status !== 400) {
-          console.warn("Không thể lấy thông tin instructor:", err);
+          console.warn("Unable to fetch instructor information:", err);
         }
         // Nếu API lỗi, vẫn hiển thị thông tin cơ bản từ material
         // Không set instructor để fallback về hiển thị authorName
@@ -157,7 +157,7 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
           setLessons(sorted);
         })
         .catch((err) => {
-          console.warn("Không thể lấy danh sách bài học:", err);
+          console.warn("Unable to fetch lesson list:", err);
           setLessons([]);
         });
     }

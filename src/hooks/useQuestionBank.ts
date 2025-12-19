@@ -390,7 +390,7 @@ export const useQuestionBank = () => {
       setQuestions(normalizeQuestions(res.data?.data)); // getAll trả về PageInfo / PaginationResponse
       setPageMeta(extractPageMeta(res.data?.data));
     } catch (error) {
-      message.error("Không thể tải danh sách câu hỏi!");
+      message.error("Unable to load question list!");
       console.error(error);
     } finally {
       setLoading(false);
@@ -448,7 +448,7 @@ export const useQuestionBank = () => {
       }
       return null;
     } catch (error) {
-      message.error("Không thể tải thông tin câu hỏi!");
+      message.error("Unable to load question details!");
       console.error(error);
       return null;
     }

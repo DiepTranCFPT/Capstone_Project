@@ -137,7 +137,7 @@ export const useCommunity = () => {
         return items;
       } catch (err) {
         setError(
-          getErrorMessage(err, "Không thể tải danh sách cộng đồng (communities).")
+          getErrorMessage(err, "Unable to load communities list.")
         );
         setCommunities([]);
         setTotalElements(0);
@@ -174,7 +174,7 @@ export const useCommunity = () => {
         return items;
       } catch (err) {
         setError(
-          getErrorMessage(err, "Không thể tìm kiếm danh sách cộng đồng.")
+          getErrorMessage(err, "Unable to search communities.")
         );
         setCommunities([]);
         setTotalElements(0);
@@ -231,7 +231,7 @@ export const useCommunity = () => {
         setError(
           getErrorMessage(
             err,
-            "Không thể tải danh sách bài viết của cộng đồng."
+            "Unable to load community posts list."
           )
         );
         setCommunityPosts([]);
@@ -269,7 +269,7 @@ export const useCommunity = () => {
         return createdPost ?? null;
       } catch (err) {
         setError(
-          getErrorMessage(err, "Không thể tạo bài viết mới trong cộng đồng.")
+          getErrorMessage(err, "Unable to create new community post.")
         );
         return null;
       } finally {
@@ -308,7 +308,7 @@ export const useCommunity = () => {
         return updated ?? null;
       } catch (err) {
         setError(
-          getErrorMessage(err, "Không thể cập nhật thông tin cộng đồng.")
+          getErrorMessage(err, "Unable to update community information.")
         );
         return null;
       } finally {

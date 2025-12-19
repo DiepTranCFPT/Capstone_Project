@@ -13,6 +13,36 @@ import LessonDetailsSection from "~/components/materials/LessonDetailsSection";
 import CourseContentSidebar from "~/components/materials/CourseContentSidebar";
 import { toast } from "~/components/common/Toast";
 
+const isLessonCompletedFromServer = (lesson: Lesson): boolean => {
+  const anyLesson = lesson as unknown as {
+    progress?: number;
+    completed?: boolean;
+    isCompleted?: boolean;
+  };
+
+  if (typeof anyLesson.completed === "boolean") {
+    return anyLesson.completed;
+  }
+  if (typeof anyLesson.isCompleted === "boolean") {
+    return anyLesson.isCompleted;
+  }
+
+  const progress = anyLesson.progress;
+  if (typeof progress === "number") {
+    // Nếu backend trả thời lượng, ưu tiên so sánh theo phần trăm thời lượng
+    if (lesson.duration && typeof lesson.duration === "number" && lesson.duration > 0) {
+      const durationSeconds = lesson.duration * 60;
+      const safeDuration = durationSeconds > 0 ? durationSeconds : lesson.duration;
+      return progress >= safeDuration * 0.9;
+    }
+
+    // Fallback: coi như hoàn thành nếu progress >= 1 (cho cả dạng 0..1 và 0..100)
+    return progress >= 1;
+  }
+
+  return false;
+};
+
 const MaterialLearnPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -27,6 +57,7 @@ const MaterialLearnPage: React.FC = () => {
   const [videoLoading, setVideoLoading] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
   const videoCache = useRef<Record<string, string>>({});
+  const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
 
   const {
     loading: ratingLoading,
@@ -44,7 +75,7 @@ const MaterialLearnPage: React.FC = () => {
   const commentRef = useRef<HTMLTextAreaElement | null>(null);
   const handleOpenPdf = async () => {
     if (!selectedLesson?.file) {
-      message.warning("Không có tài liệu để xem.");
+      message.warning("No material available to view.");
       return;
     }
 
@@ -64,7 +95,7 @@ const MaterialLearnPage: React.FC = () => {
       }, 5000);
     } catch (error) {
       console.error("Open PDF error:", error);
-      message.error("Không thể mở tài liệu. Vui lòng thử lại.");
+      message.error("Unable to open the material. Please try again.");
     } finally {
       setOpeningFile(false);
     }
@@ -90,6 +121,12 @@ const MaterialLearnPage: React.FC = () => {
         if (sorted.length > 0 && !selectedLesson) {
           setSelectedLesson(sorted[0]);
         }
+
+        // Xác định các lesson đã hoàn thành từ dữ liệu progress của backend (nếu có)
+        const completedFromServer = sorted
+          .filter((lesson) => isLessonCompletedFromServer(lesson))
+          .map((lesson) => lesson.id);
+        setCompletedLessonIds(completedFromServer);
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -124,16 +161,13 @@ const MaterialLearnPage: React.FC = () => {
       setRatingValue(0);
       setRatingComment("");
     }
-    if (ratingModalOpen && !videoPlayedForLastLessonRef.current && !videoEndedForLastLessonRef.current) {
-      setRatingModalOpen(false);
-    }
   }, [myRating, ratingModalOpen]);
 
   const handleSubmitRating = async () => {
     const materialId = material?.id;
     const userId = user?.id;
     if (!materialId || !userId) {
-      message.error("Không xác định được tài liệu hoặc học viên.");
+      message.error("Could not determine learning material or student.");
       return;
     }
 
@@ -216,12 +250,12 @@ const MaterialLearnPage: React.FC = () => {
           setVideoUrl(assetUrl);
         } else {
           setVideoUrl(null);
-          setVideoError("Không tìm thấy video.");
+          setVideoError("Video not found.");
         }
       } catch (error) {
         console.error("Load lesson video failed:", error);
         setVideoUrl(null);
-        setVideoError("Không tải được video. Vui lòng thử lại sau.");
+        setVideoError("Unable to load video. Please try again later.");
       } finally {
         setVideoLoading(false);
       }
@@ -230,77 +264,27 @@ const MaterialLearnPage: React.FC = () => {
     void loadVideo();
   }, [lessonVideoRef]);
 
-  const videoEndedForLastLessonRef = useRef(false);
-  const videoPlayedForLastLessonRef = useRef(false);
-
-  useEffect(() => {
-    videoEndedForLastLessonRef.current = false;
-    videoPlayedForLastLessonRef.current = false;
-    setRatingModalOpen(false);
-    setHasSelectedRating(false);
-  }, [selectedLesson?.id]);
-
   const sortedLessons = sortLessons(lessons);
-  const isLastLessonSelected =
-    !!selectedLesson &&
+  const allLessonsCompleted =
     sortedLessons.length > 0 &&
-    selectedLesson.id === sortedLessons[sortedLessons.length - 1].id;
-
-  const setRatingModalOpenSafe = (open: boolean) => {
-    if (open) {
-      const currentIsLastLesson =
-        !!selectedLesson &&
-        sortedLessons.length > 0 &&
-        selectedLesson.id === sortedLessons[sortedLessons.length - 1].id;
-
-      const canOpen =
-        currentIsLastLesson &&
-        videoPlayedForLastLessonRef.current &&
-        videoEndedForLastLessonRef.current;
-
-      setRatingModalOpen(canOpen);
-    } else {
-      setRatingModalOpen(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isLastLessonSelected) {
-      const shouldBeOpen =
-        videoPlayedForLastLessonRef.current &&
-        videoEndedForLastLessonRef.current;
-
-      if (ratingModalOpen && !shouldBeOpen) {
-        setRatingModalOpen(false);
-      }
-
-      if (!videoPlayedForLastLessonRef.current) {
-        videoEndedForLastLessonRef.current = false;
-      }
-    } else {
-      if (ratingModalOpen) {
-        setRatingModalOpen(false);
-      }
-    }
-  }, [isLastLessonSelected, ratingModalOpen]);
-
-  const handleVideoPlay = () => {
-    if (isLastLessonSelected) {
-      videoPlayedForLastLessonRef.current = true;
-    }
-  };
+    sortedLessons.every((lesson) => completedLessonIds.includes(lesson.id));
 
   const handleVideoEnded = () => {
-    if (
-      isLastLessonSelected &&
-      videoPlayedForLastLessonRef.current &&
-      material?.id &&
-      user
-    ) {
-      videoEndedForLastLessonRef.current = true;
-      setRatingModalOpenSafe(true);
-    }
+    if (!selectedLesson) return;
+
+    setCompletedLessonIds((prev) => {
+      if (prev.includes(selectedLesson.id)) {
+        return prev;
+      }
+      return [...prev, selectedLesson.id];
+    });
   };
+
+  useEffect(() => {
+    if (allLessonsCompleted && !myRating) {
+      setRatingModalOpen(true);
+    }
+  }, [allLessonsCompleted, myRating]);
 
   if (materialLoading) {
     return (
@@ -317,15 +301,15 @@ const MaterialLearnPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-2">Không tìm thấy tài liệu</h2>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-2">Learning material not found</h2>
           <p className="text-gray-500 mb-4">
-            {materialError || "Tài liệu bạn đang tìm không tồn tại."}
+            {materialError || "The learning material you are looking for does not exist."}
           </p>
           <button
             onClick={() => navigate("/materials")}
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
-            Quay lại danh sách
+            Back to list
           </button>
         </div>
       </div>
@@ -363,7 +347,6 @@ const MaterialLearnPage: React.FC = () => {
                 videoLoading={videoLoading}
                 videoError={videoError}
                 onVideoEnded={handleVideoEnded}
-                onVideoPlay={handleVideoPlay}
                 onOpenPdf={handleOpenPdf}
                 openingFile={openingFile}
                 activeTab={activeTab}
@@ -394,14 +377,7 @@ const MaterialLearnPage: React.FC = () => {
       </div>
 
       <Modal
-        open={
-          ratingModalOpen &&
-          isLastLessonSelected &&
-          videoPlayedForLastLessonRef.current &&
-          videoEndedForLastLessonRef.current &&
-          !!material.id &&
-          !!user
-        }
+        open={ratingModalOpen && allLessonsCompleted && !!material.id && !!user}
         onCancel={() => setRatingModalOpen(false)}
         footer={null}
         title="Rate Learning Material"
