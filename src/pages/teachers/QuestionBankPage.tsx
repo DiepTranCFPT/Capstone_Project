@@ -38,6 +38,7 @@ import { useAuth } from "~/hooks/useAuth";
 import { useSubjects } from "~/hooks/useSubjects";
 import { useQuestionTopics } from "~/hooks/useQuestionTopics";
 import LatexRenderer from "~/components/common/LatexRenderer";
+import { useGlobalLoading } from "~/context/GlobalLoadingContext";
 
 const { Option } = Select;
 
@@ -68,6 +69,7 @@ const QuestionBankPage: React.FC = () => {
     importQuestions,
     fetchDuplicates,
   } = useQuestionBank();
+  const { showLoading, hideLoading } = useGlobalLoading();
 
   const difficultyOptions = useMemo(
     () => [
@@ -130,6 +132,7 @@ const QuestionBankPage: React.FC = () => {
     const pageNo = Math.max(0, current - 1);
     const keyword = searchText.trim() ? searchText.trim() : undefined;
 
+    // Với search / phân trang chỉ dùng loading của bảng, không cần overlay toàn màn
     if (teacherId) {
       fetchByUserId(teacherId, { pageNo, pageSize, keyword });
     } else {
@@ -235,12 +238,17 @@ const QuestionBankPage: React.FC = () => {
     setDeleteConfirmVisible(true);
   };
 
-  const confirmDelete = () => {
-    if (questionToDelete) {
-      deleteQuestion(questionToDelete);
+  const confirmDelete = async () => {
+    if (!questionToDelete) return;
+
+    try {
+      showLoading("Deleting question...");
+      await deleteQuestion(questionToDelete);
       toast.success("Question deleted successfully!");
       setDeleteConfirmVisible(false);
       setQuestionToDelete(null);
+    } finally {
+      hideLoading();
     }
   };
 
@@ -258,11 +266,16 @@ const QuestionBankPage: React.FC = () => {
   };
 
   const confirmBatchDelete = async () => {
-    const success = await batchDeleteQuestions(selectedRowKeys as string[]);
-    if (success) {
-      setSelectedRowKeys([]);
+    try {
+      showLoading("Deleting selected questions...");
+      const success = await batchDeleteQuestions(selectedRowKeys as string[]);
+      if (success) {
+        setSelectedRowKeys([]);
+      }
+      setBatchDeleteConfirmVisible(false);
+    } finally {
+      hideLoading();
     }
-    setBatchDeleteConfirmVisible(false);
   };
 
   const cancelBatchDelete = () => {
@@ -278,6 +291,8 @@ const QuestionBankPage: React.FC = () => {
     try {
       console.log("[QuestionBankPage] Saving question:", newQuestion);
       console.log("[QuestionBankPage] Editing question:", editingQuestion);
+
+      showLoading(editingQuestion ? "Updating question..." : "Creating question...");
 
       if (editingQuestion) {
         // Pass NewQuestion directly - useQuestionBank will transform it to API format
@@ -310,6 +325,8 @@ const QuestionBankPage: React.FC = () => {
       console.error("[QuestionBankPage] Save question error:", err);
       // Don't close modal on error so user can fix and retry
       // Error message is already shown by useQuestionBank hook
+    } finally {
+      hideLoading();
     }
   };
 
@@ -361,6 +378,7 @@ const QuestionBankPage: React.FC = () => {
 
     try {
       setIsImporting(true);
+      showLoading("Importing questions from Excel...");
       const result = await importQuestions(importSubjectId, importFile, importSkipErrors);
       setImportResult(result);
 
@@ -383,6 +401,7 @@ const QuestionBankPage: React.FC = () => {
     } catch (error) {
       console.error("Import error:", error);
     } finally {
+      hideLoading();
       setIsImporting(false);
     }
   };

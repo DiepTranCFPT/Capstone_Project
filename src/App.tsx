@@ -106,6 +106,7 @@ import TeacherProfilePage from "./pages/teachers/TeacherProfilePage";
 import TeacherDetailPage from "./pages/teachers/TeacherDetailPage";
 import TeacherRatingsViewPage from "./pages/teachers/TeacherRatingsViewPage";
 import LoadingPage from "./pages/LoadingPage";
+import { GlobalLoadingProvider } from "./context/GlobalLoadingContext";
 import PaymentResult from "./pages/checkWallet/PaymentResult";
 import MyWalletPage from "./pages/teachers/MyWalletPage";
 import MyCertificatesPage from "./pages/students/MyCertificatesPage";
@@ -123,8 +124,9 @@ const Layout = () => (
 
 function App() {
   return (
-    <Router>
-      <Routes>
+    <GlobalLoadingProvider>
+      <Router>
+        <Routes>
         {/* Routes không có Layout (Navbar/Footer) */}
         <Route path="/do-test/:examId/:testType" element={<DoTestPage />} />
         <Route path="/do-test/combo/:attemptId" element={<DoTestPage />} />
@@ -276,8 +278,9 @@ function App() {
           <Route path="consultations" element={<ConsultationPage />} />
           <Route path="ap-pathway-planner" element={<APPathwaysPage />} />
         </Route>
-      </Routes>
-    </Router>
+        </Routes>
+      </Router>
+    </GlobalLoadingProvider>
   );
 }
 

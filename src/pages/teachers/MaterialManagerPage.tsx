@@ -14,6 +14,7 @@ import LessonModal, { type LessonFormValues } from "~/components/teachers/Lesson
 import MaterialModal from "~/components/teachers/material/MaterialModal";
 import EditModal, { type EditMaterialFormValues } from "~/components/teachers/material/EditModal";
 import MaterialPreviewModal from "~/components/teachers/material/MaterialPreviewModal";
+import { useGlobalLoading } from "~/context/GlobalLoadingContext";
 
 
 const { Title } = Typography;
@@ -77,6 +78,7 @@ const MaterialManagerPage: React.FC = () => {
   const [loadingLessons, setLoadingLessons] = useState(false);
   const [previewMaterial, setPreviewMaterial] = useState<LearningMaterial | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const { showLoading, hideLoading } = useGlobalLoading();
   useEffect(() => {
     if (error) {
       message.error(error);
@@ -221,6 +223,7 @@ const MaterialManagerPage: React.FC = () => {
 
       try {
         setAddingLesson(true);
+        showLoading("Creating lesson...");
         await LessonService.create({
           ...values,
           learningMaterialId: selectedMaterial.id,
@@ -231,10 +234,11 @@ const MaterialManagerPage: React.FC = () => {
         message.error("Failed to create lesson!");
         console.error("Create lesson error:", error);
       } finally {
+        hideLoading();
         setAddingLesson(false);
       }
     },
-    [refreshLessons, selectedMaterial],
+    [refreshLessons, selectedMaterial, showLoading, hideLoading],
   );
 
   const handleUpdateLesson = useCallback(
@@ -244,6 +248,7 @@ const MaterialManagerPage: React.FC = () => {
         return;
       }
       try {
+        showLoading("Updating lesson...");
         await LessonService.update(lessonId, {
           ...values,
           learningMaterialId: selectedMaterial.id,
@@ -253,9 +258,11 @@ const MaterialManagerPage: React.FC = () => {
       } catch (error) {
         console.error("Update lesson error:", error);
         message.error("Failed to update lesson!");
+      } finally {
+        hideLoading();
       }
     },
-    [refreshLessons, selectedMaterial],
+    [refreshLessons, selectedMaterial, showLoading, hideLoading],
   );
 
   const handleDeleteLesson = useCallback(
@@ -265,15 +272,18 @@ const MaterialManagerPage: React.FC = () => {
         return;
       }
       try {
+        showLoading("Deleting lesson...");
         await LessonService.delete(lessonId);
         message.success("Lesson deleted successfully!");
         await refreshLessons(selectedMaterial.id);
       } catch (error) {
         console.error("Delete lesson error:", error);
         message.error("Failed to delete lesson!");
+      } finally {
+        hideLoading();
       }
     },
-    [refreshLessons, selectedMaterial],
+    [refreshLessons, selectedMaterial, showLoading, hideLoading],
   );
 
   const applyServerSearch = useCallback(
@@ -359,6 +369,7 @@ const MaterialManagerPage: React.FC = () => {
           onSubmit={async (values) => {
             try {
               setCreating(true);
+              showLoading("Creating learning material...");
               await create(values);
               message.success("Material created successfully!");
               await reloadMaterials({ pageNo: 0 });
@@ -367,6 +378,7 @@ const MaterialManagerPage: React.FC = () => {
             } catch {
               message.error("Failed to create material!");
             } finally {
+              hideLoading();
               setCreating(false);
             }
           }}
@@ -413,6 +425,7 @@ const MaterialManagerPage: React.FC = () => {
 
             try {
               setUpdating(true);
+              showLoading("Updating learning material...");
               await update(editingMaterial.id, values);
               message.success("Material updated successfully!");
               await reloadMaterials();
@@ -421,6 +434,7 @@ const MaterialManagerPage: React.FC = () => {
             } catch {
               message.error("Failed to update material!");
             } finally {
+              hideLoading();
               setUpdating(false);
             }
           }}

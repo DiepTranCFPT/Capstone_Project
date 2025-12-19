@@ -10,6 +10,7 @@ import { toast } from "~/components/common/Toast";
 import useQuestionTopics from "~/hooks/useQuestionTopics";
 import { useQuestionBank } from "~/hooks/useQuestionBank";
 import type { QuestionBankItem } from "~/types/question";
+import { useGlobalLoading } from "~/context/GlobalLoadingContext";
 
 const CreateExamPage: React.FC = () => {
   const { examId } = useParams<{ examId: string }>();
@@ -27,6 +28,7 @@ const CreateExamPage: React.FC = () => {
     fetchBySubjectId,
     loading: loadingQuestions
   } = useQuestionBank();
+  const { showLoading, hideLoading } = useGlobalLoading();
 
   // Template form states
   const [templateTitle, setTemplateTitle] = useState<string>('');
@@ -341,6 +343,8 @@ const CreateExamPage: React.FC = () => {
     }
 
     try {
+      showLoading(isEditMode ? "Updating exam template..." : "Creating exam template...");
+
       if (isEditMode && examId) {
         // Update existing template
         const updateData = {
@@ -406,6 +410,8 @@ const CreateExamPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Save template error:', error);
+    } finally {
+      hideLoading();
     }
   };
 
