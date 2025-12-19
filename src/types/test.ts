@@ -111,6 +111,7 @@ export interface CreateExamRulePayload {
   numberOfQuestions: number;
   points: number;
   percentage?: number; // Frontend-only field
+  numberOfContexts?: number;
 }
 
 export interface ExamTemplateSubject {
@@ -160,6 +161,7 @@ export interface CreateExamTemplatePayload {
   rules: CreateExamRulePayload[];
   tokenCost: number;
   scoreMapping?: ScoreMapping;
+  numberOfContexts?: number;
 }
 
 export interface PageInfo<T> {

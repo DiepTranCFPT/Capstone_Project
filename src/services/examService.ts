@@ -113,6 +113,15 @@ const ExamTemplateService = {
     return axiosInstance.get(`/exam-templates/ratings/${templateId}`, { params });
   },
 
+  // === AI Analysis ===
+
+  // POST /ai/analyze-template: Phân tích template bằng AI
+  analyzeTemplate(
+    data: CreateExamTemplatePayload
+  ): Promise<AxiosResponse<string>> {
+    return axiosInstance.post("/ai/analyze-template", data);
+  },
+
 };
 
 export default ExamTemplateService;

@@ -93,9 +93,14 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
     const handleAskAiSubmit = async () => {
         if (!modalContent.question || !attemptResultDetail || !user) return;
 
+        // Get questionContext content if available
+        const questionContextContent = (modalContent.question as unknown as { questionContext?: QuestionContext })
+            .questionContext?.content || undefined;
+
         await askAi({
             attemptId: attemptResultDetail.attemptId,
             questionContent: modalContent.question.question,
+            questionContext: questionContextContent,
             studentAnswer: modalContent.question.userAnswer,
             studentAsking: studentQuestion,
             doneBy: user.email,
