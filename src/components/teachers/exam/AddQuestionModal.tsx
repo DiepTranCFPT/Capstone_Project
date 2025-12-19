@@ -10,9 +10,11 @@ import {
   PlusOutlined,
   CloseOutlined,
 } from "@ant-design/icons";
-import type { NewQuestion, QuestionBankItem } from "~/types/question";
+import type { NewQuestion, QuestionBankItem, CreateQuestionContextRequest, QuestionContext } from "~/types/question";
 import { useSubjects } from "~/hooks/useSubjects";
 import { useQuestionTopics } from "~/hooks/useQuestionTopics";
+import { useQuestionBank } from "~/hooks/useQuestionBank";
+import { QuestionContextSection } from "~/components/teachers/question";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -32,6 +34,10 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
 }) => {
   const { subjects, loading: subjectsLoading, fetchSubjects } = useSubjects();
   const { topics, loading: topicsLoading, fetchTopicsBySubject } = useQuestionTopics();
+  const { fetchMyContexts, loading: contextsLoading } = useQuestionBank();
+
+  // Existing contexts for selection
+  const [existingContexts, setExistingContexts] = useState<QuestionContext[]>([]);
 
   const difficultyOptions = useMemo(
     () => [
@@ -53,6 +59,13 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
     correctIndex: 0,
     tags: [],
   });
+
+  // Context state
+  const [hasContext, setHasContext] = useState(false);
+  const [contextId, setContextId] = useState<string | undefined>(undefined);
+  const [inlineContext, setInlineContext] = useState<CreateQuestionContextRequest | undefined>(undefined);
+  const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
+  const [audioUrl, setAudioUrl] = useState<string | undefined>(undefined);
 
   const subjectOptions = useMemo(() => {
     const options = subjects.map((subject) => ({
@@ -93,6 +106,15 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
     fetchSubjects({ pageNo: 0, pageSize: 1000 });
   }, [fetchSubjects]);
 
+  // Fetch existing contexts when modal opens
+  useEffect(() => {
+    if (open) {
+      fetchMyContexts({ pageSize: 100 }).then((data) => {
+        setExistingContexts(data?.items ?? []);
+      });
+    }
+  }, [open, fetchMyContexts]);
+
   // Fetch topics when subject is selected
   useEffect(() => {
     if (formData.subject) {
@@ -113,6 +135,12 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
         correctIndex: 0,
         tags: [],
       });
+      // Reset context state
+      setHasContext(false);
+      setContextId(undefined);
+      setInlineContext(undefined);
+      setImageUrl(undefined);
+      setAudioUrl(undefined);
       return;
     }
 
@@ -132,6 +160,15 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
         expectedAnswer: editingQuestion.expectedAnswer || "",
         tags: editingQuestion.tags || [],
       });
+      // Set context state from editing question
+      if (editingQuestion.contextId || editingQuestion.questionContext) {
+        setHasContext(true);
+        // Prioritize contextId, but if not available, use questionContext.id
+        const ctxId = editingQuestion.contextId || editingQuestion.questionContext?.id;
+        setContextId(ctxId);
+      }
+      setImageUrl(editingQuestion.imageUrl);
+      setAudioUrl(editingQuestion.audioUrl);
     } else {
       setFormData({
         text: "",
@@ -225,7 +262,22 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
       return;
     }
 
-    onSubmit(formData);
+    // Validate context if enabled
+    if (hasContext && !contextId && (!inlineContext?.title?.trim() || !inlineContext?.content?.trim())) {
+      message.warning("Please select an existing context or fill in context title and content");
+      return;
+    }
+
+    // Build final data with context
+    const finalData: NewQuestion = {
+      ...formData,
+      imageUrl,
+      audioUrl,
+      contextId: hasContext ? contextId : undefined,
+      context: hasContext && !contextId ? inlineContext : undefined,
+    };
+
+    onSubmit(finalData);
   };
 
   return (
@@ -249,6 +301,24 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
     >
       <Form layout="vertical" className="question-form">
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
+          {/* Question Context Section */}
+          <QuestionContextSection
+            hasContext={hasContext}
+            onHasContextChange={setHasContext}
+            contextId={contextId}
+            onContextIdChange={setContextId}
+            existingContexts={existingContexts}
+            loadingContexts={contextsLoading}
+            inlineContext={inlineContext}
+            onInlineContextChange={setInlineContext}
+            imageUrl={imageUrl}
+            onImageUrlChange={setImageUrl}
+            audioUrl={audioUrl}
+            onAudioUrlChange={setAudioUrl}
+          />
+
+          <Divider style={{ margin: "8px 0" }} />
+
           {/* Question Text */}
           <Form.Item
             label={

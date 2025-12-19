@@ -31,10 +31,32 @@ export const askAiExamQuestion = async (
                     const trimmedLine = line.trim();
                     if (trimmedLine.startsWith('data:')) {
                         // Remove 'data:' prefix and any leading whitespace after it
-                        const content = trimmedLine.slice(5).trimStart();
-                        // Add space between words if content is not empty
+                        let content = trimmedLine.slice(5).trimStart();
+
+                        // Skip SSE completion signal
+                        if (content === '[DONE]') {
+                            continue;
+                        }
+
+                        // Try to parse as JSON (some SSE APIs send JSON objects)
+                        try {
+                            const jsonData = JSON.parse(content);
+                            // Handle different JSON formats
+                            if (jsonData.content) {
+                                content = jsonData.content;
+                            } else if (jsonData.text) {
+                                content = jsonData.text;
+                            } else if (jsonData.delta?.content) {
+                                content = jsonData.delta.content;
+                            } else if (typeof jsonData === 'string') {
+                                content = jsonData;
+                            }
+                        } catch {
+                            // Not JSON, use content as-is (plain text)
+                        }
+
                         if (content) {
-                            onChunk(content + ' ');
+                            onChunk(content);
                         }
                     }
                 }
@@ -45,9 +67,27 @@ export const askAiExamQuestion = async (
         if (buffer.trim()) {
             const trimmedLine = buffer.trim();
             if (trimmedLine.startsWith('data:')) {
-                const content = trimmedLine.slice(5).trimStart();
-                if (content) {
-                    onChunk(content + ' ');
+                let content = trimmedLine.slice(5).trimStart();
+
+                if (content !== '[DONE]') {
+                    try {
+                        const jsonData = JSON.parse(content);
+                        if (jsonData.content) {
+                            content = jsonData.content;
+                        } else if (jsonData.text) {
+                            content = jsonData.text;
+                        } else if (jsonData.delta?.content) {
+                            content = jsonData.delta.content;
+                        } else if (typeof jsonData === 'string') {
+                            content = jsonData;
+                        }
+                    } catch {
+                        // Not JSON, use content as-is
+                    }
+
+                    if (content) {
+                        onChunk(content);
+                    }
                 }
             }
         }
@@ -91,10 +131,32 @@ export const askAiStudentDashboard = async (
                     const trimmedLine = line.trim();
                     if (trimmedLine.startsWith('data:')) {
                         // Remove 'data:' prefix and any leading whitespace after it
-                        const content = trimmedLine.slice(5).trimStart();
-                        // Add space between words if content is not empty
+                        let content = trimmedLine.slice(5).trimStart();
+
+                        // Skip SSE completion signal
+                        if (content === '[DONE]') {
+                            continue;
+                        }
+
+                        // Try to parse as JSON (some SSE APIs send JSON objects)
+                        try {
+                            const jsonData = JSON.parse(content);
+                            // Handle different JSON formats
+                            if (jsonData.content) {
+                                content = jsonData.content;
+                            } else if (jsonData.text) {
+                                content = jsonData.text;
+                            } else if (jsonData.delta?.content) {
+                                content = jsonData.delta.content;
+                            } else if (typeof jsonData === 'string') {
+                                content = jsonData;
+                            }
+                        } catch {
+                            // Not JSON, use content as-is (plain text)
+                        }
+
                         if (content) {
-                            onChunk(content + ' ');
+                            onChunk(content);
                         }
                     }
                 }
@@ -105,9 +167,27 @@ export const askAiStudentDashboard = async (
         if (buffer.trim()) {
             const trimmedLine = buffer.trim();
             if (trimmedLine.startsWith('data:')) {
-                const content = trimmedLine.slice(5).trimStart();
-                if (content) {
-                    onChunk(content + ' ');
+                let content = trimmedLine.slice(5).trimStart();
+
+                if (content !== '[DONE]') {
+                    try {
+                        const jsonData = JSON.parse(content);
+                        if (jsonData.content) {
+                            content = jsonData.content;
+                        } else if (jsonData.text) {
+                            content = jsonData.text;
+                        } else if (jsonData.delta?.content) {
+                            content = jsonData.delta.content;
+                        } else if (typeof jsonData === 'string') {
+                            content = jsonData;
+                        }
+                    } catch {
+                        // Not JSON, use content as-is
+                    }
+
+                    if (content) {
+                        onChunk(content);
+                    }
                 }
             }
         }
@@ -117,3 +197,4 @@ export const askAiStudentDashboard = async (
         onError(error instanceof Error ? error : new Error('Unknown error'));
     }
 };
+
