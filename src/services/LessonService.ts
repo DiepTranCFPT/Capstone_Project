@@ -60,6 +60,13 @@ const LessonService = {
     return axiosInstance.put(`/lessons/${id}`, data);
   },
 
+  saveProgress(
+    lessonId: string,
+    payload: Record<string, unknown>
+  ): Promise<AxiosResponse<ApiResponse<Lesson>>> {
+    return axiosInstance.put(`/lessons/${lessonId}/progress`, payload);
+  },
+
   delete(id: string): Promise<AxiosResponse<ApiResponse<null>>> {
     return axiosInstance.delete(`/lessons/${id}`);
   },
@@ -79,7 +86,7 @@ const LessonService = {
   },
 
   getByLearningMaterial(learningMaterialId: string): Promise<AxiosResponse<ApiResponse<Lesson[]>>> {
-    return axiosInstance.get(`/lessons/by-learning-material/${learningMaterialId}`);
+    return axiosInstance.get(`/lessons/progress/by-learning-material/${learningMaterialId}`);
   },
 
   getVideos(nameFile?: string): Promise<AxiosResponse<unknown>> {
