@@ -1,4 +1,4 @@
-import type { QuestionBankItem } from "./question";
+import type { QuestionBankItem, QuestionContext } from "./question";
 import type { ApiResponse } from "./api";
 export type { QuestionBankItem } from "./question";
 
@@ -203,6 +203,9 @@ export interface ExamQuestionDetail {
   createdBy: string;
   topic: string;
   answers: ExamAnswer[]; // Danh sách các lựa chọn trả lời
+  imageUrl?: string;
+  audioUrl?: string;
+  questionContext?: QuestionContext;
 }
 
 /**

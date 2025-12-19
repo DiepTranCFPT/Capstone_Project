@@ -1,7 +1,10 @@
 import React from 'react';
-import type { QuestionBankItem } from '~/types/question';
+import type { QuestionBankItem, QuestionContext } from '~/types/question';
 import LatexRenderer from '~/components/common/LatexRenderer';
+import ContextDisplay from './ContextDisplay';
 import { MdClose } from 'react-icons/md';
+import { Image } from 'antd';
+import { AudioOutlined } from '@ant-design/icons';
 
 interface QuestionCardProps {
     question: QuestionBankItem;
@@ -9,9 +12,17 @@ interface QuestionCardProps {
     onAnswerChange: (answerId: string) => void;
     selectedAnswerId?: string;
     onClearAnswer?: () => void;
+    questionContext?: QuestionContext;
 }
 
-const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNumber, onAnswerChange, selectedAnswerId, onClearAnswer }) => {
+const QuestionCard: React.FC<QuestionCardProps> = ({
+    question,
+    questionNumber,
+    onAnswerChange,
+    selectedAnswerId,
+    onClearAnswer,
+    questionContext
+}) => {
     const handleAnswerChange = (answerId: string) => {
         onAnswerChange(answerId);
     };
@@ -24,6 +35,12 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNumber, o
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            {/* Context Display */}
+            {questionContext && (
+                <ContextDisplay context={questionContext} defaultExpanded={true} />
+            )}
+
+            {/* Question Header */}
             <div className="flex justify-between items-start mb-4">
                 <h3 className="font-semibold text-gray-800 flex-1">
                     {questionNumber}. <LatexRenderer content={question.text} />
@@ -39,6 +56,37 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNumber, o
                     </button>
                 )}
             </div>
+
+            {/* Question-level media (image/audio) */}
+            {(question.imageUrl || question.audioUrl) && (
+                <div className="mb-4 space-y-3">
+                    {question.imageUrl && (
+                        <div className="image-container">
+                            <Image
+                                src={question.imageUrl}
+                                alt="Question image"
+                                className="rounded-lg max-h-48 object-contain"
+                                style={{ maxWidth: "100%" }}
+                            />
+                        </div>
+                    )}
+                    {question.audioUrl && (
+                        <div className="audio-container bg-gray-50 p-3 rounded-lg">
+                            <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                                <AudioOutlined />
+                                <span>Listen to audio</span>
+                            </div>
+                            <audio
+                                src={question.audioUrl}
+                                controls
+                                className="w-full"
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Answer Options */}
             <div className="space-y-3">
                 {question.options?.map(option => {
                     const isChecked = String(selectedAnswerId) === String(option.id);
@@ -62,3 +110,4 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question, questionNumber, o
 };
 
 export default QuestionCard;
+

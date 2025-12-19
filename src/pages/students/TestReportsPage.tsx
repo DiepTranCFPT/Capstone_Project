@@ -233,15 +233,10 @@ const TestReportsPage: React.FC = () => {
                                     </div>
                                     {record.apResult && record.apResult.scaledScore && (
                                         <div
-                                            className="text-sm font-semibold px-3 py-1 rounded-full ml-2"
-                                            style={{
-                                                backgroundColor: 'rgba(255,255,255,0.3)',
-                                                color: 'white',
-                                                backdropFilter: 'blur(4px)'
-                                            }}
+                                            className="text-sm font-semibold px-3 mt-2 rounded-full ml-2 text-gray-800"
                                             title={record.apResult.qualificationMessage}
                                         >
-                                            AP: {record.apResult.scaledScore}
+                                            AP Score: {record.apResult.scaledScore}
                                         </div>
                                     )}
 

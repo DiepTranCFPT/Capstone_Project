@@ -4,6 +4,7 @@ import { Tabs } from 'antd';
 import Timer from '~/components/do-test/Timer';
 import QuestionCard from '~/components/do-test/QuestionCard';
 import FRQCard from '~/components/do-test/FRQCard';
+import ContextDisplay from '~/components/do-test/ContextDisplay';
 import ProctoringStatus from '~/components/do-test/ProctoringStatus';
 import ProctoringRulesModal from '~/components/do-test/ProctoringRulesModal';
 import { useExamAttempt } from '~/hooks/useExamAttempt';
@@ -875,38 +876,162 @@ const DoTestPage: React.FC = () => {
                             {/* MCQ Tab */}
                             {(() => {
                                 const mcqQuestions = sortedQuestions.filter((q: ActiveExamQuestion) => q.question.type === 'mcq');
+
+                                // Helper function to get questionContext from either camelCase or snake_case
+                                const getQuestionContext = (question: ActiveExamQuestion['question']) => {
+                                    const ctx = question.questionContext ||
+                                        (question as unknown as { question_context?: typeof question.questionContext }).question_context;
+                                    return ctx;
+                                };
+
+                                // Group questions by contextId for shared context display
+                                const contextGroups = new Map<string, ActiveExamQuestion[]>();
+                                const noContextQuestions: ActiveExamQuestion[] = [];
+
+                                mcqQuestions.forEach((q: ActiveExamQuestion) => {
+                                    const context = getQuestionContext(q.question);
+                                    const contextId = context?.id;
+                                    if (contextId) {
+                                        if (!contextGroups.has(contextId)) {
+                                            contextGroups.set(contextId, []);
+                                        }
+                                        contextGroups.get(contextId)!.push(q);
+                                    } else {
+                                        noContextQuestions.push(q);
+                                    }
+                                });
+
+                                // Build render order: group questions with shared context together
+                                const renderGroups: { contextId: string | null; questions: ActiveExamQuestion[] }[] = [];
+                                const processedContexts = new Set<string>();
+
+                                // Process questions in original order, but group shared contexts
+                                mcqQuestions.forEach((q: ActiveExamQuestion) => {
+                                    const context = getQuestionContext(q.question);
+                                    const contextId = context?.id;
+
+                                    if (contextId) {
+                                        if (!processedContexts.has(contextId)) {
+                                            processedContexts.add(contextId);
+                                            renderGroups.push({
+                                                contextId,
+                                                questions: contextGroups.get(contextId)!
+                                            });
+                                        }
+                                    } else {
+                                        // Individual question without context
+                                        renderGroups.push({
+                                            contextId: null,
+                                            questions: [q]
+                                        });
+                                    }
+                                });
+
                                 return (
                                     <Tabs.TabPane
                                         tab={`MCQ (${mcqQuestions.length})`}
                                         key="mcq"
                                         className="space-y-8"
                                     >
-                                        {mcqQuestions.map((q: ActiveExamQuestion) => {
-                                            const index = sortedQuestions.findIndex((q2: ActiveExamQuestion) => q2.examQuestionId === q.examQuestionId);
-                                            const currentAnswer = answers[q.examQuestionId];
+                                        {renderGroups.map((group, groupIndex) => {
+                                            const firstQuestion = group.questions[0];
+                                            const sharedContext = group.contextId ? getQuestionContext(firstQuestion.question) : null;
+                                            const isSharedContext = group.questions.length > 1 && sharedContext;
+
+                                            // Wrapper for shared context groups
+                                            if (isSharedContext && sharedContext) {
+                                                return (
+                                                    <div
+                                                        key={group.contextId || `no-context-${groupIndex}`}
+                                                        className="border-2 border-blue-300 rounded-xl bg-blue-50/30 p-4 space-y-4"
+                                                    >
+                                                        {/* Reading Passage Header */}
+                                                        <div className="bg-white rounded-lg shadow-sm border border-blue-200 overflow-hidden">
+                                                            <div className="bg-blue-500 text-white px-4 py-2 flex items-center gap-2">
+                                                                <MdOutlineMenuBook size={20} />
+                                                                <span className="font-semibold">Reading Passage - {group.questions.length} Questions</span>
+                                                            </div>
+                                                            <div className="p-4">
+                                                                <ContextDisplay context={sharedContext} defaultExpanded={true} />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Questions in this reading group */}
+                                                        <div className="space-y-4 ">
+                                                            {group.questions.map((q: ActiveExamQuestion) => {
+                                                                const index = sortedQuestions.findIndex((q2: ActiveExamQuestion) => q2.examQuestionId === q.examQuestionId);
+                                                                const currentAnswer = answers[q.examQuestionId];
+
+                                                                return (
+                                                                    <div
+                                                                        key={q.examQuestionId}
+                                                                        ref={(el) => { questionRefs.current[index] = el; }}
+                                                                    >
+                                                                        <QuestionCard
+                                                                            question={{
+                                                                                id: q.question.id,
+                                                                                text: q.question.content,
+                                                                                subject: q.question.subject.name,
+                                                                                difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
+                                                                                type: q.question.type as "mcq",
+                                                                                createdBy: q.question.createdBy,
+                                                                                createdAt: new Date().toISOString(),
+                                                                                options: q.question.answers
+                                                                                    .filter((a: ExamAnswer) => a.content !== null)
+                                                                                    .map((a: ExamAnswer) => ({ id: a.id, text: a.content || '' })),
+                                                                                imageUrl: q.question.imageUrl,
+                                                                                audioUrl: q.question.audioUrl,
+                                                                            }}
+                                                                            questionNumber={q.orderNumber}
+                                                                            onAnswerChange={(answerId) => handleAnswerChange(q.examQuestionId, !!answerId, { selectedAnswerId: answerId })}
+                                                                            selectedAnswerId={currentAnswer?.selectedAnswerId}
+                                                                            onClearAnswer={() => handleAnswerChange(q.examQuestionId, false, { selectedAnswerId: undefined })}
+                                                                        />
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+
+                                            // Individual questions (no shared context)
                                             return (
-                                                <div
-                                                    key={q.examQuestionId}
-                                                    ref={(el) => { questionRefs.current[index] = el; }}
-                                                >
-                                                    <QuestionCard
-                                                        question={{
-                                                            id: q.question.id,
-                                                            text: q.question.content,
-                                                            subject: q.question.subject.name,
-                                                            difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
-                                                            type: q.question.type as "mcq",
-                                                            createdBy: q.question.createdBy,
-                                                            createdAt: new Date().toISOString(),
-                                                            options: q.question.answers
-                                                                .filter((a: ExamAnswer) => a.content !== null)
-                                                                .map((a: ExamAnswer) => ({ id: a.id, text: a.content || '' }))
-                                                        }}
-                                                        questionNumber={q.orderNumber}
-                                                        onAnswerChange={(answerId) => handleAnswerChange(q.examQuestionId, !!answerId, { selectedAnswerId: answerId })}
-                                                        selectedAnswerId={currentAnswer?.selectedAnswerId}
-                                                        onClearAnswer={() => handleAnswerChange(q.examQuestionId, false, { selectedAnswerId: undefined })}
-                                                    />
+                                                <div key={group.contextId || `no-context-${groupIndex}`} className="space-y-4">
+                                                    {group.questions.map((q: ActiveExamQuestion) => {
+                                                        const index = sortedQuestions.findIndex((q2: ActiveExamQuestion) => q2.examQuestionId === q.examQuestionId);
+                                                        const currentAnswer = answers[q.examQuestionId];
+                                                        const questionContext = getQuestionContext(q.question);
+
+                                                        return (
+                                                            <div
+                                                                key={q.examQuestionId}
+                                                                ref={(el) => { questionRefs.current[index] = el; }}
+                                                            >
+                                                                <QuestionCard
+                                                                    question={{
+                                                                        id: q.question.id,
+                                                                        text: q.question.content,
+                                                                        subject: q.question.subject.name,
+                                                                        difficulty: q.question.difficulty.name as "easy" | "medium" | "hard",
+                                                                        type: q.question.type as "mcq",
+                                                                        createdBy: q.question.createdBy,
+                                                                        createdAt: new Date().toISOString(),
+                                                                        options: q.question.answers
+                                                                            .filter((a: ExamAnswer) => a.content !== null)
+                                                                            .map((a: ExamAnswer) => ({ id: a.id, text: a.content || '' })),
+                                                                        imageUrl: q.question.imageUrl,
+                                                                        audioUrl: q.question.audioUrl,
+                                                                    }}
+                                                                    questionNumber={q.orderNumber}
+                                                                    onAnswerChange={(answerId) => handleAnswerChange(q.examQuestionId, !!answerId, { selectedAnswerId: answerId })}
+                                                                    selectedAnswerId={currentAnswer?.selectedAnswerId}
+                                                                    onClearAnswer={() => handleAnswerChange(q.examQuestionId, false, { selectedAnswerId: undefined })}
+                                                                    questionContext={questionContext}
+                                                                />
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             );
                                         })}
@@ -917,6 +1042,31 @@ const DoTestPage: React.FC = () => {
                             {/* FRQ Tab */}
                             {(() => {
                                 const frqQuestions = sortedQuestions.filter((q: ActiveExamQuestion) => q.question.type === 'frq');
+
+                                // Helper function to get questionContext from either camelCase or snake_case
+                                const getQuestionContext = (question: ActiveExamQuestion['question']) => {
+                                    const ctx = question.questionContext ||
+                                        (question as unknown as { question_context?: typeof question.questionContext }).question_context;
+                                    return ctx;
+                                };
+
+                                // Group questions by contextId for shared context display
+                                const contextGroups = new Map<string, ActiveExamQuestion[]>();
+
+                                frqQuestions.forEach((q: ActiveExamQuestion) => {
+                                    const context = getQuestionContext(q.question);
+                                    const contextId = context?.id;
+                                    if (contextId) {
+                                        if (!contextGroups.has(contextId)) {
+                                            contextGroups.set(contextId, []);
+                                        }
+                                        contextGroups.get(contextId)!.push(q);
+                                    }
+                                });
+
+                                // Track which contexts have been rendered
+                                const renderedContexts = new Set<string>();
+
                                 return (
                                     <Tabs.TabPane
                                         tab={`FRQ (${frqQuestions.length})`}
@@ -926,6 +1076,16 @@ const DoTestPage: React.FC = () => {
                                         {frqQuestions.map((q: ActiveExamQuestion) => {
                                             const index = sortedQuestions.indexOf(q);
                                             const currentAnswer = answers[q.examQuestionId];
+                                            const questionContext = getQuestionContext(q.question);
+                                            const contextId = questionContext?.id;
+                                            const isSharedContext = contextId && contextGroups.get(contextId)!.length > 1;
+                                            const isFirstInContext = contextId && !renderedContexts.has(contextId);
+
+                                            // Mark context as rendered
+                                            if (contextId) {
+                                                renderedContexts.add(contextId);
+                                            }
+
                                             return (
                                                 <div
                                                     key={q.examQuestionId}
@@ -940,13 +1100,16 @@ const DoTestPage: React.FC = () => {
                                                             type: q.question.type as "frq",
                                                             createdBy: q.question.createdBy,
                                                             createdAt: new Date().toISOString(),
-                                                            expectedAnswer: "Sample answer" // This would come from API if available
+                                                            expectedAnswer: "Sample answer",
+                                                            imageUrl: q.question.imageUrl,
+                                                            audioUrl: q.question.audioUrl,
                                                         }}
                                                         questionNumber={q.orderNumber}
                                                         savedAnswer={currentAnswer?.frqAnswerText}
                                                         onAnswerChange={(_questionIndex, hasAnswer, answerData) =>
                                                             handleAnswerChange(q.examQuestionId, hasAnswer, answerData)
                                                         }
+                                                        questionContext={isSharedContext ? (isFirstInContext ? questionContext : undefined) : questionContext}
                                                     />
                                                 </div>
                                             );
@@ -957,10 +1120,10 @@ const DoTestPage: React.FC = () => {
                         </Tabs>
                     ) : null}
                 </div>
-            </main>
+            </main >
 
             {/* Proctoring Rules Modal */}
-            <ProctoringRulesModal
+            < ProctoringRulesModal
                 visible={showProctoringRules}
                 onAccept={() => {
                     setShowProctoringRules(false);
@@ -988,83 +1151,87 @@ const DoTestPage: React.FC = () => {
             />
 
             {/* Resume Exam Modal - shown after reload to enter fullscreen */}
-            {showResumeModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
-                        <div className="text-center">
-                            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-teal-100 flex items-center justify-center">
-                                <MdOutlineMenuBook className="text-4xl text-teal-600" />
-                            </div>
-                            <h2 className="text-2xl font-bold text-gray-800 mb-3">
-                                Resume Exam
-                            </h2>
-                            <p className="text-gray-600 mb-6">
-                                Your exam progress has been saved. Click the button below to resume in fullscreen mode.
-                            </p>
-                            <button
-                                onClick={() => {
-                                    setShowResumeModal(false);
-                                    startProctoring(); // This will enter fullscreen via user gesture
-                                }}
-                                className="w-full bg-backgroundColor hover:bg-backgroundColor/80 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
-                            >
-                                Continue Exam
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showConFirmed && (
-                <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center">
-                    <div className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-teal-200/50 max-w-md mx-4">
-                        <div className="text-center">
-                            <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${isSubmit ? 'bg-teal-100' : 'bg-red-100'
-                                }`}>
-                                <span className="text-2xl">
-                                    {isSubmit ? <MdCheckCircle className="text-teal-600" /> : <MdCancel className="text-red-600" />}
-                                </span>
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-800 mb-3">
-                                {isSubmit ? 'Confirm Submit' : 'Confirm Cancel'}
-                            </h3>
-                            <p className="text-gray-600 mb-6 leading-relaxed">
-                                {isSubmit
-                                    ? 'Are you sure you want to submit the exam? This action cannot be undone.'
-                                    : 'Are you sure you want to cancel the exam? Your current answers will be submitted.'
-                                }
-                            </p>
-                            <div className="flex gap-3 justify-center">
+            {
+                showResumeModal && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+                            <div className="text-center">
+                                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-teal-100 flex items-center justify-center">
+                                    <MdOutlineMenuBook className="text-4xl text-teal-600" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                                    Resume Exam
+                                </h2>
+                                <p className="text-gray-600 mb-6">
+                                    Your exam progress has been saved. Click the button below to resume in fullscreen mode.
+                                </p>
                                 <button
-                                    onClick={() => setShowConFirmed(false)}
-                                    className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-all duration-200 border border-gray-300 hover:border-gray-400 shadow-sm hover:shadow-md"
+                                    onClick={() => {
+                                        setShowResumeModal(false);
+                                        startProctoring(); // This will enter fullscreen via user gesture
+                                    }}
+                                    className="w-full bg-backgroundColor hover:bg-backgroundColor/80 text-white font-bold py-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
                                 >
-                                    Cancel
+                                    Continue Exam
                                 </button>
-
-                                {isCancel ? (
-                                    <button
-                                        onClick={handleSubmit}
-                                        disabled={isSubmitting}
-                                        className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-all duration-200 border border-red-400/60 hover:border-red-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {isSubmitting ? 'Submitting...' : 'Confirm Cancel'}
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={handleSubmit}
-                                        disabled={isSubmitting}
-                                        className="px-6 py-3 bg-backgroundColor hover:bg-backgroundColor/80 text-white font-medium rounded-lg transition-all duration-200 border border-teal-500/60 hover:border-teal-400 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {isSubmitting ? 'Submitting...' : 'Confirm Submit'}
-                                    </button>
-                                )}
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+
+            {
+                showConFirmed && (
+                    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center">
+                        <div className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-teal-200/50 max-w-md mx-4">
+                            <div className="text-center">
+                                <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${isSubmit ? 'bg-teal-100' : 'bg-red-100'
+                                    }`}>
+                                    <span className="text-2xl">
+                                        {isSubmit ? <MdCheckCircle className="text-teal-600" /> : <MdCancel className="text-red-600" />}
+                                    </span>
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-800 mb-3">
+                                    {isSubmit ? 'Confirm Submit' : 'Confirm Cancel'}
+                                </h3>
+                                <p className="text-gray-600 mb-6 leading-relaxed">
+                                    {isSubmit
+                                        ? 'Are you sure you want to submit the exam? This action cannot be undone.'
+                                        : 'Are you sure you want to cancel the exam? Your current answers will be submitted.'
+                                    }
+                                </p>
+                                <div className="flex gap-3 justify-center">
+                                    <button
+                                        onClick={() => setShowConFirmed(false)}
+                                        className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-all duration-200 border border-gray-300 hover:border-gray-400 shadow-sm hover:shadow-md"
+                                    >
+                                        Cancel
+                                    </button>
+
+                                    {isCancel ? (
+                                        <button
+                                            onClick={handleSubmit}
+                                            disabled={isSubmitting}
+                                            className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-all duration-200 border border-red-400/60 hover:border-red-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {isSubmitting ? 'Submitting...' : 'Confirm Cancel'}
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={handleSubmit}
+                                            disabled={isSubmitting}
+                                            className="px-6 py-3 bg-backgroundColor hover:bg-backgroundColor/80 text-white font-medium rounded-lg transition-all duration-200 border border-teal-500/60 hover:border-teal-400 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {isSubmitting ? 'Submitting...' : 'Confirm Submit'}
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     );
 };
 

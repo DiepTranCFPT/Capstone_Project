@@ -1,17 +1,21 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import type { FRQ } from '~/types/question';
+import type { FRQ, QuestionContext } from '~/types/question';
 import { getSubjectRenderModeByCodeAndName } from '~/configs/subjectRenderMode';
 import MathEditor from '~/components/common/MathEditor';
 import LatexRenderer from '~/components/common/LatexRenderer';
+import ContextDisplay from './ContextDisplay';
+import { Image } from 'antd';
+import { AudioOutlined } from '@ant-design/icons';
 
 interface FRQCardProps {
     question: FRQ;
     questionNumber: number;
     savedAnswer?: string;
     onAnswerChange?: (questionIndex: number, hasAnswer: boolean, answerData?: { selectedAnswerId?: string; frqAnswerText?: string }) => void;
+    questionContext?: QuestionContext;
 }
 
-const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer, onAnswerChange }) => {
+const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer, onAnswerChange, questionContext }) => {
     const [answerText, setAnswerText] = useState(savedAnswer || '');
     const isInitialMountRef = useRef(true);
     const prevSavedAnswerRef = useRef<string | undefined>(savedAnswer);
@@ -94,7 +98,7 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
         }
     }, [savedAnswer]); // Only depend on savedAnswer
 
-    
+
 
     // Notify parent when answerText changes (skip on initial mount and when syncing)
     useEffect(() => {
@@ -165,6 +169,34 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
     if (cardMode === "latex") {
         return (
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                {/* Context Display */}
+                {questionContext && (
+                    <ContextDisplay context={questionContext} defaultExpanded={true} />
+                )}
+
+                {/* Question-level media */}
+                {(question.imageUrl || question.audioUrl) && (
+                    <div className="mb-4 space-y-3">
+                        {question.imageUrl && (
+                            <Image
+                                src={question.imageUrl}
+                                alt="Question image"
+                                className="rounded-lg max-h-48 object-contain"
+                                style={{ maxWidth: "100%" }}
+                            />
+                        )}
+                        {question.audioUrl && (
+                            <div className="audio-container bg-gray-50 p-3 rounded-lg">
+                                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                                    <AudioOutlined />
+                                    <span>Listen to audio</span>
+                                </div>
+                                <audio src={question.audioUrl} controls className="w-full" />
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <h3 className="font-semibold text-gray-800 mb-4">
                     {questionNumber}. <LatexRenderer content={question.text} />
                 </h3>
@@ -190,6 +222,13 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
                 ref={containerRef}
                 className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
             >
+                {/* Context Display for splitscreen */}
+                {questionContext && (
+                    <div className="p-4 border-b border-gray-200 bg-gray-50">
+                        <ContextDisplay context={questionContext} defaultExpanded={true} compact={true} />
+                    </div>
+                )}
+
                 <div className="flex min-h-[24rem]">
                     {/* Left panel - Question and sources */}
                     <div
@@ -199,6 +238,24 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
                         <h3 className="font-semibold text-gray-800 mb-4 text-lg">
                             {questionNumber}. Question
                         </h3>
+
+                        {/* Question-level media */}
+                        {(question.imageUrl || question.audioUrl) && (
+                            <div className="mb-4 space-y-3">
+                                {question.imageUrl && (
+                                    <Image
+                                        src={question.imageUrl}
+                                        alt="Question image"
+                                        className="rounded-lg max-h-32 object-contain"
+                                        style={{ maxWidth: "100%" }}
+                                    />
+                                )}
+                                {question.audioUrl && (
+                                    <audio src={question.audioUrl} controls className="w-full" />
+                                )}
+                            </div>
+                        )}
+
                         <div className="text-sm text-gray-700 whitespace-pre-line">
                             <LatexRenderer content={question.text} />
                         </div>
@@ -238,6 +295,34 @@ const FRQCard: React.FC<FRQCardProps> = ({ question, questionNumber, savedAnswer
     // Default normal mode
     return (
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            {/* Context Display */}
+            {questionContext && (
+                <ContextDisplay context={questionContext} defaultExpanded={true} />
+            )}
+
+            {/* Question-level media */}
+            {(question.imageUrl || question.audioUrl) && (
+                <div className="mb-4 space-y-3">
+                    {question.imageUrl && (
+                        <Image
+                            src={question.imageUrl}
+                            alt="Question image"
+                            className="rounded-lg max-h-48 object-contain"
+                            style={{ maxWidth: "100%" }}
+                        />
+                    )}
+                    {question.audioUrl && (
+                        <div className="audio-container bg-gray-50 p-3 rounded-lg">
+                            <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                                <AudioOutlined />
+                                <span>Listen to audio</span>
+                            </div>
+                            <audio src={question.audioUrl} controls className="w-full" />
+                        </div>
+                    )}
+                </div>
+            )}
+
             <h3 className="font-semibold text-gray-800 mb-4">
                 {questionNumber}. <LatexRenderer content={question.text} />
             </h3>
