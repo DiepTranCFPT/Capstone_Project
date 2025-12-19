@@ -2,6 +2,7 @@ import { Tabs } from "antd";
 import type { Lesson } from "~/types/lesson";
 import type { ReactNode } from "react";
 import { useRef, useEffect } from "react";
+import LessonService from "~/services/LessonService";
 
 interface LessonDetailsSectionProps {
   lesson: Lesson;
@@ -33,10 +34,14 @@ const LessonDetailsSection: React.FC<LessonDetailsSectionProps> = ({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const hasActuallyPlayedRef = useRef(false);
   const lastPlayTimeRef = useRef<number>(0);
+  const maxWatchedTimeRef = useRef<number>(0);
+  const lastSavedProgressTimeRef = useRef<number>(0);
 
   useEffect(() => {
     hasActuallyPlayedRef.current = false;
     lastPlayTimeRef.current = 0;
+    maxWatchedTimeRef.current = 0;
+    lastSavedProgressTimeRef.current = 0;
     
     const videoElement = videoRef.current;
     if (videoElement) {
@@ -82,6 +87,7 @@ const LessonDetailsSection: React.FC<LessonDetailsSectionProps> = ({
             ref={videoRef}
             key={lesson.id}
             controls
+            controlsList="noplaybackrate"
             className="w-full h-full"
             src={videoUrl}
             onPlay={() => {
@@ -94,10 +100,55 @@ const LessonDetailsSection: React.FC<LessonDetailsSectionProps> = ({
                 onVideoPlay();
               }
             }}
-            onTimeUpdate={() => {
+            onTimeUpdate={async () => {
               const videoElement = videoRef.current;
-              if (videoElement && videoElement.currentTime > 0) {
+              if (!videoElement) return;
+
+              const currentTime = videoElement.currentTime;
+
+              // Nếu người dùng tua quá xa so với mốc đã xem, kéo lại
+              const allowedTime = maxWatchedTimeRef.current;
+              if (currentTime > allowedTime + 0.5) {
+                videoElement.currentTime = allowedTime;
+                return;
+              }
+
+              if (currentTime > 0) {
                 hasActuallyPlayedRef.current = true;
+              }
+
+              // Cập nhật mốc thời gian xem tối đa (không cho tua vượt quá mốc này)
+              if (currentTime > maxWatchedTimeRef.current) {
+                maxWatchedTimeRef.current = currentTime;
+              }
+
+              // Lưu tiến trình sau mỗi 5 giây xem
+              const now = Date.now();
+              if (lesson.id && now - lastSavedProgressTimeRef.current >= 5000) {
+                lastSavedProgressTimeRef.current = now;
+                try {
+                  await LessonService.saveProgress(
+                    lesson.id,
+                    Math.floor(currentTime)
+                  );
+                } catch (error) {
+                  // Không hiển thị lỗi để tránh làm phiền người dùng khi đang xem video
+                  console.error("Save lesson progress failed:", error);
+                }
+              }
+            }}
+            onSeeking={(e) => {
+              const videoElement = e.currentTarget;
+              const allowedTime = maxWatchedTimeRef.current;
+              if (videoElement.currentTime > allowedTime + 0.5) {
+                videoElement.currentTime = allowedTime;
+              }
+            }}
+            onSeeked={(e) => {
+              const videoElement = e.currentTarget;
+              const allowedTime = maxWatchedTimeRef.current;
+              if (videoElement.currentTime > allowedTime + 0.5) {
+                videoElement.currentTime = allowedTime;
               }
             }}
             onEnded={(e) => {

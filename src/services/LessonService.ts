@@ -62,9 +62,11 @@ const LessonService = {
 
   saveProgress(
     lessonId: string,
-    payload: Record<string, unknown>
-  ): Promise<AxiosResponse<ApiResponse<Lesson>>> {
-    return axiosInstance.put(`/lessons/${lessonId}/progress`, payload);
+    lastWatchedSecond: number
+  ): Promise<AxiosResponse<ApiResponse<null>>> {
+    return axiosInstance.put(`/lessons/${lessonId}/progress`, null, {
+      params: { lastWatchedSecond },
+    });
   },
 
   delete(id: string): Promise<AxiosResponse<ApiResponse<null>>> {
