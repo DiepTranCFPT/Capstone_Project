@@ -13,6 +13,36 @@ import LessonDetailsSection from "~/components/materials/LessonDetailsSection";
 import CourseContentSidebar from "~/components/materials/CourseContentSidebar";
 import { toast } from "~/components/common/Toast";
 
+const isLessonCompletedFromServer = (lesson: Lesson): boolean => {
+  const anyLesson = lesson as unknown as {
+    progress?: number;
+    completed?: boolean;
+    isCompleted?: boolean;
+  };
+
+  if (typeof anyLesson.completed === "boolean") {
+    return anyLesson.completed;
+  }
+  if (typeof anyLesson.isCompleted === "boolean") {
+    return anyLesson.isCompleted;
+  }
+
+  const progress = anyLesson.progress;
+  if (typeof progress === "number") {
+    // Nếu backend trả thời lượng, ưu tiên so sánh theo phần trăm thời lượng
+    if (lesson.duration && typeof lesson.duration === "number" && lesson.duration > 0) {
+      const durationSeconds = lesson.duration * 60;
+      const safeDuration = durationSeconds > 0 ? durationSeconds : lesson.duration;
+      return progress >= safeDuration * 0.9;
+    }
+
+    // Fallback: coi như hoàn thành nếu progress >= 1 (cho cả dạng 0..1 và 0..100)
+    return progress >= 1;
+  }
+
+  return false;
+};
+
 const MaterialLearnPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -27,6 +57,7 @@ const MaterialLearnPage: React.FC = () => {
   const [videoLoading, setVideoLoading] = useState(false);
   const [videoError, setVideoError] = useState<string | null>(null);
   const videoCache = useRef<Record<string, string>>({});
+  const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
 
   const {
     loading: ratingLoading,
@@ -90,6 +121,12 @@ const MaterialLearnPage: React.FC = () => {
         if (sorted.length > 0 && !selectedLesson) {
           setSelectedLesson(sorted[0]);
         }
+
+        // Xác định các lesson đã hoàn thành từ dữ liệu progress của backend (nếu có)
+        const completedFromServer = sorted
+          .filter((lesson) => isLessonCompletedFromServer(lesson))
+          .map((lesson) => lesson.id);
+        setCompletedLessonIds(completedFromServer);
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -123,9 +160,6 @@ const MaterialLearnPage: React.FC = () => {
     } else {
       setRatingValue(0);
       setRatingComment("");
-    }
-    if (ratingModalOpen && !videoPlayedForLastLessonRef.current && !videoEndedForLastLessonRef.current) {
-      setRatingModalOpen(false);
     }
   }, [myRating, ratingModalOpen]);
 
@@ -230,77 +264,27 @@ const MaterialLearnPage: React.FC = () => {
     void loadVideo();
   }, [lessonVideoRef]);
 
-  const videoEndedForLastLessonRef = useRef(false);
-  const videoPlayedForLastLessonRef = useRef(false);
-
-  useEffect(() => {
-    videoEndedForLastLessonRef.current = false;
-    videoPlayedForLastLessonRef.current = false;
-    setRatingModalOpen(false);
-    setHasSelectedRating(false);
-  }, [selectedLesson?.id]);
-
   const sortedLessons = sortLessons(lessons);
-  const isLastLessonSelected =
-    !!selectedLesson &&
+  const allLessonsCompleted =
     sortedLessons.length > 0 &&
-    selectedLesson.id === sortedLessons[sortedLessons.length - 1].id;
-
-  const setRatingModalOpenSafe = (open: boolean) => {
-    if (open) {
-      const currentIsLastLesson =
-        !!selectedLesson &&
-        sortedLessons.length > 0 &&
-        selectedLesson.id === sortedLessons[sortedLessons.length - 1].id;
-
-      const canOpen =
-        currentIsLastLesson &&
-        videoPlayedForLastLessonRef.current &&
-        videoEndedForLastLessonRef.current;
-
-      setRatingModalOpen(canOpen);
-    } else {
-      setRatingModalOpen(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isLastLessonSelected) {
-      const shouldBeOpen =
-        videoPlayedForLastLessonRef.current &&
-        videoEndedForLastLessonRef.current;
-
-      if (ratingModalOpen && !shouldBeOpen) {
-        setRatingModalOpen(false);
-      }
-
-      if (!videoPlayedForLastLessonRef.current) {
-        videoEndedForLastLessonRef.current = false;
-      }
-    } else {
-      if (ratingModalOpen) {
-        setRatingModalOpen(false);
-      }
-    }
-  }, [isLastLessonSelected, ratingModalOpen]);
-
-  const handleVideoPlay = () => {
-    if (isLastLessonSelected) {
-      videoPlayedForLastLessonRef.current = true;
-    }
-  };
+    sortedLessons.every((lesson) => completedLessonIds.includes(lesson.id));
 
   const handleVideoEnded = () => {
-    if (
-      isLastLessonSelected &&
-      videoPlayedForLastLessonRef.current &&
-      material?.id &&
-      user
-    ) {
-      videoEndedForLastLessonRef.current = true;
-      setRatingModalOpenSafe(true);
-    }
+    if (!selectedLesson) return;
+
+    setCompletedLessonIds((prev) => {
+      if (prev.includes(selectedLesson.id)) {
+        return prev;
+      }
+      return [...prev, selectedLesson.id];
+    });
   };
+
+  useEffect(() => {
+    if (allLessonsCompleted && !myRating) {
+      setRatingModalOpen(true);
+    }
+  }, [allLessonsCompleted, myRating]);
 
   if (materialLoading) {
     return (
@@ -363,7 +347,6 @@ const MaterialLearnPage: React.FC = () => {
                 videoLoading={videoLoading}
                 videoError={videoError}
                 onVideoEnded={handleVideoEnded}
-                onVideoPlay={handleVideoPlay}
                 onOpenPdf={handleOpenPdf}
                 openingFile={openingFile}
                 activeTab={activeTab}
@@ -394,14 +377,7 @@ const MaterialLearnPage: React.FC = () => {
       </div>
 
       <Modal
-        open={
-          ratingModalOpen &&
-          isLastLessonSelected &&
-          videoPlayedForLastLessonRef.current &&
-          videoEndedForLastLessonRef.current &&
-          !!material.id &&
-          !!user
-        }
+        open={ratingModalOpen && allLessonsCompleted && !!material.id && !!user}
         onCancel={() => setRatingModalOpen(false)}
         footer={null}
         title="Rate Learning Material"
