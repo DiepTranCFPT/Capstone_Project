@@ -8,6 +8,7 @@ import FileContentService from "~/services/fileContentService";
 import LessonService from "~/services/LessonService";
 import { useAuth } from "~/hooks/useAuth";
 import { useLearningMaterialRatings } from "~/hooks/useLearningMaterialRatings";
+import { useCertificates } from "~/hooks/useCertificates";
 import LessonNotesPanel from "~/components/materials/LessonNotesPanel";
 import LessonDetailsSection from "~/components/materials/LessonDetailsSection";
 import CourseContentSidebar from "~/components/materials/CourseContentSidebar";
@@ -89,6 +90,7 @@ const MaterialLearnPage: React.FC = () => {
     fetchStatisticsByMaterial,
     createRating,
   } = useLearningMaterialRatings();
+  const { certificates, fetchMyCertificates } = useCertificates();
   const [ratingValue, setRatingValue] = useState<number>(0);
   const [ratingComment, setRatingComment] = useState<string>("");
   const [ratingModalOpen, setRatingModalOpen] = useState(false);
@@ -167,12 +169,27 @@ const MaterialLearnPage: React.FC = () => {
 
     fetchRatingByMaterialAndStudent(materialId, userId);
     fetchStatisticsByMaterial(materialId);
+    fetchMyCertificates();
   }, [
     material?.id,
     user?.id,
     fetchRatingByMaterialAndStudent,
     fetchStatisticsByMaterial,
+    fetchMyCertificates,
   ]);
+
+  // Check xem material này đã có certificate chưa (dựa trên subjectId)
+  const hasCertificate = useMemo(() => {
+    if (!material?.subjectId || !certificates || certificates.length === 0) {
+      return false;
+    }
+    return certificates.some((cert) => cert.subjectId === material.subjectId);
+  }, [material?.subjectId, certificates]);
+
+  // Nếu đã rating HOẶC có certificate → unlock tất cả lessons (cho phép xem lại)
+  const isMaterialCompleted = useMemo(() => {
+    return Boolean(myRating) || hasCertificate;
+  }, [myRating, hasCertificate]);
 
   useEffect(() => {
     if (myRating) {
@@ -291,6 +308,9 @@ const MaterialLearnPage: React.FC = () => {
     sortedLessons.every((lesson) => completedLessonIds.includes(lesson.id));
 
   const isLessonLocked = (lesson: Lesson): boolean => {
+    // Nếu material đã hoàn thành (rating/certificate) → unlock tất cả lessons
+    if (isMaterialCompleted) return false;
+    
     const index = sortedLessons.findIndex((l) => l.id === lesson.id);
     if (index <= 0) return false;
     const completedSet = new Set(completedLessonIds);
@@ -402,12 +422,15 @@ const MaterialLearnPage: React.FC = () => {
             completedLessonIds={completedLessonIds}
             onSelectLesson={(lesson) => {
               if (isLessonLocked(lesson)) {
-                message.warning("Vui lòng hoàn thành bài trước để mở khóa bài tiếp theo.");
+                message.warning("Please complete previous lessons to unlock the next one.");
                 return;
               }
               setSelectedLesson(lesson);
             }}
             loading={lessonsLoading}
+            isMaterialCompleted={isMaterialCompleted}
+            hasRating={Boolean(myRating)}
+            hasCertificate={hasCertificate}
           />
         </div>
       </div>
