@@ -164,9 +164,9 @@ const CreateExamPage: React.FC = () => {
     ).length;
   };
 
-  // Calculate number of questions from percentage
+  // Calculate number of questions from percentage (rounded)
   const calculateQuestions = (percentage: number) => {
-    return Math.floor((percentage / 100) * totalQuestions);
+    return Math.round((percentage / 100) * totalQuestions);
   };
 
   // Total percentage of all rules

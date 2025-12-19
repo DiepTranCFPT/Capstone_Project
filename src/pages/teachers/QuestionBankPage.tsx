@@ -10,6 +10,7 @@ import {
   Upload,
   Progress,
   Alert,
+  Image,
 } from "antd";
 import {
   DeleteOutlined,
@@ -22,14 +23,20 @@ import {
   DownloadOutlined,
   FileExcelOutlined,
   CloseOutlined,
+  ReadOutlined,
+  WarningOutlined,
+  PictureOutlined,
+  AudioOutlined,
 } from "@ant-design/icons";
 import type { QuestionBankItem, NewQuestion, QuestionImportResponse } from "~/types/question";
 import type { ColumnsType } from "antd/es/table";
 import AddQuestionModal from "~/components/teachers/exam/AddQuestionModal";
+import { ContextManagerModal } from "~/components/teachers/question";
 import { toast } from "~/components/common/Toast";
 import { useQuestionBank } from "~/hooks/useQuestionBank";
 import { useAuth } from "~/hooks/useAuth";
 import { useSubjects } from "~/hooks/useSubjects";
+import { useQuestionTopics } from "~/hooks/useQuestionTopics";
 import LatexRenderer from "~/components/common/LatexRenderer";
 
 const { Option } = Select;
@@ -40,7 +47,10 @@ const QuestionBankPage: React.FC = () => {
   const teacherId = user?.id;
 
   // Hook quản lý subjects
-  const { subjects } = useSubjects();
+  const { subjects, fetchSubjects, loading: loadingSubjects } = useSubjects();
+
+  // Hook quản lý topics
+  const { topics, fetchTopicsBySubject, loading: loadingTopics } = useQuestionTopics();
 
   //  Hook quản lý dữ liệu câu hỏi
   const {
@@ -56,6 +66,7 @@ const QuestionBankPage: React.FC = () => {
     getQuestionById,
     downloadImportTemplate,
     importQuestions,
+    fetchDuplicates,
   } = useQuestionBank();
 
   const difficultyOptions = useMemo(
@@ -68,7 +79,7 @@ const QuestionBankPage: React.FC = () => {
   );
 
   // Hook quản lý topics
- 
+
 
   //  Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -91,13 +102,20 @@ const QuestionBankPage: React.FC = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [batchDeleteConfirmVisible, setBatchDeleteConfirmVisible] = useState(false);
 
+  // Context Manager modal state
+  const [contextManagerVisible, setContextManagerVisible] = useState(false);
+
+  // Duplicates check state
+  const [duplicateIds, setDuplicateIds] = useState<string[]>([]);
+  const [duplicatesModalVisible, setDuplicatesModalVisible] = useState(false);
+  const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
+
   //  Filter states
   const [searchText, setSearchText] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
-  const [selectedSubject, setSelectedSubject] =
-    useState<string>("All Subjects");
-  const [selectedTopic, setSelectedTopic] = useState<string>("All Topics");
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
+  const [selectedTopic, setSelectedTopic] = useState<string>("");
 
   // Pagination state (controlled) - giúp chuyển trang ổn định dù dataSource thay đổi do filter/sort
   const [tablePagination, setTablePagination] = useState({
@@ -151,6 +169,9 @@ const QuestionBankPage: React.FC = () => {
           options: fullQuestion.options || question.options,
           expectedAnswer: fullQuestion.expectedAnswer || question.expectedAnswer || "",
           tags: fullQuestion.tags || question.tags,
+          imageUrl: fullQuestion.imageUrl || question.imageUrl,
+          audioUrl: fullQuestion.audioUrl || question.audioUrl,
+          questionContext: fullQuestion.questionContext || question.questionContext,
         };
         console.log("[QuestionBankPage] Setting viewing question:", normalizedQuestion);
         setViewingQuestion(normalizedQuestion);
@@ -189,6 +210,9 @@ const QuestionBankPage: React.FC = () => {
           options: fullQuestion.options || question.options,
           expectedAnswer: fullQuestion.expectedAnswer || question.expectedAnswer || "",
           tags: fullQuestion.tags || question.tags,
+          imageUrl: fullQuestion.imageUrl || question.imageUrl,
+          audioUrl: fullQuestion.audioUrl || question.audioUrl,
+          questionContext: fullQuestion.questionContext || question.questionContext,
         };
         setEditingQuestion(normalizedQuestion);
         setIsModalOpen(true);
@@ -294,12 +318,12 @@ const QuestionBankPage: React.FC = () => {
     setSearchText("");
     setSelectedDifficulty("all");
     setSelectedType("all");
-    setSelectedSubject("All Subjects");
-    setSelectedTopic("All Topics");
+    setSelectedSubjectId("");
+    setSelectedTopic("");
     setTablePagination((prev) => ({ ...prev, current: 1 }));
   };
 
-  // � Import Excel handlers
+  //  Import Excel handlers
   const handleOpenImportModal = () => {
     setImportModalVisible(true);
     setImportSubjectId("");
@@ -375,7 +399,9 @@ const QuestionBankPage: React.FC = () => {
         }
 
         const subject = q.subject || "";
-        if (selectedSubject !== "All Subjects" && subject !== selectedSubject) {
+        // Filter by subject name (get subject name from selectedSubjectId)
+        const selectedSubjectName = subjects.find(s => s.id === selectedSubjectId)?.name || "";
+        if (selectedSubjectId && subject !== selectedSubjectName) {
           return false;
         }
 
@@ -388,7 +414,7 @@ const QuestionBankPage: React.FC = () => {
         }
 
         const topic = (q.topic || "").trim();
-        if (selectedTopic !== "All Topics" && topic !== selectedTopic) {
+        if (selectedTopic && topic !== selectedTopic) {
           return false;
         }
 
@@ -407,16 +433,29 @@ const QuestionBankPage: React.FC = () => {
   }, [
     questionBank,
     searchText,
-    selectedSubject,
+    selectedSubjectId,
     selectedDifficulty,
     selectedTopic,
     selectedType,
+    subjects,
   ]);
 
   // Khi thay đổi filter/search, reset về trang 1 để tránh bị kẹt ở trang không còn dữ liệu
   useEffect(() => {
     setTablePagination((prev) => ({ ...prev, current: 1 }));
-  }, [searchText, selectedSubject, selectedDifficulty, selectedTopic, selectedType]);
+  }, [searchText, selectedSubjectId, selectedDifficulty, selectedTopic, selectedType]);
+
+  // Fetch topics when subject is selected
+  useEffect(() => {
+    if (selectedSubjectId) {
+      fetchTopicsBySubject(selectedSubjectId);
+    }
+  }, [selectedSubjectId, fetchTopicsBySubject]);
+
+  // Fetch subjects on mount
+  useEffect(() => {
+    fetchSubjects({ pageNo: 0, pageSize: 100 });
+  }, [fetchSubjects]);
 
   // 🧾 Cấu hình cột bảng
   const columns: ColumnsType<QuestionBankItem> = [
@@ -457,7 +496,6 @@ const QuestionBankPage: React.FC = () => {
         return <Tag color={color}>{difficulty}</Tag>;
       },
     },
-    { title: "Created At", dataIndex: "createdAt", key: "createdAt" },
     {
       title: "Action",
       key: "action",
@@ -503,6 +541,33 @@ const QuestionBankPage: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-800">Question Bank</h1>
         <Space>
           <Button
+            icon={<WarningOutlined />}
+            size="large"
+            onClick={async () => {
+              setIsCheckingDuplicates(true);
+              const ids = await fetchDuplicates();
+              setDuplicateIds(ids);
+              setIsCheckingDuplicates(false);
+              if (ids.length > 0) {
+                setDuplicatesModalVisible(true);
+              } else {
+                toast.success("No duplicate questions found!");
+              }
+            }}
+            loading={isCheckingDuplicates}
+            style={{ borderColor: "#faad14", color: "#faad14" }}
+          >
+            Check Duplicates
+          </Button>
+          <Button
+            icon={<ReadOutlined />}
+            size="large"
+            onClick={() => setContextManagerVisible(true)}
+            style={{ borderColor: "#3CBCB2", color: "#3CBCB2" }}
+          >
+            Manage Contexts
+          </Button>
+          <Button
             icon={<UploadOutlined />}
             size="large"
             onClick={handleOpenImportModal}
@@ -529,22 +594,44 @@ const QuestionBankPage: React.FC = () => {
           prefix={<SearchOutlined />}
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
+          style={{ width: 200 }}
         />
         <Select
-          value={selectedSubject}
-          onChange={setSelectedSubject}
+          value={selectedSubjectId || undefined}
+          onChange={(value) => {
+            setSelectedSubjectId(value || "");
+            setSelectedTopic(""); // Reset topic when subject changes
+          }}
+          placeholder="All Subjects"
+          allowClear
           className="w-48"
+          loading={loadingSubjects}
         >
-          <Option value="All Subjects">All Subjects</Option>
-          <Option value="Biology">Biology</Option>
-          <Option value="Mathematics">Mathematics</Option>
-          <Option value="Physics">Physics</Option>
-          <Option value="History">History</Option>
+          {subjects.map((subject) => (
+            <Option key={subject.id} value={subject.id}>
+              {subject.name}
+            </Option>
+          ))}
+        </Select>
+        <Select
+          value={selectedTopic || undefined}
+          onChange={(value) => setSelectedTopic(value || "")}
+          placeholder="All Topics"
+          allowClear
+          className="w-48"
+          loading={loadingTopics}
+          disabled={!selectedSubjectId}
+        >
+          {topics.map((topic) => (
+            <Option key={topic.id} value={topic.name}>
+              {topic.name}
+            </Option>
+          ))}
         </Select>
         <Select
           value={selectedDifficulty}
           onChange={setSelectedDifficulty}
-          className="w-48"
+          className="w-40"
         >
           <Option value="all">All Difficulties</Option>
           {difficultyOptions.map((option) => (
@@ -556,7 +643,7 @@ const QuestionBankPage: React.FC = () => {
         <Select
           value={selectedType}
           onChange={setSelectedType}
-          className="w-48"
+          className="w-32"
         >
           <Option value="all">All Types</Option>
           <Option value="mcq">MCQ</Option>
@@ -615,6 +702,9 @@ const QuestionBankPage: React.FC = () => {
           onChange: (keys) => setSelectedRowKeys(keys),
           preserveSelectedRowKeys: true,
         }}
+        rowClassName={(record) =>
+          duplicateIds.includes(record.id) ? "bg-yellow-50" : ""
+        }
       />
 
       {/* Add/Edit Modal */}
@@ -789,6 +879,78 @@ const QuestionBankPage: React.FC = () => {
               </div>
             )}
 
+            {/* Question Context */}
+            {viewingQuestion.questionContext && (
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 className="text-base font-semibold mb-2 text-blue-700 flex items-center gap-2">
+                  <ReadOutlined />
+                  Context: {viewingQuestion.questionContext.title}
+                </h3>
+                <p className="text-gray-700 whitespace-pre-wrap mb-3">
+                  {viewingQuestion.questionContext.content}
+                </p>
+                {viewingQuestion.questionContext.subjectName && (
+                  <p className="text-sm text-gray-500">
+                    Subject: {viewingQuestion.questionContext.subjectName}
+                  </p>
+                )}
+                {/* Context Image */}
+                {viewingQuestion.questionContext.imageUrl && (
+                  <div className="mt-3">
+                    <p className="text-sm text-gray-500 mb-2 flex items-center gap-1">
+                      <PictureOutlined /> Context Image:
+                    </p>
+                    <Image
+                      src={viewingQuestion.questionContext.imageUrl}
+                      alt="Context Image"
+                      style={{ maxHeight: "200px" }}
+                    />
+                  </div>
+                )}
+                {/* Context Audio */}
+                {viewingQuestion.questionContext.audioUrl && (
+                  <div className="mt-3">
+                    <p className="text-sm text-gray-500 mb-2 flex items-center gap-1">
+                      <AudioOutlined /> Context Audio:
+                    </p>
+                    <audio
+                      src={viewingQuestion.questionContext.audioUrl}
+                      controls
+                      className="w-full"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Question Image */}
+            {viewingQuestion.imageUrl && (
+              <div>
+                <h3 className="text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
+                  <PictureOutlined /> Question Image
+                </h3>
+                <Image
+                  src={viewingQuestion.imageUrl}
+                  alt="Question Image"
+                  style={{ maxHeight: "300px" }}
+                />
+              </div>
+            )}
+
+            {/* Question Audio */}
+            {viewingQuestion.audioUrl && (
+              <div>
+                <h3 className="text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
+                  <AudioOutlined /> Question Audio
+                </h3>
+                <audio
+                  src={viewingQuestion.audioUrl}
+                  controls
+                  className="w-full"
+                />
+              </div>
+            )}
+
           </div>
         )}
       </Modal>
@@ -817,7 +979,7 @@ const QuestionBankPage: React.FC = () => {
             onClick={handleImportQuestions}
             loading={isImporting}
             disabled={!importSubjectId || !importFile}
-            style={{ backgroundColor: "#3CBCB2", border: "none" }}
+            style={{ backgroundColor: "#3CBCB2", border: "none", color: "white" }}
           >
             Import
           </Button>,
@@ -833,9 +995,9 @@ const QuestionBankPage: React.FC = () => {
             message="Hướng dẫn Import"
             description={
               <ol className="list-decimal list-inside space-y-1 text-sm">
-                <li>Tải template Excel bằng nút "Download Template"</li>
-                <li>Điền câu hỏi vào file theo đúng format</li>
-                <li>Chọn môn học và upload file để import</li>
+                <li>Download template Excel with "Download Template" button</li>
+                <li>Fill in the questions into the file following the correct format</li>
+                <li>Choose subject and upload file to import</li>
               </ol>
             }
             type="info"
@@ -845,10 +1007,10 @@ const QuestionBankPage: React.FC = () => {
           {/* Subject Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Môn học <span className="text-red-500">*</span>
+              Subject <span className="text-red-500">*</span>
             </label>
             <Select
-              placeholder="Chọn môn học"
+              placeholder="Select subject"
               value={importSubjectId || undefined}
               onChange={setImportSubjectId}
               className="w-full"
@@ -880,8 +1042,8 @@ const QuestionBankPage: React.FC = () => {
               <p className="ant-upload-drag-icon">
                 <FileExcelOutlined style={{ fontSize: '48px', color: '#52c41a' }} />
               </p>
-              <p className="ant-upload-text">Click hoặc kéo thả file Excel vào đây</p>
-              <p className="ant-upload-hint">Chỉ hỗ trợ file .xlsx hoặc .xls</p>
+              <p className="ant-upload-text">Click or drag and drop the Excel file here</p>
+              <p className="ant-upload-hint">Only supports .xlsx or .xls files</p>
             </Upload.Dragger>
           </div>
 
@@ -895,7 +1057,7 @@ const QuestionBankPage: React.FC = () => {
               className="w-4 h-4 text-teal-600 rounded border-gray-300"
             />
             <label htmlFor="skipErrors" className="text-sm text-gray-600">
-              Bỏ qua các câu hỏi lỗi và tiếp tục import những câu hợp lệ
+              Skip invalid questions and continue importing valid questions
             </label>
           </div>
 
@@ -911,10 +1073,10 @@ const QuestionBankPage: React.FC = () => {
                 />
                 <div>
                   <p className="text-lg font-medium">
-                    {importResult.successCount}/{importResult.totalProcessed} câu hỏi thành công
+                    {importResult.successCount}/{importResult.totalProcessed} questions imported successfully
                   </p>
                   {importResult.errorCount > 0 && (
-                    <p className="text-red-500">{importResult.errorCount} câu hỏi lỗi</p>
+                    <p className="text-red-500">{importResult.errorCount} questions failed to import</p>
                   )}
                 </div>
               </div>
@@ -922,7 +1084,7 @@ const QuestionBankPage: React.FC = () => {
               {/* Error Messages */}
               {importResult.errorMessages && importResult.errorMessages.length > 0 && (
                 <Alert
-                  message="Chi tiết lỗi"
+                  message="Error Details"
                   description={
                     <ul className="list-disc list-inside max-h-32 overflow-y-auto text-sm">
                       {importResult.errorMessages.map((error, index) => (
@@ -938,14 +1100,84 @@ const QuestionBankPage: React.FC = () => {
               {/* Success Message */}
               {importResult.successCount > 0 && importResult.errorCount === 0 && (
                 <Alert
-                  message="Import thành công!"
-                  description={`Đã import ${importResult.successCount} câu hỏi vào ngân hàng câu hỏi.`}
+                  message="Import successful!"
+                  description={`Imported ${importResult.successCount} questions into the question bank.`}
                   type="success"
                   showIcon
                 />
               )}
             </div>
           )}
+        </div>
+      </Modal>
+
+      {/* Context Manager Modal */}
+      <ContextManagerModal
+        open={contextManagerVisible}
+        onClose={() => setContextManagerVisible(false)}
+      />
+
+      {/* Duplicates Modal */}
+      <Modal
+        open={duplicatesModalVisible}
+        onCancel={() => {
+          setDuplicatesModalVisible(false);
+        }}
+        title={
+          <div className="flex items-center gap-2">
+            <WarningOutlined style={{ color: "#faad14", fontSize: "20px" }} />
+            <span>Duplicate Questions Found</span>
+          </div>
+        }
+        footer={[
+          <Button
+            key="clear"
+            onClick={() => {
+              setDuplicateIds([]);
+              setDuplicatesModalVisible(false);
+            }}
+          >
+            Clear Highlights
+          </Button>,
+          <Button
+            key="close"
+            type="primary"
+            onClick={() => setDuplicatesModalVisible(false)}
+            style={{ backgroundColor: "#3CBCB2", border: "none" }}
+          >
+            Close
+          </Button>,
+        ]}
+        width={600}
+      >
+        <div className="space-y-4">
+          <Alert
+            message={`Found ${duplicateIds.length} duplicate question(s)`}
+            description="These questions have similar or identical content. Consider reviewing and removing duplicates to keep your question bank clean."
+            type="warning"
+            showIcon
+          />
+          <div className="max-h-64 overflow-y-auto">
+            <p className="text-sm text-gray-600 mb-2">Duplicate Question IDs:</p>
+            <ul className="list-disc list-inside space-y-1 text-sm">
+              {duplicateIds.map((id) => {
+                const question = questionBank.find((q) => q.id === id);
+                return (
+                  <li key={id} className="text-gray-700">
+                    <span className="font-mono text-xs bg-gray-100 px-1 rounded">{id.substring(0, 8)}...</span>
+                    {question && (
+                      <span className="ml-2 text-gray-500">
+                        - {question.text?.substring(0, 50)}...
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+          <p className="text-xs text-gray-500">
+            * Duplicate questions are now highlighted in yellow in the table below.
+          </p>
         </div>
       </Modal>
     </div>

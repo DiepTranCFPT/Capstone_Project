@@ -18,6 +18,10 @@ export interface QuestionBankItem {
   options?: QuestionOption[];
   expectedAnswer?: string;
   tags?: string[];
+  imageUrl?: string;
+  audioUrl?: string;
+  contextId?: string;
+  questionContext?: QuestionContext;
 }
 
 // Dùng khi thêm câu hỏi thủ công (form modal)
@@ -31,6 +35,10 @@ export interface NewQuestion {
   choices?: string[];
   correctIndex?: number | null;
   expectedAnswer?: string;
+  imageUrl?: string;
+  audioUrl?: string;
+  contextId?: string;
+  context?: CreateQuestionContextRequest;
 }
 
 // Form field types cho AddQuestionModal
@@ -74,6 +82,8 @@ export interface Difficulty {
 export interface Answer {
   id: string;
   content: string;
+  isCorrect?: boolean;
+  explanation?: string;
 }
 
 export interface QuestionV2 {
@@ -85,6 +95,9 @@ export interface QuestionV2 {
   createdBy: string;
   topic: string;
   answers: Answer[];
+  imageUrl?: string;
+  audioUrl?: string;
+  questionContext?: QuestionContext;
 }
 
 export interface QuestionV2PaginationResponse {
@@ -115,4 +128,61 @@ export interface BatchDeleteQuestionsResponse {
   code: number;
   message: string;
   data: string;
+}
+
+// Types cho API /questions-v2/context
+export interface QuestionContext {
+  id: string;
+  title: string;
+  content: string;
+  imageUrl: string;
+  audioUrl: string;
+  subjectId: string;
+  subjectName: string;
+}
+
+export interface CreateQuestionContextRequest {
+  title: string;
+  content: string;
+  imageUrl?: string;
+  audioUrl?: string;
+  subjectId: string;
+}
+
+export interface UpdateQuestionContextRequest {
+  title: string;
+  content: string;
+  imageUrl?: string;
+  audioUrl?: string;
+  subjectId: string;
+}
+
+export interface QuestionContextResponse {
+  code: number;
+  message: string;
+  data: QuestionContext;
+}
+
+// Types cho API /files/upload/questions
+export interface FileUploadQuestionsResponse {
+  code: number;
+  message: string;
+  data: string;
+}
+
+// Types cho API /questions-v2/context/me (lấy contexts của user hiện tại)
+export interface MyContextPaginationResponse {
+  pageNo: number;
+  pageSize: number;
+  totalPage: number;
+  totalElement: number;
+  sortBy: string[];
+  items: QuestionContext[];
+}
+
+// Types cho API /questions-v2/duplicates và /questions-v2/context/duplicates
+export interface DuplicatesResponse {
+  code: number;
+  message: string;
+  data: string[];
 }

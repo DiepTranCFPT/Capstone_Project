@@ -2,7 +2,15 @@ import { useState, useCallback } from "react";
 import { message } from "antd";
 import QuestionService from "~/services/QuestionService";
 import axiosInstance from "~/configs/axios";
-import type { QuestionBankItem, NewQuestion, QuestionOption } from "~/types/question";
+import type {
+  QuestionBankItem,
+  NewQuestion,
+  QuestionOption,
+  CreateQuestionContextRequest,
+  UpdateQuestionContextRequest,
+  QuestionContext
+} from "~/types/question";
+import { toast } from "~/components/common/Toast";
 
 type QuestionBankPageMeta = {
   pageNo: number;
@@ -103,12 +111,7 @@ export const useQuestionBank = () => {
       (record["correctAnswer"] as Record<string, unknown>)?.["answerId"]
     );
 
-    // Debug: Log correctAnswerId if found
-    if (correctAnswerId) {
-      console.log("[useQuestionBank] Found correctAnswerId:", correctAnswerId);
-    } else {
-      console.warn("[useQuestionBank] No correctAnswerId found in question object");
-    }
+    // Debug logs removed - correctAnswerId is optional and not always present
 
     const options = Array.isArray(optionsRaw)
       ? optionsRaw
@@ -247,6 +250,34 @@ export const useQuestionBank = () => {
         }
       }
     }
+    // Extract imageUrl and audioUrl
+    const imageUrl = normalizeString(
+      record["imageUrl"],
+      record["image_url"],
+      record["image"]
+    ) || undefined;
+
+    const audioUrl = normalizeString(
+      record["audioUrl"],
+      record["audio_url"],
+      record["audio"]
+    ) || undefined;
+
+    // Extract questionContext
+    const questionContextRaw = record["questionContext"] ?? record["context"] ?? record["question_context"];
+    let questionContext: QuestionBankItem["questionContext"] = undefined;
+    if (questionContextRaw && typeof questionContextRaw === "object") {
+      const ctx = questionContextRaw as Record<string, unknown>;
+      questionContext = {
+        id: normalizeString(ctx["id"]) || "",
+        title: normalizeString(ctx["title"]) || "",
+        content: normalizeString(ctx["content"]) || "",
+        imageUrl: normalizeString(ctx["imageUrl"], ctx["image_url"]) || "",
+        audioUrl: normalizeString(ctx["audioUrl"], ctx["audio_url"]) || "",
+        subjectId: normalizeString(ctx["subjectId"], ctx["subject_id"]) || "",
+        subjectName: normalizeString(ctx["subjectName"], ctx["subject_name"]) || "",
+      };
+    }
 
     return {
       id,
@@ -260,6 +291,9 @@ export const useQuestionBank = () => {
       options: options as QuestionOption[] | undefined,
       expectedAnswer: expectedAnswer || undefined,
       tags,
+      imageUrl,
+      audioUrl,
+      questionContext,
     };
   }, []);
 
@@ -374,7 +408,6 @@ export const useQuestionBank = () => {
       let rawData = res.data?.data as unknown as Record<string, unknown> | undefined;
 
       // Debug: Log raw response from backend
-      console.log("[useQuestionBank] Raw response from backend:", JSON.stringify(rawData, null, 2));
       if (rawData && rawData.answers && Array.isArray(rawData.answers)) {
         console.log("[useQuestionBank] Answers from backend:", rawData.answers);
       }
@@ -491,9 +524,7 @@ export const useQuestionBank = () => {
           isCorrect: opt.isCorrect || false,
           explanation: opt.explanation || "", // Backend may expect explanation field
         }));
-        console.log("[useQuestionBank] MCQ options:", transformed.options);
-        console.log("[useQuestionBank] Answers for backend:", transformed.answers);
-        console.log("[useQuestionBank] Correct answer ID:", transformed.correctAnswerId);
+       
       } else {
         console.warn("[useQuestionBank] No options found for MCQ question");
       }
@@ -570,6 +601,24 @@ export const useQuestionBank = () => {
       transformed.tags = data.tags;
     }
 
+    // Add context fields if present
+    if ("contextId" in data && data.contextId) {
+      transformed.contextId = data.contextId;
+    }
+
+    // Add inline context if present (for creating new context with question)
+    if ("context" in data && data.context) {
+      transformed.context = data.context;
+    }
+
+    // Add image and audio URLs if present
+    if ("imageUrl" in data && data.imageUrl) {
+      transformed.imageUrl = data.imageUrl;
+    }
+    if ("audioUrl" in data && data.audioUrl) {
+      transformed.audioUrl = data.audioUrl;
+    }
+
     return transformed;
   }, []);
 
@@ -577,10 +626,8 @@ export const useQuestionBank = () => {
   const createQuestion = useCallback(async (data: NewQuestion) => {
     try {
       const apiData = transformQuestionForAPI(data);
-      console.log("[useQuestionBank] Creating question with data:", JSON.stringify(apiData, null, 2));
-      console.log("[useQuestionBank] Options detail:", apiData.options);
       const res = await QuestionService.create(apiData);
-      message.success("Tạo câu hỏi thành công!");
+      toast.success("Created question successfully!");
       return res.data?.data;
     } catch (error: unknown) {
       // Extract error message from backend response
@@ -607,13 +654,12 @@ export const useQuestionBank = () => {
     async (id: string, data: Partial<QuestionBankItem> | NewQuestion) => {
       try {
         const apiData = transformQuestionForAPI(data);
-        console.log("[useQuestionBank] Updating question with data:", JSON.stringify(apiData, null, 2));
         const res = await QuestionService.update(id, apiData);
-        message.success("Cập nhật câu hỏi thành công!");
+        toast.success("Updated question successfully!");
         return res.data?.data;
       } catch (error: unknown) {
         // Extract error message from backend response
-        let errorMessage = "Cập nhật câu hỏi thất bại!";
+        let errorMessage = "Failed to update question!";
         if (error && typeof error === "object" && "response" in error) {
           const axiosError = error as { response?: { data?: { message?: string; errors?: unknown } } };
           const responseData = axiosError.response?.data;
@@ -621,11 +667,11 @@ export const useQuestionBank = () => {
             errorMessage = responseData.message;
           } else if (responseData?.errors) {
             console.error("[useQuestionBank] Validation errors:", responseData.errors);
-            errorMessage = "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.";
+            errorMessage = "Invalid data. Please check again.";
           }
           console.error("[useQuestionBank] Error response:", responseData);
         }
-        message.error(errorMessage);
+        toast.error(errorMessage);
         console.error("[useQuestionBank] Update question error:", error);
         throw error;
       }
@@ -638,9 +684,9 @@ export const useQuestionBank = () => {
     try {
       await QuestionService.delete(id);
       setQuestions((prev) => prev.filter((q) => q.id !== id));
-      message.success("Xóa câu hỏi thành công!");
+      toast.success("Deleted question successfully!");
     } catch (error) {
-      message.error("Xóa câu hỏi thất bại!");
+      toast.error("Failed to delete question!");
       console.error(error);
     }
   }, []);
@@ -668,7 +714,7 @@ export const useQuestionBank = () => {
       const res = await QuestionService.getBySubjectId(subjectId, queryParams);
       setQuestions(normalizeQuestions(res.data?.data));
     } catch (error) {
-      message.error("Không thể tải câu hỏi theo môn học!");
+      toast.error("Failed to load questions by subject!");
       console.error(error);
     } finally {
       setLoading(false);
@@ -683,7 +729,7 @@ export const useQuestionBank = () => {
       setQuestions(normalizeQuestions(res.data?.data));
       setPageMeta(extractPageMeta(res.data?.data));
     } catch (error) {
-      message.error("Không thể tải câu hỏi theo người dùng!");
+      toast.error("Failed to load questions by user!");
       console.error(error);
     } finally {
       setLoading(false);
@@ -707,9 +753,9 @@ export const useQuestionBank = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      message.success("Tải template thành công!");
+      toast.success("Download template successfully!");
     } catch (error) {
-      message.error("Không thể tải template import!");
+      toast.error("Failed to download template!");
       console.error(error);
     } finally {
       setLoading(false);
@@ -729,19 +775,19 @@ export const useQuestionBank = () => {
 
       if (result) {
         if (result.errorCount > 0) {
-          message.warning(
-            `Import hoàn tất: ${result.successCount}/${result.totalProcessed} câu hỏi thành công. ${result.errorCount} lỗi.`
+          toast.warning(
+            `Import completed: ${result.successCount}/${result.totalProcessed} questions imported. ${result.errorCount} errors.`
           );
         } else {
-          message.success(
-            `Import thành công ${result.successCount} câu hỏi!`
+          toast.success(
+            `Imported ${result.successCount} questions successfully!`
           );
         }
         return result;
       }
       return null;
     } catch (error: unknown) {
-      let errorMessage = "Import câu hỏi thất bại!";
+      let errorMessage = "Import failed!";
       if (error && typeof error === "object" && "response" in error) {
         const axiosError = error as { response?: { data?: { message?: string } } };
         if (axiosError.response?.data?.message) {
@@ -759,7 +805,7 @@ export const useQuestionBank = () => {
   // 🔹 Xóa nhiều câu hỏi cùng lúc (batch delete)
   const batchDeleteQuestions = useCallback(async (questionIds: string[]): Promise<boolean> => {
     if (questionIds.length === 0) {
-      message.warning("Vui lòng chọn ít nhất một câu hỏi để xóa");
+      toast.warning("Please select at least one question to delete");
       return false;
     }
 
@@ -767,18 +813,175 @@ export const useQuestionBank = () => {
       setLoading(true);
       const res = await QuestionService.batchDelete(questionIds);
       if (res.data.code === 0 || res.data.code === 1000) {
-        message.success(`Đã xóa thành công ${questionIds.length} câu hỏi`);
+        toast.success(`Deleted ${questionIds.length} questions successfully`);
         // Remove deleted questions from state
         setQuestions((prev) => prev.filter((q) => !questionIds.includes(q.id)));
         return true;
       } else {
-        message.error(res.data.message || "Xóa câu hỏi thất bại!");
+        toast.error(res.data.message || "Delete questions failed!");
         return false;
       }
     } catch (error) {
       console.error("Failed to batch delete questions:", error);
-      message.error("Không thể xóa các câu hỏi đã chọn!");
+      toast.error("Failed to batch delete questions!");
       return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // 🔹 Tạo question context mới
+  const createQuestionContext = useCallback(async (data: CreateQuestionContextRequest): Promise<QuestionContext | null> => {
+    try {
+      setLoading(true);
+      const res = await QuestionService.createContext(data);
+      if (res.data.code === 0 || res.data.code === 1000) {
+        message.success("Tạo context thành công!");
+        return res.data.data;
+      } else {
+        toast.error(res.data.message || "Create context failed!");
+        return null;
+      }
+    } catch (error: unknown) {
+      let errorMessage = "Create context failed!";
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+      }
+      toast.error(errorMessage);
+      console.error("[useQuestionBank] Create context error:", error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // 🔹 Cập nhật question context
+  const updateQuestionContext = useCallback(async (id: string, data: UpdateQuestionContextRequest): Promise<QuestionContext | null> => {
+    try {
+      setLoading(true);
+      const res = await QuestionService.updateContext(id, data);
+      if (res.data.code === 0 || res.data.code === 1000) {
+        toast.success("Update context successfully!");
+        return res.data.data;
+      } else {
+        toast.error(res.data.message || "Update context failed!");
+        return null;
+      }
+    } catch (error: unknown) {
+      let errorMessage = "Update context failed!";
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+      }
+      toast.error(errorMessage);
+      console.error("[useQuestionBank] Update context error:", error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // 🔹 Upload file cho questions
+  const uploadQuestionFile = useCallback(async (file: File): Promise<string | null> => {
+    try {
+      setLoading(true);
+      const res = await QuestionService.uploadQuestionFile(file);
+      if (res.data.code === 0 || res.data.code === 1000) {
+        toast.success("Upload file successfully!");
+        return res.data.data;
+      } else {
+        toast.error(res.data.message || "Upload file failed!");
+        return null;
+      }
+    } catch (error: unknown) {
+      let errorMessage = "Upload file failed!";
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+      }
+      toast.error(errorMessage);
+      console.error("[useQuestionBank] Upload file error:", error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // 🔹 Lấy danh sách contexts của user hiện tại (GET /questions-v2/context/me)
+  const fetchMyContexts = useCallback(async (params?: { pageNo?: number; pageSize?: number; sorts?: string[] }): Promise<{
+    items: QuestionContext[];
+    totalElement: number;
+    totalPage: number;
+    pageNo: number;
+    pageSize: number;
+  } | null> => {
+    try {
+      setLoading(true);
+      const res = await QuestionService.getMyContexts(params);
+      if (res.data.code === 0 || res.data.code === 1000) {
+        const data = res.data.data;
+        return {
+          items: data.items || [],
+          totalElement: data.totalElement || 0,
+          totalPage: data.totalPage || 0,
+          pageNo: data.pageNo || 0,
+          pageSize: data.pageSize || 10,
+        };
+      } else {
+        toast.error(res.data.message);
+        return null;
+      }
+    } catch (error: unknown) {
+      console.error("[useQuestionBank] Fetch my contexts error:", error);
+      toast.error("Fail to fetch my contexts");
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // 🔹 Lấy danh sách câu hỏi trùng lặp (GET /questions-v2/duplicates)
+  const fetchDuplicates = useCallback(async (): Promise<string[]> => {
+    try {
+      setLoading(true);
+      const res = await QuestionService.getDuplicates();
+      if (res.data.code === 0 || res.data.code === 1000) {
+        return res.data.data || [];
+      } else {
+        toast.error(res.data.message);
+        return [];
+      }
+    } catch (error: unknown) {
+      console.error("[useQuestionBank] Fetch duplicates error:", error);
+      toast.error("Fail to fetch duplicates");
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // 🔹 Lấy danh sách context trùng lặp (GET /questions-v2/context/duplicates)
+  const fetchContextDuplicates = useCallback(async (): Promise<string[]> => {
+    try {
+      setLoading(true);
+      const res = await QuestionService.getContextDuplicates();
+      if (res.data.code === 0 || res.data.code === 1000) {
+        return res.data.data || [];
+      } else {
+        toast.error(res.data.message);
+        return [];
+      }
+    } catch (error: unknown) {
+      console.error("[useQuestionBank] Fetch context duplicates error:", error);
+      toast.error("Fail to fetch context duplicates");
+      return [];
     } finally {
       setLoading(false);
     }
@@ -799,7 +1002,14 @@ export const useQuestionBank = () => {
     fetchBySubjectId,
     downloadImportTemplate,
     importQuestions,
+    createQuestionContext,
+    updateQuestionContext,
+    uploadQuestionFile,
+    fetchMyContexts,
+    fetchDuplicates,
+    fetchContextDuplicates,
   };
 };
 
 export default useQuestionBank;
+

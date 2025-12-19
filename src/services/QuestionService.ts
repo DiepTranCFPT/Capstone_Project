@@ -3,7 +3,19 @@ import type { AxiosResponse } from "axios";
 import type { ApiResponse } from "~/types/api";
 import type { PageInfo } from "~/types/pagination";
 import type { QuestionTopic } from "~/types/questionTopic";
-import type { QuestionBankItem, NewQuestion, QuestionV2PaginationResponse, QuestionImportResponse, BatchDeleteQuestionsResponse } from "~/types/question";
+import type {
+  QuestionBankItem,
+  NewQuestion,
+  QuestionV2PaginationResponse,
+  QuestionImportResponse,
+  BatchDeleteQuestionsResponse,
+  CreateQuestionContextRequest,
+  UpdateQuestionContextRequest,
+  QuestionContextResponse,
+  FileUploadQuestionsResponse,
+  MyContextPaginationResponse,
+  DuplicatesResponse
+} from "~/types/question";
 
 const QuestionService = {
   //  Lấy tất cả câu hỏi (có phân trang)
@@ -115,6 +127,63 @@ const QuestionService = {
     return axiosInstance.delete("/questions-v2/batch", {
       data: questionIds,
     });
+  },
+
+  // Tạo question context mới
+  async createContext(
+    data: CreateQuestionContextRequest
+  ): Promise<AxiosResponse<QuestionContextResponse>> {
+    return axiosInstance.post("/questions-v2/context", data);
+  },
+
+  // Cập nhật question context
+  async updateContext(
+    id: string,
+    data: UpdateQuestionContextRequest
+  ): Promise<AxiosResponse<QuestionContextResponse>> {
+    return axiosInstance.put(`/questions-v2/context/${id}`, data);
+  },
+
+  // Upload file cho questions
+  async uploadQuestionFile(
+    file: File
+  ): Promise<AxiosResponse<FileUploadQuestionsResponse>> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return axiosInstance.post("/files/upload/questions", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+
+  // Lấy danh sách tất cả contexts
+  // async getAllContexts(
+  //   params?: { pageNo?: number; pageSize?: number }
+  // ): Promise<AxiosResponse<QuestionContextResponse>> {
+  //   return axiosInstance.get("/questions-v2/context", { params });
+  // },
+
+  // Xóa context
+  // async deleteContext(id: string): Promise<AxiosResponse<ApiResponse<void>>> {
+  //   return axiosInstance.delete(`/questions-v2/context/${id}`);
+  // },
+
+  // Lấy danh sách contexts của user hiện tại (GET /questions-v2/context/me)
+  async getMyContexts(
+    params?: { pageNo?: number; pageSize?: number; sorts?: string[] }
+  ): Promise<AxiosResponse<ApiResponse<MyContextPaginationResponse>>> {
+    return axiosInstance.get("/questions-v2/context/me", { params });
+  },
+
+  // Lấy danh sách câu hỏi trùng lặp (GET /questions-v2/duplicates)
+  async getDuplicates(): Promise<AxiosResponse<DuplicatesResponse>> {
+    return axiosInstance.get("/questions-v2/duplicates");
+  },
+
+  // Lấy danh sách context trùng lặp (GET /questions-v2/context/duplicates)
+  async getContextDuplicates(): Promise<AxiosResponse<DuplicatesResponse>> {
+    return axiosInstance.get("/questions-v2/context/duplicates");
   },
 };
 export default QuestionService;
