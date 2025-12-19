@@ -16,6 +16,7 @@ interface LessonDetailsSectionProps {
   activeTab: string;
   onTabChange: (key: string) => void;
   notesPanel: ReactNode;
+  initialProgress?: number; // Thời gian đã xem từ backend (giây)
 }
 
 const LessonDetailsSection: React.FC<LessonDetailsSectionProps> = ({
@@ -30,38 +31,55 @@ const LessonDetailsSection: React.FC<LessonDetailsSectionProps> = ({
   activeTab,
   onTabChange,
   notesPanel,
+  initialProgress = 0,
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const hasActuallyPlayedRef = useRef(false);
   const lastPlayTimeRef = useRef<number>(0);
   const maxWatchedTimeRef = useRef<number>(0);
   const lastSavedProgressTimeRef = useRef<number>(0);
+  const progressRestoredRef = useRef(false);
 
   useEffect(() => {
     hasActuallyPlayedRef.current = false;
     lastPlayTimeRef.current = 0;
-    maxWatchedTimeRef.current = 0;
+    maxWatchedTimeRef.current = initialProgress || 0;
     lastSavedProgressTimeRef.current = 0;
+    progressRestoredRef.current = false;
     
     const videoElement = videoRef.current;
     if (videoElement) {
-      videoElement.currentTime = 0;
       videoElement.pause();
       videoElement.load();
       
-      const handleLoadedData = () => {
-        if (videoElement.ended) {
-          videoElement.currentTime = 0;
+      // Restore progress khi video đã load metadata
+      const handleLoadedMetadata = () => {
+        if (!progressRestoredRef.current && initialProgress > 0 && videoElement.duration > 0) {
+          const safeProgress = Math.min(initialProgress, videoElement.duration);
+          videoElement.currentTime = safeProgress;
+          maxWatchedTimeRef.current = safeProgress;
+          progressRestoredRef.current = true;
         }
       };
       
-      videoElement.addEventListener('loadeddata', handleLoadedData, { once: true });
+      const handleCanPlay = () => {
+        if (!progressRestoredRef.current && initialProgress > 0 && videoElement.duration > 0) {
+          const safeProgress = Math.min(initialProgress, videoElement.duration);
+          videoElement.currentTime = safeProgress;
+          maxWatchedTimeRef.current = safeProgress;
+          progressRestoredRef.current = true;
+        }
+      };
+      
+      videoElement.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+      videoElement.addEventListener('canplay', handleCanPlay, { once: true });
       
       return () => {
-        videoElement.removeEventListener('loadeddata', handleLoadedData);
+        videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        videoElement.removeEventListener('canplay', handleCanPlay);
       };
     }
-  }, [lesson.id, videoUrl]);
+  }, [lesson.id, videoUrl, initialProgress]);
 
   const renderVideoContent = () => {
     if (videoLoading) {

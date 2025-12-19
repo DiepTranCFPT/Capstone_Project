@@ -18,6 +18,7 @@ const isLessonCompletedFromServer = (lesson: Lesson): boolean => {
     progress?: number;
     completed?: boolean;
     isCompleted?: boolean;
+    lastWatchedSecond?: number;
   };
 
   if (typeof anyLesson.completed === "boolean") {
@@ -41,6 +42,26 @@ const isLessonCompletedFromServer = (lesson: Lesson): boolean => {
   }
 
   return false;
+};
+
+// Lấy thời gian đã xem cuối cùng từ backend (giây)
+const getLastWatchedSecond = (lesson: Lesson): number => {
+  const anyLesson = lesson as unknown as {
+    lastWatchedSecond?: number;
+    progress?: number;
+  };
+
+  // Ưu tiên lastWatchedSecond (từ API save progress)
+  if (typeof anyLesson.lastWatchedSecond === "number" && anyLesson.lastWatchedSecond >= 0) {
+    return anyLesson.lastWatchedSecond;
+  }
+
+  // Fallback: dùng progress nếu có
+  if (typeof anyLesson.progress === "number" && anyLesson.progress > 0) {
+    return anyLesson.progress;
+  }
+
+  return 0;
 };
 
 const MaterialLearnPage: React.FC = () => {
@@ -269,6 +290,13 @@ const MaterialLearnPage: React.FC = () => {
     sortedLessons.length > 0 &&
     sortedLessons.every((lesson) => completedLessonIds.includes(lesson.id));
 
+  const isLessonLocked = (lesson: Lesson): boolean => {
+    const index = sortedLessons.findIndex((l) => l.id === lesson.id);
+    if (index <= 0) return false;
+    const completedSet = new Set(completedLessonIds);
+    return !sortedLessons.slice(0, index).every((l) => completedSet.has(l.id));
+  };
+
   const handleVideoEnded = () => {
     if (!selectedLesson) return;
 
@@ -351,6 +379,7 @@ const MaterialLearnPage: React.FC = () => {
                 openingFile={openingFile}
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
+                initialProgress={getLastWatchedSecond(selectedLesson)}
                 notesPanel={
                   <LessonNotesPanel
                     lesson={selectedLesson}
@@ -370,7 +399,14 @@ const MaterialLearnPage: React.FC = () => {
           <CourseContentSidebar
             lessons={sortedLessons}
             selectedLessonId={selectedLesson?.id}
-            onSelectLesson={(lesson) => setSelectedLesson(lesson)}
+            completedLessonIds={completedLessonIds}
+            onSelectLesson={(lesson) => {
+              if (isLessonLocked(lesson)) {
+                message.warning("Vui lòng hoàn thành bài trước để mở khóa bài tiếp theo.");
+                return;
+              }
+              setSelectedLesson(lesson);
+            }}
             loading={lessonsLoading}
           />
         </div>

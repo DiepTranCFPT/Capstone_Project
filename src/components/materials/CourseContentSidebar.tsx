@@ -5,6 +5,7 @@ interface CourseContentSidebarProps {
   selectedLessonId?: string | null;
   onSelectLesson: (lesson: Lesson) => void;
   loading: boolean;
+  completedLessonIds?: string[];
 }
 
 const CourseContentSidebar: React.FC<CourseContentSidebarProps> = ({
@@ -12,7 +13,10 @@ const CourseContentSidebar: React.FC<CourseContentSidebarProps> = ({
   selectedLessonId,
   onSelectLesson,
   loading,
+  completedLessonIds = [],
 }) => {
+  const completedSet = new Set(completedLessonIds);
+
   if (loading) {
     return (
       <div className="bg-white rounded-xl shadow-sm lg:w-96 xl:w-[420px] lg:flex-shrink-0 flex flex-col h-fit lg:max-h-[calc(100vh-120px)]">
@@ -48,15 +52,22 @@ const CourseContentSidebar: React.FC<CourseContentSidebarProps> = ({
       <div className="flex-1 overflow-y-auto px-2 py-2">
         {lessons.map((lesson, index) => {
           const isSelected = selectedLessonId === lesson.id;
+          const prevAllCompleted =
+            index === 0 || lessons.slice(0, index).every((l) => completedSet.has(l.id));
+          const isLocked = !prevAllCompleted;
           return (
             <div
               key={lesson.id}
-              onClick={() => onSelectLesson(lesson)}
-              className={`group relative p-4 rounded-lg cursor-pointer transition-all duration-200 mb-1 ${
+              onClick={() => {
+                if (!isLocked) {
+                  onSelectLesson(lesson);
+                }
+              }}
+              className={`group relative p-4 rounded-lg transition-all duration-200 mb-1 ${
                 isSelected
                   ? "bg-blue-50 border-l-4 border-blue-500 shadow-sm"
                   : "hover:bg-gray-50 hover:shadow-sm border-l-4 border-transparent"
-              }`}
+              } ${isLocked ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
             >
               <div className="flex items-start gap-3">
                 {isSelected ? (
@@ -99,6 +110,23 @@ const CourseContentSidebar: React.FC<CourseContentSidebarProps> = ({
               </div>
               {isSelected && (
                 <div className="absolute top-0 right-0 w-1 h-full bg-blue-500 rounded-r-lg" />
+              )}
+              {isLocked && (
+                <div className="absolute top-3 right-3 text-gray-400 flex items-center gap-1 text-xs">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5 8V6a5 5 0 1110 0v2a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2zm2-2a3 3 0 116 0v2H7V6z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>Locked</span>
+                </div>
               )}
             </div>
           );
