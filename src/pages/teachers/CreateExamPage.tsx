@@ -60,6 +60,7 @@ const CreateExamPage: React.FC = () => {
     numberOfQuestions: 0,
     points: 1,
     percentage: 10, // Default 10%
+    numberOfContexts: 0, // 0 = no context grouping
   });
 
   // Error states
@@ -226,6 +227,7 @@ const CreateExamPage: React.FC = () => {
       numberOfQuestions: 0,
       points: 1,
       percentage: 10,
+      numberOfContexts: 0,
     });
     setEditingRuleIndex(null);
   };
@@ -258,6 +260,7 @@ const CreateExamPage: React.FC = () => {
     const ruleToSave = {
       ...ruleForm,
       numberOfQuestions: calculatedQuestions,
+      numberOfContexts: ruleForm.numberOfContexts || 0,
     };
 
     if (editingRuleIndex !== null) {
@@ -364,6 +367,7 @@ const CreateExamPage: React.FC = () => {
         const processedRules = rules.map(rule => ({
           ...rule,
           numberOfQuestions: calculateQuestions(rule.percentage || 0),
+          numberOfContexts: rule.numberOfContexts || 0,
         }));
 
         // Create new template
@@ -475,6 +479,16 @@ const CreateExamPage: React.FC = () => {
       title: 'Points',
       dataIndex: 'points',
       key: 'points',
+    },
+    {
+      title: 'Contexts',
+      dataIndex: 'numberOfContexts',
+      key: 'numberOfContexts',
+      render: (contexts: number) => (
+        <Tag color={contexts > 0 ? 'cyan' : 'default'}>
+          {contexts > 0 ? `${contexts} ctx` : 'None'}
+        </Tag>
+      ),
     },
     {
       title: 'Actions',
@@ -870,6 +884,28 @@ const CreateExamPage: React.FC = () => {
                           onChange={(value) => setRuleForm({ ...ruleForm, points: value || 1 })}
                           style={{ width: '100%' }}
                         />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Number of Contexts
+                          <Tooltip title="E.g. 2 contexts × 1 question/context = 2 questions from reading passages. Set to 0 for no context grouping.">
+                            <InfoCircleOutlined className="ml-1 text-gray-400" />
+                          </Tooltip>
+                        </label>
+                        <InputNumber
+                          min={0}
+                          value={ruleForm.numberOfContexts || 0}
+                          onChange={(value) => setRuleForm({ ...ruleForm, numberOfContexts: value || 0 })}
+                          style={{ width: '100%' }}
+                        />
+                        {(ruleForm.numberOfContexts || 0) > 0 && (
+                          <div className="text-xs text-cyan-600 mt-1">
+                            {ruleForm.numberOfContexts} contexts × {calculateQuestions(ruleForm.percentage || 0)} = {(ruleForm.numberOfContexts || 0) * calculateQuestions(ruleForm.percentage || 0)} questions
+                          </div>
+                        )}
                       </div>
                     </div>
 

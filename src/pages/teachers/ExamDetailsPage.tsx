@@ -1,25 +1,36 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Button, Card, Tag, Descriptions, Table, Typography, Space, Divider, Spin, Modal, Select, InputNumber, Tooltip, Slider } from "antd";
-import { EditOutlined, ArrowLeftOutlined, ClockCircleOutlined, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import { EditOutlined, ArrowLeftOutlined, ClockCircleOutlined, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined, InfoCircleOutlined, RobotOutlined } from "@ant-design/icons";
 import { useNavigate, useParams } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
 import { useExamTemplates } from "~/hooks/useExams";
 import { useQuestionTopics } from "~/hooks/useQuestionTopics";
 import { useQuestionBank } from "~/hooks/useQuestionBank";
 import type { CreateExamRulePayload, ExamRule } from "~/types/test";
 import type { QuestionBankItem } from "~/types/question";
+import Loading from "~/components/common/Loading";
 
 const { Title, Text, Paragraph } = Typography;
 
 const ExamDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const { examId } = useParams<{ examId: string }>();
-  const { currentTemplate, loading, fetchTemplateById, removeTemplate, addRule, updateRule, removeRule } = useExamTemplates();
+  const { currentTemplate, loading, fetchTemplateById, removeTemplate, addRule, updateRule, removeRule, analyzeTemplate } = useExamTemplates();
   const { topics: questionTopics } = useQuestionTopics();
   const { questions: subjectQuestions, fetchBySubjectId, loading: loadingQuestions } = useQuestionBank();
 
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [showRuleForm, setShowRuleForm] = useState(false);
   const [editingRule, setEditingRule] = useState<{ id: string; data: CreateExamRulePayload } | null>(null);
+
+  // Analysis modal state
+  const [analysisModalVisible, setAnalysisModalVisible] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+
+  // Delete rule modal state
+  const [deleteRuleModalVisible, setDeleteRuleModalVisible] = useState(false);
+  const [ruleToDelete, setRuleToDelete] = useState<string | null>(null);
 
   // Inline rule form state (similar to CreateExamPage)
   const [ruleForm, setRuleForm] = useState<CreateExamRulePayload>({
@@ -29,10 +40,16 @@ const ExamDetailsPage: React.FC = () => {
     numberOfQuestions: 0,
     points: 1,
     percentage: 10, // Mặc định 10%
+    numberOfContexts: 0,
   });
 
-  // Tổng số câu hỏi mong muốn (lấy từ template hoặc mặc định 20)
-  const totalQuestions = currentTemplate?.totalQuestions || 20;
+  // Tổng số câu hỏi = tổng numberOfQuestions từ các rules hiện có, hoặc từ template, hoặc mặc định 20
+  const totalQuestions = useMemo(() => {
+    if (currentTemplate?.rules && currentTemplate.rules.length > 0) {
+      return currentTemplate.rules.reduce((sum, rule) => sum + (rule.numberOfQuestions || 0), 0);
+    }
+    return currentTemplate?.totalQuestions || 20;
+  }, [currentTemplate]);
 
   // Tính số câu hỏi từ percentage
   const calculateQuestions = (percentage: number) => {
@@ -131,6 +148,43 @@ const ExamDetailsPage: React.FC = () => {
     setDeleteModalVisible(false);
   };
 
+  const handleAnalyze = async () => {
+    if (!currentTemplate) return;
+
+    setAnalyzing(true);
+    try {
+      // Prepare template payload for analysis
+      const analysisPayload = {
+        title: currentTemplate.title,
+        description: currentTemplate.description,
+        subjectId: currentTemplate.subject?.id || '',
+        duration: currentTemplate.duration,
+        passingScore: currentTemplate.passingScore,
+        isActive: currentTemplate.isActive,
+        tokenCost: currentTemplate.tokenCost,
+        rules: currentTemplate.rules?.map(rule => ({
+          topicName: (rule as unknown as { topic?: string }).topic || rule.topicName,
+          difficultyName: ((rule as unknown as { difficulty?: string }).difficulty || rule.difficultyName) as 'Easy' | 'Medium' | 'Hard',
+          questionType: rule.questionType,
+          numberOfQuestions: rule.numberOfQuestions,
+          points: rule.points,
+          numberOfContexts: (rule as unknown as { numberOfContexts?: number }).numberOfContexts || 0,
+        })) || [],
+        scoreMapping: currentTemplate.scoreMapping || {},
+      };
+
+      const result = await analyzeTemplate(analysisPayload);
+      if (result) {
+        setAnalysisResult(result);
+        setAnalysisModalVisible(true);
+      }
+    } catch (error) {
+      console.error('Analyze template error:', error);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const handleAddRule = () => {
     setEditingRule(null);
     setRuleForm({
@@ -139,34 +193,56 @@ const ExamDetailsPage: React.FC = () => {
       questionType: 'mcq',
       numberOfQuestions: 1,
       points: 1,
+      numberOfContexts: 0,
     });
     setShowRuleForm(true);
   };
 
   const handleEditRule = (rule: ExamRule) => {
+    // API may return 'topic'/'difficulty' or 'topicName'/'difficultyName'
+    const topicValue = (rule as unknown as { topic?: string }).topic || rule.topicName;
+    const difficultyValue = ((rule as unknown as { difficulty?: string }).difficulty || rule.difficultyName) as 'Easy' | 'Medium' | 'Hard';
+    const numberOfContextsValue = (rule as unknown as { numberOfContexts?: number }).numberOfContexts || 0;
+
     setEditingRule({
       id: rule.id, data: {
-        topicName: rule.topicName,
-        difficultyName: rule.difficultyName,
+        topicName: topicValue,
+        difficultyName: difficultyValue,
         questionType: rule.questionType,
         numberOfQuestions: rule.numberOfQuestions,
         points: rule.points,
+        numberOfContexts: numberOfContextsValue,
       }
     });
     setRuleForm({
-      topicName: rule.topicName,
-      difficultyName: rule.difficultyName,
+      topicName: topicValue,
+      difficultyName: difficultyValue,
       questionType: rule.questionType,
       numberOfQuestions: rule.numberOfQuestions,
       points: rule.points,
-      percentage: rule.percentage || 10, // Lấy percentage từ rule hoặc mặc định 10%
+      percentage: rule.percentage || 10,
+      numberOfContexts: numberOfContextsValue,
     });
     setShowRuleForm(true);
   };
 
-  const handleDeleteRule = async (ruleId: string) => {
-    if (!examId) return;
-    await removeRule(examId, ruleId);
+  const handleDeleteRule = (ruleId: string) => {
+    setRuleToDelete(ruleId);
+    setDeleteRuleModalVisible(true);
+  };
+
+  const handleConfirmDeleteRule = async () => {
+    if (!examId || !ruleToDelete) return;
+    await removeRule(examId, ruleToDelete);
+    // Refresh template data to show updated rules
+    await fetchTemplateById(examId);
+    setDeleteRuleModalVisible(false);
+    setRuleToDelete(null);
+  };
+
+  const handleCancelDeleteRule = () => {
+    setDeleteRuleModalVisible(false);
+    setRuleToDelete(null);
   };
 
   const handleSaveRule = async () => {
@@ -190,6 +266,7 @@ const ExamDetailsPage: React.FC = () => {
       const ruleData = {
         ...ruleForm,
         numberOfQuestions: calculatedQuestions,
+        numberOfContexts: ruleForm.numberOfContexts || 0,
       };
 
       if (editingRule) {
@@ -197,6 +274,10 @@ const ExamDetailsPage: React.FC = () => {
       } else {
         await addRule(examId, ruleData);
       }
+
+      // Refresh template data to show updated rules
+      await fetchTemplateById(examId);
+
       setShowRuleForm(false);
       setRuleForm({
         topicName: '',
@@ -205,6 +286,7 @@ const ExamDetailsPage: React.FC = () => {
         numberOfQuestions: 0,
         points: 1,
         percentage: 10,
+        numberOfContexts: 0,
       });
       setEditingRule(null);
     } catch (error) {
@@ -220,6 +302,7 @@ const ExamDetailsPage: React.FC = () => {
       questionType: 'mcq',
       numberOfQuestions: 1,
       points: 1,
+      numberOfContexts: 0,
     });
     setEditingRule(null);
   };
@@ -227,7 +310,7 @@ const ExamDetailsPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <Spin size="large" />
+        <Loading />
       </div>
     );
   }
@@ -282,6 +365,16 @@ const ExamDetailsPage: React.FC = () => {
       title: 'Points',
       dataIndex: 'points',
       key: 'points',
+    },
+    {
+      title: 'Contexts',
+      dataIndex: 'numberOfContexts',
+      key: 'numberOfContexts',
+      render: (contexts: number) => (
+        <Tag color={contexts > 0 ? 'cyan' : 'default'}>
+          {contexts > 0 ? `${contexts} ctx` : 'None'}
+        </Tag>
+      ),
     },
     {
       title: 'Actions',
@@ -406,6 +499,12 @@ const ExamDetailsPage: React.FC = () => {
               ) : (
                 <Card size="small" className="border-dashed">
                   <div className="space-y-3">
+                    {/* Total Questions Info */}
+                    <div className="bg-blue-50 p-2 rounded text-sm text-blue-700">
+                      <InfoCircleOutlined className="mr-1" />
+                      Total questions in template: <strong>{totalQuestions}</strong>
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Topic Name *</label>
                       <Select
@@ -534,6 +633,28 @@ const ExamDetailsPage: React.FC = () => {
                       </div>
                     </div>
 
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Number of Contexts
+                          <Tooltip title="E.g. 2 contexts × 1 question/context = 2 questions. Set to 0 for no context grouping.">
+                            <InfoCircleOutlined className="ml-1 text-gray-400" />
+                          </Tooltip>
+                        </label>
+                        <InputNumber
+                          min={0}
+                          value={ruleForm.numberOfContexts || 0}
+                          onChange={(value) => setRuleForm({ ...ruleForm, numberOfContexts: value || 0 })}
+                          style={{ width: '100%' }}
+                        />
+                        {(ruleForm.numberOfContexts || 0) > 0 && (
+                          <div className="text-xs text-cyan-600 mt-1">
+                            {ruleForm.numberOfContexts} contexts × {calculateQuestions(ruleForm.percentage || 0)} = {(ruleForm.numberOfContexts || 0) * calculateQuestions(ruleForm.percentage || 0)} questions
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="flex gap-2">
                       <Button
                         type="primary"
@@ -623,6 +744,15 @@ const ExamDetailsPage: React.FC = () => {
               >
                 Delete Template
               </Button>
+              <Button
+                icon={<RobotOutlined />}
+                block
+                loading={analyzing}
+                onClick={handleAnalyze}
+                style={{ backgroundColor: '#722ed1', color: 'white', borderColor: '#722ed1' }}
+              >
+                AI Analyze
+              </Button>
               <Button block onClick={handleBack}>
                 Back to Templates
               </Button>
@@ -663,6 +793,65 @@ const ExamDetailsPage: React.FC = () => {
         cancelText="Cancel"
       >
         <p>Are you sure you want to delete <strong>"{currentTemplate?.title}"</strong>?</p>
+        <p className="text-red-600 text-sm mt-2">This action cannot be undone.</p>
+      </Modal>
+
+      {/* Analysis Result Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <RobotOutlined style={{ color: '#722ed1' }} />
+            <span>AI Analysis Result</span>
+          </div>
+        }
+        open={analysisModalVisible}
+        onCancel={() => setAnalysisModalVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setAnalysisModalVisible(false)}>
+            Close
+          </Button>
+        ]}
+        width={700}
+      >
+        <div className="max-h-96 overflow-y-auto">
+          {analysisResult ? (
+            <div className="prose prose-sm max-w-none bg-gradient-to-br from-purple-50 to-white p-5 rounded-lg border border-purple-100">
+              <ReactMarkdown
+                components={{
+                  h1: ({ children }) => <h1 className="text-xl font-bold text-purple-800 mb-3 pb-2 border-b border-purple-200">{children}</h1>,
+                  h2: ({ children }) => <h2 className="text-lg font-semibold text-purple-700 mt-4 mb-2">{children}</h2>,
+                  h3: ({ children }) => <h3 className="text-base font-medium text-gray-800 mt-3 mb-1">{children}</h3>,
+                  p: ({ children }) => <p className="text-gray-700 leading-relaxed mb-2">{children}</p>,
+                  strong: ({ children }) => <strong className="font-semibold text-purple-700">{children}</strong>,
+                  ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-2 pl-2">{children}</ul>,
+                  li: ({ children }) => <li className="text-gray-700">{children}</li>,
+                }}
+              >
+                {analysisResult}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <Spin />
+          )}
+        </div>
+      </Modal>
+
+      {/* Delete Rule Confirmation Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />
+            <span>Delete Rule</span>
+          </div>
+        }
+        open={deleteRuleModalVisible}
+        onOk={handleConfirmDeleteRule}
+        onCancel={handleCancelDeleteRule}
+        okText="Delete"
+        okType="danger"
+        cancelText="Cancel"
+      >
+        <p>Are you sure you want to delete this rule?</p>
         <p className="text-red-600 text-sm mt-2">This action cannot be undone.</p>
       </Modal>
     </div>
