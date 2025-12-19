@@ -77,7 +77,7 @@ const MaterialCard: React.FC<{ material: Material }> = ({ material }) => {
         <span className={`text-sm font-semibold ${isRegistered ? "text-green-600" : (material.price === 0 || material.price === undefined || material.price === null) ? "text-green-600" : ""}`}>
           {(() => {
             if (isRegistered) {
-              return "Đã đăng ký";
+              return "Registered";
             }
             const price = material.price ?? 0;
             if (price === 0 || price === undefined || price === null) {

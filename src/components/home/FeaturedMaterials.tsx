@@ -85,7 +85,7 @@ const FeaturedMaterials: React.FC = () => {
             const isFree = price === 0 || price === undefined || price === null;
             const isRegistered = registeredMaterials.some((m) => m.id === material.id);
             const priceLabel = isRegistered 
-              ? "Đã đăng ký" 
+              ? "Registered" 
               : isFree 
               ? "Free" 
               : new Intl.NumberFormat("vi-VN", {

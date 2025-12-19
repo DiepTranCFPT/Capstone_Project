@@ -6,6 +6,9 @@ interface CourseContentSidebarProps {
   onSelectLesson: (lesson: Lesson) => void;
   loading: boolean;
   completedLessonIds?: string[];
+  isMaterialCompleted?: boolean; // Nếu material đã rating/có certificate → unlock tất cả
+  hasRating?: boolean;
+  hasCertificate?: boolean;
 }
 
 const CourseContentSidebar: React.FC<CourseContentSidebarProps> = ({
@@ -14,6 +17,9 @@ const CourseContentSidebar: React.FC<CourseContentSidebarProps> = ({
   onSelectLesson,
   loading,
   completedLessonIds = [],
+  isMaterialCompleted = false,
+  hasRating = false,
+  hasCertificate = false,
 }) => {
   const completedSet = new Set(completedLessonIds);
 
@@ -54,7 +60,9 @@ const CourseContentSidebar: React.FC<CourseContentSidebarProps> = ({
           const isSelected = selectedLessonId === lesson.id;
           const prevAllCompleted =
             index === 0 || lessons.slice(0, index).every((l) => completedSet.has(l.id));
-          const isLocked = !prevAllCompleted;
+          // Nếu material đã hoàn thành (rating/certificate) → unlock tất cả, nếu không → giữ logic khóa
+          const isLocked = isMaterialCompleted ? false : !prevAllCompleted;
+          const isCompleted = completedSet.has(lesson.id);
           return (
             <div
               key={lesson.id}
@@ -95,17 +103,24 @@ const CourseContentSidebar: React.FC<CourseContentSidebarProps> = ({
                   >
                     {lesson.title || lesson.name || `Bài ${index + 1}`}
                   </h4>
-                  {lesson.duration && (
-                    <div className="flex items-center gap-2">
-                      <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p className={`text-xs ${isSelected ? "text-blue-600" : "text-gray-500"}`}>
-                        {Math.floor(lesson.duration / 60)}:
-                        {(lesson.duration % 60).toString().padStart(2, "0")}
-                      </p>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {lesson.duration && (
+                      <div className="flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className={`text-xs ${isSelected ? "text-blue-600" : "text-gray-500"}`}>
+                          {Math.floor(lesson.duration / 60)}:
+                          {(lesson.duration % 60).toString().padStart(2, "0")}
+                        </p>
+                      </div>
+                    )}
+                    {isCompleted && (
+                      <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-medium">
+                        Completed
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               {isSelected && (
@@ -126,6 +141,20 @@ const CourseContentSidebar: React.FC<CourseContentSidebarProps> = ({
                     />
                   </svg>
                   <span>Locked</span>
+                </div>
+              )}
+              {isMaterialCompleted && !isLocked && (
+                <div className="absolute top-3 right-3 flex items-center gap-1 text-xs">
+                  {hasRating && (
+                    <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full font-medium" title="Rated">
+                      ⭐ Rated
+                    </span>
+                  )}
+                  {hasCertificate && (
+                    <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full font-medium" title="Certificate">
+                      🏆 Certificate
+                    </span>
+                  )}
                 </div>
               )}
             </div>
