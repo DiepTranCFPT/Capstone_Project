@@ -75,7 +75,7 @@ const MaterialLearnPage: React.FC = () => {
   const commentRef = useRef<HTMLTextAreaElement | null>(null);
   const handleOpenPdf = async () => {
     if (!selectedLesson?.file) {
-      message.warning("Không có tài liệu để xem.");
+      message.warning("No material available to view.");
       return;
     }
 
@@ -95,7 +95,7 @@ const MaterialLearnPage: React.FC = () => {
       }, 5000);
     } catch (error) {
       console.error("Open PDF error:", error);
-      message.error("Không thể mở tài liệu. Vui lòng thử lại.");
+      message.error("Unable to open the material. Please try again.");
     } finally {
       setOpeningFile(false);
     }
@@ -167,7 +167,7 @@ const MaterialLearnPage: React.FC = () => {
     const materialId = material?.id;
     const userId = user?.id;
     if (!materialId || !userId) {
-      message.error("Không xác định được tài liệu hoặc học viên.");
+      message.error("Could not determine learning material or student.");
       return;
     }
 
@@ -250,12 +250,12 @@ const MaterialLearnPage: React.FC = () => {
           setVideoUrl(assetUrl);
         } else {
           setVideoUrl(null);
-          setVideoError("Không tìm thấy video.");
+          setVideoError("Video not found.");
         }
       } catch (error) {
         console.error("Load lesson video failed:", error);
         setVideoUrl(null);
-        setVideoError("Không tải được video. Vui lòng thử lại sau.");
+        setVideoError("Unable to load video. Please try again later.");
       } finally {
         setVideoLoading(false);
       }
@@ -301,15 +301,15 @@ const MaterialLearnPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-2">Không tìm thấy tài liệu</h2>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-2">Learning material not found</h2>
           <p className="text-gray-500 mb-4">
-            {materialError || "Tài liệu bạn đang tìm không tồn tại."}
+            {materialError || "The learning material you are looking for does not exist."}
           </p>
           <button
             onClick={() => navigate("/materials")}
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
-            Quay lại danh sách
+            Back to list
           </button>
         </div>
       </div>

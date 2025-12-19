@@ -25,10 +25,10 @@ const OngoingExamsPage: React.FC = () => {
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (days > 0) return `${days} ngày trước`;
-    if (hours > 0) return `${hours} giờ trước`;
-    if (minutes > 0) return `${minutes} phút trước`;
-    return 'Vừa xong';
+    if (days > 0) return `${days} days ago`;
+    if (hours > 0) return `${hours} hours ago`;
+    if (minutes > 0) return `${minutes} minutes ago`;
+    return 'Just now';
   };
 
   const handleResume = (exam: OngoingExam) => {
@@ -36,7 +36,7 @@ const OngoingExamsPage: React.FC = () => {
   };
 
   const handleClear = (exam: OngoingExam) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa bài thi này? Hành động này không thể hoàn tác.')) {
+    if (window.confirm('Are you sure you want to delete this exam? This action cannot be undone.')) {
       clearExam(exam.examId, exam.attemptId);
     }
   };
@@ -49,24 +49,24 @@ const OngoingExamsPage: React.FC = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">📚 Bài Thi Đang Làm</h1>
-          <p className="text-gray-600">Tiếp tục hoàn thành các bài thi của bạn</p>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">📚 Ongoing Exams</h1>
+          <p className="text-gray-600">Continue working on your unfinished exams</p>
         </div>
 
         {ongoingExams.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-6xl mb-6">📝</div>
             <h3 className="text-2xl font-bold text-gray-800 mb-4">
-              Không có bài thi nào đang làm
+              No ongoing exams
             </h3>
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Bạn chưa có bài thi nào đang dang dở. Hãy bắt đầu một bài thi mới!
+              You don&apos;t have any ongoing exams. Start a new exam to begin practicing!
             </p>
             <button
               onClick={() => window.location.href = '/exam-test'}
               className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
             >
-              Bắt đầu thi
+              Start exam
             </button>
           </div>
         ) : (
@@ -83,15 +83,15 @@ const OngoingExamsPage: React.FC = () => {
                   </h3>
                   <div className="flex items-center text-sm text-gray-500">
                     <FiBookOpen className="mr-1" size={14} />
-                    {exam.examId === 'combo' ? 'Bài thi tổ hợp' : 'Bài thi cá nhân'}
+                    {exam.examId === 'combo' ? 'Combined exam' : 'Individual exam'}
                   </div>
                 </div>
 
                 {/* Progress */}
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Tiến độ</span>
-                    <span className="text-sm text-gray-500">{exam.progress} câu</span>
+                    <span className="text-sm font-medium text-gray-700">Progress</span>
+                    <span className="text-sm text-gray-500">{exam.progress} questions</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
@@ -106,7 +106,7 @@ const OngoingExamsPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center text-sm text-gray-600">
                       <FiClock className="mr-1" size={14} />
-                      Còn lại
+                      Time left
                     </div>
                     <span className={`text-sm font-medium ${
                       exam.remainingTime < 600 ? 'text-red-600' :
@@ -120,7 +120,7 @@ const OngoingExamsPage: React.FC = () => {
                 {/* Last Accessed */}
                 <div className="mb-6">
                   <div className="text-xs text-gray-400">
-                    Truy cập lần cuối: {formatLastAccessed(exam.lastAccessed)}
+                    Last accessed: {formatLastAccessed(exam.lastAccessed)}
                   </div>
                 </div>
 
@@ -131,7 +131,7 @@ const OngoingExamsPage: React.FC = () => {
                     className="flex-1 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
                   >
                     <FiPlay size={16} />
-                    Tiếp tục
+                    Continue
                   </button>
                   <button
                     onClick={() => handleClear(exam)}
