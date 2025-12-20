@@ -169,22 +169,27 @@ const LessonDetailsSection: React.FC<LessonDetailsSectionProps> = ({
                 videoElement.currentTime = allowedTime;
               }
             }}
-            onEnded={(e) => {
+            onEnded={async (e) => {
               const videoElement = e.currentTarget;
               const hasValidDuration = videoElement.duration && videoElement.duration > 0;
-              const hasPlayed = hasActuallyPlayedRef.current && videoElement.currentTime > 0;
-              const hasRecentPlay = lastPlayTimeRef.current > 0;
-              const timeSinceLastPlay = hasRecentPlay ? Date.now() - lastPlayTimeRef.current : Infinity;
-              const recentlyPlayed = hasRecentPlay && timeSinceLastPlay < 60000;
-              const hasWatchedEnough = videoElement.currentTime >= Math.min(1, videoElement.duration * 0.1);
               
-              if (hasPlayed && recentlyPlayed && hasWatchedEnough && hasValidDuration) {
-                onVideoEnded();
-              } else {
-                if (!hasPlayed || !recentlyPlayed || !hasWatchedEnough) {
-                  videoElement.currentTime = 0;
-                  videoElement.load();
+              // Lưu progress cuối cùng ngay khi video kết thúc
+              if (lesson.id && hasValidDuration) {
+                try {
+                  // Khi video kết thúc, currentTime sẽ bằng duration
+                  const finalTime = Math.floor(videoElement.duration);
+                  await LessonService.saveProgress(lesson.id, finalTime);
+                  // Cập nhật maxWatchedTime để đảm bảo đồng bộ
+                  maxWatchedTimeRef.current = videoElement.duration;
+                } catch (error) {
+                  console.error("Save final lesson progress failed:", error);
                 }
+              }
+              
+              // Nếu video có duration hợp lệ và đã kết thúc, coi như đã hoàn thành
+              // (onEnded chỉ được gọi khi video thực sự kết thúc)
+              if (hasValidDuration && hasActuallyPlayedRef.current) {
+                onVideoEnded();
               }
             }}
             preload="metadata"

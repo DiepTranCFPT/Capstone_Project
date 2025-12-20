@@ -29,6 +29,28 @@ const isLessonCompletedFromServer = (lesson: Lesson): boolean => {
     return anyLesson.isCompleted;
   }
 
+  // Kiểm tra lastWatchedSecond (từ API save progress) - ưu tiên cao nhất
+  if (typeof anyLesson.lastWatchedSecond === "number" && anyLesson.lastWatchedSecond >= 0) {
+    if (lesson.duration && typeof lesson.duration === "number" && lesson.duration > 0) {
+      // Thử cả hai trường hợp: duration là phút hoặc giây
+      const durationAsMinutes = lesson.duration * 60; // Giả sử duration là phút
+      const durationAsSeconds = lesson.duration; // Giả sử duration đã là giây
+      
+      // Kiểm tra xem lastWatchedSecond gần với giá trị nào hơn
+      const diffAsMinutes = Math.abs(anyLesson.lastWatchedSecond - durationAsMinutes);
+      const diffAsSeconds = Math.abs(anyLesson.lastWatchedSecond - durationAsSeconds);
+      
+      // Chọn duration phù hợp (giá trị nào gần hơn)
+      const actualDuration = diffAsSeconds < diffAsMinutes ? durationAsSeconds : durationAsMinutes;
+      
+      // Coi như hoàn thành nếu đã xem >= 90% thời lượng
+      return anyLesson.lastWatchedSecond >= actualDuration * 0.9;
+    }
+    // Nếu không có duration, coi như hoàn thành nếu lastWatchedSecond > 0
+    // (vì video đã được xem ít nhất một phần)
+    return anyLesson.lastWatchedSecond > 0;
+  }
+
   const progress = anyLesson.progress;
   if (typeof progress === "number") {
     // Nếu backend trả thời lượng, ưu tiên so sánh theo phần trăm thời lượng
