@@ -546,6 +546,9 @@ const DoTestPage: React.FC = () => {
                     localStorage.removeItem(`exam_started_at_${examAttemptId}`);
                     localStorage.removeItem(`exam_remaintime_received_at_${examAttemptId}`);
                     localStorage.removeItem(`exam_remaintime_value_${examAttemptId}`);
+                    // Clear proctoring violations data
+                    localStorage.removeItem(`proctoring_violation_counts_${examAttemptId}`);
+                    localStorage.removeItem(`proctoring_violations_${examAttemptId}`);
                 }
                 // Clear exam specific attempt data
                 if (examId) {
@@ -577,6 +580,9 @@ const DoTestPage: React.FC = () => {
             localStorage.removeItem(`exam_started_at_${examAttemptId}`);
             localStorage.removeItem(`exam_remaintime_received_at_${examAttemptId}`);
             localStorage.removeItem(`exam_remaintime_value_${examAttemptId}`);
+            // Clear proctoring violations data
+            localStorage.removeItem(`proctoring_violation_counts_${examAttemptId}`);
+            localStorage.removeItem(`proctoring_violations_${examAttemptId}`);
         }
 
         // Stop proctoring
