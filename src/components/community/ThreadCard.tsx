@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiThumbsUp, FiMessageSquare, FiMoreHorizontal } from 'react-icons/fi';
+import { FiMessageSquare, FiMoreHorizontal, FiThumbsUp, FiThumbsDown } from "react-icons/fi";
 import { useAuth } from "~/hooks/useAuth";
 import type { Comment, Thread } from "~/types/community";
 
@@ -64,9 +64,34 @@ const ThreadCard: React.FC<ThreadCardProps> = ({ thread }) => {
                     <span key={tag} className="text-xs font-semibold text-teal-700 bg-teal-50 px-2 py-1 rounded-full">#{tag}</span>
                 ))}
             </div>
-            <div className="flex items-center gap-6 text-gray-500 border-t pt-3">
-                <button className="flex items-center gap-2 hover:text-teal-600"><FiThumbsUp /> {thread.likes} Likes</button>
-                <button onClick={() => setShowComments(!showComments)} className="flex items-center gap-2 hover:text-teal-600 hover:cursor-pointer"><FiMessageSquare /> {thread.comments} Comments</button>
+            <div className="mt-2 flex items-center gap-4 text-gray-500 text-sm border-t pt-3">
+                <button
+                    type="button"
+                    className="inline-flex items-center gap-2 px-4 py-1 rounded-full border border-gray-200 bg-white text-gray-600 text-sm hover:bg-gray-50"
+                >
+                    <FiThumbsUp className="text-base" />
+                    <span>Like</span>
+                </button>
+
+                <span className="text-xs font-semibold text-teal-600">
+                    {thread.likes}
+                </span>
+
+                <button
+                    type="button"
+                    className="inline-flex items-center gap-2 px-4 py-1 rounded-full border border-gray-200 bg-white text-gray-600 text-sm hover:bg-gray-50"
+                >
+                    <FiThumbsDown className="text-base" />
+                    <span>Dislike</span>
+                </button>
+
+                <button
+                    onClick={() => setShowComments(!showComments)}
+                    className="ml-2 flex items-center gap-2 hover:text-teal-600 hover:cursor-pointer"
+                >
+                    <FiMessageSquare className="text-lg" />
+                    <span className="text-xs">{thread.comments}</span>
+                </button>
             </div>
             {showComments && (
                 <div className="mt-4">

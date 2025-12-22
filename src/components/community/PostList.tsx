@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Input, Button, Dropdown, message, Modal } from "antd";
 import type { MenuProps } from "antd";
-import { FiMessageSquare, FiMoreVertical, FiImage } from "react-icons/fi";
+import { FiMessageSquare, FiMoreVertical, FiImage, FiThumbsUp, FiThumbsDown } from "react-icons/fi";
 import { IoCaretUpSharp, IoCaretDownSharp } from "react-icons/io5";
 import { PushpinOutlined } from "@ant-design/icons";
 import type { Thread, CommunityComment } from "~/types/community";
@@ -805,58 +805,58 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
           </div>
         )}
         <div className="mt-4 flex items-center gap-4 text-gray-500 text-sm">
-          {/* Vote control (up/down) */}
-          <div className="inline-flex items-center rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
-            <button
-              type="button"
-              className={`w-9 h-9 flex items-center justify-center transition-all ${
-                currentUserVoteValue === 1
-                  ? "bg-teal-50 text-teal-600"
-                  : "text-gray-500 hover:bg-gray-50"
-              }`}
-              onClick={() => {
-                if (!onVotePost) return;
-                const pid = thread.postId || thread.id;
-                const current = currentUserVoteValue;
-                const nextValue = current === 1 ? 0 : 1;
-                void onVotePost(pid, nextValue);
-                setUserVoteByPostId((prev) => ({ ...prev, [String(pid)]: nextValue }));
-              }}
-              aria-label="Upvote"
-              title="Upvote"
-            >
-              <IoCaretUpSharp size={18} />
-            </button>
-            <div className="px-2 py-1 text-xs font-semibold text-gray-700 min-w-10 text-center select-none">
-              {formatCompactNumber(Number(thread.likes ?? 0))}
-            </div>
-            <button
-              type="button"
-              className={`w-9 h-9 flex items-center justify-center transition-all ${
-                currentUserVoteValue === -1
-                  ? "bg-rose-50 text-rose-600"
-                  : "text-gray-500 hover:bg-gray-50"
-              }`}
-              onClick={() => {
-                if (!onVotePost) return;
-                const pid = thread.postId || thread.id;
-                const current = currentUserVoteValue;
-                const nextValue = current === -1 ? 0 : -1;
-                void onVotePost(pid, nextValue);
-                setUserVoteByPostId((prev) => ({ ...prev, [String(pid)]: nextValue }));
-              }}
-              aria-label="Downvote"
-              title="Downvote"
-            >
-              <IoCaretDownSharp size={18} />
-            </button>
-          </div>
+          {/* Nút Like / Dislike kiểu pill */}
+          <button
+            type="button"
+            className={`inline-flex items-center gap-2 px-4 py-1 rounded-full border text-sm transition-all ${
+              currentUserVoteValue === 1
+                ? "border-teal-400 bg-teal-50 text-teal-600"
+                : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+            }`}
+            onClick={() => {
+              if (!onVotePost) return;
+              const pid = thread.postId || thread.id;
+              const current = currentUserVoteValue;
+              const nextValue = current === 1 ? 0 : 1;
+              void onVotePost(pid, nextValue);
+              setUserVoteByPostId((prev) => ({ ...prev, [String(pid)]: nextValue }));
+            }}
+          >
+            <FiThumbsUp className="text-base" />
+            <span>Like</span>
+          </button>
+
+          <span className="text-xs font-semibold text-teal-600">
+            {formatCompactNumber(Number(thread.likes ?? 0))}
+          </span>
+
+          <button
+            type="button"
+            className={`inline-flex items-center gap-2 px-4 py-1 rounded-full border text-sm transition-all ${
+              currentUserVoteValue === -1
+                ? "border-rose-400 bg-rose-50 text-rose-600"
+                : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+            }`}
+            onClick={() => {
+              if (!onVotePost) return;
+              const pid = thread.postId || thread.id;
+              const current = currentUserVoteValue;
+              const nextValue = current === -1 ? 0 : -1;
+              void onVotePost(pid, nextValue);
+              setUserVoteByPostId((prev) => ({ ...prev, [String(pid)]: nextValue }));
+            }}
+          >
+            <FiThumbsDown className="text-base" />
+            <span>Dislike</span>
+          </button>
+
           <button
             type="button"
             onClick={() => void handleToggleComments(thread)}
-            className="flex items-center gap-1 hover:text-teal-600 transition-colors"
+            className="ml-2 flex items-center gap-1 text-gray-500 hover:text-teal-600 transition-colors"
           >
-            <FiMessageSquare /> {thread.comments}
+            <FiMessageSquare className="text-lg" />
+            <span className="text-xs">{thread.comments}</span>
           </button>
         </div>
 
