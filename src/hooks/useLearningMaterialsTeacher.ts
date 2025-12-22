@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import type { LearningMaterial, LearningMaterialQuery, PageInfo } from "~/types/learningMaterial";
+import type { LearningMaterial, LearningMaterialQuery, LearningMaterialSearchParams, PageInfo } from "~/types/learningMaterial";
 import LearningMaterialService from "~/services/learningMaterialService";
 
 const getErrorMessage = (error: unknown, fallback: string): string => {
@@ -148,14 +148,19 @@ export function useLearningMaterialsTeacher() {
   }, []);
 
   //  Tìm kiếm
-  const search = useCallback(async (keyword: string) => {
+  const search = useCallback(async (params: LearningMaterialSearchParams) => {
     try {
       setLoading(true);
-      const res = await LearningMaterialService.search(keyword);
-      setMaterials(res.data.data);
+      setError(null);
+      const res = await LearningMaterialService.search(params);
+      const { items, pageInfo: normalizedPageInfo } = normalizePageData(res.data.data);
+      setMaterials(items);
+      setPageInfo(normalizedPageInfo);
     } catch (err: unknown) {
       console.error("❌ Search error:", err);
       setError(getErrorMessage(err, "Failed to search materials"));
+      setMaterials([]);
+      setPageInfo(null);
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { message } from "antd";
-import type { Community } from "~/types/community";
+import type { Community, CommunitySearchParams } from "~/types/community";
 import type { ApiResponse } from "~/types/api";
 import CommunityService from "~/services/communityService";
 
@@ -86,6 +86,8 @@ export const useCommunityManager = () => {
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState<Community[]>([]);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchCommunities = useCallback(async () => {
     try {
@@ -116,32 +118,73 @@ export const useCommunityManager = () => {
     }
   }, []);
 
+  // Debounce search keyword
   useEffect(() => {
-    fetchCommunities();
-  }, [fetchCommunities]);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
 
-  const applyFilters = useCallback((search: string) => {
-    const filtered = communities.filter((community) => {
-      if (!community) return false;
-      const name = community.name || "";
-      const description = community.description || "";
-      const searchLower = search.toLowerCase();
-      const matchesSearch =
-        name.toLowerCase().includes(searchLower) ||
-        description.toLowerCase().includes(searchLower);
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearch(searchText);
+    }, 500); // 500ms delay
 
-      return matchesSearch;
-    });
-    setFilteredData(filtered);
-  }, [communities]);
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchText]);
 
+  // Gọi API search khi có keyword hoặc fetch all khi không có
   useEffect(() => {
-    applyFilters(searchText);
-  }, [communities, searchText, applyFilters]);
+    const hasSearchKeyword = debouncedSearch.trim().length > 0;
+
+    if (hasSearchKeyword) {
+      // Gọi API search
+      const searchCommunities = async () => {
+        try {
+          setLoading(true);
+          const searchParams: CommunitySearchParams = {
+            keyword: debouncedSearch.trim(),
+            page: 0,
+            size: 100,
+          };
+          const response = await CommunityService.searchCommunities(searchParams);
+          const apiResponse = response.data as ApiResponse<unknown>;
+          const data = apiResponse.data;
+
+          let communitiesList: Community[] = [];
+          if (Array.isArray(data)) {
+            communitiesList = data as Community[];
+          } else if (data && typeof data === "object" && "items" in data) {
+            const paginated = data as { items: Community[] };
+            communitiesList = paginated.items || [];
+          } else if (data && typeof data === "object" && "content" in data) {
+            const paginated = data as { content: Community[] };
+            communitiesList = paginated.content || [];
+          }
+
+          // Loại bỏ duplicate và normalize data
+          const uniqueCommunities = deduplicateCommunities(communitiesList);
+          setFilteredData(uniqueCommunities);
+        } catch (error) {
+          console.error("Failed to search communities:", error);
+          message.error("Failed to search communities");
+          setFilteredData([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      searchCommunities();
+    } else {
+      // Không có keyword, fetch all communities
+      fetchCommunities();
+    }
+  }, [debouncedSearch, fetchCommunities]);
 
   const handleSearch = (value: string) => {
     setSearchText(value);
-    applyFilters(value);
   };
 
   return {

@@ -24,6 +24,14 @@ export interface LearningMaterialQuery {
   sorts?: string;
 }
 
+// Query params cho API search learning materials
+export interface LearningMaterialSearchParams {
+  keyword: string; // Required
+  pageNo?: number; // Default: 0
+  pageSize?: number; // Default: 10
+  sorts?: string[]; // Format: ["fieldName:direction", ...], e.g. ["title:asc", "createdAt:desc"]
+}
+
 export interface ApiResponse<T> {
   code: number;
   message: string;
