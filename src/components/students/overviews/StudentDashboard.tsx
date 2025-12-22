@@ -20,6 +20,20 @@ import StudentDashboardService from '~/services/StudentDashboardService';
 import { toast } from '~/components/common/Toast';
 import ReactMarkdown from 'react-markdown';
 
+// Helper function to get greeting based on current hour
+const getGreeting = (): string => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) {
+    return '🌄Good Morning';
+  } else if (hour >= 12 && hour < 18) {
+    return '🌇Good Afternoon';
+  } else if (hour >= 18 && hour < 22) {
+    return '🌆Good Evening';
+  } else {
+    return '🌃Good Night';
+  }
+};
+
 const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
   const { stats, overall, financial, examStats, loading, refetch } = useStudentDashboardStats();
@@ -75,7 +89,7 @@ const StudentDashboard: React.FC = () => {
       <div className="w-full mx-auto md:ml-0 ml-0">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.firstName} {user?.lastName}</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{getGreeting()}, {user?.firstName} {user?.lastName}</h1>
           <p className="text-gray-600">Here's your learning progress overview</p>
           {stats?.recommendedTopic && (
             <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium border border-blue-100">
