@@ -74,7 +74,8 @@ const DoTestPage: React.FC = () => {
         () => {
             // Auto-submit callback when max violations reached
             handleSubmit();
-        }
+        },
+        attemptId || examId // Pass attemptId/examId for localStorage persistence
     );
 
     // Check for stored attempt data from useExamAttempt - memoize to prevent recreation

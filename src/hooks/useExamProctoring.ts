@@ -23,20 +23,68 @@ interface UseExamProctoringReturn {
     getProctoringMetadata: () => ProctoringMetadata;
 }
 
+// LocalStorage keys - read from environment variables with fallback
+const PROCTORING_VIOLATIONS_KEY = import.meta.env.VITE_PROCTORING_VIOLATIONS_KEY || 'proctoring_violations';
+const PROCTORING_VIOLATION_COUNTS_KEY = import.meta.env.VITE_PROCTORING_VIOLATION_COUNTS_KEY || 'proctoring_violation_counts';
+
 export const useExamProctoring = (
     config: ProctoringConfig,
-    onAutoSubmit?: () => void
+    onAutoSubmit?: () => void,
+    examId?: string // Added examId for unique localStorage keys per exam
 ): UseExamProctoringReturn => {
-    const [violations, setViolations] = useState<ProctoringViolation[]>([]);
-    const [violationCounts, setViolationCounts] = useState<ViolationCounts>({
-        tab_switch: 0,
-        fullscreen_exit: 0,
-        copy_attempt: 0,
-        context_menu_attempt: 0,
+    // Generate unique storage keys based on examId
+    const storageKey = examId ? `${PROCTORING_VIOLATIONS_KEY}_${examId}` : PROCTORING_VIOLATIONS_KEY;
+    const countsStorageKey = examId ? `${PROCTORING_VIOLATION_COUNTS_KEY}_${examId}` : PROCTORING_VIOLATION_COUNTS_KEY;
+
+    // Initialize violations from localStorage
+    const [violations, setViolations] = useState<ProctoringViolation[]>(() => {
+        try {
+            const stored = localStorage.getItem(storageKey);
+            return stored ? JSON.parse(stored) : [];
+        } catch {
+            return [];
+        }
     });
+
+    // Initialize violationCounts from localStorage
+    const [violationCounts, setViolationCounts] = useState<ViolationCounts>(() => {
+        try {
+            const stored = localStorage.getItem(countsStorageKey);
+            if (stored) {
+                return JSON.parse(stored);
+            }
+        } catch {
+            // Fallback to default
+        }
+        return {
+            tab_switch: 0,
+            fullscreen_exit: 0,
+            copy_attempt: 0,
+            context_menu_attempt: 0,
+        };
+    });
+
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isProctoringActive, setIsProctoringActive] = useState(false);
     const [proctoringStartTime, setProctoringStartTime] = useState<number>(0);
+
+    // Save violations to localStorage whenever they change
+    useEffect(() => {
+        try {
+            localStorage.setItem(storageKey, JSON.stringify(violations));
+        } catch (error) {
+            console.error('Failed to save violations to localStorage:', error);
+        }
+    }, [violations, storageKey]);
+
+    // Save violationCounts to localStorage whenever they change
+    useEffect(() => {
+        try {
+            localStorage.setItem(countsStorageKey, JSON.stringify(violationCounts));
+        } catch (error) {
+            console.error('Failed to save violation counts to localStorage:', error);
+        }
+    }, [violationCounts, countsStorageKey]);
 
     // Refs for tracking
     const tabSwitchStartTime = useRef<number | null>(null);
@@ -64,10 +112,10 @@ export const useExamProctoring = (
         const remainingViolations = config.maxViolations - newTotal;
         if (remainingViolations > 0) {
             toast.warning(
-                 `Warning! You have ${remainingViolations} more violations before the exam will be automatically submitted.`,
-                 {
+                `Warning! You have ${remainingViolations} more violations before the exam will be automatically submitted.`,
+                {
                     autoClose: 8000,
-                 }
+                }
             );
         }
 
@@ -75,7 +123,7 @@ export const useExamProctoring = (
         if (config.strictFullscreen && newTotal >= config.maxViolations && !autoSubmitTriggered.current) {
             autoSubmitTriggered.current = true;
             toast.error(
-                 'Error! You have exceeded the maximum number of violations. The exam will be automatically submitted.'
+                'Error! You have exceeded the maximum number of violations. The exam will be automatically submitted.'
             );
             setTimeout(() => {
                 onAutoSubmit?.();
@@ -286,7 +334,15 @@ export const useExamProctoring = (
             context_menu_attempt: 0,
         });
         autoSubmitTriggered.current = false;
-    }, []);
+
+        // Also clear localStorage
+        try {
+            localStorage.removeItem(storageKey);
+            localStorage.removeItem(countsStorageKey);
+        } catch (error) {
+            console.error('Failed to clear violations from localStorage:', error);
+        }
+    }, [storageKey, countsStorageKey]);
 
     // Get proctoring metadata
     const getProctoringMetadata = useCallback((): ProctoringMetadata => {
