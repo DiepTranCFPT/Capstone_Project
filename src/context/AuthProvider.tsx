@@ -324,7 +324,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
                     safelyStoreUser(updatedUser);
                     return updatedUser;
                 } else {
-                    console.error("Not enough tokens");
+                    console.error("Not enough balance");
                     return currentUser;
                 }
             }

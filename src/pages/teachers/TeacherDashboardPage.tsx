@@ -192,7 +192,7 @@ const TeacherDashboardPage: React.FC = () => {
                                         key: 'revenue',
                                         align: 'center',
                                         width: 120,
-                                        render: (val: number) => `${val?.toLocaleString() || 0} tokens`
+                                        render: (val: number) => `${val?.toLocaleString() || 0} VNĐ`
                                     }
                                 ]}
                             />

@@ -519,7 +519,7 @@ const ExamTestPage: React.FC = () => {
                                         )}
 
                                         <div className="mt-6 p-4 bg-teal-50 border border-teal-200 rounded-lg flex justify-between items-center">
-                                            <p className="text-lg font-bold text-teal-800">Total Token Cost: {totalCombinedTokenCost} Tokens</p>
+                                            <p className="text-lg font-bold text-teal-800">Total Cost: {totalCombinedTokenCost} VNĐ</p>
                                             <button
                                                 onClick={() => handleStartCombinedExamClick(selectedExamsForCombined)}
                                                 disabled={isStartingCombinedTest}
