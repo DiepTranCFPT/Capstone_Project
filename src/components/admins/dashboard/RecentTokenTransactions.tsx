@@ -33,7 +33,7 @@ const RecentTokenTransactions: React.FC<RecentTokenTransactionsProps> = ({
                 });
                 setTransactions(sorted);
             } catch (error) {
-                console.error("Failed to fetch token transactions", error);
+                console.error("Failed to fetch transactions", error);
                 setTransactions([]);
             } finally {
                 setLoading(false);

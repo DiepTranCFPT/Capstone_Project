@@ -151,7 +151,7 @@ export default function SidebarStudent({ mobileOpen = false, onMobileClose }: St
                   {balanceLoading ? (
                     <Spin size="small" />
                   ) : (
-                    <span>{tokenBalance?.toLocaleString('vi-VN') ?? currentUser.tokenBalance.toLocaleString('vi-VN')} VNĐ</span>
+                    <span>{tokenBalance?.toLocaleString('vi-VN') ?? currentUser.tokenBalance.toLocaleString('vi-VN')} ₫</span>
                   )}
                 </div>
               </div>

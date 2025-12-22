@@ -85,7 +85,7 @@ const TeacherProfileDashboard: React.FC = () => {
                 </div>
                 <div className="flex gap-3">
                   <span className="text-gray-600">Balance:</span>
-                  <span className="font-medium text-green-600">{user.tokenBalance.toLocaleString('vi-VN')} VNĐ</span>
+                  <span className="font-medium text-green-600">{user.tokenBalance.toLocaleString('vi-VN')} ₫</span>
                 </div>
 
                 {profile && (

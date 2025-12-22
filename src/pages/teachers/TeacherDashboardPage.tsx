@@ -21,7 +21,7 @@ const PRIMARY_COLOR = '#3CBCB2';
 const quickActions = [
     { title: 'Question Bank', link: '/teacher/question-bank', icon: <FileTextOutlined /> },
     { title: 'Upload Material', link: '/teacher/materials', icon: <UploadOutlined /> },
-    { title: 'View Reports', link: '/teacher/analytics', icon: <BarChartOutlined /> },
+    { title: 'View Reports', link: '/teacher/exam-attempts', icon: <BarChartOutlined /> },
 ];
 
 const TeacherDashboardPage: React.FC = () => {
@@ -182,7 +182,7 @@ const TeacherDashboardPage: React.FC = () => {
                                         width: 100,
                                         render: (val: number) => (
                                             <span className={val >= 70 ? 'text-green-600' : 'text-orange-500'}>
-                                                {val?.toFixed(1) || 0}%
+                                                {val?.toFixed(1) || 0}
                                             </span>
                                         )
                                     },
@@ -192,7 +192,7 @@ const TeacherDashboardPage: React.FC = () => {
                                         key: 'revenue',
                                         align: 'center',
                                         width: 120,
-                                        render: (val: number) => `${val?.toLocaleString() || 0} VNĐ`
+                                        render: (val: number) => `${val?.toLocaleString() || 0} ₫`
                                     }
                                 ]}
                             />
@@ -224,7 +224,7 @@ const TeacherDashboardPage: React.FC = () => {
 
                         {/* Summary Card */}
                         <Card
-                            
+
                             className="rounded-lg shadow-sm"
                             style={{ borderColor: PRIMARY_COLOR }}
                         >

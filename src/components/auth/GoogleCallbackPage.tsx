@@ -39,7 +39,7 @@ const GoogleCallbackPage: React.FC = () => {
                         // Đăng nhập thành công, điều hướng đến trang chính
                         navigate('/');
                     } else {
-                        throw new Error("Không nhận được token từ backend.");
+                        throw new Error("Not received token from backend.");
                     }
 
                 } catch (err) {
@@ -65,9 +65,9 @@ const GoogleCallbackPage: React.FC = () => {
     return (
         <div className="flex flex-col items-center justify-center h-screen bg-white">
             <Spin size="large" />
-            <p className="mt-4 text-xl font-semibold text-gray-700">Đang xử lý đăng nhập Google...</p>
+            <p className="mt-4 text-xl font-semibold text-gray-700">Processing Google login...</p>
             <p className="mt-2 text-sm text-gray-500 text-center max-w-md">
-                Vui lòng đợi trong khi chúng tôi xác thực thông tin đăng nhập của bạn.
+                Please wait while we verify your login information.
             </p>
         </div>
     );

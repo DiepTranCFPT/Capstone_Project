@@ -37,7 +37,7 @@ const ExamCard: React.FC<ExamCardProps> = ({ exams, onStartExam, isLoading = fal
                 <span className="flex items-center mr-2">
                     {'⭐'.repeat(Math.floor(exams.rating))} ({exams.rating})
                 </span>
-                <span className='flex items-center gap-1 text-md text-gray-700'>- {exams.tokenCost === 0 ? 'Free' : `${exams.tokenCost.toLocaleString('vi-VN')}`}  (VNĐ)</span>
+                <span className='flex items-center gap-1 text-md text-gray-700'>- {exams.tokenCost === 0 ? 'Free' : `${exams.tokenCost.toLocaleString('vi-VN')}`}  (₫)</span>
             </div>
 
             {/* Subject */}

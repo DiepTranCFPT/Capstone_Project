@@ -509,7 +509,7 @@ const ExamTestPage: React.FC = () => {
                                                                     <p className="font-semibold">{exam.title}</p>
                                                                     <p className="text-sm text-gray-600">Teacher: {exam.teacherName}</p>
                                                                     <p className="text-sm text-gray-600">Rating: {exam.rating}</p>
-                                                                    <p className="text-sm text-gray-600">Cost: {exam.tokenCost.toLocaleString('vi-VN')} VNĐ</p>
+                                                                    <p className="text-sm text-gray-600">Cost: {exam.tokenCost.toLocaleString('vi-VN')} ₫</p>
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -519,7 +519,7 @@ const ExamTestPage: React.FC = () => {
                                         )}
 
                                         <div className="mt-6 p-4 bg-teal-50 border border-teal-200 rounded-lg flex justify-between items-center">
-                                            <p className="text-lg font-bold text-teal-800">Total Cost: {totalCombinedTokenCost} VNĐ</p>
+                                            <p className="text-lg font-bold text-teal-800">Total Cost: {totalCombinedTokenCost} ₫</p>
                                             <button
                                                 onClick={() => handleStartCombinedExamClick(selectedExamsForCombined)}
                                                 disabled={isStartingCombinedTest}

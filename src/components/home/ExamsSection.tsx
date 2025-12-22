@@ -122,7 +122,7 @@ const ExamsSection: React.FC = () => {
               <div className="pt-2 md:pt-3 border-t border-gray-100">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500">Passing Score</span>
-                  <span className="text-xs md:text-sm font-bold text-emerald-600">{exam.passingScore}%</span>
+                  <span className="text-xs md:text-sm font-bold text-emerald-600">{exam.passingScore}</span>
                 </div>
               </div>
               {/* Action Button */}

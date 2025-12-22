@@ -439,7 +439,7 @@ const ExamDetailsPage: React.FC = () => {
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Token Cost">
-                {currentTemplate.tokenCost === 0 ? 'Free' : `${currentTemplate.tokenCost.toLocaleString('vi-VN')} VNĐ`}
+                {currentTemplate.tokenCost === 0 ? 'Free' : `${currentTemplate.tokenCost.toLocaleString('vi-VN')} ₫`}
               </Descriptions.Item>
               <Descriptions.Item label="Average Rating">
                 ⭐ {currentTemplate.averageRating?.toFixed(1) || 'N/A'}
@@ -708,7 +708,7 @@ const ExamDetailsPage: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <Text>Cost:</Text>
-                <Text strong>{currentTemplate.tokenCost === 0 ? 'Free' : `${currentTemplate.tokenCost.toLocaleString('vi-VN')} VNĐ`}</Text>
+                <Text strong>{currentTemplate.tokenCost === 0 ? 'Free' : `${currentTemplate.tokenCost.toLocaleString('vi-VN')} ₫`}</Text>
               </div>
               <div className="flex justify-between">
                 <Text>Average Rating:</Text>

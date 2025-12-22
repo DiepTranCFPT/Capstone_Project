@@ -73,7 +73,7 @@ const ChildrenList: React.FC<ChildrenListProps> = ({
                   <Progress
                     type="circle"
                     percent={Number(child.averageScore.toFixed(1))}
-                    format={(percent) => `${percent}%`}
+                    format={(percent) => `${percent}`}
                     size={100}
                   />
                   <Text className="block mt-2 text-sm text-gray-600">Average Score</Text>

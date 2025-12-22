@@ -94,7 +94,7 @@ const ProfileDashboard: React.FC = () => {
                     {balanceLoading ? (
                       <Spin size="small" />
                     ) : (
-                        <span className="font-medium text-green-600">{tokenBalance?.toLocaleString('vi-VN') ?? user.tokenBalance.toLocaleString('vi-VN')} VNĐ</span>
+                      <span className="font-medium text-green-600">{tokenBalance?.toLocaleString('vi-VN') ?? user.tokenBalance.toLocaleString('vi-VN')} ₫</span>
                     )}
                   </div>
 
@@ -141,7 +141,7 @@ const ProfileDashboard: React.FC = () => {
                     {user.studentProfile?.goal ? (
                       <span className="font-medium">{user.studentProfile?.goal}</span>
                     ) : (
-                        <span className="text-gray-600 italic">What result do you want to achieve ?</span>
+                      <span className="text-gray-600 italic">What result do you want to achieve ?</span>
                     )}
                   </div>
 
@@ -176,7 +176,7 @@ const ProfileDashboard: React.FC = () => {
 
         {/* Nội dung chính */}
 
-        
+
         {/* Modals */}
         <Modal
           title={

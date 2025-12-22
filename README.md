@@ -46,7 +46,7 @@ AI Support: Chatbot hỗ trợ giải đáp thắc mắc và AI gợi ý chấm 
 
 # 4. Tài chính & Cộng đồng
 
-Ví điện tử (Wallet): Tích hợp cổng thanh toán MoMo, quản lý số dư Token để mua khóa học/đề thi.
+Ví điện tử (Wallet): Tích hợp cổng thanh toán MoMo, quản lý số dư để mua khóa học/đề thi.
 
 Cộng đồng (Community): Diễn đàn thảo luận, nhóm học tập.
 

@@ -244,7 +244,7 @@ const StudentDashboard: React.FC = () => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Total spent:</span>
-                  <span className="text-lg font-bold text-green-600">{(financial.totalSpent ?? 0).toLocaleString('vi-VN')} VNĐ</span>
+                  <span className="text-lg font-bold text-green-600">{(financial.totalSpent ?? 0).toLocaleString('vi-VN')} ₫</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Registered materials:</span>
@@ -252,7 +252,7 @@ const StudentDashboard: React.FC = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Current balance:</span>
-                  <span className="text-lg font-bold text-purple-600">{(financial.currentBalance ?? 0).toLocaleString('vi-VN')} VNĐ</span>
+                  <span className="text-lg font-bold text-purple-600">{(financial.currentBalance ?? 0).toLocaleString('vi-VN')} ₫</span>
                 </div>
               </div>
             ) : (

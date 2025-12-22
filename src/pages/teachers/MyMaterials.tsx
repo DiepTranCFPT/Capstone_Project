@@ -126,7 +126,7 @@ const MaterialCard: React.FC<MaterialCardProps> = ({ data }) => {
                         className="w-max px-2 py-1 rounded-full text-xs font-medium text-white shadow mb-2"
                         style={{ backgroundColor: PRIMARY_COLOR }}
                     >
-                        {material.price.toLocaleString('vi-VN')} VNĐ
+                        {material.price.toLocaleString('vi-VN')} ₫
                     </div>
                 ) : (<div>
                     <div
