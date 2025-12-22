@@ -72,7 +72,7 @@ const ChatBot: React.FC = () => {
       {/* Floating Chat Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 ${isOpen
+        className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 ${isOpen
           ? 'bg-gray-600 hover:bg-gray-700 rotate-180'
           : 'bg-gradient-to-br from-teal-500 via-emerald-500 to-cyan-500 hover:from-teal-600 hover:via-emerald-600 hover:to-cyan-600'
           }`}
@@ -90,12 +90,12 @@ const ChatBot: React.FC = () => {
 
       {/* Pulse animation when closed */}
       {!isOpen && (
-        <div className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-teal-500 via-emerald-500 to-cyan-500 animate-ping opacity-30" />
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-teal-500 via-emerald-500 to-cyan-500 animate-ping opacity-30" />
       )}
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[380px] h-[520px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-fade-in">
+        <div className="fixed inset-4 sm:inset-auto sm:bottom-20 sm:right-4 md:bottom-24 md:right-6 z-50 sm:w-[350px] md:w-[380px] sm:h-[450px] md:h-[520px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-fade-in">
           {/* Header */}
           <div className="bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-500 text-white p-4 flex items-center gap-3">
             <div className="relative">
@@ -153,7 +153,7 @@ const ChatBot: React.FC = () => {
                   </div>
                 )}
                 <div
-                  className={`max-w-[75%] px-4 py-2.5 rounded-2xl shadow-sm ${message.sender === 'user'
+                  className={`max-w-[85%] sm:max-w-[75%] px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl shadow-sm ${message.sender === 'user'
                     ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-br-sm'
                     : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm'
                     }`}
@@ -205,7 +205,7 @@ const ChatBot: React.FC = () => {
               />
               <button
                 type="submit"
-                className="w-11 h-11 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white rounded-full flex items-center justify-center transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
+                className="w-10 h-10 sm:w-11 sm:h-11 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white rounded-full flex items-center justify-center transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg flex-shrink-0"
                 disabled={isLoading || !inputValue.trim()}
               >
                 <FaPaperPlane className="text-sm" />

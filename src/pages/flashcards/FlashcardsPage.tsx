@@ -117,7 +117,7 @@ const FlashcardsPage: React.FC = () => {
                         {isAuthenticated && (
                             <Link
                                 to={`${basePath}/create`}
-                                className="inline-flex items-center gap-2 bg-teal-600 text-white px-3 py-2 rounded-lg font-medium hover:bg-teal-700 transition-colors shadow-sm"
+                                className="inline-flex items-center w-max gap-2 bg-teal-600 text-white px-3 py-2 rounded-lg font-medium hover:bg-teal-700 transition-colors shadow-sm"
                             >
                                 <FaPlus className="w-4 h-4" />
                                 Create

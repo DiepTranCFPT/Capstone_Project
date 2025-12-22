@@ -16,7 +16,6 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import { useAuth } from '~/hooks/useAuth';
 import { useStudentDashboardStats } from '~/hooks/useStudentDashboardStats';
 import { useNavigate } from 'react-router-dom';
-import AIDashboardChatBubble from './AIDashboardChatBubble';
 import StudentDashboardService from '~/services/StudentDashboardService';
 import { toast } from '~/components/common/Toast';
 import ReactMarkdown from 'react-markdown';
@@ -416,9 +415,6 @@ const StudentDashboard: React.FC = () => {
         {/* Test Analytics Section (Assuming this is a separate component that might also need updates later) */}
         {/* <CardAnalytics /> */}
       </div>
-
-      {/* AI Chat Bubble */}
-      <AIDashboardChatBubble />
     </div>
   );
 };
