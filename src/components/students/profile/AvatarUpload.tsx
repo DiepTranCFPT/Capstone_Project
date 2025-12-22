@@ -22,14 +22,14 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ onSuccess }) => {
       // Update auth context with new avatar URL
       updateAuthFromStorage();
 
-      toast.success("Tải lên ảnh đại diện thành công!");
+      toast.success("Upload avatar successfully!");
 
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
       console.error("Error uploading avatar:", error);
-      toast.error(error instanceof Error ? error.message : "Có lỗi xảy ra khi tải lên ảnh đại diện");
+      toast.error(error instanceof Error ? error.message : "Error uploading avatar");
     } finally {
       setLoading(false);
     }
@@ -40,14 +40,14 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ onSuccess }) => {
       // Validate file type
       const isImage = file.type.startsWith('image/');
       if (!isImage) {
-        toast.error('Chỉ cho phép tải lên file ảnh!');
+        toast.error('Only image files are allowed!');
         return false;
       }
 
       // Validate file size (max 5MB)
       const isLessThan5MB = file.size / 1024 / 1024 < 5;
       if (!isLessThan5MB) {
-        toast.error('Kích thước ảnh không được vượt quá 5MB!');
+        toast.error('Image size must not exceed 5MB!');
         return false;
       }
 
@@ -63,7 +63,7 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ onSuccess }) => {
 
   if (!user) {
     return (
-      <Card title="Ảnh đại diện">
+      <Card title="Avatar">
         <div className="text-center py-4">
           <Spin size="large" />
         </div>
@@ -74,7 +74,7 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ onSuccess }) => {
   return (
     <>
       <Card
-        title="Ảnh đại diện"
+        title="Avatar"
         className="w-full mx-auto"
       >
         <div className="flex flex-col text-center items-center justify-center">
@@ -94,7 +94,7 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ onSuccess }) => {
                 size="small"
                 loading={loading}
                 className=""
-                title="Thay đổi ảnh đại diện"
+                title="Change avatar"
               />
             </Upload>
           </div>
@@ -108,14 +108,14 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ onSuccess }) => {
                 disabled={loading}
                 className="w-full"
               >
-                {loading ? "Đang tải lên..." : "Thay đổi ảnh đại diện"}
+                {loading ? "Uploading..." : "Change avatar"}
               </Button>
             </Upload>
           </div>
 
           <div className="mt-2 text-xs text-gray-500">
-            <p>Định dạng hỗ trợ: JPG, PNG, GIF</p>
-            <p>Kích thước tối đa: 5MB</p>
+            <p>Supported formats: JPG, PNG, GIF</p>
+            <p>Maximum size: 5MB</p>
           </div>
         </div>
       </Card>

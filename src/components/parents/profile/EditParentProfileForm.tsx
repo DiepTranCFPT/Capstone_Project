@@ -48,23 +48,23 @@ const EditParentProfileForm: React.FC<EditParentProfileFormProps> = ({ onSuccess
             disabled={loading}
         >
             <Form.Item
-                label="Nghề nghiệp"
+                label="Occupation"
                 name="occupation"
                 rules={[
-                    { required: true, message: "Vui lòng nhập nghề nghiệp!" },
-                    { max: 100, message: "Nghề nghiệp không được vượt quá 100 ký tự!" },
+                    { required: true, message: "Please enter occupation!" },
+                    { max: 100, message: "Occupation cannot exceed 100 characters!" },
                 ]}
             >
-                <Input placeholder="Nhập nghề nghiệp" />
+                <Input placeholder="Enter occupation" />
             </Form.Item>
 
             <Form.Item className="mb-0">
                 <div className="flex gap-2 justify-end">
                     <Button onClick={handleCancel} disabled={loading}>
-                        Hủy
+                        Cancel
                     </Button>
                     <Button type="primary" htmlType="submit" loading={loading}>
-                        Cập nhật
+                        Update
                     </Button>
                 </div>
             </Form.Item>

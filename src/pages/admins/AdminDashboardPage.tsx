@@ -104,7 +104,7 @@ const AdminDashboardPage: React.FC = () => {
                         <div className="text-red-500">Error: {revenueError}</div>
                     </Card>
                 ) : (
-                    <>
+                    <div className='flex flex-col gap-6'>
                         {/* Filters */}
                         <Card title="Filters" bordered={false} className="shadow-sm mb-6">
                             <div className="flex flex-wrap gap-3 items-center">
@@ -184,7 +184,7 @@ const AdminDashboardPage: React.FC = () => {
                                 selectedDay={selectedDay}
                             />
                         </Card>
-                    </>
+                    </div>
                 )}
             </div>
 

@@ -45,7 +45,7 @@ const UserFilter: React.FC<UserFilterProps> = ({
         allowClear
         onClear={() => setRole(undefined)}
         options={[
-          { label: "Tất cả vai trò", value: "all" },
+          { label: "All roles", value: "all" },
           { label: "Admin", value: "ADMIN" },
           { label: "Teacher", value: "TEACHER" },
           { label: "Student", value: "STUDENT" },
@@ -73,7 +73,7 @@ const UserFilter: React.FC<UserFilterProps> = ({
         onChange={(val: string | boolean) => setIsLocked(val === "all" ? undefined : (val as boolean))}
         className="min-w-36"
         options={[
-          { label: "All locked", value: "all" },
+          { label: "All", value: "all" },
           { label: "Locked", value: true },
           { label: "Active", value: false },
         ]}

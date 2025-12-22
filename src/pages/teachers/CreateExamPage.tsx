@@ -671,7 +671,7 @@ const CreateExamPage: React.FC = () => {
                           style={{ width: 70 }}
                           size="small"
                         />
-                        <span className="text-xs text-gray-500">%</span>
+                        <span className="text-xs text-gray-500"></span>
                       </div>
                     </div>
                   ))}
@@ -740,7 +740,7 @@ const CreateExamPage: React.FC = () => {
                   <div className="mt-3 p-3 bg-blue-50 rounded-lg flex justify-between items-center">
                     <span className="text-sm text-gray-700">
                       Total points: <strong>{totalPoints}</strong> points
-                      | Passing score ({passingScore}%): <strong>{Math.ceil(totalPoints * passingScore / 100)}</strong> points
+                      | Passing score ({passingScore}): <strong>{Math.ceil(totalPoints * passingScore / 100)}</strong> points
                     </span>
                   </div>
                 )}

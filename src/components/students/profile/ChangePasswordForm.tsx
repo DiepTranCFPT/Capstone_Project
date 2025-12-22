@@ -35,7 +35,7 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onSuccess }) =>
 
       await changePasswordApi(formData);
 
-      toast.success("Đổi mật khẩu thành công!");
+      toast.success("Change password successfully!");
 
       form.resetFields();
       setVisibleModal(false);
@@ -45,7 +45,7 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onSuccess }) =>
       }
     } catch (error) {
       console.error("Error changing password:", error);
-      toast.error(error instanceof Error ? error.message : "Có lỗi xảy ra khi đổi mật khẩu");
+      toast.error(error instanceof Error ? error.message : "Error changing password");
     } finally {
       setLoading(false);
     }
@@ -53,15 +53,15 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onSuccess }) =>
 
   const validatePassword = (_: unknown, value: string) => {
     if (!value) {
-      return Promise.reject("Vui lòng nhập mật khẩu mới!");
+      return Promise.reject("Please enter new password!");
     }
 
     if (value.length < 6) {
-      return Promise.reject("Mật khẩu phải có ít nhất 6 ký tự!");
+      return Promise.reject("Password must be at least 6 characters!");
     }
 
     if (!/(?=.*[a-z])/.test(value)) {
-      return Promise.reject("Mật khẩu phải chứa ít nhất 1 chữ cái thường!");
+      return Promise.reject("Password must contain at least 1 lowercase letter!");
     }
 
     // if (!/(?=.*\d)/.test(value)) {
@@ -81,7 +81,7 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onSuccess }) =>
       if (!value || newPassword === value) {
         return Promise.resolve();
       }
-      return Promise.reject("Mật khẩu xác nhận không khớp!");
+      return Promise.reject("Confirm password does not match!");
     },
   };
 
@@ -93,11 +93,11 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onSuccess }) =>
         onClick={() => setVisibleModal(true)}
         className="mb-4"
       >
-        Đổi mật khẩu
+        Change Password
       </Button>
 
       <Modal
-        title="Đổi mật khẩu"
+        title="Change Password"
         open={visibleModal}
         onCancel={() => {
           setVisibleModal(false);
@@ -113,15 +113,15 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onSuccess }) =>
           disabled={loading}
         >
           <Form.Item
-            label="Mật khẩu hiện tại"
+            label="Current Password"
             name="currentPassword"
             rules={[
-              { required: true, message: "Vui lòng nhập mật khẩu hiện tại!" },
-              { min: 1, message: "Vui lòng nhập mật khẩu hiện tại!" },
+              { required: true, message: "Please enter current password!" },
+              { min: 1, message: "Please enter current password!" },
             ]}
           >
             <Input.Password
-              placeholder="Nhập mật khẩu hiện tại"
+              placeholder="Enter current password"
               iconRender={(visible) =>
                 visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
               }
@@ -129,14 +129,14 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onSuccess }) =>
           </Form.Item>
 
           <Form.Item
-            label="Mật khẩu mới"
+            label="New Password"
             name="newPassword"
             rules={[
               { validator: validatePassword },
             ]}
           >
             <Input.Password
-              placeholder="Nhập mật khẩu mới"
+              placeholder="Enter new password"
               iconRender={(visible) =>
                 visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
               }
@@ -144,15 +144,15 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onSuccess }) =>
           </Form.Item>
 
           <Form.Item
-            label="Xác nhận mật khẩu mới"
+            label="Confirm New Password"
             name="confirmPassword"
             rules={[
-              { required: true, message: "Vui lòng xác nhận mật khẩu mới!" },
+              { required: true, message: "Please confirm new password!" },
               validateConfirmPassword,
             ]}
           >
             <Input.Password
-              placeholder="Nhập lại mật khẩu mới"
+              placeholder="Enter new password again"
               iconRender={(visible) =>
                 visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
               }
@@ -168,20 +168,20 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ onSuccess }) =>
                 }}
                 disabled={loading}
               >
-                Hủy
+                Cancel
               </Button>
               <Button type="primary" htmlType="submit" loading={loading}>
-                Đổi mật khẩu
+                Change Password
               </Button>
             </div>
           </Form.Item>
         </Form>
 
         <div className="mt-4 p-3 bg-gray-50 rounded text-sm text-gray-600">
-          <p className="font-medium mb-1">Yêu cầu mật khẩu:</p>
+          <p className="font-medium mb-1">Password requirements:</p>
           <ul className="text-xs space-y-1">
-            <li>• Ít nhất 6 ký tự</li>
-            <li>• Chứa chữ cái thường (a-z)</li>
+            <li>• At least 6 characters</li>
+            <li>• Contains lowercase letter (a-z)</li>
             {/* <li>• Chứa chữ số (0-9)</li> */}
             {/* <li>• Chứa ký tự đặc biệt (@$!%*?&)</li> */}
           </ul>

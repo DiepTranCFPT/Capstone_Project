@@ -285,7 +285,7 @@ export const useExamAttempt = () => {
             // Handle data line
             if (line.startsWith("data:")) {
               const data = line.substring(5).trim();
-              console.log("[SSE] Received data:", data);
+              // console.log("[SSE] Received data:", data);
 
               // Check if it's a status update (waiting message)
               if (data.includes("Waiting") || data.includes("grading")) {
@@ -300,7 +300,7 @@ export const useExamAttempt = () => {
                 // Check if result contains attemptId (indicates final result)
                 if (result && (result.attemptId || result.data?.attemptId)) {
                   const finalResult = result.data || result;
-                  console.log("[SSE] Grading completed:", finalResult);
+                  // console.log("[SSE] Grading completed:", finalResult);
 
                   reader.cancel();
                   setLoading(false);

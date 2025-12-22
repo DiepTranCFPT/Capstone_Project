@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Tag, Typography, Space} from 'antd';
+import { Card, Table, Button, Tag, Typography, Space } from 'antd';
 import { ArrowLeftOutlined, TrophyOutlined, FileTextOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useParent } from '~/hooks/useParent';
@@ -120,7 +120,7 @@ const StudentDetailPage: React.FC = () => {
       >
         Back
       </Button>
-  
+
       {/* Topic Performance Charts */}
       <div className="mb-6">
         <ChildDetailStats

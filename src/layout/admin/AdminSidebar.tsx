@@ -123,7 +123,7 @@ export default function AdminSidebar() {
         {/* <Link to="/admin/profile"> */}
           <Avatar
             size={collapsed ? 32 : 40}
-            src={adminUser?.imgUrl || "https://i.pravatar.cc/150?u=admin"}
+          src={adminUser?.imgUrl || `https://ui-avatars.com/api/?name=${adminUser?.firstName} ${adminUser?.lastName}&background=random`}
             className="cursor-pointer"
           />
         {/* </Link> */}

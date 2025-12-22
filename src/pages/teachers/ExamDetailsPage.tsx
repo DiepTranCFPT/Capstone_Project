@@ -475,7 +475,7 @@ const ExamDetailsPage: React.FC = () => {
                       .sort(([a], [b]) => Number(b) - Number(a))
                       .map(([grade, range]) => (
                         <Tag key={grade} color="blue">
-                          <span className="font-bold">{grade}</span>: {range.min}-{range.max}%
+                          <span className="font-bold">{grade}</span>: {range.min}-{range.max}
                         </Tag>
                       ))}
                   </div>
@@ -698,7 +698,7 @@ const ExamDetailsPage: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <Text>Passing Score:</Text>
-                <Text strong>{currentTemplate.passingScore}%</Text>
+                <Text strong>{currentTemplate.passingScore}</Text>
               </div>
               <div className="flex justify-between">
                 <Text>Status:</Text>
@@ -729,10 +729,10 @@ const ExamDetailsPage: React.FC = () => {
           <Card title="Actions">
             <Space direction="vertical" className="w-full">
               <Button
-                type="primary"
                 icon={<EditOutlined />}
                 block
                 onClick={handleEdit}
+                style={{ backgroundColor: '#FFFFFF', color: '#1d77ecff', borderColor: '#1d77ecff' }}
               >
                 Edit Template
               </Button>
@@ -749,7 +749,7 @@ const ExamDetailsPage: React.FC = () => {
                 block
                 loading={analyzing}
                 onClick={handleAnalyze}
-                style={{ backgroundColor: '#722ed1', color: 'white', borderColor: '#722ed1' }}
+                style={{ backgroundColor: '#FFFFFF', color: '#722ed1', borderColor: '#722ed1' }}
               >
                 AI Analyze
               </Button>

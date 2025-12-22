@@ -30,8 +30,8 @@ const LinkStudentForm: React.FC = () => {
   return (
     <div>
       <p className="mb-4 text-gray-600">
-        Nhập email của học sinh và mã kết nối để liên kết tài khoản.
-        Học sinh cần cung cấp mã kết nối từ trang cá nhân của họ.
+       Enter the student's email and connection code to link their account.
+       The student needs to provide their connection code from their personal page.
       </p>
       <Form
         form={form}
@@ -42,27 +42,27 @@ const LinkStudentForm: React.FC = () => {
         autoComplete="off"
       >
         <Form.Item
-          label="Email học sinh"
+          label="Student Email"
           name="studentEmail"
           rules={[
-            { required: true, message: 'Vui lòng nhập email của học sinh!' },
-            { type: 'email', message: 'Email không hợp lệ!' }
+            { required: true, message: 'Please enter the student email!' },
+            { type: 'email', message: 'Email is invalid!' }
           ]}
         >
           <Input placeholder="student@example.com" />
         </Form.Item>
 
         <Form.Item
-          label="Mã kết nối"
+          label="Connection Code"
           name="connectionCode"
-          rules={[{ required: true, message: 'Vui lòng nhập mã kết nối!' }]}
+          rules={[{ required: true, message: 'Please enter the connection code!' }]}
         >
           <Input placeholder="ABC123" />
         </Form.Item>
 
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={loading}>
-            Liên kết tài khoản
+            Link Account
           </Button>
         </Form.Item>
       </Form>

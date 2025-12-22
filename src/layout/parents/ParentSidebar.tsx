@@ -4,7 +4,7 @@ import {
     FaTachometerAlt,
     FaUserPlus,
     FaSignOutAlt,
-    FaBell,
+    // FaBell,
     FaUsers,
     FaWallet
 } from 'react-icons/fa';
@@ -21,7 +21,7 @@ type ParentMenuItem = {
 
 const parentMenu: ParentMenuItem[] = [
     { label: "Dashboard", path: "/parent/dashboard", icon: <FaTachometerAlt /> },
-    { label: "Notifications", path: "/parent/notifications", icon: <FaBell /> },
+    // { label: "Notifications", path: "/parent/notifications", icon: <FaBell /> },
     { label: "Link Student", path: "/parent/link-student", icon: <FaUserPlus /> },
     { label: "List of children", path: "/parent/children", icon: <FaUsers /> },
     { label: "Community", path: "/parent/community", icon: <TeamOutlined /> },
@@ -54,7 +54,7 @@ const ParentSidebar: React.FC = () => {
             {/* Profile */}
             {user && (
                 <Link to="/parent/profile" className={"p-4 border-b border-gray-200 flex flex-row items-center hover:bg-gray-50 transition-colors cursor-pointer" + (collapsed ? " justify-center" : "")}>
-                    <Avatar size={collapsed ? 32 : 40} src={user.imgUrl} />
+                    <Avatar size={collapsed ? 32 : 40} src={user.imgUrl || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=random`} />
                     {!collapsed && (
                         <div className='flex flex-col px-2'>
                             <p className="font-semibold text-gray-800">{user.firstName} {user.lastName}</p>

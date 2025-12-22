@@ -509,7 +509,7 @@ const ExamTestPage: React.FC = () => {
                                                                     <p className="font-semibold">{exam.title}</p>
                                                                     <p className="text-sm text-gray-600">Teacher: {exam.teacherName}</p>
                                                                     <p className="text-sm text-gray-600">Rating: {exam.rating}</p>
-                                                                    <p className="text-sm text-gray-600">Cost: {exam.tokenCost} Tokens</p>
+                                                                    <p className="text-sm text-gray-600">Cost: {exam.tokenCost.toLocaleString('vi-VN')} VNĐ</p>
                                                                 </div>
                                                             ))}
                                                         </div>

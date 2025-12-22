@@ -84,7 +84,7 @@ const ParentDashboard: React.FC = () => {
                   <Progress
                     type="circle"
                     percent={Number(child.averageScore.toFixed(1))}
-                    format={(percent) => `${percent}%`}
+                    format={(percent) => `${percent}`}
                   />
                   <Text className="text-center block mt-2">Average Score</Text>
                 </Col>

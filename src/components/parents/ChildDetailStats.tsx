@@ -74,7 +74,6 @@ export const ChildDetailStats: React.FC<ChildDetailStatsProps> = ({ stats, loadi
                             value={stats.averageScore || 0}
                             precision={1}
                             prefix={<TrophyOutlined className="text-yellow-500" />}
-                            suffix="%"
                             valueStyle={{
                                 color: (stats.averageScore || 0) >= 70 ? '#10b981' : '#f59e0b',
                                 fontSize: '28px',
@@ -124,7 +123,7 @@ export const ChildDetailStats: React.FC<ChildDetailStatsProps> = ({ stats, loadi
                                         <XAxis dataKey="topic" tick={{ fontSize: 11 }} />
                                         <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
                                         <Tooltip
-                                            formatter={(value: number) => [`${value.toFixed(1)}%`, 'Score']}
+                                            formatter={(value: number) => [`${value.toFixed(1)}`, 'Score']}
                                             labelFormatter={(label) => {
                                                 const item = topicData.find(d => d.topic === label);
                                                 return item?.fullTopic || label;
@@ -196,7 +195,7 @@ export const ChildDetailStats: React.FC<ChildDetailStatsProps> = ({ stats, loadi
                             width: 100,
                             render: (val: number) => (
                                 <span className={val >= 70 ? 'text-green-600 font-bold' : 'text-orange-500 font-bold'}>
-                                    {val?.toFixed(1) || 0}%
+                                    {val?.toFixed(1) || 0}
                                 </span>
                             )
                         },

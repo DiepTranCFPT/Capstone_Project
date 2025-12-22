@@ -139,7 +139,7 @@ const TeacherExamAttemptsPage: React.FC = () => {
             key: 'action',
             render: (_: unknown, record: TeacherExamAttemptItem) => (
                 <Space>
-                    <Link to={`/teacher/grading/${record.attemptId}`}>
+                    <Link to={`/teacher/attempt-result/${record.attemptId}`}>
                         <Button type="primary" icon={<EyeOutlined />} size="small">
                             View Details
                         </Button>

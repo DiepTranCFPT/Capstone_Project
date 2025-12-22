@@ -25,19 +25,19 @@ const TeacherProfileDashboard: React.FC = () => {
         // Set lại toàn bộ user data thay vì cập nhật thuộc tính bên trong
         localStorage.setItem('user', JSON.stringify(response.user));
 
-        toast.success('Thông tin đã được cập nhật!');
+        toast.success('Information updated successfully!');
         window.location.reload();
       }
     } catch (error) {
       console.error('Error refreshing user data:', error);
-      toast.error('Không thể cập nhật thông tin. Vui lòng thử lại.');
+      toast.error('Failed to update information. Please try again.');
     }
   };
 
   // Function to handle logout after password change
   const handleLogout = () => {
     logout();
-    toast.success('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.');
+    toast.success('Password changed successfully! Please login again.');
     window.location.href = '/auth';
   };
 
@@ -45,7 +45,7 @@ const TeacherProfileDashboard: React.FC = () => {
     return (
       <div className="p-6 text-center">
         <Spin size="large" />
-        <p className="mt-4 text-gray-600">Đang tải thông tin giáo viên...</p>
+        <p className="mt-4 text-gray-600">Loading teacher information...</p>
       </div>
     );
   }
@@ -53,7 +53,7 @@ const TeacherProfileDashboard: React.FC = () => {
   if (!user) {
     return (
       <div className="p-6 text-center">
-        <p className="text-red-600">Không thể tải thông tin giáo viên. Vui lòng đăng nhập lại.</p>
+        <p className="text-red-600">Failed to load teacher information. Please login again.</p>
       </div>
     );
   }
@@ -65,10 +65,10 @@ const TeacherProfileDashboard: React.FC = () => {
         <Card className="mb-6 shadow-sm">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AvatarUpload />
-            <Card title="Thông tin cá nhân" className="shadow-sm">
+            <Card title="Personal Information" className="shadow-sm">
               <div className="space-y-3">
                 <div className="flex gap-3">
-                  <span className="text-gray-600">Họ tên:</span>
+                  <span className="text-gray-600">Full Name:</span>
                   <span className="font-medium">{user.firstName} {user.lastName}</span>
                 </div>
                 <div className="flex gap-3">
@@ -76,16 +76,16 @@ const TeacherProfileDashboard: React.FC = () => {
                   <span className="font-medium">{user.email}</span>
                 </div>
                 <div className="flex gap-3">
-                  <span className="text-gray-600">Vai trò:</span>
+                  <span className="text-gray-600">Role:</span>
                   <Badge color="orange" text={user.role} />
                 </div>
                 <div className="flex gap-3">
-                  <span className="text-gray-600">Ngày sinh:</span>
+                  <span className="text-gray-600">Birthday:</span>
                   <span>🎂 {user.dob && user.dob ? new Date(user.dob).toLocaleDateString('vi-VN') : 'N/A'}</span>
                 </div>
                 <div className="flex gap-3">
-                  <span className="text-gray-600">Token:</span>
-                  <span className="font-medium text-green-600">{user.tokenBalance}</span>
+                  <span className="text-gray-600">Balance:</span>
+                  <span className="font-medium text-green-600">{user.tokenBalance.toLocaleString('vi-VN')} VNĐ</span>
                 </div>
 
                 {profile && (
@@ -95,8 +95,8 @@ const TeacherProfileDashboard: React.FC = () => {
                       <Badge count={`${profile.rating}/5`} style={{ backgroundColor: '#52c41a' }} />
                     </div>
                     <div className="flex gap-3">
-                      <span className="text-gray-600">Trạng thái xác thực:</span>
-                      <Badge color={profile.isVerified ? 'green' : 'orange'} text={profile.isVerified ? 'Đã xác thực' : 'Chờ xác thực'} />
+                      <span className="text-gray-600">Verification Status:</span>
+                      <Badge color={profile.isVerified ? 'green' : 'orange'} text={profile.isVerified ? 'Verified' : 'Pending'} />
                     </div>
                   </>
                 )}
@@ -110,7 +110,7 @@ const TeacherProfileDashboard: React.FC = () => {
                       onClick={() => setEditProfileModalVisible(true)}
                       size="small"
                     >
-                      Chỉnh sửa thông tin
+                      Edit Profile
                     </Button>
                     <Button
                       icon={<LockOutlined />}
@@ -118,7 +118,7 @@ const TeacherProfileDashboard: React.FC = () => {
                       size="small"
                       danger
                     >
-                      Đổi mật khẩu
+                      Change Password
                     </Button>
                   </div>
                 </div>
@@ -133,34 +133,34 @@ const TeacherProfileDashboard: React.FC = () => {
             <Card title={
               <div className="flex items-center gap-2">
                 <EditOutlined className="text-blue-500" />
-                Thông tin chuyên môn
+                Professional Information
               </div>
             } className="shadow-sm">
               <div className="space-y-4">
                 <div>
-                  <div className="font-medium text-sm text-gray-700 mb-2">Lĩnh vực chuyên môn</div>
-                  <p className="text-sm">{profile?.specialization || 'Chưa cập nhật'}</p>
+                  <div className="font-medium text-sm text-gray-700 mb-2">Specialization</div>
+                  <p className="text-sm">{profile?.specialization || 'Not updated'}</p>
                 </div>
 
                 <div className="border-t pt-4">
-                  <div className="font-medium text-sm text-gray-700 mb-2">Trình độ học vấn</div>
+                  <div className="font-medium text-sm text-gray-700 mb-2">Qualification</div>
                   <div className="space-y-1">
-                    <div className="text-sm">🎓 {profile?.qualification || 'Chưa cập nhật'}</div>
+                    <div className="text-sm">🎓 {profile?.qualification || 'Not updated'}</div>
                   </div>
                 </div>
 
                 <div className="border-t pt-4">
-                  <div className="font-medium text-sm text-gray-700 mb-2">Kinh nghiệm</div>
-                  <p className="text-sm">{profile?.experience || 'Chưa cập nhật'}</p>
+                  <div className="font-medium text-sm text-gray-700 mb-2">Experience</div>
+                  <p className="text-sm">{profile?.experience || 'Not updated'}</p>
                 </div>
 
                 {profile?.certificateUrls && profile.certificateUrls.length > 0 && (
                   <div className="border-t pt-4">
-                    <div className="font-medium text-sm text-gray-700 mb-2">Chứng chỉ</div>
+                    <div className="font-medium text-sm text-gray-700 mb-2">Certificates</div>
                     <div className="space-y-1">
                       {profile.certificateUrls.map((url, index) => (
                         <a key={index} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline block text-sm">
-                          Chứng chỉ {index + 1}
+                          Certificate {index + 1}
                         </a>
                       ))}
                     </div>
@@ -175,7 +175,7 @@ const TeacherProfileDashboard: React.FC = () => {
                     onClick={() => setEditTeacherProfileModalVisible(true)}
                     size="small"
                   >
-                    Chỉnh sửa thông tin chuyên môn
+                    Edit Professional Information
                   </Button>
                 </div>
               </div>
@@ -185,12 +185,12 @@ const TeacherProfileDashboard: React.FC = () => {
             <Card title={
               <div className="flex items-center gap-2">
                 <FileTextOutlined className="text-green-500" />
-                Giới thiệu về tôi
+                About Me
               </div>
             } className="shadow-sm">
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-gray-600 leading-relaxed">{profile?.biography || 'Chưa cập nhật'}</p>
+                  <p className="text-sm text-gray-600 leading-relaxed">{profile?.biography || 'Not updated'}</p>
                 </div>
               </div>
             </Card>
@@ -203,7 +203,7 @@ const TeacherProfileDashboard: React.FC = () => {
               icon={<UserAddOutlined />}
               onClick={() => setEditTeacherProfileModalVisible(true)}
             >
-              Tạo hồ sơ giáo viên
+              Create Teacher Profile
             </Button>
           </div>
         )}
@@ -213,7 +213,7 @@ const TeacherProfileDashboard: React.FC = () => {
           title={
             <div className="flex items-center gap-2">
               <EditOutlined className="text-blue-500" />
-              Chỉnh sửa thông tin cá nhân
+              Edit Personal Information
             </div>
           }
           open={editProfileModalVisible}
@@ -235,7 +235,7 @@ const TeacherProfileDashboard: React.FC = () => {
           title={
             <div className="flex items-center gap-2">
               {profile ? <EditOutlined className="text-blue-500" /> : <UserAddOutlined className="text-green-500" />}
-              {profile ? 'Chỉnh sửa thông tin giáo viên' : 'Tạo hồ sơ giáo viên'}
+              {profile ? 'Edit Teacher Information' : 'Create Teacher Profile'}
             </div>
           }
           open={editTeacherProfileModalVisible}
@@ -259,7 +259,7 @@ const TeacherProfileDashboard: React.FC = () => {
           title={
             <div className="flex items-center gap-2">
               <LockOutlined className="text-orange-500" />
-              Đổi mật khẩu
+              Change Password
             </div>
           }
           open={changePasswordModalVisible}

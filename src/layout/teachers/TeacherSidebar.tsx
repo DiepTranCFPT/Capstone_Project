@@ -10,6 +10,7 @@ import {
     // FaCalendarAlt,
     FaWallet,
     FaStar,
+    FaLayerGroup,
     // FaBookOpen,
 } from 'react-icons/fa';
 import { useAuth } from '~/hooks/useAuth';
@@ -31,6 +32,7 @@ const teacherMenu = [
     { label: "My Ratings", path: "/teacher/ratings", icon: <FaStar /> },
     { label: "Exams Attempt", path: "/teacher/exam-attempts", icon: <FaBook /> },
     { label: "Community", path: "/teacher/community", icon: <TeamOutlined /> },
+    { label: "Flashcards", path: "/teacher/flashcards", icon: <FaLayerGroup /> },
     // { label: "Analytics", path: "/teacher/analytics", icon: <FaChartBar /> },
     // { label: "Tutor Profile", path: "/teacher/tutor-profile", icon: <FaBookOpen /> },
     // { label: "My Availability", path: "/teacher/availability", icon: <FaCalendarAlt /> },

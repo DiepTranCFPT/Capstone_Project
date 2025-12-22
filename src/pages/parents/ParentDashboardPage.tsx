@@ -31,7 +31,6 @@ const ParentDashboardPage: React.FC = () => {
                 precision={1}
                 valueStyle={{ color: averageScore >= 70 ? '#3f8600' : '#cf1322' }}
                 prefix={averageScore >= 70 ? <ArrowUpOutlined /> : null}
-                suffix="%"
               />
             </Card>
           </Col>

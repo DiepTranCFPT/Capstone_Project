@@ -4,9 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { useBrowseExamTemplates } from "~/hooks/useExamBrowser";
 
 const ExamsSection: React.FC = () => {
-  const { templates, loading } = useBrowseExamTemplates({ pageNo: 0, pageSize: 3 });
+  // Fetch more exams to ensure we get enough free ones after filtering
+  const { templates, loading } = useBrowseExamTemplates({ pageNo: 0, pageSize: 100 });
 
-  const filteredTemplates = templates.filter((template) => template.tokenCost === 0);
+  // Filter for free exams and limit to 3 for display
+  const filteredTemplates = templates
+    .filter((template) => template.tokenCost === 0)
+    .slice(0, 3);
   const navigate = useNavigate();
 
   const handleExamClick = () => {
@@ -38,7 +42,7 @@ const ExamsSection: React.FC = () => {
 
       {/* Danh sách exams */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 w-full max-w-6xl">
-        {templates.length === 0 ? (
+        {filteredTemplates.length === 0 ? (
           <div className="col-span-full flex flex-col items-center justify-center py-8 md:py-16 px-4">
             <div className="bg-white rounded-full p-6 md:p-8 shadow-lg mb-4 md:mb-6">
               <svg className="w-16 h-16 md:w-24 md:h-24 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

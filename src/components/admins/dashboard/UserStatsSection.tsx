@@ -264,9 +264,9 @@ export const UserStatsSection: React.FC<UserStatsSectionProps> = ({ stats, loadi
                                         }}
                                     />
                                     <Legend />
-                                    <Bar dataKey="Students" fill="#10b981" radius={[8, 8, 0, 0]} />
-                                    <Bar dataKey="Teachers" fill="#f59e0b" radius={[8, 8, 0, 0]} />
-                                    <Bar dataKey="Parents" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                                    <Bar dataKey="New Students" fill="#10b981" radius={[8, 8, 0, 0]} />
+                                    <Bar dataKey="New Teachers" fill="#f59e0b" radius={[8, 8, 0, 0]} />
+                                    <Bar dataKey="Active Users" fill="#3b82f6" radius={[8, 8, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>

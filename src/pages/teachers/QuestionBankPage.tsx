@@ -149,7 +149,7 @@ const QuestionBankPage: React.FC = () => {
   //  Mở modal xem chi tiết
   const handleView = async (question: QuestionBankItem) => {
     try {
-      console.log("[QuestionBankPage] Viewing question:", question);
+      // console.log("[QuestionBankPage] Viewing question:", question);
       // Try to fetch full question details, but use question from list if it fails
       let fullQuestion: QuestionBankItem | null = null;
       try {
@@ -176,10 +176,10 @@ const QuestionBankPage: React.FC = () => {
           audioUrl: fullQuestion.audioUrl || question.audioUrl,
           questionContext: fullQuestion.questionContext || question.questionContext,
         };
-        console.log("[QuestionBankPage] Setting viewing question:", normalizedQuestion);
+        // console.log("[QuestionBankPage] Setting viewing question:", normalizedQuestion);
         setViewingQuestion(normalizedQuestion);
       } else {
-        console.log("[QuestionBankPage] Using question from list for view");
+        // console.log("[QuestionBankPage] Using question from list for view");
         setViewingQuestion(question);
       }
       setViewQuestionVisible(true);
@@ -289,19 +289,19 @@ const QuestionBankPage: React.FC = () => {
   //  Lưu hoặc cập nhật câu hỏi
   const handleSaveNewQuestion = async (newQuestion: NewQuestion) => {
     try {
-      console.log("[QuestionBankPage] Saving question:", newQuestion);
-      console.log("[QuestionBankPage] Editing question:", editingQuestion);
+      // console.log("[QuestionBankPage] Saving question:", newQuestion);
+      // console.log("[QuestionBankPage] Editing question:", editingQuestion);
 
       showLoading(editingQuestion ? "Updating question..." : "Creating question...");
 
       if (editingQuestion) {
         // Pass NewQuestion directly - useQuestionBank will transform it to API format
-        console.log("[QuestionBankPage] Updating question with ID:", editingQuestion.id);
+        // console.log("[QuestionBankPage] Updating question with ID:", editingQuestion.id);
         await updateQuestion(editingQuestion.id, newQuestion);
         toast.success("Question updated successfully!");
         setEditingQuestion(null);
       } else {
-        console.log("[QuestionBankPage] Creating new question");
+        // console.log("[QuestionBankPage] Creating new question");
         await createQuestion(newQuestion);
         toast.success("Question added successfully!");
       }
@@ -368,11 +368,11 @@ const QuestionBankPage: React.FC = () => {
 
   const handleImportQuestions = async () => {
     if (!importSubjectId) {
-      toast.error("Vui lòng chọn môn học!");
+      toast.error("Please select a subject!");
       return;
     }
     if (!importFile) {
-      toast.error("Vui lòng chọn file Excel!");
+      toast.error("Please select an Excel file!");
       return;
     }
 
@@ -526,7 +526,7 @@ const QuestionBankPage: React.FC = () => {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log("[QuestionBankPage] View button clicked for:", record.id);
+              // console.log("[QuestionBankPage] View button clicked for:", record.id);
               handleView(record);
             }}
             title="View details"

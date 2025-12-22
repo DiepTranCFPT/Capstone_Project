@@ -198,7 +198,7 @@ export const ExamStatsSection: React.FC<ExamStatsSectionProps> = ({ stats, loadi
                                     width: 100,
                                     render: (val: number) => (
                                         <span className={val >= 70 ? 'text-green-600' : 'text-orange-500'}>
-                                            {val?.toFixed(1) || 0}%
+                                            {val?.toFixed(1) || 0}
                                         </span>
                                     )
                                 }

@@ -23,20 +23,20 @@ const ParentProfileDashboard: React.FC = () => {
                 // Set lại toàn bộ user data thay vì cập nhật thuộc tính bên trong
                 localStorage.setItem('user', JSON.stringify(response.user));
 
-                toast.success('Thông tin đã được cập nhật!');
+                toast.success('Profile information updated successfully!');
                 // Force re-render by reloading page
                 window.location.reload();
             }
         } catch (error) {
             console.error('Error refreshing user data:', error);
-            toast.error('Không thể cập nhật thông tin. Vui lòng thử lại.');
+            toast.error('Failed to update profile information. Please try again.');
         }
     };
 
     // Function to handle logout after password change
     const handleLogout = () => {
         logout();
-        toast.success('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.');
+        toast.success('Password changed successfully! Please login again.');
         window.location.href = '/auth';
     };
 
@@ -44,7 +44,7 @@ const ParentProfileDashboard: React.FC = () => {
         return (
             <div className="p-6 text-center">
                 <Spin size="large" />
-                <p className="mt-4 text-gray-600">Đang tải thông tin cá nhân...</p>
+                <p className="mt-4 text-gray-600">Loading profile information...</p>
             </div>
         );
     }
@@ -52,7 +52,7 @@ const ParentProfileDashboard: React.FC = () => {
     if (!user) {
         return (
             <div className="p-6 text-center">
-                <p className="text-red-600">Không thể tải thông tin cá nhân. Vui lòng đăng nhập lại.</p>
+                <p className="text-red-600">Cannot load profile information. Please login again.</p>
             </div>
         );
     }
@@ -65,10 +65,10 @@ const ParentProfileDashboard: React.FC = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <AvatarUpload />
                         <div className="flex flex-col gap-6">
-                            <Card title="Thông tin cá nhân" className="shadow-sm">
+                            <Card title="Profile Information" className="shadow-sm">
                                 <div className="space-y-3">
                                     <div className="flex gap-3">
-                                        <span className="text-gray-600">Họ tên:</span>
+                                        <span className="text-gray-600">Full Name:</span>
                                         <span className="font-medium">{user.firstName} {user.lastName}</span>
                                     </div>
                                     <div className="flex gap-3">
@@ -76,11 +76,11 @@ const ParentProfileDashboard: React.FC = () => {
                                         <span className="font-medium">{user.email}</span>
                                     </div>
                                     <div className="flex gap-3">
-                                        <span className="text-gray-600">Vai trò:</span>
+                                        <span className="text-gray-600">Role:</span>
                                         <Badge color="blue" text={user.role} />
                                     </div>
                                     <div className="flex gap-3">
-                                        <span className="text-gray-600">Ngày sinh:</span>
+                                        <span className="text-gray-600">Date of Birth:</span>
                                         <span>🎂 {user.dob ? new Date(user.dob).toLocaleDateString() : 'N/A'}</span>
                                     </div>
 
@@ -93,7 +93,7 @@ const ParentProfileDashboard: React.FC = () => {
                                                 onClick={() => setEditProfileModalVisible(true)}
                                                 size="small"
                                             >
-                                                Chỉnh sửa thông tin
+                                                Edit Profile
                                             </Button>
                                             <Button
                                                 icon={<LockOutlined />}
@@ -101,18 +101,18 @@ const ParentProfileDashboard: React.FC = () => {
                                                 size="small"
                                                 danger
                                             >
-                                                Đổi mật khẩu
+                                                Change Password
                                             </Button>
                                         </div>
                                     </div>
                                 </div>
                             </Card>
 
-                            <Card title="Thông tin phụ huynh" className="shadow-sm">
+                            <Card title="Parent Information" className="shadow-sm">
                                 <div className="space-y-3">
                                     <div className="flex gap-3">
-                                        <span className="text-gray-600">Nghề nghiệp:</span>
-                                        <span className="font-medium">{user.parentProfile?.occupation || "Chưa cập nhật"}</span>
+                                        <span className="text-gray-600">Occupation:</span>
+                                        <span className="font-medium">{user.parentProfile?.occupation || "Not updated"}</span>
                                     </div>
 
                                     {/* Edit button */}
@@ -124,7 +124,7 @@ const ParentProfileDashboard: React.FC = () => {
                                                 onClick={() => setEditParentProfileModalVisible(true)}
                                                 size="small"
                                             >
-                                                Chỉnh sửa thông tin phụ huynh
+                                                Edit Parent Information
                                             </Button>
                                         </div>
                                     </div>
@@ -139,7 +139,7 @@ const ParentProfileDashboard: React.FC = () => {
                     title={
                         <div className="flex items-center gap-2">
                             <EditOutlined className="text-blue-500" />
-                            Chỉnh sửa thông tin cá nhân
+                            Edit Profile Information
                         </div>
                     }
                     open={editProfileModalVisible}
@@ -161,7 +161,7 @@ const ParentProfileDashboard: React.FC = () => {
                     title={
                         <div className="flex items-center gap-2">
                             <LockOutlined className="text-orange-500" />
-                            Đổi mật khẩu
+                            Change Password
                         </div>
                     }
                     open={changePasswordModalVisible}
@@ -185,7 +185,7 @@ const ParentProfileDashboard: React.FC = () => {
                     title={
                         <div className="flex items-center gap-2">
                             <EditOutlined className="text-blue-500" />
-                            Chỉnh sửa thông tin phụ huynh
+                            Edit Parent Information
                         </div>
                     }
                     open={editParentProfileModalVisible}
