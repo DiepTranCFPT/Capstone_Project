@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Form, Input, DatePicker, Button, Card, message, Spin } from "antd";
+import { Form, Input, DatePicker, Button, Card, Spin } from "antd";
 import type { EditProfileRequest } from "~/types/auth";
 import { updateProfileApi } from "~/services/authService";
 import { useAuth } from "~/hooks/useAuth";
 import dayjs from "dayjs";
+import { toast } from "~/components/common/Toast";
 
 interface EditProfileFormProps {
   onSuccess?: () => void;
@@ -47,14 +48,14 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ onSuccess, onCancel }
       // Update auth context with new user data
       updateAuthFromStorage();
 
-      message.success("Cập nhật thông tin thành công!");
+      toast.success("Update profile successfully!");
 
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      message.error(error instanceof Error ? error.message : "Có lỗi xảy ra khi cập nhật thông tin");
+      toast.error(error instanceof Error ? error.message : "Error updating profile");
     } finally {
       setLoading(false);
     }
@@ -69,7 +70,7 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ onSuccess, onCancel }
 
   if (!user) {
     return (
-      <Card title="Chỉnh sửa thông tin cá nhân">
+      <Card title="Edit Profile">
         <div className="text-center py-4">
           <Spin size="large" />
         </div>
@@ -79,7 +80,7 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ onSuccess, onCancel }
 
   return (
     <Card
-      title="Chỉnh sửa thông tin cá nhân"
+      title="Edit Profile"
       className="w-full max-w-2xl"
     >
       <Form
@@ -96,27 +97,27 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ onSuccess, onCancel }
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Form.Item
-            label="Họ"
+            label="First Name"
             name="firstName"
             rules={[
-              { required: true, message: "Vui lòng nhập họ!" },
-              { min: 2, message: "Họ phải có ít nhất 2 ký tự!" },
-              { max: 50, message: "Họ không được vượt quá 50 ký tự!" },
+              { required: true, message: "Please enter first name!" },
+              { min: 2, message: "First name must be at least 2 characters!" },
+              { max: 50, message: "First name cannot exceed 50 characters!" },
             ]}
           >
-            <Input placeholder="Nhập họ" />
+            <Input placeholder="Enter first name" />
           </Form.Item>
 
           <Form.Item
-            label="Tên"
+            label="Last Name"
             name="lastName"
             rules={[
-              { required: true, message: "Vui lòng nhập tên!" },
-              { min: 2, message: "Tên phải có ít nhất 2 ký tự!" },
-              { max: 50, message: "Tên không được vượt quá 50 ký tự!" },
+              { required: true, message: "Please enter last name!" },
+              { min: 2, message: "Last name must be at least 2 characters!" },
+              { max: 50, message: "Last name cannot exceed 50 characters!" },
             ]}
           >
-            <Input placeholder="Nhập tên" />
+            <Input placeholder="Enter last name" />
           </Form.Item>
         </div>
 
@@ -124,22 +125,22 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ onSuccess, onCancel }
           label="Email"
           name="email"
           rules={[
-            { required: true, message: "Vui lòng nhập email!" },
-            { type: "email", message: "Email không hợp lệ!" },
+            { required: true, message: "Please enter email!" },
+            { type: "email", message: "Email is not valid!" },
           ]}
         >
-          <Input placeholder="Nhập email" disabled />
+          <Input placeholder="Enter email" disabled />
         </Form.Item>
 
         <Form.Item
-          label="Ngày sinh"
+          label="Date of Birth"
           name="dob"
           rules={[
-            { required: true, message: "Vui lòng chọn ngày sinh!" },
+            { required: true, message: "Please select date of birth!" },
           ]}
         >
           <DatePicker
-            placeholder="Chọn ngày sinh"
+            placeholder="Select date of birth"
             format="DD/MM/YYYY"
             className="w-full"
             disabledDate={(current) => {
@@ -154,10 +155,10 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ onSuccess, onCancel }
         <Form.Item className="mb-0">
           <div className="flex gap-2 justify-end">
             <Button onClick={handleCancel} disabled={loading}>
-              Hủy
+              Cancel
             </Button>
             <Button type="primary" htmlType="submit" loading={loading}>
-              Cập nhật
+              Update
             </Button>
           </div>
         </Form.Item>

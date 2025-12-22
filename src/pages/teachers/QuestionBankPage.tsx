@@ -1011,7 +1011,7 @@ const QuestionBankPage: React.FC = () => {
         <div className="space-y-6">
           {/* Instructions */}
           <Alert
-            message="Hướng dẫn Import"
+            message="Import Instructions"
             description={
               <ol className="list-decimal list-inside space-y-1 text-sm">
                 <li>Download template Excel with "Download Template" button</li>

@@ -12,6 +12,7 @@ import {
 import { Modal } from "antd";
 import FlashcardViewer from "~/components/flashcards/FlashcardViewer";
 import { useFlashcardSets } from "~/hooks/useFlashcardSets";
+import { useFlashcardBasePath } from "~/hooks/useFlashcardBasePath";
 import { useAuth } from "~/hooks/useAuth";
 import type { Flashcard } from "~/types/flashcardSet";
 import Loading from "~/components/common/Loading";
@@ -34,6 +35,7 @@ const FlashcardDetailPage: React.FC = () => {
     const [isShuffled, setIsShuffled] = useState(false);
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const hasFetchedRef = useRef(false);
+    const basePath = useFlashcardBasePath();
 
     useEffect(() => {
         if (id && !hasFetchedRef.current) {
@@ -76,7 +78,7 @@ const FlashcardDetailPage: React.FC = () => {
         const success = await deleteFlashcardSet(id);
         if (success) {
             toast.success("Flashcard set deleted successfully");
-            navigate("/flashcards");
+            navigate(basePath);
         } else {
             toast.error("Failed to delete flashcard set");
         }
@@ -88,7 +90,7 @@ const FlashcardDetailPage: React.FC = () => {
         if (!error) {
             return (
                 <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                    <Loading/>
+                    <Loading />
                 </div>
             );
         }
@@ -96,7 +98,7 @@ const FlashcardDetailPage: React.FC = () => {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
                 <p className="text-red-500 mb-4">{error}</p>
-                <Link to="/flashcards" className="text-teal-600 hover:underline">
+                <Link to={basePath} className="text-teal-600 hover:underline">
                     Back to flashcards
                 </Link>
             </div>
@@ -112,7 +114,7 @@ const FlashcardDetailPage: React.FC = () => {
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     {/* Back button */}
                     <Link
-                        to="/flashcards"
+                        to={basePath}
                         className="inline-flex items-center gap-2 text-gray-600 hover:text-teal-600 mb-4 transition-colors"
                     >
                         <FaArrowLeft className="w-4 h-4" />
@@ -164,7 +166,7 @@ const FlashcardDetailPage: React.FC = () => {
                             {isOwner && (
                                 <>
                                     <Link
-                                        to={`/flashcards/${id}/edit`}
+                                        to={`${basePath}/${id}/edit`}
                                         className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
                                     >
                                         <FaPenToSquare className="w-4 h-4" />
@@ -201,7 +203,7 @@ const FlashcardDetailPage: React.FC = () => {
                                 {isShuffled ? "Shuffled" : "Shuffle"}
                             </button>
                             <Link
-                                to={`/flashcards/${id}/quiz`}
+                                to={`${basePath}/${id}/quiz`}
                                 className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
                             >
                                 <FaGamepad className="w-4 h-4" />

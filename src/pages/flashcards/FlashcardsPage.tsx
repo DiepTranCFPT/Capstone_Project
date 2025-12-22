@@ -4,6 +4,7 @@ import { FaPlus, FaMagnifyingGlass, FaLayerGroup, FaPenToSquare, FaTrash } from 
 import { Pagination, Empty, Modal } from "antd";
 import FlashcardSetCard from "~/components/flashcards/FlashcardSetCard";
 import { useFlashcardSets } from "~/hooks/useFlashcardSets";
+import { useFlashcardBasePath } from "~/hooks/useFlashcardBasePath";
 import { useAuth } from "~/hooks/useAuth";
 import { toast } from "~/components/common/Toast";
 import Loading from "~/components/common/Loading";
@@ -30,6 +31,7 @@ const FlashcardsPage: React.FC = () => {
     const [deleteTitle, setDeleteTitle] = useState("");
     const pageSize = 12;
     const hasFetchedRef = useRef(false);
+    const basePath = useFlashcardBasePath();
 
     // Fetch data based on active tab
     useEffect(() => {
@@ -114,7 +116,7 @@ const FlashcardsPage: React.FC = () => {
                         {/* Create Button */}
                         {isAuthenticated && (
                             <Link
-                                to="/flashcards/create"
+                                to={`${basePath}/create`}
                                 className="inline-flex items-center gap-2 bg-teal-600 text-white px-3 py-2 rounded-lg font-medium hover:bg-teal-700 transition-colors shadow-sm"
                             >
                                 <FaPlus className="w-4 h-4" />
@@ -209,7 +211,7 @@ const FlashcardsPage: React.FC = () => {
                     >
                         {isAuthenticated && (
                             <Link
-                                to="/flashcards/create"
+                                to={`${basePath}/create`}
                                 className="inline-flex items-center gap-2 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors"
                             >
                                 <FaPlus className="w-4 h-4" />
@@ -229,7 +231,7 @@ const FlashcardsPage: React.FC = () => {
                                     {activeTab === "my" && (
                                         <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Link
-                                                to={`/flashcards/${set.id}/edit`}
+                                                to={`${basePath}/${set.id}/edit`}
                                                 className="w-8 h-8 bg-white rounded-lg shadow-md flex items-center justify-center text-gray-600 hover:text-teal-600 hover:bg-teal-50 transition-colors"
                                                 title="Edit"
                                             >

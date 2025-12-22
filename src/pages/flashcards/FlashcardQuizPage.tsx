@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { FaArrowLeft, FaCheck, FaXmark, FaTrophy } from "react-icons/fa6";
 import { Progress, Modal } from "antd";
 import { useFlashcardSets } from "~/hooks/useFlashcardSets";
+import { useFlashcardBasePath } from "~/hooks/useFlashcardBasePath";
 import Loading from "~/components/common/Loading";
 
 const FlashcardQuizPage: React.FC = () => {
@@ -24,6 +25,7 @@ const FlashcardQuizPage: React.FC = () => {
     const [showResult, setShowResult] = useState(false);
     const [exitModalVisible, setExitModalVisible] = useState(false);
     const hasFetchedRef = useRef(false);
+    const basePath = useFlashcardBasePath();
 
     useEffect(() => {
         if (id && !hasFetchedRef.current) {
@@ -87,7 +89,7 @@ const FlashcardQuizPage: React.FC = () => {
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <Loading/>
+                <Loading />
             </div>
         );
     }
@@ -98,7 +100,7 @@ const FlashcardQuizPage: React.FC = () => {
                 <p className="text-red-500 mb-4">
                     {error || "Unable to create quiz for this flashcard set"}
                 </p>
-                <Link to={`/flashcards/${id}`} className="text-teal-600 hover:underline">
+                <Link to={`${basePath}/${id}`} className="text-teal-600 hover:underline">
                     Back to study
                 </Link>
             </div>
@@ -152,7 +154,7 @@ const FlashcardQuizPage: React.FC = () => {
                             Retry Quiz
                         </button>
                         <Link
-                            to={`/flashcards/${id}`}
+                            to={`${basePath}/${id}`}
                             className="w-full py-3 border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                         >
                             Back to study
@@ -269,7 +271,7 @@ const FlashcardQuizPage: React.FC = () => {
             <Modal
                 title="Thoát Quiz?"
                 open={exitModalVisible}
-                onOk={() => navigate(`/flashcards/${id}`)}
+                onOk={() => navigate(`${basePath}/${id}`)}
                 onCancel={() => setExitModalVisible(false)}
                 okText="Exit"
                 cancelText="Continue"

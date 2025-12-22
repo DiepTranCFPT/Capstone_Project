@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { FaEye, FaLayerGroup } from "react-icons/fa";
 import type { FlashcardSetListItem } from "~/types/flashcardSet";
+import { useFlashcardBasePath } from "~/hooks/useFlashcardBasePath";
 
 interface FlashcardSetCardProps {
     flashcardSet: FlashcardSetListItem;
@@ -18,9 +19,11 @@ const FlashcardSetCard: React.FC<FlashcardSetCardProps> = ({ flashcardSet }) => 
         });
     };
 
+    const basePath = useFlashcardBasePath();
+
     return (
         <Link
-            to={`/flashcards/${id}`}
+            to={`${basePath}/${id}`}
             className="block bg-white rounded-xl border border-gray-200 p-5 hover:shadow-lg hover:border-teal-300 transition-all duration-300 group"
         >
             {/* Icon and Title */}

@@ -36,11 +36,7 @@ import FlashcardQuizPage from "./pages/flashcards/FlashcardQuizPage";
 import StudentDashboardPage from "./pages/students/StudentDashboardPage";
 import StudentLayout from "./layout/students/StudentLayout";
 import AITutorPage from "./pages/students/AITutorPage";
-import FindTutorPage from "./pages/students/FindTutorPage";
-import TutorDetailPage from "./pages/students/TutorDetailPage";
-import MyBookingsPage from "./pages/students/MyBookingsPage";
 import MyCoursesPage from "./pages/students/MyCoursesPage";
-import QuizBattlePage from "./pages/students/QuizBattlePage";
 
 import TestReportsPage from "./pages/students/TestReportsPage";
 import TestReportDetailPage from "./pages/students/TestReportDetailPage";
@@ -70,9 +66,7 @@ import QuestionBankPage from "./pages/teachers/QuestionBankPage";
 import CreateExamPage from "./pages/teachers/CreateExamPage";
 import ExamListPage from "./pages/teachers/ExamListPage";
 import TeacherExamDetailsPage from "./pages/teachers/ExamDetailsPage";
-import ClassAnalyticsPage from "./pages/teachers/ClassAnalyticsPage";
 import GradeSubmissionPage from "./pages/teachers/GradeSubmissionPage";
-import TeacherBookingRequestsPage from "./pages/teachers/TeacherBookingRequestsPage";
 import TeacherReviewQueuePage from "./pages/teachers/TeacherReviewQueuePage";
 import TeacherExamAttemptsPage from "./pages/teachers/TeacherExamAttemptsPage";
 import TeacherAttemptResultPage from "./pages/teachers/TeacherAttemptResultPage";
@@ -101,7 +95,6 @@ import RankingPage from "./pages/ranking/RankingPage";
 import WalletPage from "./pages/students/WalletPage";
 import AdminDashboardPage from "./pages/admins/AdminDashboardPage";
 import TokenPaymentManagerPage from "./pages/admins/TokenPaymentManagerPage";
-import TeacherAvailabilityPage from "./pages/teachers/TeacherAvailabilityPage";
 import TeacherProfilePage from "./pages/teachers/TeacherProfilePage";
 import TeacherDetailPage from "./pages/teachers/TeacherDetailPage";
 import TeacherRatingsViewPage from "./pages/teachers/TeacherRatingsViewPage";
@@ -217,11 +210,7 @@ function App() {
 
             <Route path="profile" element={<ProfileDashboard />} />
             <Route path="ai-tutor" element={<AITutorPage />} />
-            <Route path="find-tutor" element={<FindTutorPage />} />
-            <Route path="tutor/:tutorId" element={<TutorDetailPage />} />
-            <Route path="my-bookings" element={<MyBookingsPage />} />
             <Route path="my-courses" element={<MyCoursesPage />} />
-            <Route path="quiz-battle" element={<QuizBattlePage />} />
             <Route path="certificates" element={<MyCertificatesPage />} />
           </Route>
 
@@ -246,9 +235,6 @@ function App() {
               element={<GradeSubmissionPage />}
             />
             <Route path="tutor-profile" element={<TeacherProfilePage />} />
-            <Route path="availability" element={<TeacherAvailabilityPage />} />
-            <Route path="bookings" element={<TeacherBookingRequestsPage />} />
-            <Route path="analytics" element={<ClassAnalyticsPage />} />
             <Route path="ratings" element={<TeacherRatingsViewPage />} />
             <Route path="wallet" element={<MyWalletPage />} />
             <Route path="community" element={<CommunityPage />} />

@@ -395,7 +395,7 @@ const StudentDashboard: React.FC = () => {
                         {new Date(attempt.startTime).toLocaleDateString()}
                       </div>
                       <div className="text-right font-bold text-blue-600">
-                        {attempt.score !== undefined ? `${attempt.score}%` : 'N/A'}
+                        {attempt.score !== undefined ? `${attempt.score}` : 'N/A'}
                       </div>
                     </div>
                   </div>
@@ -406,7 +406,7 @@ const StudentDashboard: React.FC = () => {
             </div>
 
             <div className="mt-4 pt-4 border-t border-gray-100">
-              <Button type="text" className="w-full text-blue-600 hover:bg-blue-50" onClick={() => navigate('/practice')}>
+              <Button type="text" className="w-full text-blue-600 hover:bg-blue-50" onClick={() => navigate('/student/test-reports')}>
                 View All Exams <RightOutlined className="ml-2" />
               </Button>
             </div>

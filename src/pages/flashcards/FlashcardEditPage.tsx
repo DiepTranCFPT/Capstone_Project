@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa6";
 import { Switch, Spin, Modal } from "antd";
 import { useFlashcardSets } from "~/hooks/useFlashcardSets";
+import { useFlashcardBasePath } from "~/hooks/useFlashcardBasePath";
 import type { CreateFlashcardRequest } from "~/types/flashcardSet";
 import { toast } from "~/components/common/Toast";
 import Loading from "~/components/common/Loading";
@@ -58,6 +59,7 @@ const FlashcardEditPage: React.FC = () => {
     const [imageLoading, setImageLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const fetchingRef = useRef(false);
+    const basePath = useFlashcardBasePath();
 
     // Fetch existing flashcard set
     useEffect(() => {
@@ -213,7 +215,7 @@ const FlashcardEditPage: React.FC = () => {
 
         if (result) {
             toast.success("Flashcard set updated successfully!");
-            navigate(`/flashcards/${id}`);
+            navigate(`${basePath}/${id}`);
         } else {
             toast.error("Failed to update flashcard set");
         }
@@ -231,7 +233,7 @@ const FlashcardEditPage: React.FC = () => {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
                 <p className="text-red-500 mb-4">{error}</p>
-                <Link to="/flashcards" className="text-teal-600 hover:underline">
+                <Link to={basePath} className="text-teal-600 hover:underline">
                     Back to flashcards
                 </Link>
             </div>
@@ -246,7 +248,7 @@ const FlashcardEditPage: React.FC = () => {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <Link
-                                to={`/flashcards/${id}`}
+                                to={`${basePath}/${id}`}
                                 className="text-gray-600 hover:text-teal-600 transition-colors"
                             >
                                 <FaArrowLeft className="w-5 h-5" />
@@ -346,7 +348,7 @@ const FlashcardEditPage: React.FC = () => {
                                     {/* Definition */}
                                     <div>
                                         <p className="text-xs text-gray-400 mt-2">DEFINITION</p>
-                                        <textarea 
+                                        <textarea
                                             placeholder="Enter definition..."
                                             rows={2}
                                             value={card.definition}
@@ -354,7 +356,7 @@ const FlashcardEditPage: React.FC = () => {
                                                 updateCard(card.tempId, "definition", e.target.value)
                                             }
                                             className="w-full border-0 border-b-2 border-gray-100 focus:border-teal-400 focus:outline-none pb-2 text-lg transition-colors"
-                                        />                                        
+                                        />
                                     </div>
                                 </div>
 

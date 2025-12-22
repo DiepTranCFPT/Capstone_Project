@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa6";
 import { Switch, Spin, Modal } from "antd";
 import { useFlashcardSets } from "~/hooks/useFlashcardSets";
+import { useFlashcardBasePath } from "~/hooks/useFlashcardBasePath";
 import type { CreateFlashcardRequest } from "~/types/flashcardSet";
 import { toast } from "~/components/common/Toast";
 
@@ -50,6 +51,7 @@ const FlashcardCreatePage: React.FC = () => {
     const [imageLoading, setImageLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const fetchingRef = useRef(false);
+    const basePath = useFlashcardBasePath();
 
     const addCard = () => {
         setCards([
@@ -168,7 +170,7 @@ const FlashcardCreatePage: React.FC = () => {
         const result = await createFlashcardSet(payload);
         if (result) {
             toast.success("Flashcard set created successfully!");
-            navigate(`/flashcards/${result.id}`);
+            navigate(`${basePath}/${result.id}`);
         }
     };
 
@@ -180,7 +182,7 @@ const FlashcardCreatePage: React.FC = () => {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <Link
-                                to="/flashcards"
+                                to={basePath}
                                 className="text-gray-600 hover:text-teal-600 transition-colors"
                             >
                                 <FaArrowLeft className="w-5 h-5" />
@@ -193,16 +195,16 @@ const FlashcardCreatePage: React.FC = () => {
                         <div className="flex items-center gap-4">
                             {/* Public Toggle */}
                             <div className="flex items-center gap-2">
-                                {isVisible  ? (
+                                {isVisible ? (
                                     <FaGlobe className="w-4 h-4 text-teal-600" />
                                 ) : (
                                     <FaLock className="w-4 h-4 text-gray-400" />
                                 )}
                                 <span className="text-sm text-gray-600">
-                                    {isVisible  ? "Public" : "Private"}
+                                    {isVisible ? "Public" : "Private"}
                                 </span>
                                 <Switch
-                                    checked={isVisible }
+                                    checked={isVisible}
                                     onChange={setIsVisible}
                                     size="small"
                                 />
