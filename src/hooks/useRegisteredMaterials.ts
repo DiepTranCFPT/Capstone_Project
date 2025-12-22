@@ -10,6 +10,14 @@ export const useRegisteredMaterials = () => {
   const { user } = useAuth();
 
   const fetchRegisteredMaterials = useCallback(async (query?: LearningMaterialQuery) => {
+    // Không gọi API nếu chưa đăng nhập
+    if (!user) {
+      setMaterials([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -136,8 +144,16 @@ export const useRegisteredMaterials = () => {
   }, [user?.id]);
 
   useEffect(() => {
-    fetchRegisteredMaterials();
-  }, [fetchRegisteredMaterials]);
+    // Chỉ gọi API khi đã có user
+    if (user) {
+      fetchRegisteredMaterials();
+    } else {
+      // Reset state khi chưa login
+      setMaterials([]);
+      setLoading(false);
+      setError(null);
+    }
+  }, [fetchRegisteredMaterials, user]);
 
   return {
     materials,
