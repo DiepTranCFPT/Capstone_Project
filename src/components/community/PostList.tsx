@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Input, Button, Dropdown, message, Modal } from "antd";
 import type { MenuProps } from "antd";
 import { FiMessageSquare, FiMoreVertical, FiImage, FiThumbsUp, FiThumbsDown } from "react-icons/fi";
-import { IoCaretUpSharp, IoCaretDownSharp } from "react-icons/io5";
 import { PushpinOutlined } from "@ant-design/icons";
 import type { Thread, CommunityComment } from "~/types/community";
 import usePostComments from "~/hooks/usePostComments";
@@ -530,38 +529,43 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
             )}
             
             {/* Vote + Reply button */}
-            <div className="mt-1 flex items-center gap-4 text-xs text-gray-500">
-              <div className="inline-flex items-center rounded-full border border-gray-200 bg-white overflow-hidden shadow-sm">
-                <button
-                  type="button"
-                  className={`w-7 h-7 flex items-center justify-center transition-all ${
-                    commentUserVote === 1
-                      ? "bg-teal-50 text-teal-600"
-                      : "text-gray-500 hover:bg-gray-50"
-                  }`}
-                  onClick={() => void handleVoteComment(c, postId, 1)}
-                  aria-label="Upvote comment"
-                  title="Upvote comment"
-                >
-                  <IoCaretUpSharp size={14} />
-                </button>
-                <div className="px-2 py-0.5 text-[11px] font-semibold text-gray-700 min-w-8 text-center select-none">
-                  {commentScore}
-                </div>
-                <button
-                  type="button"
-                  className={`w-7 h-7 flex items-center justify-center transition-all ${
-                    commentUserVote === -1
-                      ? "bg-rose-50 text-rose-600"
-                      : "text-gray-500 hover:bg-gray-50"
-                  }`}
-                  onClick={() => void handleVoteComment(c, postId, -1)}
-                  aria-label="Downvote comment"
-                  title="Downvote comment"
-                >
-                  <IoCaretDownSharp size={14} />
-                </button>
-              </div>
+            <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
+              {/* Like button */}
+              <button
+                type="button"
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full border text-xs transition-all ${
+                  commentUserVote === 1
+                    ? "border-teal-400 bg-teal-50 text-teal-600"
+                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                }`}
+                onClick={() => void handleVoteComment(c, postId, 1)}
+                aria-label="Like comment"
+                title="Like comment"
+              >
+                <FiThumbsUp className="text-xs" />
+                <span>Like</span>
+              </button>
+
+              {/* Comment score */}
+              <span className="text-xs font-semibold text-teal-600">
+                {formatCompactNumber(commentScore)}
+              </span>
+
+              {/* Dislike button */}
+              <button
+                type="button"
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full border text-xs transition-all ${
+                  commentUserVote === -1
+                    ? "border-rose-400 bg-rose-50 text-rose-600"
+                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                }`}
+                onClick={() => void handleVoteComment(c, postId, -1)}
+                aria-label="Dislike comment"
+                title="Dislike comment"
+              >
+                <FiThumbsDown className="text-xs" />
+                <span>Dislike</span>
+              </button>
 
               <button
                 type="button"
@@ -573,7 +577,7 @@ const PostList: React.FC<PostListProps> = ({ loading, threads, onDeletePost, onV
                     setReplyingCommentId(c.id);
                   }
                 }}
-                className="hover:text-teal-600 transition-colors"
+                className="hover:text-teal-600 transition-colors ml-1"
               >
                 {isReplying ? "Cancel" : "Reply"}
               </button>
