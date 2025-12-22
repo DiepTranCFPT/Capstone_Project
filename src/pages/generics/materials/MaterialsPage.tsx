@@ -1,25 +1,67 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Filters from "~/components/materials/Filters";
 import MaterialCard from "~/components/materials/MaterialCard";
 import MaterialsPageHeader from "~/components/materials/MaterialsPageHeader";
 import LanguageNewsletter from "~/components/home/LanguageNewsletter";
-import { usePublicMaterials } from "~/hooks/usePublicMaterials"; // 👈 Thêm dòng này
+import { usePublicMaterials } from "~/hooks/usePublicMaterials";
+import useLearningMaterialsTeacher from "~/hooks/useLearningMaterialsTeacher";
+import type { LearningMaterialSearchParams } from "~/types/learningMaterial";
 
 const MaterialsPage: React.FC = () => {
   const [search, setSearch] = useState("");
-  const [topic, setTopic] = useState("All");
   const [subject, setSubject] = useState("All");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  // Gọi hook API
-  const { materials, loading, error } = usePublicMaterials();
+  // Hook để lấy materials public (fallback khi không search)
+  const { materials: publicMaterials, loading: publicLoading, error: publicError } = usePublicMaterials();
+  
+  // Hook để search materials
+  const { materials: searchResults, loading: searchLoading, search: searchMaterials } = useLearningMaterialsTeacher();
 
-  // Lọc dữ liệu
-  const filtered = materials.filter((m) => {
-    const matchSearch = m.title.toLowerCase().includes(search.toLowerCase());
-    const matchTopic = topic === "All" || m.typeName === topic;
-    const matchSubject = subject === "All" || m.subjectName  === subject;
-    return matchSearch && matchTopic && matchSubject;
-  });
+  // Debounce search keyword
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Gọi API search khi có keyword hoặc subject filter
+  useEffect(() => {
+    const hasActiveFilters = debouncedSearch.trim() || subject !== "All";
+    
+    if (hasActiveFilters) {
+      const searchParams: LearningMaterialSearchParams = {
+        keyword: debouncedSearch.trim() || "",
+        pageNo: 0,
+        pageSize: 100,
+      };
+
+      // Thêm subject filter nếu có
+      if (subject !== "All") {
+        // Note: API có thể không hỗ trợ subject filter trực tiếp,
+        // nên sẽ filter ở client-side sau khi nhận kết quả
+        searchMaterials(searchParams);
+      } else {
+        searchMaterials(searchParams);
+      }
+    }
+  }, [debouncedSearch, subject, searchMaterials]);
+
+  // Xác định materials để hiển thị
+  const hasActiveFilters = debouncedSearch.trim() || subject !== "All";
+  const materials = hasActiveFilters ? searchResults : publicMaterials;
+  const loading = hasActiveFilters ? searchLoading : publicLoading;
+  const error = hasActiveFilters ? null : publicError;
+
+  // Filter theo subject nếu đang dùng search results
+  const filtered = hasActiveFilters && subject !== "All"
+    ? materials.filter((m) => {
+        // So sánh với subjectId (string) hoặc subjectName
+        return String(m.subjectId) === String(subject) || m.subjectName === subject;
+      })
+    : materials;
 
   if (loading) return <p className="text-center mt-20">Loading materials...</p>;
   if (error) return <p className="text-center text-red-500 mt-20">{error}</p>;
@@ -34,8 +76,6 @@ const MaterialsPage: React.FC = () => {
             <Filters
               search={search}
               setSearch={setSearch}
-              topic={topic}
-              setTopic={setTopic}
               subject={subject}
               setSubject={setSubject}
             />
