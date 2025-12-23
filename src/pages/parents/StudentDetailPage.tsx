@@ -27,7 +27,7 @@ const StudentDetailPage: React.FC = () => {
   const { stats: childStats, loading: statsLoading } = useParentDashboardStats(studentId || null);
 
   const [currentPage, setCurrentPage] = useState(0);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     fetchChildren();
@@ -37,7 +37,7 @@ const StudentDetailPage: React.FC = () => {
     if (studentId) {
       fetchChildExamHistory(studentId, currentPage, pageSize);
     }
-  }, [studentId, currentPage, fetchChildExamHistory]);
+  }, [studentId, currentPage, pageSize, fetchChildExamHistory]);
 
 
   const columns: ColumnsType<ChildExamHistoryItem> = [
@@ -140,10 +140,19 @@ const StudentDetailPage: React.FC = () => {
             pagination={{
               current: currentPage + 1,
               pageSize: pageSize,
-              total: historyPageInfo?.totalElements || 0,
-              onChange: (page) => setCurrentPage(page - 1),
-              showSizeChanger: false,
-              showTotal: (total) => `Total ${total} exams`,
+              total: historyPageInfo?.totalElement || historyPageInfo?.totalElements || 0,
+              onChange: (page, newPageSize) => {
+                if (newPageSize !== pageSize) {
+                  setPageSize(newPageSize);
+                  setCurrentPage(0);
+                } else {
+                  setCurrentPage(page - 1);
+                }
+              },
+              showSizeChanger: true,
+              pageSizeOptions: ['5', '10', '20', '50'],
+              showQuickJumper: true,
+              showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} exams`,
             }}
             locale={{
               emptyText: 'No exam history',

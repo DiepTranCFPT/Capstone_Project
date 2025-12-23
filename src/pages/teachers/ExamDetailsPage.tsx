@@ -438,7 +438,7 @@ const ExamDetailsPage: React.FC = () => {
                   {currentTemplate.isActive ? 'Active' : 'Inactive'}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="Token Cost">
+              <Descriptions.Item label="Cost">
                 {currentTemplate.tokenCost === 0 ? 'Free' : `${currentTemplate.tokenCost.toLocaleString('vi-VN')} ₫`}
               </Descriptions.Item>
               <Descriptions.Item label="Average Rating">
