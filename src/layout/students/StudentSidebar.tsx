@@ -9,7 +9,8 @@ import {
   FaCertificate,
   FaChartBar,
   FaRobot,
-  FaBars
+  FaBars,
+  FaWallet
 } from "react-icons/fa";
 import { useAuth } from "~/hooks/useAuth";
 import { useWalletBalance } from "~/hooks/useWalletBalance";
@@ -40,6 +41,11 @@ const studentMenu = [
     label: "Test Reports",
     path: "/student/test-reports",
     icon: <FaChartBar />,
+  },
+  {
+    label: "Wallet",
+    path: "/wallet",
+    icon: <FaWallet />,
   },
 ];
 

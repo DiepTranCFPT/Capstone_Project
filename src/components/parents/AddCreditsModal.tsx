@@ -20,7 +20,6 @@ interface AddCreditsModalProps {
 const AddCreditsModal: React.FC<AddCreditsModalProps> = ({ open, onCancel, child }) => {
   const { createPayment, loading, error } = useMomoPayment();
   const [amount, setAmount] = useState<number>(500_000);
-  const [note, setNote] = useState<string>('');
 
   const formatAmount = (value: number) =>
     new Intl.NumberFormat('vi-VN', {
@@ -57,7 +56,7 @@ const AddCreditsModal: React.FC<AddCreditsModalProps> = ({ open, onCancel, child
       orderId,
       requestId,
       orderType: 'AP_WALLET',
-      orderInfo: note?.trim() || defaultNote,
+      orderInfo: defaultNote,
       extraData: JSON.stringify({
         studentId: child.studentId,
         studentEmail: child.email,
@@ -92,7 +91,6 @@ const AddCreditsModal: React.FC<AddCreditsModalProps> = ({ open, onCancel, child
 
   const handleCancel = () => {
     setAmount(500_000);
-    setNote('');
     onCancel();
   };
 
@@ -178,11 +176,12 @@ const AddCreditsModal: React.FC<AddCreditsModalProps> = ({ open, onCancel, child
             Note (optional)
           </Text>
           <TextArea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
+            value={defaultNote}
             rows={3}
             placeholder={defaultNote}
             className="w-full"
+            readOnly
+            disabled
           />
         </div>
 

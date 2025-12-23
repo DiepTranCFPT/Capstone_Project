@@ -23,7 +23,7 @@ const ParentBillingPage: React.FC = () => {
   const { createPayment, loading } = useMomoPayment();
   const [modalOpen, setModalOpen] = useState(false);
   const [topupAmount, setTopupAmount] = useState<number>(500000);
-  const [topupNote, setTopupNote] = useState<string>("Top up parent wallet");
+  const topupNote = "Top up parent wallet"; // cố định nội dung ghi chú
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [transferAmount, setTransferAmount] = useState<number>(200000);
   const [transferNote, setTransferNote] = useState<string>("Transfer to child");
@@ -102,9 +102,9 @@ const ParentBillingPage: React.FC = () => {
     fetchTransactions();
   }, [fetchTransactions]);
 
-  const handleTopUp = useCallback(async (amount?: number, note?: string) => {
+  const handleTopUp = useCallback(async (amount?: number) => {
     const targetAmount = amount ?? topupAmount;
-    const targetNote = (note ?? topupNote)?.trim() || "Top up parent wallet";
+    const targetNote = topupNote;
     if (!targetAmount || Number.isNaN(targetAmount) || targetAmount < 1000) {
       toast.error("Please enter a valid amount (>= 1,000 VND).");
       return;
@@ -182,9 +182,8 @@ const ParentBillingPage: React.FC = () => {
         note={topupNote}
         quickAmounts={quickAmounts}
         onAmountChange={setTopupAmount}
-        onNoteChange={setTopupNote}
         onCancel={() => setModalOpen(false)}
-        onSubmit={() => handleTopUp(topupAmount, topupNote)}
+        onSubmit={() => handleTopUp(topupAmount)}
       />
 
       <TransferModal

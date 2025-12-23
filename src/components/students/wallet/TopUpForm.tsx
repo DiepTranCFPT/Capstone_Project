@@ -4,7 +4,6 @@ interface TopUpFormProps {
   amount: number;
   setAmount: (value: number) => void;
   note: string;
-  setNote: (value: string) => void;
   handleSubmit: () => Promise<void> | void;
   scrollToHistory: () => void;
   loading: boolean;
@@ -17,7 +16,6 @@ const TopUpForm: React.FC<TopUpFormProps> = ({
   amount,
   setAmount,
   note,
-  setNote,
   handleSubmit,
   scrollToHistory,
   loading,
@@ -65,10 +63,10 @@ const TopUpForm: React.FC<TopUpFormProps> = ({
         Invoice display content
         <textarea
           value={note}
-          onChange={(e) => setNote(e.target.value)}
+          readOnly
           rows={3}
-          className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-700 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
-          placeholder="E.g: Top up for AP exam prep course"
+          className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-700 outline-none bg-slate-50 text-slate-500 cursor-not-allowed"
+          placeholder="Top up AP Wallet"
         />
       </label>
 
