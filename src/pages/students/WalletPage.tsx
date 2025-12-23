@@ -20,7 +20,8 @@ const WalletPage = () => {
   const { user } = useAuth();
   const { createPayment, loading, error } = useMomoPayment();
   const [amount, setAmount] = useState<number>(500_000);
-  const [note, setNote] = useState<string>("Top up AP Wallet");
+  // cố định nội dung hóa đơn theo quy định
+  const [note] = useState<string>("Top up AP Wallet");
   const [transactions, setTransactions] = useState<
     (TransactionResponse | UserTokenTransaction)[]
   >([]);
@@ -268,7 +269,6 @@ const WalletPage = () => {
               amount={amount}
               setAmount={setAmount}
               note={note}
-              setNote={setNote}
               handleSubmit={handleSubmit}
               scrollToHistory={scrollToHistory}
               loading={loading}

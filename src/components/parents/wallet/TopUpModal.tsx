@@ -8,7 +8,6 @@ interface TopUpModalProps {
   note: string;
   quickAmounts: number[];
   onAmountChange: (value: number) => void;
-  onNoteChange: (value: string) => void;
   onCancel: () => void;
   onSubmit: () => void;
 }
@@ -20,10 +19,9 @@ const TopUpModal: React.FC<TopUpModalProps> = ({
   note,
   quickAmounts,
   onAmountChange,
-  onNoteChange,
   onCancel,
   onSubmit,
-}) => {
+}: TopUpModalProps) => {
   return (
     <Modal
       title="Top up wallet"
@@ -68,7 +66,8 @@ const TopUpModal: React.FC<TopUpModalProps> = ({
           <Input
             placeholder="Top up parent wallet"
             value={note}
-            onChange={(e) => onNoteChange(e.target.value)}
+            readOnly
+            disabled
           />
         </Form.Item>
       </Form>
@@ -77,4 +76,5 @@ const TopUpModal: React.FC<TopUpModalProps> = ({
 };
 
 export default TopUpModal;
+
 
