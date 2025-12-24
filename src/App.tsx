@@ -103,6 +103,7 @@ import { GlobalLoadingProvider } from "./context/GlobalLoadingContext";
 import PaymentResult from "./pages/checkWallet/PaymentResult";
 import MyWalletPage from "./pages/teachers/MyWalletPage";
 import MyCertificatesPage from "./pages/students/MyCertificatesPage";
+import NotificationsPage from "./pages/NotificationsPage";
 // Layout Wrapper for common UI elements
 const Layout = () => (
   <div className="flex flex-col min-h-screen">
@@ -181,6 +182,7 @@ function App() {
             <Route path="learning-pathway" element={<LearningPathwayPage />} />
             <Route path="/wallet" element={<WalletPage />} />
             <Route path="/wallet/result" element={<PaymentResult />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/teacher-detail/:teacherId" element={<TeacherDetailPage />} />
 
             {/* Flashcard routes */}

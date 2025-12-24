@@ -1,143 +1,120 @@
 import { useState, useCallback, useEffect } from 'react';
 import { notificationService } from '~/services/notificationService';
-import type { Notification, NotificationFilter, NotificationStats } from '~/types/notification';
+import type { NotificationResponse, GetNotificationsParams } from '~/types/notification';
 import { toast } from '~/components/common/Toast';
 
 export const useNotifications = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [stats, setStats] = useState<NotificationStats>({ total: 0, unread: 0, highPriority: 0 });
+  const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [markingAsRead, setMarkingAsRead] = useState(false);
+  const [markingAllAsRead, setMarkingAllAsRead] = useState(false);
 
   const handleError = (err: unknown, defaultMessage: string) => {
-    setLoading(false);
     const e = err as Error;
     setError(e.message || defaultMessage);
     toast.error(e.message || defaultMessage);
   };
 
-  // Fetch all notifications with optional filtering
-  const fetchNotifications = useCallback(async (filter?: NotificationFilter) => {
+  // Fetch notifications with optional unreadOnly filter
+  // unreadOnly = true -> fetch unread only
+  // unreadOnly = undefined/null -> fetch all (read)
+  const fetchNotifications = useCallback(async (params?: GetNotificationsParams) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await notificationService.getNotifications(filter);
+      const data = await notificationService.getNotifications(params);
       setNotifications(data);
-
-      // Update stats after fetching notifications
-      const stats = await notificationService.getNotificationStats();
-      setStats(stats);
     } catch (err) {
-      handleError(err, 'Không thể tải thông báo');
+      handleError(err, 'Not load notification');
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Fetch unread notifications only
+  const fetchUnreadNotifications = useCallback(async () => {
+    await fetchNotifications({ unreadOnly: true });
+  }, [fetchNotifications]);
+
+  // Fetch all notifications (for "Read" tab - all notifications)
+  const fetchAllNotifications = useCallback(async () => {
+    await fetchNotifications(); // No params = all notifications
+  }, [fetchNotifications]);
+
   // Mark notification as read
   const markAsRead = useCallback(async (notificationId: string) => {
+    setMarkingAsRead(true);
     try {
-      await notificationService.markAsRead(notificationId);
+      const updatedNotification = await notificationService.markAsRead(notificationId);
 
       // Update local state optimistically
       setNotifications(prev =>
         prev.map(notification =>
           notification.id === notificationId
-            ? { ...notification, isRead: true }
+            ? updatedNotification
             : notification
         )
       );
 
-      // Refresh stats
-      const updatedStats = await notificationService.getNotificationStats();
-      setStats(updatedStats);
-
-      toast.success('Đã đánh dấu là đã đọc');
+      toast.success('Mark as read');
     } catch (err) {
-      handleError(err, 'Không thể cập nhật trạng thái thông báo');
+      handleError(err, 'Not update notification status');
+    } finally {
+      setMarkingAsRead(false);
     }
   }, []);
 
   // Mark all notifications as read
   const markAllAsRead = useCallback(async () => {
+    setMarkingAllAsRead(true);
     try {
       await notificationService.markAllAsRead();
 
       // Update local state optimistically
       setNotifications(prev =>
-        prev.map(notification => ({ ...notification, isRead: true }))
+        prev.map(notification => ({ ...notification, read: true }))
       );
 
-      // Refresh stats
-      const updatedStats = await notificationService.getNotificationStats();
-      setStats(updatedStats);
-
-      toast.success('Đã đánh dấu tất cả là đã đọc');
+      toast.success('All mark as read');
     } catch (err) {
-      handleError(err, 'Không thể cập nhật trạng thái thông báo');
+      handleError(err, 'Not update notification status');
+    } finally {
+      setMarkingAllAsRead(false);
     }
   }, []);
 
-  // Dismiss/delete notification
-  const dismissNotification = useCallback(async (notificationId: string) => {
-    try {
-      await notificationService.dismissNotification(notificationId);
-
-      // Remove from local state
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-
-      // Refresh stats
-      const updatedStats = await notificationService.getNotificationStats();
-      setStats(updatedStats);
-
-      toast.success('Đã xóa thông báo');
-    } catch (err) {
-      handleError(err, 'Không thể xóa thông báo');
-    }
-  }, []);
-
-  // Get notification statistics
-  const fetchStats = useCallback(async () => {
-    try {
-      const stats = await notificationService.getNotificationStats();
-      setStats(stats);
-    } catch (err) {
-      handleError(err, 'Không thể tải thống kê thông báo');
-    }
-  }, []);
-
-  // Filter notifications by type
-  const filterByType = useCallback((type: string) => {
-    return notifications.filter(n => n.type === type);
-  }, [notifications]);
-
-  // Filter unread notifications
+  // Get unread notifications from current list
   const getUnreadNotifications = useCallback(() => {
-    return notifications.filter(n => !n.isRead);
+    return notifications.filter(n => !n.read);
   }, [notifications]);
 
-  // Filter high priority notifications
-  const getHighPriorityNotifications = useCallback(() => {
-    return notifications.filter(n => n.priority === 'high');
+  // Get read notifications from current list  
+  const getReadNotifications = useCallback(() => {
+    return notifications.filter(n => n.read);
   }, [notifications]);
 
-  // Initial load
+  // Get unread count from current list
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Initial load - fetch unread by default
   useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+    fetchUnreadNotifications();
+  }, [fetchUnreadNotifications]);
 
   return {
     notifications,
-    stats,
     loading,
     error,
+    markingAsRead,
+    markingAllAsRead,
+    unreadCount,
     fetchNotifications,
+    fetchUnreadNotifications,
+    fetchAllNotifications,
     markAsRead,
     markAllAsRead,
-    dismissNotification,
-    fetchStats,
-    filterByType,
     getUnreadNotifications,
-    getHighPriorityNotifications
+    getReadNotifications
   };
 };
