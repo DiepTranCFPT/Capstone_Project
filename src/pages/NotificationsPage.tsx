@@ -12,7 +12,9 @@ const NotificationsPage: React.FC = () => {
         loading,
         unreadCount,
         markingAsRead,
+        markingAllAsRead,
         markAsRead,
+        markAllAsRead,
         fetchAllNotifications
     } = useNotifications();
 
@@ -64,6 +66,10 @@ const NotificationsPage: React.FC = () => {
         }
     };
 
+    // Handle mark all as read
+    const handleMarkAllAsRead = async () => {
+        await markAllAsRead();
+    };
 
     // Notification item component
     const NotificationItem: React.FC<{ notification: NotificationResponse }> = ({ notification }) => (
@@ -95,21 +101,6 @@ const NotificationsPage: React.FC = () => {
                             <span className="text-xs text-gray-400" title={formatDate(notification.createdAt)}>
                                 {formatTimeAgo(notification.createdAt)}
                             </span>
-                            {!notification.read && (
-                                <Button
-                                    type="text"
-                                    size="small"
-                                    icon={<CheckOutlined />}
-                                    loading={markingAsRead}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        markAsRead(notification.id);
-                                    }}
-                                    className="text-teal-600 hover:text-teal-700"
-                                >
-                                    Mark as read
-                                </Button>
-                            )}
                         </div>
                     </div>
                     <p className="text-base text-gray-700 mb-2">
@@ -139,7 +130,17 @@ const NotificationsPage: React.FC = () => {
                             </p>
                         </div>
                     </div>
-                    
+                    {unreadCount > 0 && (
+                        <Button
+                            type="primary"
+                            icon={<CheckOutlined />}
+                            loading={markingAllAsRead}
+                            onClick={handleMarkAllAsRead}
+                            className="bg-teal-500 hover:bg-teal-600 border-teal-500"
+                        >
+                            Mark all as read
+                        </Button>
+                    )}
                 </div>
 
                 {/* Tabs */}
