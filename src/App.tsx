@@ -103,6 +103,8 @@ import { GlobalLoadingProvider } from "./context/GlobalLoadingContext";
 import PaymentResult from "./pages/checkWallet/PaymentResult";
 import MyWalletPage from "./pages/teachers/MyWalletPage";
 import MyCertificatesPage from "./pages/students/MyCertificatesPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import { NotificationProvider } from "./context/NotificationContext";
 // Layout Wrapper for common UI elements
 const Layout = () => (
   <div className="flex flex-col min-h-screen">
@@ -119,158 +121,161 @@ function App() {
   return (
     <GlobalLoadingProvider>
       <Router>
-        <Routes>
-          {/* Routes không có Layout (Navbar/Footer) */}
-          <Route path="/do-test/:examId/:testType" element={<DoTestPage />} />
-          <Route path="/do-test/combo/:attemptId" element={<DoTestPage />} />
+        <NotificationProvider>
+          <Routes>
+            {/* Routes without Layout (Navbar/Footer) */}
+            <Route path="/do-test/:examId/:testType" element={<DoTestPage />} />
+            <Route path="/do-test/combo/:attemptId" element={<DoTestPage />} />
 
-          {/* Auth routes */}
-          <Route path="/auth" element={<AuthPage />} />
-          <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/verify-otp" element={<OtpVerificationPage />} />
-          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-          <Route path="/loading" element={<LoadingPage />} />
+            {/* Auth routes */}
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/verify-otp" element={<OtpVerificationPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+            <Route path="/loading" element={<LoadingPage />} />
 
-          {/*Admin routes with AdminLayout */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute roles={["ADMIN"]}>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="dashboard" element={<AdminDashboardPage />} />
-            <Route path="parents" element={<ParentManagerPage />} />
-            <Route path="courses" element={<CourseManagerPage />} />
-            <Route path="students" element={<StudentMangerPage />} />
-            <Route path="mock-tests" element={<MockTestManagerPage />} />
-            <Route path="teachers" element={<TeacherManagerPage />} />
+            {/*Admin routes with AdminLayout */}
             <Route
-              path="certificates"
-              element={<CertificatesRankingManagerPage />}
-            />
-            <Route path="users" element={<UserManagerPage />} />
-            <Route path="subscriptions" element={<TokenPaymentManagerPage />} />
-            <Route path="subjects" element={<SubjectManagerPage />} />
-            <Route path="communities" element={<CommunityManagerPage />} />
-            <Route path="community" element={<CommunityPage />} />
-          </Route>
+              path="/admin"
+              element={
+                <ProtectedRoute roles={["ADMIN"]}>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<AdminDashboardPage />} />
+              <Route path="parents" element={<ParentManagerPage />} />
+              <Route path="courses" element={<CourseManagerPage />} />
+              <Route path="students" element={<StudentMangerPage />} />
+              <Route path="mock-tests" element={<MockTestManagerPage />} />
+              <Route path="teachers" element={<TeacherManagerPage />} />
+              <Route
+                path="certificates"
+                element={<CertificatesRankingManagerPage />}
+              />
+              <Route path="users" element={<UserManagerPage />} />
+              <Route path="subscriptions" element={<TokenPaymentManagerPage />} />
+              <Route path="subjects" element={<SubjectManagerPage />} />
+              <Route path="communities" element={<CommunityManagerPage />} />
+              <Route path="community" element={<CommunityPage />} />
+            </Route>
 
-          {/* Main routes with Layout */}
-          <Route element={<Layout />}>
-            <Route path="/" element={<HomePages />} />
-            <Route path="/exam-test" element={<ExamTestPage />} />
-            <Route path="/ongoing-exams" element={<OngoingExamsPage />} />
-            <Route path="/exam-details/:examId" element={<ExamDetailsPage />} />
+            {/* Main routes with Layout */}
+            <Route element={<Layout />}>
+              <Route path="/" element={<HomePages />} />
+              <Route path="/exam-test" element={<ExamTestPage />} />
+              <Route path="/ongoing-exams" element={<OngoingExamsPage />} />
+              <Route path="/exam-details/:examId" element={<ExamDetailsPage />} />
+              <Route
+                path="/test-result/:submissionId"
+                element={<TestResultPage />}
+              />
+              <Route path="/materials" element={<MaterialsPage />} />
+              <Route path="/materials/:id" element={<MaterialsDetailPage />} />
+              <Route path="/materials/:id/learn" element={<MaterialLearnPage />} />
+              <Route path="/community" element={<CommunityPage />} />
+              <Route
+                path="/community/groups/:groupId"
+                element={<GroupDetailPage />}
+              />
+              <Route path="/ranking" element={<RankingPage />} />
+              <Route path="learning-pathway" element={<LearningPathwayPage />} />
+              <Route path="/wallet" element={<WalletPage />} />
+              <Route path="/wallet/result" element={<PaymentResult />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/teacher-detail/:teacherId" element={<TeacherDetailPage />} />
+
+              {/* Flashcard routes */}
+              <Route path="/flashcards" element={<FlashcardsPage />} />
+              <Route path="/flashcards/create" element={<FlashcardCreatePage />} />
+              <Route path="/flashcards/:id" element={<FlashcardDetailPage />} />
+              <Route path="/flashcards/:id/edit" element={<FlashcardEditPage />} />
+              <Route path="/flashcards/:id/quiz" element={<FlashcardQuizPage />} />
+            </Route>
+
+            {/* Student routes with StudentLayout */}
             <Route
-              path="/test-result/:submissionId"
-              element={<TestResultPage />}
-            />
-            <Route path="/materials" element={<MaterialsPage />} />
-            <Route path="/materials/:id" element={<MaterialsDetailPage />} />
-            <Route path="/materials/:id/learn" element={<MaterialLearnPage />} />
-            <Route path="/community" element={<CommunityPage />} />
-            <Route
-              path="/community/groups/:groupId"
-              element={<GroupDetailPage />}
-            />
-            <Route path="/ranking" element={<RankingPage />} />
-            <Route path="learning-pathway" element={<LearningPathwayPage />} />
-            <Route path="/wallet" element={<WalletPage />} />
-            <Route path="/wallet/result" element={<PaymentResult />} />
-            <Route path="/teacher-detail/:teacherId" element={<TeacherDetailPage />} />
+              path="/student"
+              element={
+                <ProtectedRoute roles={["STUDENT"]}>
+                  <StudentLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<StudentDashboardPage />} />
 
-            {/* Flashcard routes */}
-            <Route path="/flashcards" element={<FlashcardsPage />} />
-            <Route path="/flashcards/create" element={<FlashcardCreatePage />} />
-            <Route path="/flashcards/:id" element={<FlashcardDetailPage />} />
-            <Route path="/flashcards/:id/edit" element={<FlashcardEditPage />} />
-            <Route path="/flashcards/:id/quiz" element={<FlashcardQuizPage />} />
-          </Route>
+              <Route path="test-reports" element={<TestReportsPage />} />
+              <Route
+                path="test-reports/:reportId"
+                element={<TestReportDetailPage />}
+              />
 
-          {/* Student routes with StudentLayout */}
-          <Route
-            path="/student"
-            element={
-              <ProtectedRoute roles={["STUDENT"]}>
-                <StudentLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="dashboard" element={<StudentDashboardPage />} />
+              <Route path="profile" element={<ProfileDashboard />} />
+              <Route path="ai-tutor" element={<AITutorPage />} />
+              <Route path="my-courses" element={<MyCoursesPage />} />
+              <Route path="certificates" element={<MyCertificatesPage />} />
+            </Route>
 
-            <Route path="test-reports" element={<TestReportsPage />} />
-            <Route
-              path="test-reports/:reportId"
-              element={<TestReportDetailPage />}
-            />
+            {/* Teacher routes with TeacherLayout */}
+            <Route path="/teacher" element={
+              <ProtectedRoute roles={["TEACHER"]}>
+                <TeacherLayout />
+              </ProtectedRoute>}>
+              <Route path="dashboard" element={<TeacherDashboardPage />} />
+              <Route path="my-materials" element={<MyClassesPage />} />
+              <Route path="materials" element={<MaterialManagerPage />} />
+              <Route path="question-bank" element={<QuestionBankPage />} />
+              <Route path="create-template" element={<CreateExamPage />} />
+              <Route path="templates" element={<ExamListPage />} />
+              <Route path="template-details/:examId" element={<TeacherExamDetailsPage />} />
+              <Route path="edit-template/:examId" element={<CreateExamPage />} />
+              <Route path="review-queue" element={<TeacherReviewQueuePage />} />
+              <Route path="exam-attempts" element={<TeacherExamAttemptsPage />} />
+              <Route path="attempt-result/:attemptId" element={<TeacherAttemptResultPage />} />
+              <Route
+                path="grading/:submissionId"
+                element={<GradeSubmissionPage />}
+              />
+              <Route path="tutor-profile" element={<TeacherProfilePage />} />
+              <Route path="ratings" element={<TeacherRatingsViewPage />} />
+              <Route path="wallet" element={<MyWalletPage />} />
+              <Route path="community" element={<CommunityPage />} />
+              {/* Flashcard routes for teachers */}
+              <Route path="flashcards" element={<FlashcardsPage />} />
+              <Route path="flashcards/create" element={<FlashcardCreatePage />} />
+              <Route path="flashcards/:id" element={<FlashcardDetailPage />} />
+              <Route path="flashcards/:id/edit" element={<FlashcardEditPage />} />
+              <Route path="flashcards/:id/quiz" element={<FlashcardQuizPage />} />
+            </Route>
 
-            <Route path="profile" element={<ProfileDashboard />} />
-            <Route path="ai-tutor" element={<AITutorPage />} />
-            <Route path="my-courses" element={<MyCoursesPage />} />
-            <Route path="certificates" element={<MyCertificatesPage />} />
-          </Route>
+            {/* Parent routes with ParentLayout */}
+            <Route path="/parent" element={
+              <ProtectedRoute roles={["PARENT"]}>
+                <ParentLayout />
+              </ProtectedRoute>}>
+              <Route path="dashboard" element={<ParentDashboardPage />} />
+              <Route path="notifications" element={<NotificationCenterPage />} />
+              <Route path="profile" element={<ParentProfileDashboard />} />
+              <Route path="link-student" element={<LinkStudentPage />} />
+              <Route path="children" element={<ChildrenListPage />} />
+              <Route path="student/:studentId" element={<StudentDetailPage />} />
+              <Route path="billing" element={<ParentBillingPage />} />
+              <Route path="wallet" element={<ParentBillingPage />} />
+              <Route path="community" element={<CommunityPage />} />
+            </Route>
 
-          {/* Teacher routes with TeacherLayout */}
-          <Route path="/teacher" element={
-            <ProtectedRoute roles={["TEACHER"]}>
-              <TeacherLayout />
-            </ProtectedRoute>}>
-            <Route path="dashboard" element={<TeacherDashboardPage />} />
-            <Route path="my-materials" element={<MyClassesPage />} />
-            <Route path="materials" element={<MaterialManagerPage />} />
-            <Route path="question-bank" element={<QuestionBankPage />} />
-            <Route path="create-template" element={<CreateExamPage />} />
-            <Route path="templates" element={<ExamListPage />} />
-            <Route path="template-details/:examId" element={<TeacherExamDetailsPage />} />
-            <Route path="edit-template/:examId" element={<CreateExamPage />} />
-            <Route path="review-queue" element={<TeacherReviewQueuePage />} />
-            <Route path="exam-attempts" element={<TeacherExamAttemptsPage />} />
-            <Route path="attempt-result/:attemptId" element={<TeacherAttemptResultPage />} />
-            <Route
-              path="grading/:submissionId"
-              element={<GradeSubmissionPage />}
-            />
-            <Route path="tutor-profile" element={<TeacherProfilePage />} />
-            <Route path="ratings" element={<TeacherRatingsViewPage />} />
-            <Route path="wallet" element={<MyWalletPage />} />
-            <Route path="community" element={<CommunityPage />} />
-            {/* Flashcard routes for teachers */}
-            <Route path="flashcards" element={<FlashcardsPage />} />
-            <Route path="flashcards/create" element={<FlashcardCreatePage />} />
-            <Route path="flashcards/:id" element={<FlashcardDetailPage />} />
-            <Route path="flashcards/:id/edit" element={<FlashcardEditPage />} />
-            <Route path="flashcards/:id/quiz" element={<FlashcardQuizPage />} />
-          </Route>
-
-          {/* Parent routes with ParentLayout */}
-          <Route path="/parent" element={
-            <ProtectedRoute roles={["PARENT"]}>
-              <ParentLayout />
-            </ProtectedRoute>}>
-            <Route path="dashboard" element={<ParentDashboardPage />} />
-            <Route path="notifications" element={<NotificationCenterPage />} />
-            <Route path="profile" element={<ParentProfileDashboard />} />
-            <Route path="link-student" element={<LinkStudentPage />} />
-            <Route path="children" element={<ChildrenListPage />} />
-            <Route path="student/:studentId" element={<StudentDetailPage />} />
-            <Route path="billing" element={<ParentBillingPage />} />
-            <Route path="wallet" element={<ParentBillingPage />} />
-            <Route path="community" element={<CommunityPage />} />
-          </Route>
-
-          {/* Advisor routes with AdvisorLayout */}
-          <Route path="/advisor" element={<AdvisorLayout />}>
-            <Route path="dashboard" element={<AdvisorDashboardPage />} />
-            <Route path="student-tracking" element={<StudentTrackingPage />} />
-            <Route path="reporting" element={<ReportingPage />} />
-            <Route path="consultations" element={<ConsultationPage />} />
-            <Route path="ap-pathway-planner" element={<APPathwaysPage />} />
-          </Route>
-        </Routes>
+            {/* Advisor routes with AdvisorLayout */}
+            <Route path="/advisor" element={<AdvisorLayout />}>
+              <Route path="dashboard" element={<AdvisorDashboardPage />} />
+              <Route path="student-tracking" element={<StudentTrackingPage />} />
+              <Route path="reporting" element={<ReportingPage />} />
+              <Route path="consultations" element={<ConsultationPage />} />
+              <Route path="ap-pathway-planner" element={<APPathwaysPage />} />
+            </Route>
+          </Routes>
+        </NotificationProvider>
       </Router>
     </GlobalLoadingProvider>
   );

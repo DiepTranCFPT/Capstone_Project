@@ -11,6 +11,7 @@ import {
     FaMagnifyingGlass,
     FaXmark,
     FaCheck,
+    FaUpload,
 } from "react-icons/fa6";
 import { Switch, Spin, Modal } from "antd";
 import { useFlashcardSets } from "~/hooks/useFlashcardSets";
@@ -42,6 +43,8 @@ const FlashcardEditPage: React.FC = () => {
         error,
         fetchFlashcardSetById,
         updateFlashcardSet,
+        uploadImage,
+        uploadingImage,
     } = useFlashcardSets();
 
     const [title, setTitle] = useState("");
@@ -58,7 +61,9 @@ const FlashcardEditPage: React.FC = () => {
     const [searchImages, setSearchImages] = useState<PixabayImage[]>([]);
     const [imageLoading, setImageLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [activeTab, setActiveTab] = useState<"search" | "upload">("search");
     const fetchingRef = useRef(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const basePath = useFlashcardBasePath();
 
     // Fetch existing flashcard set
@@ -174,6 +179,38 @@ const FlashcardEditPage: React.FC = () => {
             setImagePickerOpen(false);
             setActiveCardId(null);
             setSearchImages([]);
+            setActiveTab("search");
+        }
+    };
+
+    // Handle file upload
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !activeCardId) return;
+
+        // Validate file type
+        if (!file.type.startsWith("image/")) {
+            toast.error("Please select an image file");
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("Image size must be less than 5MB");
+            return;
+        }
+
+        const imageUrl = await uploadImage(file);
+        if (imageUrl) {
+            selectImage(imageUrl);
+            toast.success("Image uploaded successfully!");
+        } else {
+            toast.error("Failed to upload image");
+        }
+
+        // Reset file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
         }
     };
 
@@ -417,67 +454,128 @@ const FlashcardEditPage: React.FC = () => {
                     setImagePickerOpen(false);
                     setActiveCardId(null);
                     setSearchImages([]);
+                    setActiveTab("search");
                 }}
                 footer={null}
                 width={600}
             >
-                {/* Search Input */}
-                <div className="flex gap-2 mb-4">
-                    <div className="flex-1 relative">
-                        <input
-                            type="text"
-                            placeholder="Search image..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    fetchImages(searchQuery);
-                                }
-                            }}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-teal-400"
-                        />
-                        <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    </div>
+                {/* Tabs */}
+                <div className="flex border-b border-gray-200 mb-4">
                     <button
-                        onClick={() => fetchImages(searchQuery)}
-                        disabled={imageLoading}
-                        className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors"
+                        onClick={() => setActiveTab("search")}
+                        className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors ${activeTab === "search"
+                                ? "text-teal-600 border-b-2 border-teal-600"
+                                : "text-gray-500 hover:text-gray-700"
+                            }`}
                     >
-                        {imageLoading ? <Spin size="small" /> : "Search"}
+                        <FaMagnifyingGlass className="w-4 h-4" />
+                        Search
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("upload")}
+                        className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors ${activeTab === "upload"
+                                ? "text-teal-600 border-b-2 border-teal-600"
+                                : "text-gray-500 hover:text-gray-700"
+                            }`}
+                    >
+                        <FaUpload className="w-4 h-4" />
+                        Upload
                     </button>
                 </div>
 
-                {/* Images Grid */}
-                {imageLoading ? (
-                    <div className="flex justify-center py-12">
-                        <Spin size="large" />
-                    </div>
-                ) : searchImages.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-3">
-                        {searchImages.map((img) => (
-                            <button
-                                key={img.id}
-                                onClick={() => selectImage(img.largeImageURL)}
-                                className="relative group overflow-hidden rounded-lg border-2 border-transparent hover:border-teal-400 transition-all"
-                            >
-                                <img
-                                    src={img.previewURL}
-                                    alt={img.tags}
-                                    className="w-full h-32 object-cover"
+                {activeTab === "search" ? (
+                    <>
+                        {/* Search Input */}
+                        <div className="flex gap-2 mb-4">
+                            <div className="flex-1 relative">
+                                <input
+                                    type="text"
+                                    placeholder="Search image..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            fetchImages(searchQuery);
+                                        }
+                                    }}
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-teal-400"
                                 />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <div className="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center">
-                                        <FaCheck className="w-5 h-5 text-white" />
-                                    </div>
-                                </div>
+                                <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            </div>
+                            <button
+                                onClick={() => fetchImages(searchQuery)}
+                                disabled={imageLoading}
+                                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors"
+                            >
+                                {imageLoading ? <Spin size="small" /> : "Search"}
                             </button>
-                        ))}
-                    </div>
+                        </div>
+
+                        {/* Images Grid */}
+                        {imageLoading ? (
+                            <div className="flex justify-center py-12">
+                                <Spin size="large" />
+                            </div>
+                        ) : searchImages.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-3">
+                                {searchImages.map((img) => (
+                                    <button
+                                        key={img.id}
+                                        onClick={() => selectImage(img.largeImageURL)}
+                                        className="relative group overflow-hidden rounded-lg border-2 border-transparent hover:border-teal-400 transition-all"
+                                    >
+                                        <img
+                                            src={img.previewURL}
+                                            alt={img.tags}
+                                            className="w-full h-32 object-cover"
+                                        />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <div className="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center">
+                                                <FaCheck className="w-5 h-5 text-white" />
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 text-gray-500">
+                                <FaImage className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                                <p>Enter keyword to search image</p>
+                                <p className="text-sm text-gray-400 mt-1">Powered by Pixabay</p>
+                            </div>
+                        )}
+                    </>
                 ) : (
-                    <div className="text-center py-12 text-gray-500">
-                        <FaImage className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                        <p>Enter keyword to search image</p>
-                        <p className="text-sm text-gray-400 mt-1">Powered by Pixabay</p>
+                    /* Upload Tab */
+                    <div className="py-8">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                            id="flashcard-image-upload-edit"
+                        />
+                        <label
+                            htmlFor="flashcard-image-upload-edit"
+                            className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${uploadingImage
+                                    ? "border-gray-300 bg-gray-50 cursor-not-allowed"
+                                    : "border-gray-300 hover:border-teal-400 hover:bg-teal-50/30"
+                                }`}
+                        >
+                            {uploadingImage ? (
+                                <>
+                                    <Spin size="large" />
+                                    <p className="mt-3 text-gray-500">Uploading...</p>
+                                </>
+                            ) : (
+                                <>
+                                    <FaUpload className="w-10 h-10 text-gray-400 mb-3" />
+                                    <p className="text-gray-600 font-medium">Click to upload image</p>
+                                    <p className="text-sm text-gray-400 mt-1">PNG, JPG, GIF up to 5MB</p>
+                                </>
+                            )}
+                        </label>
                     </div>
                 )}
             </Modal>

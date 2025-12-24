@@ -6,7 +6,8 @@ import {
     FaSignOutAlt,
     // FaBell,
     FaUsers,
-    FaWallet
+    FaWallet,
+    FaBell
 } from 'react-icons/fa';
 import { useAuth } from '~/hooks/useAuth';
 import { useNotifications } from '~/hooks/useNotifications';
@@ -21,7 +22,7 @@ type ParentMenuItem = {
 
 const parentMenu: ParentMenuItem[] = [
     { label: "Dashboard", path: "/parent/dashboard", icon: <FaTachometerAlt /> },
-    // { label: "Notifications", path: "/parent/notifications", icon: <FaBell /> },
+    { label: "Notifications", path: "/parent/notifications", icon: <FaBell /> },
     { label: "Link Student", path: "/parent/link-student", icon: <FaUserPlus /> },
     { label: "List of children", path: "/parent/children", icon: <FaUsers /> },
     { label: "Community", path: "/parent/community", icon: <TeamOutlined /> },
@@ -32,7 +33,7 @@ const ParentSidebar: React.FC = () => {
     const location = useLocation();
     const { user, logout } = useAuth();
     const navigate = useNavigate();
-    const { stats } = useNotifications();
+    const { unreadCount } = useNotifications();
     const [collapsed, setCollapsed] = useState(false);
 
     const toggleCollapse = () => {
@@ -68,7 +69,7 @@ const ParentSidebar: React.FC = () => {
             <nav className="flex-1 mt-4 flex flex-col items-center">
                 {parentMenu.map((item) => {
                     const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
-                    const showBadge = item.path === "/parent/notifications" && stats.unread > 0;
+                    const showBadge = item.path === "/parent/notifications" && unreadCount > 0;
 
                     return (
                         <div key={item.path} className="w-full flex flex-col items-center">
@@ -94,7 +95,7 @@ const ParentSidebar: React.FC = () => {
                                     {item.icon}
                                     {showBadge && collapsed && (
                                         <Badge
-                                            count={stats.unread}
+                                            count={unreadCount}
                                             size="small"
                                             className="absolute -top-2 -right-2"
                                             style={{ fontSize: '8px' }}
@@ -104,7 +105,7 @@ const ParentSidebar: React.FC = () => {
                                 {!collapsed && (
                                     <div className="flex items-center justify-between flex-1 ml-3">
                                         <span className="font-medium">{item.label}</span>
-                                        {showBadge && <Badge count={stats.unread} />}
+                                        {showBadge && <Badge count={unreadCount} />}
                                     </div>
                                 )}
                             </div>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "~/hooks/useAuth";
-import { FaSignOutAlt, FaMoneyBillWave, FaBars, FaTimes } from "react-icons/fa";
+import { FaSignOutAlt, FaMoneyBillWave, FaBars, FaTimes, FaBell } from "react-icons/fa";
 import { IoPersonCircleOutline } from "react-icons/io5";
 import { Drawer } from "antd";
+import NotificationDropdown from "~/components/common/NotificationDropdown";
 
 const Navbar: React.FC = () => {
   const { isAuthenticated, logout, user, initialLoading } = useAuth();
@@ -107,14 +108,17 @@ const Navbar: React.FC = () => {
         {/* Actions */}
         <div className="flex items-center gap-2 md:gap-4">
           {!initialLoading && isAuthenticated && (
-            <button
-              type="button"
-              title="Ví thanh toán"
-              onClick={() => navigate("/wallet")}
-              className="w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-full border border-teal-100 text-teal-500 hover:bg-teal-50 hover:scale-105 transition-all duration-300 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
-            >
-              <FaMoneyBillWave className="w-4 h-4 md:w-5 md:h-5" />
-            </button>
+            <>
+              <NotificationDropdown />
+              <button
+                type="button"
+                title="Wallet"
+                onClick={() => navigate("/wallet")}
+                className="w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-full border border-teal-100 text-teal-500 hover:bg-teal-50 hover:scale-105 transition-all duration-300 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
+              >
+                <FaMoneyBillWave className="w-4 h-4 md:w-5 md:h-5" />
+              </button>
+            </>
           )}
           {!initialLoading && !isAuthenticated ? (
             <>
@@ -270,6 +274,14 @@ const Navbar: React.FC = () => {
                 >
                   <IoPersonCircleOutline className="w-5 h-5" />
                   My Profile
+                </Link>
+                <Link
+                  to="/notifications"
+                  className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <FaBell className="w-5 h-5 text-teal-500" />
+                  Notifications
                 </Link>
                 <Link
                   to="/wallet"

@@ -1,3 +1,14 @@
+// API Response notification type (from backend)
+export interface NotificationResponse {
+  id: string;
+  receiverEmail: string;
+  type: string;
+  message: string;
+  createdAt: string; // ISO date string, e.g., "2025-12-24T06:26:31.562Z"
+  read: boolean;
+}
+
+// Legacy notification type (for backward compatibility with existing components)
 export interface Notification {
   id: string;
   studentId: string;
@@ -25,4 +36,9 @@ export interface NotificationStats {
   total: number;
   unread: number;
   highPriority: number;
+}
+
+// API Query parameters
+export interface GetNotificationsParams {
+  unreadOnly?: boolean;
 }
