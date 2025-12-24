@@ -68,6 +68,7 @@ const QuestionBankPage: React.FC = () => {
     downloadImportTemplate,
     importQuestions,
     fetchDuplicates,
+    searchQuestions,
   } = useQuestionBank();
   const { showLoading, hideLoading } = useGlobalLoading();
 
@@ -130,15 +131,20 @@ const QuestionBankPage: React.FC = () => {
   // Server-side pagination: mỗi lần đổi trang / pageSize / search thì gọi lại API
   useEffect(() => {
     const pageNo = Math.max(0, current - 1);
-    const keyword = searchText.trim() ? searchText.trim() : undefined;
+    const keyword = searchText.trim();
 
-    // Với search / phân trang chỉ dùng loading của bảng, không cần overlay toàn màn
-    if (teacherId) {
-      fetchByUserId(teacherId, { pageNo, pageSize, keyword });
+    // Nếu có keyword, sử dụng searchQuestions API
+    if (keyword) {
+      searchQuestions({ keyword, pageNo, pageSize });
     } else {
-      fetchQuestions({ pageNo, pageSize, keyword });
+      // Không có keyword, fetch theo user hoặc tất cả
+      if (teacherId) {
+        fetchByUserId(teacherId, { pageNo, pageSize });
+      } else {
+        fetchQuestions({ pageNo, pageSize });
+      }
     }
-  }, [teacherId, current, pageSize, searchText, fetchByUserId, fetchQuestions]);
+  }, [teacherId, current, pageSize, searchText, fetchByUserId, fetchQuestions, searchQuestions]);
 
   //  Đóng modal
   const handleCloseModal = () => {
