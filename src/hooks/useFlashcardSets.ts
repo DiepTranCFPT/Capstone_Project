@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import FlashcardSetService from "~/services/flashcardSetService";
+import FileUploadService from "~/services/fileUploadService";
 import type {
     FlashcardSetListItem,
     FlashcardSetDetail,
@@ -18,6 +19,7 @@ interface UseFlashcardSetsReturn {
     pageInfo: Omit<PageInfo<FlashcardSetListItem>, "items"> | null;
     loading: boolean;
     error: string | null;
+    uploadingImage: boolean;
 
     // Actions
     fetchFlashcardSets: (params?: FlashcardSetQuery) => Promise<void>;
@@ -28,6 +30,7 @@ interface UseFlashcardSetsReturn {
     deleteFlashcardSet: (id: string) => Promise<boolean>;
     updateVisibility: (id: string) => Promise<boolean>;
     fetchQuiz: (id: string) => Promise<FlashcardQuizQuestion[] | null>;
+    uploadImage: (file: File) => Promise<string | null>;
     clearError: () => void;
     clearCurrentFlashcardSet: () => void;
 }
@@ -39,6 +42,7 @@ export const useFlashcardSets = (): UseFlashcardSetsReturn => {
     const [pageInfo, setPageInfo] = useState<Omit<PageInfo<FlashcardSetListItem>, "items"> | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     // Fetch all flashcard sets with pagination
     const fetchFlashcardSets = useCallback(async (params?: FlashcardSetQuery) => {
@@ -293,6 +297,34 @@ export const useFlashcardSets = (): UseFlashcardSetsReturn => {
         }
     }, [currentFlashcardSet?.id]);
 
+    // Upload image for flashcard
+    const uploadImage = useCallback(async (file: File): Promise<string | null> => {
+        try {
+            setUploadingImage(true);
+            setError(null);
+
+            const response = await FileUploadService.uploadFlashcardImage(file);
+            const imageUrl = response.data?.data;
+
+            if (imageUrl) {
+                return imageUrl;
+            }
+            return null;
+        } catch (err) {
+            console.error("Error uploading image:", err);
+            const axiosError = err as {
+                response?: {
+                    data?: { message?: string };
+                    status?: number;
+                };
+            };
+            setError(axiosError.response?.data?.message || "Failed to upload image");
+            return null;
+        } finally {
+            setUploadingImage(false);
+        }
+    }, []);
+
     // Clear error
     const clearError = useCallback(() => {
         setError(null);
@@ -312,6 +344,7 @@ export const useFlashcardSets = (): UseFlashcardSetsReturn => {
         pageInfo,
         loading,
         error,
+        uploadingImage,
 
         // Actions
         fetchFlashcardSets,
@@ -322,6 +355,7 @@ export const useFlashcardSets = (): UseFlashcardSetsReturn => {
         deleteFlashcardSet,
         updateVisibility,
         fetchQuiz,
+        uploadImage,
         clearError,
         clearCurrentFlashcardSet,
     };
