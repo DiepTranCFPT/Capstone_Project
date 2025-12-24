@@ -230,16 +230,16 @@ const CommunityPage: React.FC = () => {
         <div className="bg-[#f5f7fb] min-h-screen">
             <main className="max-w-7xl mx-auto py-6 px-4">
                 <div className="flex flex-col gap-6">
-                    {/* top search */}
+                    {/* top search
                     <div className="flex items-center gap-3">
                         <div className="relative flex-1">
                             <FiSearch className="absolute left-3 top-3 text-gray-400" />
                             <input
                                 className="w-full pl-10 pr-4 py-2 rounded-full bg-white border border-gray-200 focus:outline-none focus:border-teal-400"
-                                placeholder="Search in community..."
+                                placeholder="Search in community...aaaa"
                             />
                         </div>
-                    </div>
+                    </div> */}
 
                     <div className="grid grid-cols-12 gap-6">
                         {/* Left sidebar communities */}

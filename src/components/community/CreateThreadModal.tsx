@@ -21,7 +21,6 @@ const getBase64 = (file: RcFile): Promise<string> =>
     });
 
 const CreateThreadModal: React.FC<CreateThreadModalProps> = ({ visible, onClose, onSubmit }) => {
-    const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [fileList, setFileList] = useState<UploadFile[]>([]);
 
@@ -44,21 +43,25 @@ const CreateThreadModal: React.FC<CreateThreadModalProps> = ({ visible, onClose,
         setFileList(newFileList);
     };
 
+    // Tự động tạo title từ content (lấy 50 ký tự đầu hoặc dòng đầu tiên)
+    const generateTitle = (text: string): string => {
+        if (!text.trim()) return 'Untitled Thread';
+        const firstLine = text.split('\n')[0].trim();
+        if (firstLine.length <= 50) return firstLine;
+        return firstLine.substring(0, 50) + '...';
+    };
+
     const handleSubmit = () => {
-        if (!title.trim()) {
-            message.error("Please enter a title for your thread.");
-            return;
-        }
         if (!content.trim()) {
             message.error("Please enter some content for your thread.");
             return;
         }
+        const title = generateTitle(content);
         const imageFile = fileList.length > 0 && fileList[0].originFileObj
             ? (fileList[0].originFileObj as File)
             : undefined;
         onSubmit({ title, content, imageFile });
         // Reset form
-        setTitle('');
         setContent('');
         setFileList([]);
         onClose();
@@ -88,11 +91,6 @@ const CreateThreadModal: React.FC<CreateThreadModalProps> = ({ visible, onClose,
                 ]}
             >
                 <div className="flex flex-col gap-4">
-                    <Input
-                        placeholder="Thread title"
-                        value={title}
-                        onChange={e => setTitle(e.target.value)}
-                    />
                     <TextArea
                         rows={5}
                         placeholder="What's on your mind?"

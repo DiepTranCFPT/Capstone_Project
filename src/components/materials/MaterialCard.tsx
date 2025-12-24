@@ -7,8 +7,10 @@ import { useRegisteredMaterials } from "~/hooks/useRegisteredMaterials";
 import LearningMaterialRatingService from "~/services/learningMaterialRatingService";
 import type { ApiResponse } from "~/types/api";
 import type { LearningMaterialRatingStatistics } from "~/types/learningMaterialRating";
+import { useAuth } from "~/hooks/useAuth";
 
 const MaterialCard: React.FC<{ material: Material }> = ({ material }) => {
+  const { user } = useAuth();
   const { materials: registeredMaterials } = useRegisteredMaterials();
   const isRegistered = registeredMaterials.some((m) => m.id === material.id);
   const [averageRating, setAverageRating] = useState<number | null>(null);
@@ -90,12 +92,14 @@ const MaterialCard: React.FC<{ material: Material }> = ({ material }) => {
             }).format(price);
           })()}
         </span>
-        <Link
-          to={`/materials/${material.id}`}
-          className="text-xs border px-2 py-1 rounded hover:bg-gray-100"
-        >
-          View Details
-        </Link>
+        {user && (
+          <Link
+            to={`/materials/${material.id}`}
+            className="text-xs border px-2 py-1 rounded hover:bg-gray-100"
+          >
+            View Details
+          </Link>
+        )}
       </div>
     </div>
   );

@@ -328,6 +328,13 @@ const LessonModal: React.FC<LessonModalProps> = ({
         ]);
         return;
       }
+      // Require PDF material
+      if (!payload.file) {
+        form.setFields([
+          { name: "file", errors: ["Please upload the PDF material"] },
+        ]);
+        return;
+      }
       setSubmitting(true);
       if (formMode === "create" && onCreateLesson) {
         await onCreateLesson(payload);
@@ -473,6 +480,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
           <Form.Item
             label="Description"
             name="description"
+            rules={[{ required: true, message: "Please enter description" }]}
           >
             <Input.TextArea placeholder="Enter description" rows={3} />
           </Form.Item>
@@ -502,6 +510,7 @@ const LessonModal: React.FC<LessonModalProps> = ({
           <Form.Item
             label="PDF material"
             name="file"
+            required
             help="Upload PDF file with important notes"
           >
             <Upload
