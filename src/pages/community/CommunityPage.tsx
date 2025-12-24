@@ -2,7 +2,7 @@ import { message } from "antd";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { FiSearch, FiGlobe } from "react-icons/fi";
+import { FiGlobe } from "react-icons/fi";
 import CreateThreadModal from "~/components/community/CreateThreadModal";
 import { useAuth } from "~/hooks/useAuth";
 import useCommunity from "~/hooks/useCommunity";
