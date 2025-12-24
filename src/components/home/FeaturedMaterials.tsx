@@ -32,59 +32,6 @@ const FeaturedMaterials: React.FC = () => {
 
   const displayedMaterials = filteredMaterials.slice(0, 3);
 
-  // Hiển thị message yêu cầu đăng nhập nếu chưa login
-  if (!user) {
-    return (
-      <div className="w-full bg-white py-16">
-        {/* Header */}
-        <div className="flex justify-center items-center mb-4">
-          <div className="flex items-center space-x-3 border border-black/20 rounded-[30px] px-6 py-2 bg-white">
-            <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
-              <img
-                src="/education_6041280.png"
-                alt="Top class materials logo"
-                className="w-8 h-8 object-contain"
-              />
-            </div>
-            <span className="text-black font-normal">Top Class Materials</span>
-          </div>
-        </div>
-
-        <h2 className="text-3xl font-bold text-center mb-8">
-          Explore Featured Materials
-        </h2>
-
-        {/* Message yêu cầu đăng nhập */}
-        <div className="max-w-2xl mx-auto px-6">
-          <div className="bg-gray-50 rounded-2xl shadow-sm p-12 text-center border border-gray-200">
-            <div className="mb-6">
-              <svg
-                className="mx-auto h-20 w-20 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">
-              Sign in to view featured materials
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Please sign in to access all featured learning materials and explore our course catalog.
-            </p>
-
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="w-full bg-white py-16">
       {/* Header */}
@@ -183,12 +130,14 @@ const FeaturedMaterials: React.FC = () => {
                   <span className={`text-[10px] font-semibold ${isRegistered ? "text-green-600" : ""}`}>
                     {priceLabel}
                   </span>
-                  <Link
-                    to={`/materials/${material.id}`}
-                    className="text-[10px] px-3 py-1 border border-black/10 rounded-[10px] hover:bg-gray-100 transition-colors"
-                  >
-                    View Details
-                  </Link>
+                  {user && (
+                    <Link
+                      to={`/materials/${material.id}`}
+                      className="text-[10px] px-3 py-1 border border-black/10 rounded-[10px] hover:bg-gray-100 transition-colors"
+                    >
+                      View Details
+                    </Link>
+                  )}
                 </div>
               </div>
             );

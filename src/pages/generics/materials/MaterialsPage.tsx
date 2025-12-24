@@ -81,40 +81,6 @@ const MaterialsPage: React.FC = () => {
     return true;
   });
 
-  // Hiển thị message yêu cầu đăng nhập nếu chưa login
-  if (!user) {
-    return (
-      <div className="bg-gray-50 min-h-screen">
-        <MaterialsPageHeader />
-        <div className="max-w-4xl mx-auto px-6 py-20">
-          <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-            <div className="mb-6">
-              <svg
-                className="mx-auto h-24 w-24 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                />
-              </svg>
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Sign in to view learning materials
-            </h2>
-            <p className="text-gray-600 mb-8 text-lg">
-              Please sign in to access all learning materials and advanced search features.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (loading) return <p className="text-center mt-20">Loading materials...</p>;
   if (error) return <p className="text-center text-red-500 mt-20">{error}</p>;
 

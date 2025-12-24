@@ -120,23 +120,29 @@ const MaterialLearnPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (id) {
-      getLessonsByLearningMaterial(id).then((lessonList) => {
-        const sorted = sortLessons(lessonList);
-        setLessons(sorted);
-        if (sorted.length > 0 && !selectedLesson) {
-          setSelectedLesson(sorted[0]);
-        }
-
-        // Xác định các lesson đã hoàn thành từ dữ liệu progress của backend (nếu có)
-        const completedFromServer = sorted
-          .filter((lesson) => isLessonCompletedFromServer(lesson))
-          .map((lesson) => lesson.id);
-        setCompletedLessonIds(completedFromServer);
-      });
+    // Nếu chưa đăng nhập: chỉ cần load thông tin material, không gọi API lessons/progress
+    if (!id || !user) {
+      setLessons([]);
+      setSelectedLesson(null);
+      setCompletedLessonIds([]);
+      return;
     }
+
+    getLessonsByLearningMaterial(id).then((lessonList) => {
+      const sorted = sortLessons(lessonList);
+      setLessons(sorted);
+      if (sorted.length > 0 && !selectedLesson) {
+        setSelectedLesson(sorted[0]);
+      }
+
+      // Xác định các lesson đã hoàn thành từ dữ liệu progress của backend (nếu có)
+      const completedFromServer = sorted
+        .filter((lesson) => isLessonCompletedFromServer(lesson))
+        .map((lesson) => lesson.id);
+      setCompletedLessonIds(completedFromServer);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, user]);
 
   const lessonVideoRef = useMemo(() => {
     if (!selectedLesson) return null;
@@ -178,9 +184,11 @@ const MaterialLearnPage: React.FC = () => {
   }, [material?.id, certificates]);
 
   // Nếu đã rating HOẶC có certificate → unlock tất cả lessons (cho phép xem lại)
+  // Nếu chưa đăng nhập: không cần khóa lessons theo tài khoản → coi như đã hoàn thành
   const isMaterialCompleted = useMemo(() => {
+    if (!user) return true;
     return Boolean(myRating) || hasCertificate;
-  }, [myRating, hasCertificate]);
+  }, [user, myRating, hasCertificate]);
 
   useEffect(() => {
     if (myRating) {
