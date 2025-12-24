@@ -13,13 +13,17 @@ import {
   Tabs,
 } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
-import { RefreshCcw, Trash2, Shield } from "lucide-react";
+import {
+  RefreshCcw,
+  Trash2,
+  // Shield
+} from "lucide-react";
 import { useAdminUsers } from "~/hooks/useAdminUsers";
 import UserService from "~/services/userService";
 import type { User } from "~/types/user";
 import type { ColumnsType } from "antd/es/table";
 import UserFilter from "./UserFilter";
-import PermissionManager from "./PermissionManager";
+// import PermissionManager from "./PermissionManager";
 import UserPermissionModal from "./UserPermissionModal";
 import { toast } from "~/components/common/Toast";
 
@@ -183,7 +187,7 @@ const UserManagement: React.FC = () => {
       align: "center",
       render: (_: unknown, record: User) => (
         <Space size="small">
-          <Tooltip title="Manage Permissions">
+          {/* <Tooltip title="Manage Permissions">
             <button
               className="p-2 text-blue-500 hover:bg-blue-100 rounded-lg transition"
               onClick={() => {
@@ -193,7 +197,7 @@ const UserManagement: React.FC = () => {
             >
               <Shield className="w-4 h-4" />
             </button>
-          </Tooltip>
+          </Tooltip> */}
           <Popconfirm
             title="Delete User?"
             description={`Are you sure you want to delete ${record.firstName} ${record.lastName}?`}
@@ -316,11 +320,11 @@ const UserManagement: React.FC = () => {
               label: "User",
               children: userManagementTab,
             },
-            {
-              key: "permissions",
-              label: "Permission",
-              children: <PermissionManager />,
-            },
+            // {
+            //   key: "permissions",
+            //   label: "Permission",
+            //   children: <PermissionManager />,
+            // },
           ]}
         />
 

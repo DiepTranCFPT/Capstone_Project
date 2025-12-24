@@ -8,6 +8,7 @@ import {
     FaGamepad,
     FaEye,
     FaLayerGroup,
+    FaLock,
 } from "react-icons/fa6";
 import { Modal } from "antd";
 import FlashcardViewer from "~/components/flashcards/FlashcardViewer";
@@ -21,7 +22,7 @@ import { toast } from "~/components/common/Toast";
 const FlashcardDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, isAuthenticated } = useAuth();
     const {
         currentFlashcardSet,
         loading,
@@ -96,12 +97,40 @@ const FlashcardDetailPage: React.FC = () => {
         }
         // Show error only if there's an actual error
         return (
-            <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-                <p className="text-red-500 mb-4">{error}</p>
-                <Link to={basePath} className="text-teal-600 hover:underline">
-                    Back to flashcards
-                </Link>
-            </div>
+            isAuthenticated ? (
+                <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                    <Loading />
+                </div>
+            ) : (
+                <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+                    {/* <p className="text-red-500 mb-4">{error}</p> */}
+                        <div className="bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200 rounded-xl p-6 text-center w-full max-w-md">
+                            <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <FaLock className="w-5 h-5 text-teal-600" />
+                            </div>
+                            <h3 className="font-semibold text-gray-800 mb-2">Login to Practice</h3>
+                            <p className="text-gray-500 text-sm mb-4">
+                                Sign in to shuffle cards, take quizzes, and track your progress
+                            </p>
+                            <Link
+                                to="/login"
+                                className="inline-flex items-center gap-2 px-6 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
+                            >
+                                Sign In
+                            </Link>
+                            <p className="text-xs text-gray-400 mt-3">
+                                Don't have an account?{" "}
+                                <Link to="/signup" className="text-teal-600 hover:underline">
+                                    Sign up free
+                                </Link>
+                            </p>
+                            <Link to={basePath} className="text-teal-600 text-xs hover:underline">
+                                Back to flashcards
+                            </Link>
+                        </div>
+                    
+                </div>
+            )
         );
     }
 
@@ -192,23 +221,49 @@ const FlashcardDetailPage: React.FC = () => {
                     <>
                         {/* Action Buttons */}
                         <div className="flex items-center justify-center gap-4 mb-8">
-                            <button
-                                onClick={handleShuffle}
-                                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${isShuffled
-                                    ? "bg-teal-600 text-white"
-                                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-                                    }`}
-                            >
-                                <FaShuffle className="w-4 h-4" />
-                                {isShuffled ? "Shuffled" : "Shuffle"}
-                            </button>
-                            <Link
-                                to={`${basePath}/${id}/quiz`}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
-                            >
-                                <FaGamepad className="w-4 h-4" />
-                                Quiz
-                            </Link>
+                            {isAuthenticated ? (
+                                <>
+                                    <button
+                                        onClick={handleShuffle}
+                                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${isShuffled
+                                            ? "bg-teal-600 text-white"
+                                            : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                                            }`}
+                                    >
+                                        <FaShuffle className="w-4 h-4" />
+                                        {isShuffled ? "Shuffled" : "Shuffle"}
+                                    </button>
+                                    <Link
+                                        to={`${basePath}/${id}/quiz`}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+                                    >
+                                        <FaGamepad className="w-4 h-4" />
+                                        Quiz
+                                    </Link>
+                                </>
+                            ) : (
+                                <div className="bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200 rounded-xl p-6 text-center w-full max-w-md">
+                                    <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <FaLock className="w-5 h-5 text-teal-600" />
+                                    </div>
+                                    <h3 className="font-semibold text-gray-800 mb-2">Login to Practice</h3>
+                                    <p className="text-gray-500 text-sm mb-4">
+                                        Sign in to shuffle cards, take quizzes, and track your progress
+                                    </p>
+                                    <Link
+                                        to="/login"
+                                        className="inline-flex items-center gap-2 px-6 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
+                                    >
+                                        Sign In
+                                    </Link>
+                                    <p className="text-xs text-gray-400 mt-3">
+                                        Don't have an account?{" "}
+                                        <Link to="/signup" className="text-teal-600 hover:underline">
+                                            Sign up free
+                                        </Link>
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Flashcard Viewer */}

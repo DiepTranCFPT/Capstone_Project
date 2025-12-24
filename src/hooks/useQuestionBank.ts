@@ -524,7 +524,7 @@ export const useQuestionBank = () => {
           isCorrect: opt.isCorrect || false,
           explanation: opt.explanation || "", // Backend may expect explanation field
         }));
-       
+
       } else {
         console.warn("[useQuestionBank] No options found for MCQ question");
       }
@@ -987,6 +987,33 @@ export const useQuestionBank = () => {
     }
   }, []);
 
+  // 🔹 Tìm kiếm câu hỏi (GET /questions-v2/search)
+  const searchQuestions = useCallback(async (params: {
+    keyword: string;
+    pageNo?: number;
+    pageSize?: number;
+    sorts?: string[];
+  }) => {
+    try {
+      setLoading(true);
+      const res = await QuestionService.search(params);
+      const data = res.data?.data;
+      if (data) {
+        setQuestions(normalizeQuestions(data));
+        setPageMeta(extractPageMeta(res.data?.data));
+      } else {
+        setQuestions([]);
+        setPageMeta(null);
+      }
+    } catch (error) {
+      toast.error("Failed to search questions!");
+      console.error("[useQuestionBank] Search error:", error);
+      setQuestions([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [normalizeQuestions, extractPageMeta]);
+
   return {
     questions,
     loading,
@@ -1008,6 +1035,7 @@ export const useQuestionBank = () => {
     fetchMyContexts,
     fetchDuplicates,
     fetchContextDuplicates,
+    searchQuestions,
   };
 };
 

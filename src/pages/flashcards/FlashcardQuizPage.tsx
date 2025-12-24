@@ -269,7 +269,7 @@ const FlashcardQuizPage: React.FC = () => {
 
             {/* Exit Modal */}
             <Modal
-                title="Thoát Quiz?"
+                title="Exit  to Quiz?"
                 open={exitModalVisible}
                 onOk={() => navigate(`${basePath}/${id}`)}
                 onCancel={() => setExitModalVisible(false)}
