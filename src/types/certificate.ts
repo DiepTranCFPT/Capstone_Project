@@ -5,6 +5,11 @@ export interface CertificateData {
     certificateNumber: string;
     userId: string;
     subjectId: string;
+    /** 
+     * ID của learning material mà certificate này gắn với.
+     * Backend mới bổ sung trường này – để an toàn, khai báo là optional.
+     */
+    materialId?: string;
     issueDate: string;
     isValid: boolean;
     certificateUrl: string;

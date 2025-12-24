@@ -16,54 +16,15 @@ import { toast } from "~/components/common/Toast";
 
 const isLessonCompletedFromServer = (lesson: Lesson): boolean => {
   const anyLesson = lesson as unknown as {
-    progress?: number;
     completed?: boolean;
     isCompleted?: boolean;
-    lastWatchedSecond?: number;
   };
 
-  if (typeof anyLesson.completed === "boolean") {
-    return anyLesson.completed;
-  }
-  if (typeof anyLesson.isCompleted === "boolean") {
-    return anyLesson.isCompleted;
-  }
+  // Chỉ tin cậy cờ hoàn thành rõ ràng từ backend.
+  if (typeof anyLesson.completed === "boolean") return anyLesson.completed;
+  if (typeof anyLesson.isCompleted === "boolean") return anyLesson.isCompleted;
 
-  // Kiểm tra lastWatchedSecond (từ API save progress) - ưu tiên cao nhất
-  if (typeof anyLesson.lastWatchedSecond === "number" && anyLesson.lastWatchedSecond >= 0) {
-    if (lesson.duration && typeof lesson.duration === "number" && lesson.duration > 0) {
-      // Thử cả hai trường hợp: duration là phút hoặc giây
-      const durationAsMinutes = lesson.duration * 60; // Giả sử duration là phút
-      const durationAsSeconds = lesson.duration; // Giả sử duration đã là giây
-      
-      // Kiểm tra xem lastWatchedSecond gần với giá trị nào hơn
-      const diffAsMinutes = Math.abs(anyLesson.lastWatchedSecond - durationAsMinutes);
-      const diffAsSeconds = Math.abs(anyLesson.lastWatchedSecond - durationAsSeconds);
-      
-      // Chọn duration phù hợp (giá trị nào gần hơn)
-      const actualDuration = diffAsSeconds < diffAsMinutes ? durationAsSeconds : durationAsMinutes;
-      
-      // Coi như hoàn thành nếu đã xem >= 90% thời lượng
-      return anyLesson.lastWatchedSecond >= actualDuration * 0.9;
-    }
-    // Nếu không có duration, coi như hoàn thành nếu lastWatchedSecond > 0
-    // (vì video đã được xem ít nhất một phần)
-    return anyLesson.lastWatchedSecond > 0;
-  }
-
-  const progress = anyLesson.progress;
-  if (typeof progress === "number") {
-    // Nếu backend trả thời lượng, ưu tiên so sánh theo phần trăm thời lượng
-    if (lesson.duration && typeof lesson.duration === "number" && lesson.duration > 0) {
-      const durationSeconds = lesson.duration * 60;
-      const safeDuration = durationSeconds > 0 ? durationSeconds : lesson.duration;
-      return progress >= safeDuration * 0.9;
-    }
-
-    // Fallback: coi như hoàn thành nếu progress >= 1 (cho cả dạng 0..1 và 0..100)
-    return progress >= 1;
-  }
-
+  // Không tự suy luận từ progress/lastWatchedSecond để tránh mở khóa nhầm.
   return false;
 };
 
@@ -200,13 +161,21 @@ const MaterialLearnPage: React.FC = () => {
     fetchMyCertificates,
   ]);
 
-  // Check xem material này đã có certificate chưa (dựa trên subjectId)
+  // Check xem material này đã có certificate chưa
+  // Chỉ dựa theo materialId để tránh mở nhầm các khóa khác cùng subject
   const hasCertificate = useMemo(() => {
-    if (!material?.subjectId || !certificates || certificates.length === 0) {
+    if (!certificates || certificates.length === 0) {
       return false;
     }
-    return certificates.some((cert) => cert.subjectId === material.subjectId);
-  }, [material?.subjectId, certificates]);
+
+    if (!material?.id) {
+      return false;
+    }
+
+    return certificates.some(
+      (cert) => cert.materialId && cert.materialId === material.id
+    );
+  }, [material?.id, certificates]);
 
   // Nếu đã rating HOẶC có certificate → unlock tất cả lessons (cho phép xem lại)
   const isMaterialCompleted = useMemo(() => {
