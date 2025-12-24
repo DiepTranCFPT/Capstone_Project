@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Popover, Tabs, Badge, Button, Spin } from 'antd';
+import { Popover, Tabs, Badge, Button, Spin, Modal } from 'antd';
 import { BellOutlined, CheckOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '~/hooks/useNotifications';
@@ -9,6 +9,8 @@ const NotificationDropdown: React.FC = () => {
     const navigate = useNavigate();
     const [open, setOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<'unread' | 'all'>('unread');
+    const [selectedNotification, setSelectedNotification] = useState<NotificationResponse | null>(null);
+    const [detailModalOpen, setDetailModalOpen] = useState(false);
 
     const {
         notifications,
@@ -17,18 +19,18 @@ const NotificationDropdown: React.FC = () => {
         markingAllAsRead,
         markAsRead,
         markAllAsRead,
-        fetchUnreadNotifications,
         fetchAllNotifications
     } = useNotifications();
 
-    // Fetch notifications when tab changes
+    // Filter notifications based on active tab (client-side for real-time updates)
+    const displayedNotifications = activeTab === 'unread'
+        ? notifications.filter(n => !n.read)
+        : notifications;
+
+    // Fetch all notifications on mount (client-side filtering handles the rest)
     useEffect(() => {
-        if (activeTab === 'unread') {
-            fetchUnreadNotifications();
-        } else {
-            fetchAllNotifications();
-        }
-    }, [activeTab, fetchUnreadNotifications, fetchAllNotifications]);
+        fetchAllNotifications();
+    }, [fetchAllNotifications]);
 
     // Format time ago
     const formatTimeAgo = (dateString: string) => {
@@ -50,25 +52,49 @@ const NotificationDropdown: React.FC = () => {
         }
     };
 
+    // Format full date time
+    const formatDateTime = (dateString: string) => {
+        return new Date(dateString).toLocaleString('vi-VN', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
     // Get notification icon based on type
     const getTypeStyles = (type: string) => {
         switch (type) {
             case 'SYSTEM':
-                return { bg: 'bg-gradient-to-r from-purple-500 to-indigo-500', icon: '🔔' };
+                return { bg: 'bg-gradient-to-r from-purple-500 to-indigo-500', icon: '🔔', badge: 'bg-purple-100 text-purple-700' };
             case 'EXAM':
-                return { bg: 'bg-gradient-to-r from-orange-500 to-amber-500', icon: '📝' };
+                return { bg: 'bg-gradient-to-r from-orange-500 to-amber-500', icon: '📝', badge: 'bg-orange-100 text-orange-700' };
             case 'SCORE':
-                return { bg: 'bg-gradient-to-r from-green-500 to-emerald-500', icon: '🏆' };
+                return { bg: 'bg-gradient-to-r from-green-500 to-emerald-500', icon: '🏆', badge: 'bg-green-100 text-green-700' };
+            case 'COMPLETE LEARNING':
+                return { bg: 'bg-gradient-to-r from-blue-500 to-cyan-500', icon: '📚', badge: 'bg-blue-100 text-blue-700' };
             default:
-                return { bg: 'bg-gradient-to-r from-teal-500 to-cyan-500', icon: '📢' };
+                return { bg: 'bg-gradient-to-r from-teal-500 to-cyan-500', icon: '📢', badge: 'bg-teal-100 text-teal-700' };
         }
     };
 
-    // Handle notification click
+    // Handle notification click - open detail modal
     const handleNotificationClick = async (notification: NotificationResponse) => {
+        // Mark as read if unread
         if (!notification.read) {
             await markAsRead(notification.id);
         }
+        // Set selected notification and open modal
+        setSelectedNotification(notification);
+        setDetailModalOpen(true);
+        setOpen(false); // Close dropdown
+    };
+
+    // Close detail modal
+    const handleCloseDetailModal = () => {
+        setDetailModalOpen(false);
+        setSelectedNotification(null);
     };
 
     // Handle mark all as read
@@ -106,12 +132,7 @@ const NotificationDropdown: React.FC = () => {
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1.5">
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${notification.type === 'SYSTEM'
-                                    ? 'bg-purple-100 text-purple-700'
-                                    : notification.type === 'EXAM'
-                                        ? 'bg-orange-100 text-orange-700'
-                                        : 'bg-teal-100 text-teal-700'
-                                }`}>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${typeStyles.badge}`}>
                                 {notification.type}
                             </span>
                             <span className="text-xs text-gray-400 flex items-center gap-1">
@@ -140,7 +161,7 @@ const NotificationDropdown: React.FC = () => {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
-                            <BellOutlined className="text-white text-xl" />
+                            <BellOutlined style={{ color: 'white' }} className="text-xl" />
                         </div>
                         <div>
                             <h3 className="text-lg font-bold text-white">Notifications</h3>
@@ -208,9 +229,9 @@ const NotificationDropdown: React.FC = () => {
                         <Spin size="large" />
                         <p className="text-gray-400 text-sm mt-3">Loading notifications...</p>
                     </div>
-                ) : notifications.length > 0 ? (
+                ) : displayedNotifications.length > 0 ? (
                     <div>
-                        {notifications.slice(0, 8).map((notification) => (
+                        {displayedNotifications.slice(0, 8).map((notification) => (
                             <NotificationItem key={notification.id} notification={notification} />
                         ))}
                     </div>
@@ -247,29 +268,76 @@ const NotificationDropdown: React.FC = () => {
     );
 
     return (
-        <Popover
-            content={content}
-            trigger="click"
-            placement="bottomRight"
-            open={open}
-            onOpenChange={setOpen}
-            overlayClassName="notification-dropdown-popover"
-            arrow={false}
-            overlayInnerStyle={{ padding: 0, borderRadius: '16px', overflow: 'hidden' }}
-        >
-            <button
-                type="button"
-                title="Notifications"
-                className="relative w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-full border border-teal-100 text-teal-500 hover:bg-teal-50 hover:scale-105 transition-all duration-300 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
+        <>
+            <Popover
+                content={content}
+                trigger="click"
+                placement="bottomRight"
+                open={open}
+                onOpenChange={setOpen}
+                overlayClassName="notification-dropdown-popover"
+                arrow={false}
+                overlayInnerStyle={{ padding: 0, borderRadius: '16px', overflow: 'hidden' }}
             >
-                <BellOutlined className="text-lg md:text-xl" />
-                {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-gradient-to-r from-red-500 to-rose-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg shadow-red-500/30 animate-pulse">
-                        {unreadCount > 99 ? '99+' : unreadCount}
-                    </span>
+                <button
+                    type="button"
+                    title="Notifications"
+                    className="relative w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-full border border-teal-100 text-teal-500 hover:bg-teal-50 hover:scale-105 transition-all duration-300 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
+                >
+                    <BellOutlined className="text-lg md:text-xl" />
+                    {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-gradient-to-r from-red-500 to-rose-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg shadow-red-500/30 animate-pulse">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                    )}
+                </button>
+            </Popover>
+
+            {/* Notification Detail Modal */}
+            <Modal
+                open={detailModalOpen}
+                onCancel={handleCloseDetailModal}
+                footer={null}
+                width={500}
+                centered
+                className="notification-detail-modal"
+            >
+                {selectedNotification && (
+                    <div className="py-4">
+                        {/* Header */}
+                        <div className="flex items-start gap-4 mb-6">
+                            <div className={`w-14 h-14 ${getTypeStyles(selectedNotification.type).bg} rounded-2xl flex items-center justify-center text-2xl shadow-lg flex-shrink-0`}>
+                                {getTypeStyles(selectedNotification.type).icon}
+                            </div>
+                            <div className="flex-1">
+                                <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full mb-2 ${getTypeStyles(selectedNotification.type).badge}`}>
+                                    {selectedNotification.type}
+                                </span>
+                                <p className="text-xs text-gray-400 flex items-center gap-1">
+                                    <ClockCircleOutlined />
+                                    {formatDateTime(selectedNotification.createdAt)}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                            <p className="text-base text-gray-800 leading-relaxed">
+                                {selectedNotification.message}
+                            </p>
+                        </div>
+
+                        {/* Metadata */}
+                        <div className="flex items-center justify-between text-sm text-gray-500 border-t pt-4">
+                            <span>To: {selectedNotification.receiverEmail}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-xs ${selectedNotification.read ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                {selectedNotification.read ? 'Read' : 'Unread'}
+                            </span>
+                        </div>
+                    </div>
                 )}
-            </button>
-        </Popover>
+            </Modal>
+        </>
     );
 };
 

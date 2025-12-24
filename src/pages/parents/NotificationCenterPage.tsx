@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Badge, Empty, Spin, Tabs } from 'antd';
+import { Card, Button, Badge, Empty, Spin, Tabs, Modal } from 'antd';
 import { BellFilled, CheckOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useNotifications } from '~/hooks/useNotifications';
 import type { NotificationResponse } from '~/types/notification';
 
 const NotificationCenterPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'unread' | 'all'>('unread');
+  const [selectedNotification, setSelectedNotification] = useState<NotificationResponse | null>(null);
 
   const {
     notifications,
@@ -15,18 +16,18 @@ const NotificationCenterPage: React.FC = () => {
     markingAllAsRead,
     markAsRead,
     markAllAsRead,
-    fetchUnreadNotifications,
     fetchAllNotifications
   } = useNotifications();
 
-  // Fetch notifications when tab changes
+  // Filter notifications based on active tab (client-side for real-time updates)
+  const displayedNotifications = activeTab === 'unread'
+    ? notifications.filter(n => !n.read)
+    : notifications;
+
+  // Fetch all notifications on mount (client-side filtering handles the rest)
   useEffect(() => {
-    if (activeTab === 'unread') {
-      fetchUnreadNotifications();
-    } else {
-      fetchAllNotifications();
-    }
-  }, [activeTab, fetchUnreadNotifications, fetchAllNotifications]);
+    fetchAllNotifications();
+  }, [fetchAllNotifications]);
 
   // Format time ago
   const formatTimeAgo = (dateString: string) => {
@@ -50,7 +51,7 @@ const NotificationCenterPage: React.FC = () => {
 
   // Format full date
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
+    return new Date(dateString).toLocaleString('vi-VN', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -75,6 +76,10 @@ const NotificationCenterPage: React.FC = () => {
 
   // Handle notification click
   const handleNotificationClick = async (notification: NotificationResponse) => {
+    // Open detail modal
+    setSelectedNotification(notification);
+
+    // Mark as read if unread
     if (!notification.read && !markingAsRead) {
       await markAsRead(notification.id);
     }
@@ -88,8 +93,8 @@ const NotificationCenterPage: React.FC = () => {
       <Card
         size="small"
         className={`mb-3 transition-all duration-300 cursor-pointer hover:shadow-lg ${!notification.read
-            ? 'border-l-4 border-l-teal-500 bg-gradient-to-r from-teal-50 to-white'
-            : 'bg-white hover:bg-gray-50'
+          ? 'border-l-4 border-l-teal-500 bg-gradient-to-r from-teal-50 to-white'
+          : 'bg-white hover:bg-gray-50'
           }`}
         onClick={() => handleNotificationClick(notification)}
       >
@@ -110,28 +115,11 @@ const NotificationCenterPage: React.FC = () => {
                   <ClockCircleOutlined className="text-[10px]" />
                   {formatTimeAgo(notification.createdAt)}
                 </span>
-                {!notification.read && (
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<CheckOutlined />}
-                    loading={markingAsRead}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      markAsRead(notification.id);
-                    }}
-                    className="text-teal-600 hover:text-teal-700"
-                  >
-                    Mark as read
-                  </Button>
-                )}
+
               </div>
             </div>
             <p className={`text-base leading-relaxed mb-2 ${!notification.read ? 'text-gray-800 font-medium' : 'text-gray-600'}`}>
               {notification.message}
-            </p>
-            <p className="text-sm text-gray-400">
-              To: {notification.receiverEmail}
             </p>
           </div>
         </div>
@@ -214,9 +202,9 @@ const NotificationCenterPage: React.FC = () => {
                 <Spin size="large" />
                 <p className="text-gray-400 text-sm mt-4">Loading notifications...</p>
               </div>
-            ) : notifications.length > 0 ? (
-              <div>
-                {notifications.map((notification) => (
+            ) : displayedNotifications.length > 0 ? (
+              <div className='flex flex-col gap-3'>
+                {displayedNotifications.map((notification) => (
                   <NotificationCard key={notification.id} notification={notification} />
                 ))}
               </div>
@@ -242,6 +230,55 @@ const NotificationCenterPage: React.FC = () => {
           </div>
         </Card>
       </div>
+
+      {/* Notification Detail Modal */}
+      <Modal
+        title={null}
+        open={!!selectedNotification}
+        onCancel={() => setSelectedNotification(null)}
+        footer={null}
+        width={500}
+        centered
+        className="notification-detail-modal"
+      >
+        {selectedNotification && (
+          <div className="p-2">
+            {/* Header with type badge */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className={`w-14 h-14 ${getTypeStyles(selectedNotification.type).bg} rounded-xl flex items-center justify-center text-2xl shadow-lg`}>
+                {getTypeStyles(selectedNotification.type).icon}
+              </div>
+              <div>
+                <span className={`text-sm px-3 py-1 rounded-full font-medium ${getTypeStyles(selectedNotification.type).badge}`}>
+                  {selectedNotification.type}
+                </span>
+                <p className="text-sm text-gray-400 mt-2 flex items-center gap-1">
+                  <ClockCircleOutlined className="text-xs" />
+                  {formatDate(selectedNotification.createdAt)}
+                </p>
+              </div>
+            </div>
+
+            {/* Message */}
+            <div className="bg-gray-50 rounded-xl p-4 mb-4">
+              <h4 className="text-xs text-gray-400 uppercase tracking-wide mb-2">Message</h4>
+              <p className="text-gray-800 leading-relaxed text-base">
+                {selectedNotification.message}
+              </p>
+            </div>
+
+            {/* Status */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${selectedNotification.read ? 'bg-gray-400' : 'bg-teal-500'}`}></span>
+                <span className="text-sm text-gray-500">
+                  {selectedNotification.read ? 'Read' : 'Unread'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

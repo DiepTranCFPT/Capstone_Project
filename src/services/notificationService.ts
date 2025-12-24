@@ -1,17 +1,11 @@
 import axiosInstance from "~/configs/axios";
 import type { NotificationResponse, GetNotificationsParams } from '~/types/notification';
 
-interface NotificationsApiResponse {
-  code: number;
-  message: string;
-  data: NotificationResponse[];
-}
-
-interface SingleNotificationApiResponse {
-  code: number;
-  message: string;
-  data: NotificationResponse;
-}
+// interface SingleNotificationApiResponse {
+//   code: number;
+//   message: string;
+//   data: NotificationResponse;
+// }
 
 export const notificationService = {
   /**
@@ -20,10 +14,11 @@ export const notificationService = {
    * @param params - Optional query parameters (unreadOnly)
    */
   async getNotifications(params?: GetNotificationsParams): Promise<NotificationResponse[]> {
-    const response = await axiosInstance.get<NotificationsApiResponse>('/notifications', {
+    const response = await axiosInstance.get<NotificationResponse[]>('/notifications', {
       params
     });
-    return response.data.data || [];
+    // API returns array directly, not wrapped in data object
+    return response.data || [];
   },
 
   /**
@@ -32,10 +27,10 @@ export const notificationService = {
    * @param notificationId - The ID of the notification to mark as read
    */
   async markAsRead(notificationId: string): Promise<NotificationResponse> {
-    const response = await axiosInstance.post<SingleNotificationApiResponse>(
+    const response = await axiosInstance.post<NotificationResponse>(
       `/notifications/${notificationId}`
     );
-    return response.data.data;
+    return response.data;
   },
 
   /**

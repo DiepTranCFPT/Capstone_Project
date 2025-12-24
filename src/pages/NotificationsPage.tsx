@@ -12,21 +12,19 @@ const NotificationsPage: React.FC = () => {
         loading,
         unreadCount,
         markingAsRead,
-        markingAllAsRead,
         markAsRead,
-        markAllAsRead,
-        fetchUnreadNotifications,
         fetchAllNotifications
     } = useNotifications();
 
-    // Fetch notifications when tab changes
+    // Filter notifications based on active tab (client-side for real-time updates)
+    const displayedNotifications = activeTab === 'unread'
+        ? notifications.filter(n => !n.read)
+        : notifications;
+
+    // Fetch all notifications on mount
     useEffect(() => {
-        if (activeTab === 'unread') {
-            fetchUnreadNotifications();
-        } else {
-            fetchAllNotifications();
-        }
-    }, [activeTab, fetchUnreadNotifications, fetchAllNotifications]);
+        fetchAllNotifications();
+    }, [fetchAllNotifications]);
 
     // Format time ago
     const formatTimeAgo = (dateString: string) => {
@@ -66,18 +64,14 @@ const NotificationsPage: React.FC = () => {
         }
     };
 
-    // Handle mark all as read
-    const handleMarkAllAsRead = async () => {
-        await markAllAsRead();
-    };
 
     // Notification item component
     const NotificationItem: React.FC<{ notification: NotificationResponse }> = ({ notification }) => (
         <Card
             size="small"
             className={`mb-3 transition-all duration-200 cursor-pointer hover:shadow-md ${!notification.read
-                    ? 'border-l-4 border-l-teal-500 bg-teal-50/50'
-                    : 'bg-white hover:bg-gray-50'
+                ? 'border-l-4 border-l-teal-500 bg-teal-50/50'
+                : 'bg-white hover:bg-gray-50'
                 }`}
             onClick={() => handleNotificationClick(notification)}
         >
@@ -90,10 +84,10 @@ const NotificationsPage: React.FC = () => {
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-2">
                         <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${notification.type === 'SYSTEM'
-                                ? 'bg-purple-100 text-purple-700'
-                                : notification.type === 'EXAM'
-                                    ? 'bg-orange-100 text-orange-700'
-                                    : 'bg-teal-100 text-teal-700'
+                            ? 'bg-purple-100 text-purple-700'
+                            : notification.type === 'EXAM'
+                                ? 'bg-orange-100 text-orange-700'
+                                : 'bg-teal-100 text-teal-700'
                             }`}>
                             {notification.type}
                         </span>
@@ -145,17 +139,7 @@ const NotificationsPage: React.FC = () => {
                             </p>
                         </div>
                     </div>
-                    {unreadCount > 0 && (
-                        <Button
-                            type="primary"
-                            icon={<CheckOutlined />}
-                            loading={markingAllAsRead}
-                            onClick={handleMarkAllAsRead}
-                            className="bg-teal-500 hover:bg-teal-600 border-teal-500"
-                        >
-                            Mark all as read
-                        </Button>
-                    )}
+                    
                 </div>
 
                 {/* Tabs */}
@@ -195,9 +179,9 @@ const NotificationsPage: React.FC = () => {
                         <div className="flex justify-center items-center py-16">
                             <Spin size="large" />
                         </div>
-                    ) : notifications.length > 0 ? (
-                        <div>
-                            {notifications.map((notification) => (
+                    ) : displayedNotifications.length > 0 ? (
+                        <div className='flex flex-col gap-3'>
+                            {displayedNotifications.map((notification) => (
                                 <NotificationItem key={notification.id} notification={notification} />
                             ))}
                         </div>
