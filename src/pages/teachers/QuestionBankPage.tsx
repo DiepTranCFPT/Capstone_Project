@@ -488,7 +488,12 @@ const QuestionBankPage: React.FC = () => {
       title: "Question",
       dataIndex: "text",
       key: "text",
-      render: (text) => (text ? text.substring(0, 50) + "..." : ""),
+      width: 400,
+      render: (text: string) => (
+        <div style={{ maxWidth: 380, overflow: "hidden", textOverflow: "ellipsis" }}>
+          <LatexRenderer content={text ? (text.length > 100 ? text.substring(0, 100) + "..." : text) : ""} />
+        </div>
+      ),
     },
     {
       title: "Type",
