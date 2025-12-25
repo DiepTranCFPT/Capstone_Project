@@ -92,59 +92,33 @@ export const notificationService = {
   },
 
   /**
-   * Get all public notifications
+   * Get public notification (single or latest)
    * GET /notifications/public
    */
-  async getPublicNotifications(): Promise<NotificationResponse[]> {
+  async getPublicNotification(): Promise<NotificationResponse[]> {
     const response = await axiosInstance.get('/notifications/public');
+    return normalizeToArray<NotificationResponse>(response.data);
+  },
+
+  /**
+   * Get all public notifications
+   * GET /notifications/public/list
+   */
+  async getPublicNotifications(): Promise<NotificationResponse[]> {
+    const response = await axiosInstance.get('/notifications/public/list');
     return normalizeToArray<NotificationResponse>(response.data);
   },
 
   /**
    * Create a public notification
    * POST /notifications/public
-   * @param data - Notification data to create
    */
   async createPublicNotification(data: {
     type: string;
     message: string;
     receiverEmail?: string;
-  }): Promise<NotificationResponse> {
+  }): Promise<NotificationResponse | string> {
     const response = await axiosInstance.post('/notifications/public', data);
-    console.log('createPublicNotification response:', response.data);
-    
-    // If response is a string (like "create successfully"), consider it success
-    if (typeof response.data === 'string') {
-      // Return a mock notification object to allow the flow to continue
-      // The actual notification will be fetched when we refresh the list
-      return {
-        id: 'temp-' + Date.now(),
-        receiverEmail: data.receiverEmail || '',
-        type: data.type,
-        message: data.message,
-        createdAt: new Date().toISOString(),
-        read: false
-      } as NotificationResponse;
-    }
-    
-    // Try to normalize the response
-    try {
-      return normalizeToSingle<NotificationResponse>(response.data, 'Invalid response format from createPublicNotification API');
-    } catch (err) {
-      console.warn('Failed to normalize response, using fallback:', err);
-      // If normalization fails, return the response data as-is if it's an object
-      if (response.data && typeof response.data === 'object') {
-        return response.data as NotificationResponse;
-      }
-      // If all else fails, return a mock object to allow the flow to continue
-      return {
-        id: 'temp-' + Date.now(),
-        receiverEmail: data.receiverEmail || '',
-        type: data.type,
-        message: data.message,
-        createdAt: new Date().toISOString(),
-        read: false
-      } as NotificationResponse;
-    }
+    return response.data;
   }
 };

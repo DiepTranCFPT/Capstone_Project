@@ -104,7 +104,7 @@ import { GlobalLoadingProvider } from "./context/GlobalLoadingContext";
 import PaymentResult from "./pages/checkWallet/PaymentResult";
 import MyWalletPage from "./pages/teachers/MyWalletPage";
 import MyCertificatesPage from "./pages/students/MyCertificatesPage";
-import NotificationsPage from "./pages/NotificationsPage";
+import NotificationPage from "./pages/notification/NotificationPage";
 import { NotificationProvider } from "./context/NotificationContext";
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -186,7 +186,7 @@ function App() {
               <Route path="learning-pathway" element={<LearningPathwayPage />} />
               <Route path="/wallet" element={<WalletPage />} />
               <Route path="/wallet/result" element={<PaymentResult />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/notifications" element={<NotificationPage />} />
               <Route path="/teacher-detail/:teacherId" element={<TeacherDetailPage />} />
 
               {/* Flashcard routes */}
@@ -195,6 +195,7 @@ function App() {
               <Route path="/flashcards/:id" element={<FlashcardDetailPage />} />
               <Route path="/flashcards/:id/edit" element={<FlashcardEditPage />} />
               <Route path="/flashcards/:id/quiz" element={<FlashcardQuizPage />} />
+
             </Route>
 
             {/* Student routes with StudentLayout */}

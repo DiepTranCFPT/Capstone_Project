@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Empty, Spin, Tag, Button, Badge, Modal, Form, Input, message } from 'antd';
+import { Card, Empty, Spin, Tag, Button, Badge, Modal, Form, Input, Table } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { 
   BellOutlined, 
   CheckOutlined, 
-  MailOutlined, 
   ReloadOutlined,
-  PlusOutlined
+  PlusOutlined,
+  ClockCircleOutlined,
+  MailOutlined,
+  EyeOutlined
 } from '@ant-design/icons';
-import { notificationService } from '~/services/notificationService';
+import { usePublicNotifications } from '~/hooks/usePublicNotifications';
 import type { NotificationResponse } from '~/types/notification';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -15,80 +18,33 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
 
 const NotificationsPage: React.FC = () => {
-  const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    notifications,
+    loading,
+    error,
+    submitting,
+    unreadCount,
+    fetchNotifications,
+    createNotification,
+    markAsRead
+  } = usePublicNotifications();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
-
-  const fetchNotifications = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await notificationService.getPublicNotifications();
-      console.log('Fetched notifications:', data);
-      setNotifications(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Failed to fetch notifications:', err);
-      setError('Failed to load notifications');
-      setNotifications([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreate = async (values: { message: string; receiverEmail?: string }) => {
-    try {
-      setSubmitting(true);
-      console.log('Creating notification...', values);
-      
-      // Gửi với type mặc định là "NOTIFICATION SYSTEM"
-      const result = await notificationService.createPublicNotification({
-        type: 'NOTIFICATION SYSTEM',
-        message: values.message,
-        receiverEmail: values.receiverEmail
-      });
-      
-      console.log('Notification created:', result);
-      
-      // Đóng modal TRƯỚC tiên - sử dụng setTimeout để đảm bảo state update
-      setTimeout(() => {
-        setIsModalOpen(false);
-        form.resetFields();
-      }, 0);
-      
-      // Hiển thị thông báo thành công
-      message.success('Notification created successfully!');
-      
-      // Fetch lại danh sách thông báo
-      setTimeout(() => {
-        fetchNotifications();
-      }, 100);
-    } catch (err) {
-      console.error('Failed to create notification:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create notification';
-      message.error(errorMessage);
-      // Không đóng modal nếu có lỗi để user có thể sửa và thử lại
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   useEffect(() => {
     fetchNotifications();
-  }, []);
+  }, [fetchNotifications]);
 
-  const handleMarkAsRead = async (id: string) => {
-    try {
-      await notificationService.markAsRead(id);
-      setNotifications((prev) =>
-        prev.map((notif) =>
-          notif.id === id ? { ...notif, read: true } : notif
-        )
-      );
-    } catch (err) {
-      console.error('Failed to mark as read:', err);
+  const handleCreate = async (values: { message: string }) => {
+    const success = await createNotification({
+      type: 'NOTIFICATION SYSTEM',
+      message: values.message
+    });
+    
+    if (success) {
+      setIsModalOpen(false);
+      form.resetFields();
     }
   };
 
@@ -96,37 +52,124 @@ const NotificationsPage: React.FC = () => {
   const getDisplayMessage = (message: string): string => {
     if (!message) return '';
     try {
-      // Check if message is a JSON string like '{"type":"...","message":"..."}'
       if (message.startsWith('{') && message.includes('"message"')) {
         const parsed = JSON.parse(message);
         return parsed.message || message;
       }
     } catch {
-      // Not JSON, return as-is
     }
     return message;
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  if (loading) {
-    return (
-      <div className="p-6 bg-gray-50 min-h-screen">
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <BellOutlined className="text-blue-600 text-2xl" />
-                  </div>
-                  Notifications
-                </h1>
-                <p className="text-gray-500 text-sm">Manage system notifications</p>
-              </div>
-            </div>
+  // Table columns
+  const columns: ColumnsType<NotificationResponse> = [
+    {
+      title: (
+        <span className="text-gray-600 font-semibold">Type</span>
+      ),
+      dataIndex: 'type',
+      key: 'type',
+      width: 160,
+      render: (type: string) => (
+        <Tag 
+          className="px-3 py-1 rounded-full text-xs font-medium border-0"
+          style={{ 
+            background: 'linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%)',
+            color: 'white'
+          }}
+        >
+          {type}
+        </Tag>
+      ),
+    },
+    {
+      title: (
+        <span className="text-gray-600 font-semibold">Message</span>
+      ),
+      dataIndex: 'message',
+      key: 'message',
+      render: (message: string, record) => (
+        <div className="py-1">
+          <p className={`text-sm leading-relaxed ${!record.read ? 'font-semibold text-gray-900' : 'text-gray-600'}`}>
+            {getDisplayMessage(message)}
+          </p>
+        </div>
+      ),
+    },
+    {
+      title: (
+        <span className="text-gray-600 font-semibold">Receiver</span>
+      ),
+      dataIndex: 'receiverEmail',
+      key: 'receiverEmail',
+      width: 220,
+      render: (email: string) => (
+        email ? (
+          <div className="flex items-center gap-2 text-gray-500">
+            <MailOutlined className="text-blue-400" />
+            <span className="text-sm">{email}</span>
           </div>
-          <Card variant="borderless" className="shadow-sm rounded-xl">
+        ) : (
+          <span className="text-gray-300 text-sm italic">All users</span>
+        )
+      ),
+    },
+    {
+      title: (
+        <span className="text-gray-600 font-semibold">Created</span>
+      ),
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      width: 180,
+      render: (date: string) => (
+        <div className="flex items-center gap-2">
+          <ClockCircleOutlined className="text-gray-400" />
+          <div>
+            <div className="text-sm text-gray-700">{dayjs(date).format('DD/MM/YYYY')}</div>
+            <div className="text-xs text-gray-400">{dayjs(date).fromNow()}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: (
+        <span className="text-gray-600 font-semibold">Action</span>
+      ),
+      key: 'action',
+      width: 130,
+      align: 'center',
+      render: (_, record) => (
+        !record.read ? (
+          <Button
+            type="primary"
+            size="small"
+            icon={<CheckOutlined />}
+            onClick={() => markAsRead(record.id)}
+            className="bg-gradient-to-r from-green-500 to-emerald-500 border-0 shadow-sm hover:shadow-md transition-all"
+          >
+            Mark read
+          </Button>
+        ) : (
+          <span className="text-gray-400 text-xs">—</span>
+        )
+      ),
+    },
+  ];
+
+  if (loading && notifications.length === 0) {
+    return (
+      <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3 mb-1">
+              <div className="p-3 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-xl shadow-lg">
+                <BellOutlined className="text-white text-xl" />
+              </div>
+              Notifications
+            </h1>
+            <p className="text-gray-500 text-sm ml-14">Manage system notifications</p>
+          </div>
+          <Card className="shadow-lg rounded-2xl border-0">
             <div className="flex justify-center items-center py-20">
               <Spin size="large" />
             </div>
@@ -138,22 +181,18 @@ const NotificationsPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <BellOutlined className="text-blue-600 text-2xl" />
-                  </div>
-                  Notifications
-                </h1>
-                <p className="text-gray-500 text-sm">Manage system notifications</p>
+      <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3 mb-1">
+              <div className="p-3 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-xl shadow-lg">
+                <BellOutlined className="text-white text-xl" />
               </div>
-            </div>
+              Notifications
+            </h1>
+            <p className="text-gray-500 text-sm ml-14">Manage system notifications</p>
           </div>
-          <Card variant="borderless" className="shadow-sm rounded-xl">
+          <Card className="shadow-lg rounded-2xl border-0">
             <div className="text-center py-12">
               <div className="text-red-500 text-lg mb-4">{error}</div>
               <Button 
@@ -172,40 +211,44 @@ const NotificationsPage: React.FC = () => {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-5xl mx-auto">
+    <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3 mb-2">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <BellOutlined className="text-blue-600 text-2xl" />
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3 mb-1">
+                <div className="p-3 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-xl shadow-lg">
+                  <BellOutlined className="text-white text-xl" />
                 </div>
                 Notifications
               </h1>
-              <p className="text-gray-500 text-sm">Manage system notifications</p>
+              <p className="text-gray-500 text-sm ml-14">Manage system notifications</p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {unreadCount > 0 && (
-                <Badge count={unreadCount} showZero={false}>
-                  <span className="text-sm text-gray-600">
-                    {unreadCount} unread notification{unreadCount > 1 ? 's' : ''}
+                <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-100">
+                  <Badge count={unreadCount} showZero={false} />
+                  <span className="text-sm text-gray-600 font-medium">
+                    unread
                   </span>
-                </Badge>
+                </div>
               )}
               <Button 
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={() => setIsModalOpen(true)}
-                className="flex items-center"
+                size="large"
+                className="bg-gradient-to-r from-teal-400 to-cyan-500 border-0 shadow-lg hover:shadow-xl transition-all h-10"
               >
                 Create
               </Button>
               <Button 
                 icon={<ReloadOutlined />}
                 onClick={fetchNotifications}
-                className="flex items-center"
+                loading={loading}
+                size="large"
+                className="h-10 shadow-sm"
               >
                 Refresh
               </Button>
@@ -213,85 +256,77 @@ const NotificationsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Notifications List */}
-        {notifications.length === 0 ? (
-          <Card variant="borderless" className="shadow-sm rounded-xl">
-            <Empty
-              description={
-                <span className="text-gray-500">No notifications yet</span>
-              }
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-            />
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {notifications.map((item) => (
-              <Card
-                key={item.id}
-                variant="borderless"
-                className={`rounded-xl shadow-sm transition-all duration-300 hover:shadow-md ${
-                  !item.read 
-                    ? 'bg-white border-l-4 border-l-blue-500' 
-                    : 'bg-white border-l-4 border-l-gray-200'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    {/* Header: Type Tag and Timestamp */}
-                    <div className="flex items-center justify-between gap-4 mb-3 flex-wrap">
-                      <Tag 
-                        color="default" 
-                        className="text-xs bg-gray-100 text-gray-700 border-0"
-                      >
-                        {item.type}
-                      </Tag>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <span>{dayjs(item.createdAt).format('DD/MM/YYYY HH:mm')}</span>
-                        <span className="text-gray-400">
-                          ({dayjs(item.createdAt).fromNow()})
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Main Message */}
-                    <div className="mb-3">
-                      <p className={`text-base font-semibold ${!item.read ? 'text-gray-900' : 'text-gray-700'}`}>
-                        {getDisplayMessage(item.message)}
-                      </p>
-                    </div>
-
-                    {/* Email Source */}
-                    {item.receiverEmail && (
-                      <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                        <MailOutlined className="text-xs" />
-                        <span>{item.receiverEmail}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  {!item.read && (
-                    <div className="flex-shrink-0">
-                      <Button
-                        type="text"
-                        icon={<CheckOutlined />}
-                        onClick={() => handleMarkAsRead(item.id)}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                      >
-                        Mark as read
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            ))}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-teal-100 flex items-center justify-center">
+                <BellOutlined className="text-teal-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{notifications.length}</p>
+                <p className="text-xs text-gray-500">Total Notifications</p>
+              </div>
+            </div>
           </div>
-        )}
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                <EyeOutlined className="text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{notifications.filter(n => n.read).length}</p>
+                <p className="text-xs text-gray-500">Read</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Notifications Table */}
+        <Card className="shadow-lg rounded-2xl border-0 overflow-hidden">
+          <Table
+            columns={columns}
+            dataSource={notifications}
+            rowKey="id"
+            loading={loading}
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              pageSizeOptions: ['10', '20', '50'],
+              showTotal: (total, range) => (
+                <span className="text-gray-500">
+                  Showing <strong>{range[0]}-{range[1]}</strong> of <strong>{total}</strong> notifications
+                </span>
+              ),
+            }}
+            locale={{
+              emptyText: (
+                <Empty
+                  description={<span className="text-gray-500">No notifications yet</span>}
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                />
+              ),
+            }}
+            rowClassName={(record) => 
+              !record.read 
+                ? 'bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100' 
+                : 'hover:bg-gray-50'
+            }
+            className="notifications-table"
+          />
+        </Card>
       </div>
 
       {/* Create Notification Modal */}
       <Modal
-        title="Create Notification"
+        title={
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+              <PlusOutlined className="text-blue-600" />
+            </div>
+            <span>Create Notification</span>
+          </div>
+        }
         open={isModalOpen}
         onCancel={() => {
           setIsModalOpen(false);
@@ -302,38 +337,70 @@ const NotificationsPage: React.FC = () => {
         }}
         footer={null}
         destroyOnHidden
+        className="rounded-2xl"
       >
         <Form
           form={form}
           layout="vertical"
           onFinish={handleCreate}
+          className="mt-4"
         >
           <Form.Item
             name="message"
-            label="Message"
+            label={<span className="text-gray-700 font-medium">Message</span>}
             rules={[{ required: true, message: 'Please enter a message' }]}
           >
-            <Input.TextArea rows={4} placeholder="Enter notification message..." />
+            <Input.TextArea 
+              rows={4} 
+              placeholder="Enter notification message..." 
+              className="rounded-lg"
+            />
           </Form.Item>
 
           <Form.Item className="mb-0 flex justify-end">
             <div className="flex gap-2">
-              <Button onClick={() => {
-                setIsModalOpen(false);
-                form.resetFields();
-              }}>
+              <Button 
+                onClick={() => {
+                  setIsModalOpen(false);
+                  form.resetFields();
+                }}
+                className="rounded-lg"
+              >
                 Cancel
               </Button>
-              <Button type="primary" htmlType="submit" loading={submitting}>
-                Create
+              <Button 
+                type="primary" 
+                htmlType="submit" 
+                loading={submitting}
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 border-0 rounded-lg"
+              >
+                Create Notification
               </Button>
             </div>
           </Form.Item>
         </Form>
       </Modal>
+
+      <style>{`
+        .notifications-table .ant-table-thead > tr > th {
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+          border-bottom: 2px solid #e2e8f0;
+          padding: 16px 12px;
+        }
+        .notifications-table .ant-table-tbody > tr > td {
+          padding: 14px 12px;
+          border-bottom: 1px solid #f1f5f9;
+        }
+        .notifications-table .ant-table-tbody > tr:hover > td {
+          background: transparent !important;
+        }
+        .notifications-table .ant-pagination {
+          padding: 16px;
+          margin: 0;
+        }
+      `}</style>
     </div>
   );
 };
 
 export default NotificationsPage;
-
