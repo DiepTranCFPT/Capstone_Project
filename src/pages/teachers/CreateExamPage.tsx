@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Button, Input, Card, Select, Switch, Table, Space, InputNumber, Tag, Tooltip, Slider, Progress, Alert } from "antd";
-import { PlusOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import { Button, Input, Card, Select, Switch, Table, Space, InputNumber, Tag, Tooltip, Slider, Progress, Alert, Modal, Spin } from "antd";
+import { PlusOutlined, InfoCircleOutlined, RobotOutlined } from "@ant-design/icons";
+import ReactMarkdown from "react-markdown";
 import { useParams, useNavigate } from "react-router-dom";
 import type { CreateExamRulePayload, CreateExamTemplatePayload, ExamRule, ScoreMapping } from "~/types/test";
 // import { useAuth } from "~/hooks/useAuth";
@@ -18,7 +19,7 @@ const CreateExamPage: React.FC = () => {
   const isEditMode = Boolean(examId);
 
   // const { user } = useAuth();
-  const { createNewTemplate, updateTemplateDetails, fetchTemplateById, currentTemplate, loading: savingTemplate } = useExamTemplates();
+  const { createNewTemplate, updateTemplateDetails, fetchTemplateById, currentTemplate, loading: savingTemplate, analyzeTemplate } = useExamTemplates();
   const { subjects } = useSubjects();
   const { topics, fetchTopicsBySubject } = useQuestionTopics();
 
@@ -70,6 +71,11 @@ const CreateExamPage: React.FC = () => {
   const [rulesError, setRulesError] = useState<string>('');
   const [tokenCostError, setTokenCostError] = useState<string>('');
   const [totalQuestionsError, setTotalQuestionsError] = useState<string>('');
+
+  // Analysis modal state
+  const [analysisModalVisible, setAnalysisModalVisible] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
 
   // Load template data when in edit mode
   useEffect(() => {
@@ -419,6 +425,51 @@ const CreateExamPage: React.FC = () => {
     }
   };
 
+  const handleAnalyze = async () => {
+    // Validation for analyze - minimal requirements
+    if (!templateTitle.trim()) {
+      setTitleError('Template title is required for analysis');
+      toast.error('Template title is required for analysis');
+      return;
+    }
+    if (!selectedSubjectId) {
+      toast.error('Subject must be selected for analysis');
+      return;
+    }
+
+    setAnalyzing(true);
+    try {
+      // Recalculate numberOfQuestions from percentage
+      const processedRules = rules.map(rule => ({
+        ...rule,
+        numberOfQuestions: calculateQuestions(rule.percentage || 0),
+        numberOfContexts: rule.numberOfContexts || 0,
+      }));
+
+      const analysisPayload = {
+        title: templateTitle.trim(),
+        description: templateDescription.trim(),
+        subjectId: selectedSubjectId,
+        duration: templateDuration,
+        passingScore: passingScore,
+        isActive: isActive,
+        tokenCost: tokenCost,
+        rules: processedRules,
+        scoreMapping: scoreMapping,
+      };
+
+      const result = await analyzeTemplate(analysisPayload);
+      if (result) {
+        setAnalysisResult(result);
+        setAnalysisModalVisible(true);
+      }
+    } catch (error) {
+      console.error('Analyze template error:', error);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
 
 
 
@@ -521,14 +572,25 @@ const CreateExamPage: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-800">
           {isEditMode ? 'Edit Exam Template' : 'Create Exam Template'}
         </h1>
-        <Button
-          type="primary"
-          size="large"
-          loading={savingTemplate}
-          onClick={handleSaveTemplate}
-        >
-          {isEditMode ? 'Update Template' : 'Save Template'}
-        </Button>
+        <Space>
+          <Button
+            icon={<RobotOutlined />}
+            loading={analyzing}
+            onClick={handleAnalyze}
+            style={{ backgroundColor: '#FFFFFF', color: '#722ed1', borderColor: '#722ed1' }}
+            size="large"
+          >
+            AI Analyze
+          </Button>
+          <Button
+            type="primary"
+            size="large"
+            loading={savingTemplate}
+            onClick={handleSaveTemplate}
+          >
+            {isEditMode ? 'Update Template' : 'Save Template'}
+          </Button>
+        </Space>
       </div>
 
       <div className={`${!isEditMode ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'grid grid-cols-1 gap-6'}`}>
@@ -932,14 +994,56 @@ const CreateExamPage: React.FC = () => {
                   dataSource={rules?.map((rule, index) => ({ ...rule, key: index }))}
                   pagination={false}
                   size="small"
+                  scroll={{ x: 'max-content' }}
                 />
               )}
 
               {rulesError && <div className="text-red-500 text-sm mt-2">{rulesError}</div>}
             </div>
           </Card>
-        )}
+        )
+        }
       </div>
+
+      {/* Analysis Result Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <RobotOutlined style={{ color: '#722ed1' }} />
+            <span>AI Analysis Result</span>
+          </div>
+        }
+        open={analysisModalVisible}
+        onCancel={() => setAnalysisModalVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setAnalysisModalVisible(false)}>
+            Close
+          </Button>
+        ]}
+        width={700}
+      >
+        <div className="max-h-96 overflow-y-auto">
+          {analysisResult ? (
+            <div className="prose prose-sm max-w-none bg-gradient-to-br from-purple-50 to-white p-5 rounded-lg border border-purple-100">
+              <ReactMarkdown
+                components={{
+                  h1: ({ children }) => <h1 className="text-xl font-bold text-purple-800 mb-3 pb-2 border-b border-purple-200">{children}</h1>,
+                  h2: ({ children }) => <h2 className="text-lg font-semibold text-purple-700 mt-4 mb-2">{children}</h2>,
+                  h3: ({ children }) => <h3 className="text-base font-medium text-gray-800 mt-3 mb-1">{children}</h3>,
+                  p: ({ children }) => <p className="text-gray-700 leading-relaxed mb-2">{children}</p>,
+                  strong: ({ children }) => <strong className="font-semibold text-purple-700">{children}</strong>,
+                  ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-2 pl-2">{children}</ul>,
+                  li: ({ children }) => <li className="text-gray-700">{children}</li>,
+                }}
+              >
+                {analysisResult}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <Spin />
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };
