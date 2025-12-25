@@ -27,6 +27,7 @@ import {
   WarningOutlined,
   PictureOutlined,
   AudioOutlined,
+  RobotOutlined,
 } from "@ant-design/icons";
 import type { QuestionBankItem, NewQuestion, QuestionImportResponse } from "~/types/question";
 import type { ColumnsType } from "antd/es/table";
@@ -39,6 +40,7 @@ import { useSubjects } from "~/hooks/useSubjects";
 import { useQuestionTopics } from "~/hooks/useQuestionTopics";
 import LatexRenderer from "~/components/common/LatexRenderer";
 import { useGlobalLoading } from "~/context/GlobalLoadingContext";
+import { useNavigate } from "react-router-dom";
 
 const { Option } = Select;
 
@@ -71,6 +73,7 @@ const QuestionBankPage: React.FC = () => {
     searchQuestions,
   } = useQuestionBank();
   const { showLoading, hideLoading } = useGlobalLoading();
+  const navigate = useNavigate();
 
   const difficultyOptions = useMemo(
     () => [
@@ -596,6 +599,19 @@ const QuestionBankPage: React.FC = () => {
             style={{ borderColor: "#3CBCB2", color: "#3CBCB2" }}
           >
             Manage Contexts
+          </Button>
+          <Button
+            icon={<RobotOutlined />}
+            size="large"
+            onClick={() => navigate('/teacher/ai-question-import')}
+            style={{
+              background: '#3CBCB2',
+              border: 'none',
+              color: 'white',
+              fontWeight: 500,
+            }}
+          >
+            AI Import
           </Button>
           <Button
             icon={<UploadOutlined />}

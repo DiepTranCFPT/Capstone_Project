@@ -15,7 +15,7 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '~/hooks/useAuth';
 import { Avatar, Button } from 'antd';
-import { FileAddOutlined, MenuFoldOutlined, MenuUnfoldOutlined, TagsOutlined, TeamOutlined } from '@ant-design/icons';
+import { FileAddOutlined, MenuFoldOutlined, MenuUnfoldOutlined, TagsOutlined, TeamOutlined, RobotOutlined } from '@ant-design/icons';
 import { IoCheckmarkCircle } from "react-icons/io5";
 import { BsQuestionSquare } from "react-icons/bs";
 import { CiBoxList } from "react-icons/ci";
@@ -26,6 +26,7 @@ const teacherMenu = [
     { label: "My Materials", path: "/teacher/my-materials", icon: <FaUsers /> },
     { label: "Materials", path: "materials", icon: <TagsOutlined /> },
     { label: "Questions Bank", path: "/teacher/question-bank", icon: <BsQuestionSquare /> },
+    { label: "AI Import Questions", path: "/teacher/ai-question-import", icon: <RobotOutlined /> },
     { label: "Templates", path: "/teacher/templates", icon: <FaClipboardList /> },
     { label: "Create Template", path: "/teacher/create-template", icon: <FileAddOutlined /> },
     { label: "Review Queue", path: "/teacher/review-queue", icon: <CiBoxList /> },

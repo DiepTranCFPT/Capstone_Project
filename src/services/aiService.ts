@@ -1,4 +1,5 @@
 import type { AiExamAskRequest, AiStudentDashboardRequest } from "~/types/ai";
+import type { AIGeneratedQuestion } from "~/types/aiQuestionImport";
 import axiosInstance from "~/configs/axios";
 
 export const askAiExamQuestion = async (
@@ -198,3 +199,24 @@ export const askAiStudentDashboard = async (
     }
 };
 
+/**
+ * Generate questions from text using AI
+ * @param subjectId - The subject ID for the questions
+ * @param text - The raw text containing questions (correct answers marked with *)
+ * @returns Promise with the generated questions array directly
+ */
+export const generateQuestionsFromText = async (
+    subjectId: string,
+    text: string
+): Promise<AIGeneratedQuestion[]> => {
+    const response = await axiosInstance.post<AIGeneratedQuestion[]>(
+        `/ai/generate-questions/${subjectId}`,
+        text,
+        {
+            headers: {
+                'Content-Type': 'text/plain'
+            }
+        }
+    );
+    return response.data;
+};
