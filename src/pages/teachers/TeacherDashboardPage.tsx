@@ -68,7 +68,7 @@ const TeacherDashboardPage: React.FC = () => {
             {/* Stats Cards */}
             <Row gutter={[16, 16]} className="mb-8">
                 <Col xs={24} sm={12} lg={6}>
-                    <Card bordered={false} className="rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                    <Card variant="borderless" className="rounded-lg shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
                             title={<span className="text-gray-500">Students Tested</span>}
                             value={stats?.totalStudentsTested || 0}
@@ -77,7 +77,7 @@ const TeacherDashboardPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card bordered={false} className="rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                    <Card variant="borderless" className="rounded-lg shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
                             title={<span className="text-gray-500">Total Attempts</span>}
                             value={stats?.totalExamAttempts || 0}
@@ -86,7 +86,7 @@ const TeacherDashboardPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card bordered={false} className="rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                    <Card variant="borderless" className="rounded-lg shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
                             title={<span className="text-gray-500">Exam Revenue</span>}
                             value={stats?.estimatedRevenue || 0}
@@ -95,7 +95,7 @@ const TeacherDashboardPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card bordered={false} className="rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                    <Card variant="borderless" className="rounded-lg shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
                             title={<span className="text-gray-500">Avg Rating</span>}
                             value={stats?.averageRating || 0}
@@ -106,7 +106,7 @@ const TeacherDashboardPage: React.FC = () => {
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card bordered={false} className="rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                    <Card variant="borderless" className="rounded-lg shadow-sm hover:shadow-md transition-shadow">
                         <Statistic
                             title={<span className="text-gray-500">Pending Reviews</span>}
                             value={stats?.pendingManualReviews || 0}
@@ -123,7 +123,7 @@ const TeacherDashboardPage: React.FC = () => {
                         {/* Chart */}
                         <Card
                             title="Questions by Topic"
-                            bordered={false}
+                            variant="borderless"
                             className="rounded-lg shadow-sm"
                         >
                             <div style={{ height: 300 }}>
@@ -151,7 +151,7 @@ const TeacherDashboardPage: React.FC = () => {
                                     Top Performing Exams
                                 </span>
                             }
-                            bordered={false}
+                            variant="borderless"
                             className="rounded-lg shadow-sm"
                         >
                             <Table
@@ -204,7 +204,7 @@ const TeacherDashboardPage: React.FC = () => {
                 <Col xs={24} lg={8}>
                     <div className="flex flex-col gap-4">
                         {/* Quick Actions */}
-                        <Card title="Quick Actions" bordered={false} className="rounded-lg shadow-sm">
+                        <Card title="Quick Actions" variant="borderless" className="rounded-lg shadow-sm">
                             <div className="flex flex-col gap-2">
                                 {quickActions.map((action, index) => (
                                     <Link to={action.link} key={index}>

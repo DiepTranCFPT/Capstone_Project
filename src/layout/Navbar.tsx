@@ -34,6 +34,7 @@ const Navbar: React.FC = () => {
     // { path: "/learning-pathway", label: "Path Way" },
     // { path: "/ranking", label: "Ranking" },
     { path: "/community", label: "Community" },
+    { path: "/notifications", label: "Notifications" },
   ];
 
   // Close mobile menu when route changes

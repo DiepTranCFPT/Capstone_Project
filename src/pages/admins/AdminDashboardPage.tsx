@@ -100,13 +100,13 @@ const AdminDashboardPage: React.FC = () => {
                         <Spin />
                     </div>
                 ) : revenueError ? (
-                    <Card bordered={false} className="shadow-sm">
+                    <Card variant="borderless" className="shadow-sm">
                         <div className="text-red-500">Error: {revenueError}</div>
                     </Card>
                 ) : (
                     <div className='flex flex-col gap-6'>
                         {/* Filters */}
-                        <Card title="Filters" bordered={false} className="shadow-sm mb-6">
+                        <Card title="Filters" variant="borderless" className="shadow-sm mb-6">
                             <div className="flex flex-wrap gap-3 items-center">
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-600 mb-1">Year</label>
@@ -163,7 +163,7 @@ const AdminDashboardPage: React.FC = () => {
                         </Card>
 
                         {/* Total Revenue */}
-                        <Card title="System Revenue" bordered={false} className="shadow-sm mb-6">
+                        <Card title="System Revenue" variant="borderless" className="shadow-sm mb-6">
                             <p className="text-gray-600 text-sm">Total Revenue</p>
                             <p className="text-3xl font-bold text-indigo-600">
                                 {revenue?.totalAmount !== undefined 
@@ -175,7 +175,7 @@ const AdminDashboardPage: React.FC = () => {
                         {/* Revenue Chart */}
                         <Card 
                             title="Revenue Chart" 
-                            bordered={false} 
+                            variant="borderless" 
                             className="shadow-sm"
                         >
                             <RevenueChart 

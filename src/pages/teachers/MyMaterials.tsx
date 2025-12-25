@@ -46,7 +46,7 @@ const MyMaterialsPage: React.FC = () => {
 
             {/* Materials Grid */}
             {materialsWithStudents.length === 0 ? (
-                <Card bordered={false} className="rounded-lg shadow-sm">
+                <Card variant="borderless" className="rounded-lg shadow-sm">
                     <Empty description="You have no materials yet" />
                 </Card>
             ) : (
@@ -70,7 +70,7 @@ const MaterialCard: React.FC<MaterialCardProps> = ({ data }) => {
     return (
         <Card
             hoverable
-            bordered={false}
+            variant="borderless"
             className="rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
             styles={{ body: { padding: 0 } }}
         >

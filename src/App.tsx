@@ -96,6 +96,7 @@ import RankingPage from "./pages/ranking/RankingPage";
 import WalletPage from "./pages/students/WalletPage";
 import AdminDashboardPage from "./pages/admins/AdminDashboardPage";
 import TokenPaymentManagerPage from "./pages/admins/TokenPaymentManagerPage";
+import AdminNotificationsPage from "./pages/admins/NotificationsPage";
 import TeacherProfilePage from "./pages/teachers/TeacherProfilePage";
 import TeacherDetailPage from "./pages/teachers/TeacherDetailPage";
 import TeacherRatingsViewPage from "./pages/teachers/TeacherRatingsViewPage";
@@ -104,7 +105,7 @@ import { GlobalLoadingProvider } from "./context/GlobalLoadingContext";
 import PaymentResult from "./pages/checkWallet/PaymentResult";
 import MyWalletPage from "./pages/teachers/MyWalletPage";
 import MyCertificatesPage from "./pages/students/MyCertificatesPage";
-import NotificationsPage from "./pages/NotificationsPage";
+import NotificationPage from "./pages/notification/NotificationPage";
 import { NotificationProvider } from "./context/NotificationContext";
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -161,6 +162,7 @@ function App() {
               <Route path="subjects" element={<SubjectManagerPage />} />
               <Route path="communities" element={<CommunityManagerPage />} />
               <Route path="community" element={<CommunityPage />} />
+              <Route path="notifications" element={<AdminNotificationsPage />} />
             </Route>
 
             {/* Main routes with Layout */}
@@ -185,7 +187,7 @@ function App() {
               <Route path="learning-pathway" element={<LearningPathwayPage />} />
               <Route path="/wallet" element={<WalletPage />} />
               <Route path="/wallet/result" element={<PaymentResult />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/notifications" element={<NotificationPage />} />
               <Route path="/teacher-detail/:teacherId" element={<TeacherDetailPage />} />
 
               {/* Flashcard routes */}
@@ -194,6 +196,7 @@ function App() {
               <Route path="/flashcards/:id" element={<FlashcardDetailPage />} />
               <Route path="/flashcards/:id/edit" element={<FlashcardEditPage />} />
               <Route path="/flashcards/:id/quiz" element={<FlashcardQuizPage />} />
+
             </Route>
 
             {/* Student routes with StudentLayout */}

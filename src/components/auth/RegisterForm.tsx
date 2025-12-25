@@ -27,9 +27,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ buttonClasses }) => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isSubmitting, setSubmitting] = useState(false);
 
-    const handleSubmit = async (values: { firstName: string; lastName: string; email: string; password: string; dob: Date, roleName: string; confirmPassword: string }) => {
+    const handleSubmit = async (values: { firstName: string; lastName: string; email: string; password: string; dob: string, roleName: string; confirmPassword: string }) => {
         try {
-            await register(values.email, values.password, values.firstName, values.lastName, values.dob, values.roleName);
+            await register(values.email, values.password, values.firstName, values.lastName, new Date(values.dob), values.roleName);
             setSubmitting(false);
         } catch {
             toast.error(authMessages.register.error);
@@ -47,7 +47,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ buttonClasses }) => {
                     </p>
                 </h1>
                 <Formik
-                    initialValues={{ firstName: '', lastName: '', dob: new Date(), email: '', password: '', confirmPassword: '', roleName: '' }}
+                    initialValues={{ firstName: '', lastName: '', dob: '', email: '', password: '', confirmPassword: '', roleName: '' }}
                     validationSchema={RegisterSchema}
                     onSubmit={(values) => {
                         handleSubmit(values);
@@ -141,6 +141,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ buttonClasses }) => {
                                         type={showPassword ? "text" : "password"}
                                         className="w-full px-2 py-1 mt-1 border border-gray-300 rounded-md"
                                         placeholder="••••••••"
+                                        autoComplete="new-password"
                                     />
                                     <button
                                         type="button"
@@ -167,6 +168,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ buttonClasses }) => {
                                         type={showConfirmPassword ? "text" : "password"}
                                         className="w-full px-2 py-1 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                         placeholder="••••••••"
+                                        autoComplete="new-password"
                                     />
                                     <button
                                         type="button"
