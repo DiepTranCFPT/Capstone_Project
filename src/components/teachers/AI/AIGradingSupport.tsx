@@ -27,7 +27,7 @@ const AIGradingSupport: React.FC<AIGradingSupportProps> = ({ studentAnswer }) =>
                     <BulbOutlined className="mr-2 text-yellow-500" /> AI Suggestion
                 </div>
             }
-            bordered={false}
+            variant="borderless"
             className="bg-blue-50"
         >
             <p className="text-xs text-gray-500 mb-2">Student Answer: {studentAnswer}</p>

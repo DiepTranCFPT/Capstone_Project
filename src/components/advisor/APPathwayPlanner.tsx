@@ -37,7 +37,7 @@ const APPathwayPlanner: React.FC = () => {
     };
 
     return (
-        <Card title="Công cụ Định hướng Môn AP" bordered={false} className="shadow-sm">
+        <Card title="Công cụ Định hướng Môn AP" variant="borderless" className="shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <Select
                     placeholder="1. Chọn học sinh"

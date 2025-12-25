@@ -95,6 +95,7 @@ import RankingPage from "./pages/ranking/RankingPage";
 import WalletPage from "./pages/students/WalletPage";
 import AdminDashboardPage from "./pages/admins/AdminDashboardPage";
 import TokenPaymentManagerPage from "./pages/admins/TokenPaymentManagerPage";
+import AdminNotificationsPage from "./pages/admins/NotificationsPage";
 import TeacherProfilePage from "./pages/teachers/TeacherProfilePage";
 import TeacherDetailPage from "./pages/teachers/TeacherDetailPage";
 import TeacherRatingsViewPage from "./pages/teachers/TeacherRatingsViewPage";
@@ -160,6 +161,7 @@ function App() {
               <Route path="subjects" element={<SubjectManagerPage />} />
               <Route path="communities" element={<CommunityManagerPage />} />
               <Route path="community" element={<CommunityPage />} />
+              <Route path="notifications" element={<AdminNotificationsPage />} />
             </Route>
 
             {/* Main routes with Layout */}
