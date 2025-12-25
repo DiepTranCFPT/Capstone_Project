@@ -16,6 +16,10 @@ import type {
   MyContextPaginationResponse,
   DuplicatesResponse
 } from "~/types/question";
+import type {
+  BatchCreateQuestionRequest,
+  BatchCreateQuestionsResponse
+} from "~/types/aiQuestionImport";
 
 const QuestionService = {
   //  Lấy tất cả câu hỏi (có phân trang)
@@ -184,6 +188,13 @@ const QuestionService = {
   // Lấy danh sách context trùng lặp (GET /questions-v2/context/duplicates)
   async getContextDuplicates(): Promise<AxiosResponse<DuplicatesResponse>> {
     return axiosInstance.get("/questions-v2/context/duplicates");
+  },
+
+  // Tạo nhiều câu hỏi cùng lúc (batch create) - dùng cho AI import
+  async batchCreate(
+    questions: BatchCreateQuestionRequest[]
+  ): Promise<AxiosResponse<BatchCreateQuestionsResponse>> {
+    return axiosInstance.post("/questions-v2/batch-create", questions);
   },
 };
 export default QuestionService;

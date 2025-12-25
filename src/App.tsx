@@ -70,6 +70,7 @@ import GradeSubmissionPage from "./pages/teachers/GradeSubmissionPage";
 import TeacherReviewQueuePage from "./pages/teachers/TeacherReviewQueuePage";
 import TeacherExamAttemptsPage from "./pages/teachers/TeacherExamAttemptsPage";
 import TeacherAttemptResultPage from "./pages/teachers/TeacherAttemptResultPage";
+import AIQuestionImportPage from "./pages/teachers/AIQuestionImportPage";
 
 // --- Parent Imports ---
 import ParentLayout from "./layout/parents/ParentLayout";
@@ -227,6 +228,7 @@ function App() {
               <Route path="my-materials" element={<MyClassesPage />} />
               <Route path="materials" element={<MaterialManagerPage />} />
               <Route path="question-bank" element={<QuestionBankPage />} />
+              <Route path="ai-question-import" element={<AIQuestionImportPage />} />
               <Route path="create-template" element={<CreateExamPage />} />
               <Route path="templates" element={<ExamListPage />} />
               <Route path="template-details/:examId" element={<TeacherExamDetailsPage />} />
