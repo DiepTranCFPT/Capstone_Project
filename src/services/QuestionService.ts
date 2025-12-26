@@ -59,12 +59,21 @@ const QuestionService = {
   },
 
 
+
   //  Lấy danh sách câu hỏi theo subjectId
   async getBySubjectId(
     subjectId: string,
-    params?: { pageNo?: number; pageSize?: number }
+    params?: { pageNo?: number; pageSize?: number; sorts?: string }
   ): Promise<AxiosResponse<ApiResponse<QuestionBankItem[]>>> {
     return axiosInstance.get(`/questions-v2/subject/${subjectId}`, { params });
+  },
+
+  //  Lấy danh sách câu hỏi theo topicId
+  async getByTopicId(
+    topicId: string,
+    params?: { pageNo?: number; pageSize?: number; sorts?: string }
+  ): Promise<AxiosResponse<ApiResponse<QuestionBankItem[]>>> {
+    return axiosInstance.get(`/questions-v2/topic/${topicId}`, { params });
   },
 
   //  Tìm kiếm câu hỏi (search)
@@ -77,7 +86,7 @@ const QuestionService = {
   //  Lấy danh sách câu hỏi được tạo bởi user
   async getByUserId(
     userId: string,
-    params?: { pageNo?: number; pageSize?: number; keyword?: string }
+    params?: { pageNo?: number; pageSize?: number; keyword?: string; sorts?: string }
   ): Promise<AxiosResponse<ApiResponse<PageInfo<QuestionBankItem> | QuestionBankItem[]>>> {
     return axiosInstance.get(`/questions-v2/created-by/${userId}`, { params });
   },
@@ -195,6 +204,19 @@ const QuestionService = {
     questions: BatchCreateQuestionRequest[]
   ): Promise<AxiosResponse<BatchCreateQuestionsResponse>> {
     return axiosInstance.post("/questions-v2/batch-create", questions);
+  },
+
+  // Export câu hỏi ra file để tạo tài liệu
+  async exportQuestionsToText(
+    subjectId: string,
+    questionIds: string[]
+  ): Promise<AxiosResponse<Blob>> {
+    return axiosInstance.post("/questions-v2/export", {
+      subjectId,
+      questionIds,
+    }, {
+      responseType: 'blob',
+    });
   },
 };
 export default QuestionService;

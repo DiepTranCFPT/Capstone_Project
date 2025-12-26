@@ -36,9 +36,19 @@ export const LATEX_SUBJECT_IDENTIFIERS: string[] = [
     "Geometry",
     "Trigonometry",
     "Statistics",
+    // AP STEM subjects (LaTeX mode)
     "AP Calculus AB",
     "AP Calculus BC",
     "AP Statistics",
+    "AP Chemistry",
+    "AP Physics 1",
+    "AP Physics 2",
+    "AP Physics C: Mechanics",
+    "AP Physics C: Electricity and Magnetism",
+    "AP Biology",
+    "AP Computer Science A",
+    "AP Computer Science Principles",
+    "AP Precalculus",
 ];
 
 /**
@@ -62,6 +72,33 @@ export const SPLITSCREEN_SUBJECT_IDENTIFIERS: string[] = [
     "Geography",
     "Social Studies",
     "Philosophy",
+    // AP Text-heavy subjects (Split screen mode)
+    "AP Psychology",
+    "AP Environmental Science",
+    "AP US History",
+    "AP World History",
+    "AP World History: Modern",
+    "AP European History",
+    "AP US Government and Politics",
+    "AP Comparative Government and Politics",
+    "AP Human Geography",
+    "AP Macroeconomics",
+    "AP Microeconomics",
+    "AP English Language and Composition",
+    "AP English Literature and Composition",
+    "AP Art History",
+    "AP Music Theory",
+    "AP Spanish Language and Culture",
+    "AP Spanish Literature and Culture",
+    "AP French Language and Culture",
+    "AP German Language and Culture",
+    "AP Italian Language and Culture",
+    "AP Japanese Language and Culture",
+    "AP Chinese Language and Culture",
+    "AP Latin",
+    "AP African American Studies",
+    "AP Seminar",
+    "AP Research",
 ];
 
 /**

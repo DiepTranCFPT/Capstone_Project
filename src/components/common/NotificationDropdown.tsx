@@ -277,7 +277,7 @@ const NotificationDropdown: React.FC = () => {
                 onOpenChange={setOpen}
                 overlayClassName="notification-dropdown-popover"
                 arrow={false}
-                overlayInnerStyle={{ padding: 0, borderRadius: '16px', overflow: 'hidden' }}
+                styles={{ body: { padding: 0, borderRadius: '16px', overflow: 'hidden' } }}
             >
                 <button
                     type="button"

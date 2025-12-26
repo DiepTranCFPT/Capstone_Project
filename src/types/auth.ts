@@ -7,8 +7,8 @@ export interface User {
     lastName: string;
     email: string;
     imgUrl: string;
-    dob: Date;
-    role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'ACADEMIC_ADVISOR' | 'PARENT';
+    dob: string;
+    role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'PARENT';
     tokenBalance: number;
     teacherProfile?: TeacherProfileData;
     studentProfile?: StudentProfile;

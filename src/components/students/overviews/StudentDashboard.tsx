@@ -55,7 +55,7 @@ const StudentDashboard: React.FC = () => {
         // Mark that we just updated (for UI badge)
         setOnDemandRecommend('updated');
       } else {
-        toast.error(response.message || 'Failed to get AI recommendation');
+        toast.error(response.message);
       }
     } catch (error) {
       console.error('Error getting AI recommendation:', error);
@@ -79,7 +79,9 @@ const StudentDashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f4f7fd] p-6 flex justify-center items-center">
-        <Spin size="large" tip="Loading dashboard data..." />
+        <Spin size="large" tip="Loading dashboard data...">
+          <div className="p-12" />
+        </Spin>
       </div>
     );
   }

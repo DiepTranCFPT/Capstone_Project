@@ -13,7 +13,7 @@ export interface UseAIQuestionImportReturn {
     error: string | null;
 
     // Actions
-    generateQuestions: (subjectId: string, text: string) => Promise<boolean>;
+    generateQuestions: (subjectId: string, text: string, topicName?: string) => Promise<boolean>;
     createQuestions: (questions: AIGeneratedQuestion[]) => Promise<boolean>;
     updateQuestion: (index: number, updates: Partial<AIGeneratedQuestion>) => void;
     reset: () => void;
@@ -30,9 +30,10 @@ export const useAIQuestionImport = (): UseAIQuestionImportReturn => {
      * Generate questions from text using AI
      * @param subjectId - The subject ID for the questions
      * @param text - Raw text containing questions (correct answers marked with *)
+     * @param topicName - Optional topic name to apply to all generated questions
      * @returns true if successful, false otherwise
      */
-    const generateQuestions = useCallback(async (subjectId: string, text: string): Promise<boolean> => {
+    const generateQuestions = useCallback(async (subjectId: string, text: string, topicName?: string): Promise<boolean> => {
         if (!subjectId) {
             toast.error("Please select a subject first!");
             return false;
@@ -46,7 +47,7 @@ export const useAIQuestionImport = (): UseAIQuestionImportReturn => {
         setError(null);
 
         try {
-            const questions = await generateQuestionsFromText(subjectId, text);
+            const questions = await generateQuestionsFromText(subjectId, text, topicName);
 
             // Check if we got valid questions array
             if (questions && Array.isArray(questions) && questions.length > 0) {

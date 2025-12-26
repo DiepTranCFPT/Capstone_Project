@@ -110,7 +110,7 @@ const TeacherProfileDashboard: React.FC = () => {
                 </div>
                 <div className="flex gap-3">
                   <span className="text-gray-600">Birthday:</span>
-                  <span>🎂 {user.dob && user.dob ? new Date(user.dob).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                  <span>🎂 {user.dob ? new Date(user.dob).toLocaleDateString('vi-VN') : 'N/A'}</span>
                 </div>
                 <div className="flex gap-3">
                   <span className="text-gray-600">Balance:</span>

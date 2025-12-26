@@ -81,7 +81,7 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ onSuccess }) => {
           <div className="relative inline-block mb-4">
             <Avatar
               size={120}
-              src={user.imgUrl}
+              src={user.imgUrl || `https://ui-avatars.com/api/?name=${user.firstName} ${user.lastName}&background=random`}
               icon={!user.imgUrl ? <UserOutlined /> : undefined}
               className="border-2 border-gray-200"
             />

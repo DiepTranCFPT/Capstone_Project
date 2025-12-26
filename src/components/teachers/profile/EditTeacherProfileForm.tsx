@@ -53,7 +53,7 @@ const EditTeacherProfileForm: React.FC<EditTeacherProfileFormProps> = ({ current
 
   const handleSubmit = async (values: TeacherProfileFormValues) => {
     const payload: TeacherProfilePayload = {
-      dateOfBirth: values.dateOfBirth ? values.dateOfBirth.format('YYYY-MM-DD') : (currentUser.dob ? (typeof currentUser.dob === 'string' ? currentUser.dob : currentUser.dob.toISOString().split('T')[0]) : '2000-01-01'),
+      dateOfBirth: values.dateOfBirth ? values.dateOfBirth.format('YYYY-MM-DD') : (currentUser.dob ? (typeof currentUser.dob === 'string' ? currentUser.dob : currentUser.dob) : '2000-01-01'),
       qualification: values.qualification,
       specialization: values.specialization,
       experience: values.experience,

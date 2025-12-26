@@ -64,7 +64,39 @@ export const askAiExamQuestion = async (
         await axiosInstance.post('/ai/exam-ask', payload, {
             responseType: 'text',
             onDownloadProgress: (progressEvent) => {
-                const response = progressEvent.event.currentTarget.response;
+                // Try multiple ways to access response for cross-browser compatibility
+                let response: string | null = null;
+
+                // Method 1: Direct from progressEvent (some axios versions)
+                const target = (progressEvent as unknown as { target?: XMLHttpRequest }).target;
+                if (target?.response) {
+                    response = target.response;
+                } else if (target?.responseText) {
+                    response = target.responseText;
+                }
+
+                // Method 2: From event.target
+                if (!response) {
+                    const eventTarget = (progressEvent.event?.target as XMLHttpRequest | null);
+                    if (eventTarget?.response) {
+                        response = eventTarget.response;
+                    } else if (eventTarget?.responseText) {
+                        response = eventTarget.responseText;
+                    }
+                }
+
+                // Method 3: From event.currentTarget
+                if (!response) {
+                    const currentTarget = (progressEvent.event?.currentTarget as XMLHttpRequest | null);
+                    if (currentTarget?.response) {
+                        response = currentTarget.response;
+                    } else if (currentTarget?.responseText) {
+                        response = currentTarget.responseText;
+                    }
+                }
+
+                if (!response) return;
+
                 const newContent = response.slice(lastProcessedIndex);
                 lastProcessedIndex = response.length;
 
@@ -109,7 +141,39 @@ export const askAiStudentDashboard = async (
             },
             responseType: 'text',
             onDownloadProgress: (progressEvent) => {
-                const response = progressEvent.event.currentTarget.response;
+                // Try multiple ways to access response for cross-browser compatibility
+                let response: string | null = null;
+
+                // Method 1: Direct from progressEvent (some axios versions)
+                const target = (progressEvent as unknown as { target?: XMLHttpRequest }).target;
+                if (target?.response) {
+                    response = target.response;
+                } else if (target?.responseText) {
+                    response = target.responseText;
+                }
+
+                // Method 2: From event.target
+                if (!response) {
+                    const eventTarget = (progressEvent.event?.target as XMLHttpRequest | null);
+                    if (eventTarget?.response) {
+                        response = eventTarget.response;
+                    } else if (eventTarget?.responseText) {
+                        response = eventTarget.responseText;
+                    }
+                }
+
+                // Method 3: From event.currentTarget
+                if (!response) {
+                    const currentTarget = (progressEvent.event?.currentTarget as XMLHttpRequest | null);
+                    if (currentTarget?.response) {
+                        response = currentTarget.response;
+                    } else if (currentTarget?.responseText) {
+                        response = currentTarget.responseText;
+                    }
+                }
+
+                if (!response) return;
+
                 const newContent = response.slice(lastProcessedIndex);
                 lastProcessedIndex = response.length;
 
@@ -196,19 +260,24 @@ export const askAiStudentDashboard = async (
 /**
  * Generate questions from text using AI
  * @param subjectId - The subject ID for the questions
- * @param text - The raw text containing questions (correct answers marked with *)
+ * @param rawText - The raw text containing questions (correct answers marked with *)
+ * @param topicName - Optional topic name for all generated questions
  * @returns Promise with the generated questions array directly
  */
 export const generateQuestionsFromText = async (
     subjectId: string,
-    text: string
+    rawText: string,
+    topicName?: string
 ): Promise<AIGeneratedQuestion[]> => {
     const response = await axiosInstance.post<AIGeneratedQuestion[]>(
         `/ai/generate-questions/${subjectId}`,
-        text,
+        {
+            rawText,
+            topicName: topicName || undefined
+        },
         {
             headers: {
-                'Content-Type': 'text/plain'
+                'Content-Type': 'application/json'
             }
         }
     );

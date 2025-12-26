@@ -15,6 +15,7 @@ import {
     Alert,
     Space,
     Divider,
+    Checkbox,
 } from "antd";
 import {
     RobotOutlined,
@@ -27,6 +28,8 @@ import {
     CopyOutlined,
     ReloadOutlined,
     InfoCircleOutlined,
+    DeleteOutlined,
+    PlusOutlined,
 } from "@ant-design/icons";
 import { useSubjects } from "~/hooks/useSubjects";
 import { useQuestionTopics } from "~/hooks/useQuestionTopics";
@@ -66,6 +69,7 @@ const AIQuestionImportPage: React.FC = () => {
     // States
     const [currentStep, setCurrentStep] = useState(0);
     const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
+    const [selectedTopicName, setSelectedTopicName] = useState<string | undefined>(undefined);
     const [inputText, setInputText] = useState<string>("");
 
     // Hooks
@@ -86,6 +90,7 @@ const AIQuestionImportPage: React.FC = () => {
     useEffect(() => {
         if (selectedSubjectId) {
             fetchTopicsBySubject(selectedSubjectId);
+            setSelectedTopicName(undefined); // Reset topic when subject changes
         }
     }, [selectedSubjectId, fetchTopicsBySubject]);
 
@@ -93,14 +98,14 @@ const AIQuestionImportPage: React.FC = () => {
     const handleGenerate = useCallback(async () => {
         setCurrentStep(1);
 
-        const success = await generateQuestions(selectedSubjectId, inputText);
+        const success = await generateQuestions(selectedSubjectId, inputText, selectedTopicName);
 
         if (success) {
             setCurrentStep(2);
         } else {
             setCurrentStep(0);
         }
-    }, [selectedSubjectId, inputText, generateQuestions]);
+    }, [selectedSubjectId, inputText, selectedTopicName, generateQuestions]);
 
     // Handle create questions
     const handleCreateQuestions = useCallback(async () => {
@@ -155,10 +160,40 @@ D. Mark Twain`;
         toast.success("Copied sample text to clipboard!");
     }, []);
 
-    // Render question preview
+    // Render editable question form
     const renderQuestionPreview = (question: AIGeneratedQuestion, index: number) => {
         const correctAnswers = question.answers.filter((a) => a.isCorrect);
         const hasContext = question.context && question.context.content;
+
+        // Update answer at specific index
+        const updateAnswer = (answerIndex: number, updates: Partial<typeof question.answers[0]>) => {
+            const newAnswers = [...question.answers];
+            newAnswers[answerIndex] = { ...newAnswers[answerIndex], ...updates };
+            updateQuestion(index, { answers: newAnswers });
+        };
+
+        // Add new answer
+        const addAnswer = () => {
+            const newAnswers = [...question.answers, { content: "", isCorrect: false, explanation: "" }];
+            updateQuestion(index, { answers: newAnswers });
+        };
+
+        // Delete answer
+        const deleteAnswer = (answerIndex: number) => {
+            if (question.answers.length <= 2) {
+                toast.error("Question must have at least 2 answers");
+                return;
+            }
+            const newAnswers = question.answers.filter((_, i) => i !== answerIndex);
+            updateQuestion(index, { answers: newAnswers });
+        };
+
+        // Update context
+        const updateContext = (updates: Partial<NonNullable<typeof question.context>>) => {
+            updateQuestion(index, {
+                context: question.context ? { ...question.context, ...updates } : undefined
+            });
+        };
 
         return (
             <Panel
@@ -174,7 +209,7 @@ D. Mark Twain`;
                                 }}
                             />
                             <span className="font-medium text-gray-700 line-clamp-1 max-w-[500px]">
-                                {question.content}
+                                {question.content || "New question..."}
                             </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -189,101 +224,198 @@ D. Mark Twain`;
                                     </Tag>
                                 </Tooltip>
                             )}
+                            <Tag color={correctAnswers.length > 0 ? "green" : "red"}>
+                                {correctAnswers.length} correct
+                            </Tag>
                         </div>
                     </div>
                 }
                 className="mb-3 bg-white/50 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
             >
                 <div className="space-y-4">
-                    {/* Context */}
+                    {/* Context - Editable */}
                     {hasContext && (
                         <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-                            <div className="flex items-center gap-2 mb-2 text-amber-700 font-medium">
+                            <div className="flex items-center gap-2 mb-3 text-amber-700 font-medium">
                                 <FileTextOutlined />
-                                <span>Context: {question.context?.title}</span>
+                                <span>Context</span>
                             </div>
-                            <p className="text-gray-600 text-sm whitespace-pre-wrap">
-                                {question.context?.content}
-                            </p>
-                            {question.context?.imageUrl && (
-                                <img src={question.context?.imageUrl} alt={question.context?.title} />
-                            )}
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                                    <Input
+                                        value={question.context?.title || ""}
+                                        onChange={(e) => updateContext({ title: e.target.value })}
+                                        placeholder="Context title..."
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+                                    <TextArea
+                                        value={question.context?.content || ""}
+                                        onChange={(e) => updateContext({ content: e.target.value })}
+                                        placeholder="Context content..."
+                                        rows={4}
+                                    />
+                                </div>
+                                {question.context?.imageUrl && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                                        <Input
+                                            value={question.context?.imageUrl || ""}
+                                            onChange={(e) => updateContext({ imageUrl: e.target.value })}
+                                            placeholder="Image URL..."
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
-                    {/* Question content */}
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                        <p className="font-medium text-gray-800 mb-3">{question.content}</p>
+                    {/* Question Settings */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                            <Select
+                                value={question.type}
+                                onChange={(value) => updateQuestion(index, { type: value })}
+                                className="w-full"
+                            >
+                                <Option value="MCQ">MCQ (Multiple Choice)</Option>
+                                <Option value="FRQ">FRQ (Free Response)</Option>
+                            </Select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Difficulty</label>
+                            <Select
+                                value={question.difficultyName}
+                                onChange={(value) => updateQuestion(index, { difficultyName: value })}
+                                className="w-full"
+                            >
+                                <Option value="EASY">Easy</Option>
+                                <Option value="MEDIUM">Medium</Option>
+                                <Option value="HARD">Hard</Option>
+                            </Select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Topic <span className="text-red-500">*</span>
+                            </label>
+                            <Select
+                                placeholder="Select topic..."
+                                value={question.topicName || undefined}
+                                onChange={(value) => updateQuestion(index, { topicName: value })}
+                                className="w-full"
+                                loading={loadingTopics}
+                                allowClear
+                                showSearch
+                                optionFilterProp="children"
+                            >
+                                {topics.map((topic) => (
+                                    <Option key={topic.id} value={topic.name}>
+                                        {topic.name}
+                                    </Option>
+                                ))}
+                            </Select>
+                        </div>
+                    </div>
 
-                        {/* Answers */}
-                        <div className="space-y-2">
+                    {/* Question content - Editable */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Question Content <span className="text-red-500">*</span>
+                        </label>
+                        <TextArea
+                            value={question.content}
+                            onChange={(e) => updateQuestion(index, { content: e.target.value })}
+                            placeholder="Enter question content..."
+                            rows={3}
+                            className="text-base"
+                        />
+                    </div>
+
+                    {/* Answers - Editable */}
+                    <div>
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm font-medium text-gray-700">
+                                Answers <span className="text-red-500">*</span>
+                            </label>
+                            <Button
+                                type="dashed"
+                                size="small"
+                                icon={<PlusOutlined />}
+                                onClick={addAnswer}
+                            >
+                                Add Answer
+                            </Button>
+                        </div>
+                        <div className="space-y-3">
                             {question.answers.map((answer, aIndex) => (
                                 <div
                                     key={aIndex}
-                                    className={`flex items-start gap-3 p-3 rounded-lg transition-all ${answer.isCorrect
-                                        ? "bg-green-100 border border-green-300"
-                                        : "bg-white border border-gray-200"
+                                    className={`p-3 rounded-lg transition-all ${answer.isCorrect
+                                        ? "bg-green-50 border-2 border-green-300"
+                                        : "bg-gray-50 border border-gray-200"
                                         }`}
                                 >
-                                    <span
-                                        className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold ${answer.isCorrect
-                                            ? "bg-green-500 text-white"
-                                            : "bg-gray-300 text-gray-600"
-                                            }`}
-                                    >
-                                        {String.fromCharCode(65 + aIndex)}
-                                    </span>
-                                    <div className="flex-1">
-                                        <span
-                                            className={`${answer.isCorrect ? "text-green-700 font-medium" : "text-gray-700"
-                                                }`}
-                                        >
-                                            {answer.content}
-                                        </span>
-                                        {answer.isCorrect && (
-                                            <CheckCircleOutlined className="ml-2 text-green-500" />
-                                        )}
-                                        {answer.explanation && (
-                                            <p className="text-gray-500 text-sm mt-1 italic">
-                                                💡 {answer.explanation}
-                                            </p>
-                                        )}
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <span
+                                                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${answer.isCorrect
+                                                    ? "bg-green-500 text-white"
+                                                    : "bg-gray-300 text-gray-600"
+                                                    }`}
+                                            >
+                                                {String.fromCharCode(65 + aIndex)}
+                                            </span>
+                                            <Checkbox
+                                                checked={answer.isCorrect}
+                                                onChange={(e) => updateAnswer(aIndex, { isCorrect: e.target.checked })}
+                                            >
+                                                <span className="text-xs">Correct</span>
+                                            </Checkbox>
+                                        </div>
+                                        <div className="flex-1 space-y-2">
+                                            <Input
+                                                value={answer.content}
+                                                onChange={(e) => updateAnswer(aIndex, { content: e.target.value })}
+                                                placeholder="Answer content..."
+                                                className={answer.isCorrect ? "border-green-300" : ""}
+                                            />
+                                            <Input
+                                                value={answer.explanation || ""}
+                                                onChange={(e) => updateAnswer(aIndex, { explanation: e.target.value })}
+                                                placeholder="Explanation (optional)..."
+                                                prefix={<span className="text-gray-400">💡</span>}
+                                                className="text-sm mt-2"
+                                            />
+                                        </div>
+                                        <Button
+                                            type="text"
+                                            danger
+                                            icon={<DeleteOutlined />}
+                                            onClick={() => deleteAnswer(aIndex)}
+                                            disabled={question.answers.length <= 2}
+                                        />
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Meta info - Editable Topic */}
-                    <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap">
-                        <div className="flex items-center gap-2">
-                            <span>Topic:</span>
-                            {question.topicName ? (
-                                <Tag color="blue">{question.topicName}</Tag>
-                            ) : (
-                                <Select
-                                    size="small"
-                                    placeholder="Select topic..."
-                                    value={question.topicName || undefined}
-                                    onChange={(value) => updateQuestion(index, { topicName: value })}
-                                    style={{ width: 200 }}
-                                    loading={loadingTopics}
-                                    allowClear
-                                    showSearch
-                                    optionFilterProp="children"
-                                >
-                                    {topics.map((topic) => (
-                                        <Option key={topic.id} value={topic.name}>
-                                            {topic.name}
-                                        </Option>
-                                    ))}
-                                </Select>
-                            )}
-
-                        </div>
+                    {/* Summary */}
+                    <div className="flex items-center gap-4 text-sm text-gray-500 pt-2 border-t">
                         <span>
-                            Correct answers: {correctAnswers.length}/{question.answers.length}
+                            Correct answers: <strong className={correctAnswers.length > 0 ? "text-green-600" : "text-red-600"}>
+                                {correctAnswers.length}/{question.answers.length}
+                            </strong>
                         </span>
+                        {!question.topicName && (
+                            <Tag color="warning">Topic required</Tag>
+                        )}
+                        {correctAnswers.length === 0 && (
+                            <Tag color="error">No correct answer</Tag>
+                        )}
                     </div>
                 </div>
             </Panel>
@@ -376,6 +508,35 @@ D. Mark Twain`;
                                         ))}
                                     </Select>
                                 </div>
+
+                                {/* Topic Selection (Optional) */}
+                                {selectedSubjectId && (
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Select topic <span className="text-gray-400">(optional)</span>
+                                        </label>
+                                        <Select
+                                            placeholder="Select topic for all questions..."
+                                            className="w-full"
+                                            size="large"
+                                            loading={loadingTopics}
+                                            value={selectedTopicName}
+                                            onChange={setSelectedTopicName}
+                                            showSearch
+                                            optionFilterProp="children"
+                                            allowClear
+                                        >
+                                            {topics.map((topic) => (
+                                                <Option key={topic.id} value={topic.name}>
+                                                    {topic.name}
+                                                </Option>
+                                            ))}
+                                        </Select>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            If selected, all generated questions will be assigned to this topic.
+                                        </p>
+                                    </div>
+                                )}
 
                                 {/* Text Input */}
                                 <div>
