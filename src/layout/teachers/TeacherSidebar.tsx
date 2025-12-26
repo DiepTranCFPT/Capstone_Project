@@ -93,7 +93,7 @@ const TeacherSidebar: React.FC = () => {
             )}
 
             {/* Menu */}
-            <nav className="flex-1 mt-4 flex flex-col items-center">
+            <nav className="flex-1 mt-4 flex flex-col items-center overflow-y-auto">
                 {teacherMenu.map((item) => {
                     const isActive = location.pathname === item.path;
                     return (

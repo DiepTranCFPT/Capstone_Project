@@ -5,6 +5,7 @@ export interface AiExamAskRequest {
     studentAnswer: string;
     studentAsking: string;
     doneBy: string;
+    answerContents: string[];
 }
 
 export interface AiStudentDashboardRequest {

@@ -104,6 +104,13 @@ const AIQuestionImportPage: React.FC = () => {
 
     // Handle create questions
     const handleCreateQuestions = useCallback(async () => {
+        // Validate all questions have topic selected
+        const questionsWithoutTopic = generatedQuestions.filter(q => !q.topicName);
+        if (questionsWithoutTopic.length > 0) {
+            toast.error(`Please select topic for all questions. ${questionsWithoutTopic.length} question(s) missing topic.`);
+            return;
+        }
+
         const success = await createQuestions(generatedQuestions);
 
         if (success) {
@@ -120,7 +127,13 @@ const AIQuestionImportPage: React.FC = () => {
 
     // Copy sample text
     const handleCopySample = useCallback(() => {
-        const sampleText = `1. Which of the following is the capital of France?
+        const sampleText = `
+Context:
+Read the following questions carefully. The questions below assess general knowledge across geography, mathematics, and literature. Choose the best answer for each question based on your understanding.
+
+Question:
+
+1. Which of the following is the capital of France?
 A. London
 B. Berlin
 C. Paris*
@@ -132,7 +145,7 @@ B. 4*
 C. 5
 D. 6
 
-3. Who wrote "Romeo and Juliet"?
+3. Who wrote “Romeo and Juliet”?
 A. Charles Dickens
 B. William Shakespeare*
 C. Jane Austen
@@ -373,7 +386,10 @@ D. Mark Twain`;
                                         rows={15}
                                         placeholder={`Enter question content here...
 
-Example:
+
+Context: Enter the reading passage, description, or instructions...
+
+Question: 
 1. Which of the following is correct?
 A. Option A
 B. Option B*
@@ -426,7 +442,7 @@ Note: Mark the correct answer with * at the end.`}
                                         className="rounded-lg"
                                     />
 
-                                    <div className="space-y-3 text-gray-600">
+                                    <div className="space-y-3 text-gray-600 mt-2">
                                         <div className="flex items-start gap-2">
                                             <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm font-bold">
                                                 1
