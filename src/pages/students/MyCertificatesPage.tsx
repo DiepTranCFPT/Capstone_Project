@@ -287,7 +287,7 @@ const MyCertificatesPage: React.FC = () => {
                 footer={null}
                 width={800}
                 centered
-                destroyOnClose
+                destroyOnHidden
             >
                 {selectedCertificate && (
                     <div className="py-4">

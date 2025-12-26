@@ -79,7 +79,9 @@ const StudentDashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f4f7fd] p-6 flex justify-center items-center">
-        <Spin size="large" tip="Loading dashboard data..." />
+        <Spin size="large" tip="Loading dashboard data...">
+          <div className="p-12" />
+        </Spin>
       </div>
     );
   }
