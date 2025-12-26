@@ -28,11 +28,10 @@ export const decodeJWT = (token: string): JwtPayload | null => {
 };
 
 // Helper function to map API roles to User role type
-const mapRolesToUserRole = (roles: string[]): 'STUDENT' | 'TEACHER' | 'ADMIN' | 'ACADEMIC_ADVISOR' | 'PARENT' => {
+const mapRolesToUserRole = (roles: string[]): 'STUDENT' | 'TEACHER' | 'ADMIN' | 'PARENT' => {
     if (roles === null || roles.length === 0) return 'STUDENT'; // default to student if roles is null or empty
     if (roles.includes('ADMIN')) return 'ADMIN';
     if (roles.includes('TEACHER')) return 'TEACHER';
-    if (roles.includes('ACADEMIC_ADVISOR')) return 'ACADEMIC_ADVISOR';
     if (roles.includes('PARENT')) return 'PARENT';
     return 'STUDENT'; // default to user
 };
@@ -65,7 +64,7 @@ export const loginApi = async (email: string, password: string): Promise<AuthRes
             lastName: decodedToken.lastName || '',
             email: decodedToken.email || email,
             imgUrl: decodedToken.imgUrl || decodedToken.avatar || '',
-            dob: decodedToken.dob ? new Date(decodedToken.dob) : new Date(),
+            dob: decodedToken.dob || '',
             role: mapRolesToUserRole(roles),
             tokenBalance: decodedToken.tokenBalance || 0,
         };
@@ -153,7 +152,7 @@ export const updateProfileApi = async (profileData: EditProfileRequest): Promise
             lastName: userData.lastName || '',
             email: userData.email || '',
             imgUrl: userData.imgUrl || '',
-            dob: new Date(userData.dob),
+            dob: userData.dob || '',
             role: mapRolesToUserRole(roles),
             tokenBalance: userData.tokenBalance || 0,
         };
@@ -343,7 +342,7 @@ export const googleLoginApi = async (code: string): Promise<AuthResponse> => {
             lastName: decodedToken.lastName || '',
             email: decodedToken.email || '',
             imgUrl: decodedToken.imgUrl || decodedToken.avatar || '',
-            dob: decodedToken.dob ? new Date(decodedToken.dob) : new Date(),
+            dob: decodedToken.dob || '',
             role: mapRolesToUserRole(roles),
             tokenBalance: decodedToken.tokenBalance || 0,
         };
@@ -644,7 +643,7 @@ export const getCurrentUserApi = async (): Promise<AuthResponse> => {
             lastName: userData.lastName || '',
             email: userData.email || '',
             imgUrl: userData.imgUrl || '',
-            dob: userData.dob ? new Date(userData.dob) : new Date(),
+            dob: userData.dob || '',
             role: mapRolesToUserRole(roles),
             tokenBalance: userData.tokenBalance || 0,
             teacherProfile: userData.teacherProfile,

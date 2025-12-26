@@ -55,7 +55,7 @@ const StudentDashboard: React.FC = () => {
         // Mark that we just updated (for UI badge)
         setOnDemandRecommend('updated');
       } else {
-        toast.error(response.message || 'Failed to get AI recommendation');
+        toast.error(response.message);
       }
     } catch (error) {
       console.error('Error getting AI recommendation:', error);

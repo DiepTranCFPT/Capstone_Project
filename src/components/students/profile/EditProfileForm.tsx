@@ -40,7 +40,7 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ onSuccess, onCancel }
       const profileData: EditProfileRequest = {
         firstName: values.firstName,
         lastName: values.lastName,
-        dob: values.dob ? values.dob.format('YYYY-MM-DD') : user.dob.toISOString().split('T')[0],
+        dob: values.dob ? values.dob.format('YYYY-MM-DD') : user.dob,
       };
 
       await updateProfileApi(profileData);

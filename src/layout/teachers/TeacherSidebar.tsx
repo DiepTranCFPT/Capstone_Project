@@ -75,7 +75,7 @@ const TeacherSidebar: React.FC = () => {
                     onClick={() => handleProfileClick()}
                 >
                     <div className="relative">
-                        <Avatar size={collapsed ? 32 : 40} src={user.imgUrl || undefined} />
+                        <Avatar size={collapsed ? 32 : 40} src={user.imgUrl || `https://ui-avatars.com/api/?name=${user.firstName} ${user.lastName}&background=random`} />
                         {user.teacherProfile?.isVerified && (
                             <IoCheckmarkCircle
                                 className="absolute -bottom-0.5 -right-0.5 text-green-500 bg-white rounded-full"
