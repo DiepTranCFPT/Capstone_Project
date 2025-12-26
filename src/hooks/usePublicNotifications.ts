@@ -43,7 +43,7 @@ export const usePublicNotifications = () => {
       
       const response = await notificationService.createPublicNotification({
         message: data.message,
-        receiverEmail: data.receiverEmail
+        ...(data.receiverEmail && { receiverEmail: data.receiverEmail })
       });
 
       // Handle string response (success message)

@@ -114,7 +114,7 @@ export const notificationService = {
    * POST /notifications/public
    */
   async createPublicNotification(data: {
-    type: string;
+    type?: string;
     message: string;
     receiverEmail?: string;
   }): Promise<NotificationResponse | string> {
