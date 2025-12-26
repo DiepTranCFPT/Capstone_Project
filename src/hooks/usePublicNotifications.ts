@@ -4,7 +4,6 @@ import { notificationService } from '~/services/notificationService';
 import type { NotificationResponse } from '~/types/notification';
 
 interface CreateNotificationData {
-  type: string;
   message: string;
   receiverEmail?: string;
 }
@@ -43,7 +42,6 @@ export const usePublicNotifications = () => {
       setSubmitting(true);
       
       const response = await notificationService.createPublicNotification({
-        type: data.type || 'NOTIFICATION SYSTEM',
         message: data.message,
         receiverEmail: data.receiverEmail
       });

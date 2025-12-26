@@ -16,7 +16,6 @@ const Notification: React.FC = () => {
   const {
     notifications,
     loading,
-    unreadCount,
     markAsRead,
     fetchNotifications
   } = usePublicNotifications();
@@ -90,10 +89,7 @@ const Notification: React.FC = () => {
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-2">
-              <span className={`text-xs px-2.5 py-1 rounded-full font-medium bg-teal-100 text-teal-700`}>
-                {notification.type}
-              </span>
+            <div className="flex items-center justify-end mb-2">
               <div className="text-right">
                 <p className="text-xs text-gray-400 mb-1">{formatDate(notification.createdAt)}</p>
                 {isNew && isRecent && (
@@ -113,13 +109,6 @@ const Notification: React.FC = () => {
             <p className={`text-base mb-2 ${isNew ? 'text-gray-900 font-medium' : 'text-gray-700'}`}>
               {getDisplayMessage(notification.message)}
             </p>
-
-            {notification.receiverEmail && (
-              <p className="text-sm text-gray-500 mb-2">
-                <span className="inline-block w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
-                {notification.receiverEmail}
-              </p>
-            )}
 
             <div className="flex items-center justify-end gap-2 text-xs text-gray-400 mt-2">
               <ClockCircleOutlined />
@@ -146,15 +135,10 @@ const Notification: React.FC = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
               <p className="text-sm text-gray-500">
-                {notifications.length} total • {unreadCount} unread
+                {notifications.length} total
               </p>
             </div>
           </div>
-          {unreadCount > 0 && (
-            <span className="text-sm text-gray-500">
-              {unreadCount} unread
-            </span>
-          )}
         </div>
 
         {/* Main Card */}

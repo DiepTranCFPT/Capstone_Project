@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Empty, Spin, Tag, Button, Badge, Modal, Form, Input, Table } from 'antd';
+import { Card, Empty, Spin, Button, Modal, Form, Input, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { 
   BellOutlined, 
@@ -23,7 +23,6 @@ const NotificationsPage: React.FC = () => {
     loading,
     error,
     submitting,
-    unreadCount,
     fetchNotifications,
     createNotification,
     markAsRead
@@ -38,7 +37,6 @@ const NotificationsPage: React.FC = () => {
 
   const handleCreate = async (values: { message: string }) => {
     const success = await createNotification({
-      type: 'NOTIFICATION SYSTEM',
       message: values.message
     });
     
@@ -63,25 +61,6 @@ const NotificationsPage: React.FC = () => {
 
   // Table columns
   const columns: ColumnsType<NotificationResponse> = [
-    {
-      title: (
-        <span className="text-gray-600 font-semibold">Type</span>
-      ),
-      dataIndex: 'type',
-      key: 'type',
-      width: 160,
-      render: (type: string) => (
-        <Tag 
-          className="px-3 py-1 rounded-full text-xs font-medium border-0"
-          style={{ 
-            background: 'linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%)',
-            color: 'white'
-          }}
-        >
-          {type}
-        </Tag>
-      ),
-    },
     {
       title: (
         <span className="text-gray-600 font-semibold">Message</span>
@@ -226,14 +205,7 @@ const NotificationsPage: React.FC = () => {
               <p className="text-gray-500 text-sm ml-14">Manage system notifications</p>
             </div>
             <div className="flex items-center gap-3">
-              {unreadCount > 0 && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-100">
-                  <Badge count={unreadCount} showZero={false} />
-                  <span className="text-sm text-gray-600 font-medium">
-                    unread
-                  </span>
-                </div>
-              )}
+
               <Button 
                 type="primary"
                 icon={<PlusOutlined />}

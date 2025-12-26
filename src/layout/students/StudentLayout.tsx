@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import StudentSidebar, { MobileMenuButton } from "./StudentSidebar";
+import NotificationModal from "~/components/notification/NotificationModal";
 
 export default function StudentLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -18,6 +19,9 @@ export default function StudentLayout() {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
+      {/* Notification Modal - shows on first login */}
+      <NotificationModal />
+
       {/* Mobile Menu Button - chỉ hiển thị khi là mobile */}
       {isMobile && (
         <MobileMenuButton onClick={() => setMobileMenuOpen(true)} />
@@ -36,5 +40,3 @@ export default function StudentLayout() {
     </div>
   );
 }
-
-

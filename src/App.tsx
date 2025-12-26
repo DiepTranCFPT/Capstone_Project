@@ -107,10 +107,13 @@ import MyWalletPage from "./pages/teachers/MyWalletPage";
 import MyCertificatesPage from "./pages/students/MyCertificatesPage";
 import NotificationPage from "./pages/notification/NotificationPage";
 import { NotificationProvider } from "./context/NotificationContext";
+import NotificationModal from "./components/notification/NotificationModal";
+
 // Layout Wrapper for common UI elements
 const Layout = () => (
   <div className="flex flex-col min-h-screen">
     <Navbar />
+    <NotificationModal />
     <main className="flex-grow mt-28">
       <Outlet />
     </main>

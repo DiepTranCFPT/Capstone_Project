@@ -77,6 +77,8 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
             setIsAuthenticated(true);
             setError(null);
             localStorage.setItem('token', response.token);
+            // Clear notification modal shown flag so it shows on new login
+            sessionStorage.removeItem('notification_modal_shown');
 
             if (isRefreshing) {
                 setUser(response.user);
