@@ -16,6 +16,7 @@ const TeacherProfileDashboard: React.FC = () => {
   const [editTeacherProfileModalVisible, setEditTeacherProfileModalVisible] = useState(false);
   const [changePasswordModalVisible, setChangePasswordModalVisible] = useState(false);
   const [verifyLoading, setVerifyLoading] = useState(false);
+  const [checkRequestLoading, setCheckRequestLoading] = useState(false);
 
   const profile = user?.teacherProfile;
 
@@ -67,6 +68,32 @@ const TeacherProfileDashboard: React.FC = () => {
       toast.error(err.response?.data?.message || 'Failed to submit verification request. Please try again.');
     } finally {
       setVerifyLoading(false);
+    }
+  };
+
+  // Function to check current verification request status
+  const handleCheckCurrentRequest = async () => {
+    try {
+      setCheckRequestLoading(true);
+      const response = await TeacherProfileService.getCurrentVerificationRequest();
+      if (response.data?.data) {
+        const data = response.data.data;
+        // Handle both array and object response
+        const requestData = Array.isArray(data) ? data[0] : data;
+        if (requestData) {
+          toast.success(`Request Status: ${requestData.status || 'Pending'}. Created at: ${requestData.createdAt ? new Date(requestData.createdAt).toLocaleString('vi-VN') : 'N/A'}`);
+        } else {
+          toast.info('No verification request found.');
+        }
+      } else {
+        toast.info('No verification request found.');
+      }
+    } catch (error: unknown) {
+      console.error('Error checking verification request:', error);
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Failed to check verification request.');
+    } finally {
+      setCheckRequestLoading(false);
     }
   };
 
@@ -161,6 +188,14 @@ const TeacherProfileDashboard: React.FC = () => {
                         Register Verify
                       </Button>
                     )}
+                    <Button
+                      icon={<FileTextOutlined />}
+                      onClick={handleCheckCurrentRequest}
+                      loading={checkRequestLoading}
+                      size="small"
+                    >
+                      Check Request Status
+                    </Button>
                   </div>
                 </div>
               </div>

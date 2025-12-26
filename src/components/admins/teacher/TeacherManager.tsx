@@ -33,13 +33,12 @@ const TeacherManager: React.FC = () => {
   const [isAiReviewModalVisible, setIsAiReviewModalVisible] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<UnverifiedTeacherProfile | null>(null);
   const [selectedAiReview, setSelectedAiReview] = useState<AiReviewResponse | null>(null);
-  const { unverifiedProfiles, loading, fetchUnverifiedProfiles, fetchCurrentRequests, verifyProfile } = useTeacherProfile();
+  const { unverifiedProfiles, loading, fetchUnverifiedProfiles, verifyProfile } = useTeacherProfile();
 
   // Initialize data on component mount - call both APIs
   useEffect(() => {
     fetchUnverifiedProfiles();
-    fetchCurrentRequests();
-  }, [fetchUnverifiedProfiles, fetchCurrentRequests]);
+  }, [fetchUnverifiedProfiles]);
 
   // Update filtered data when unverified profiles change
   useEffect(() => {
@@ -206,7 +205,7 @@ const TeacherManager: React.FC = () => {
             <Button
               type="primary"
               icon={<CheckOutlined />}
-              onClick={() => { fetchUnverifiedProfiles(); fetchCurrentRequests(); }}
+              onClick={() => fetchUnverifiedProfiles()}
               loading={loading}
               className="bg-blue-600 hover:bg-blue-700 border-0"
             >
