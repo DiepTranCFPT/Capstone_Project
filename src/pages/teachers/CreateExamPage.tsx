@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Button, Input, Card, Select, Switch, Table, Space, InputNumber, Tag, Tooltip, Slider, Progress, Alert, Modal, Spin } from "antd";
+import { Button, Input, Card, Select, Switch, Table, Space, InputNumber, Tag, Tooltip, Modal, Spin } from "antd";
 import { PlusOutlined, InfoCircleOutlined, RobotOutlined } from "@ant-design/icons";
 import ReactMarkdown from "react-markdown";
 import { useParams, useNavigate } from "react-router-dom";
@@ -58,9 +58,9 @@ const CreateExamPage: React.FC = () => {
     topicName: '',
     difficultyName: 'Easy',
     questionType: 'mcq',
-    numberOfQuestions: 0,
+    numberOfQuestions: 1, // Direct input - số câu hỏi
     points: 1,
-    percentage: 10, // Default 10%
+    percentage: 0, // Will be calculated from numberOfQuestions
     numberOfContexts: 0, // 0 = no context grouping
   });
 
@@ -111,7 +111,7 @@ const CreateExamPage: React.FC = () => {
   useEffect(() => {
     if (selectedSubjectId) {
       fetchTopicsBySubject(selectedSubjectId);
-      fetchBySubjectId(selectedSubjectId);
+      fetchBySubjectId(selectedSubjectId, { pageNo: 0, pageSize: 1000 });
     }
   }, [selectedSubjectId, fetchTopicsBySubject, fetchBySubjectId]);
 
@@ -120,25 +120,32 @@ const CreateExamPage: React.FC = () => {
     const stats: Record<string, { total: number; easy: number; medium: number; hard: number; mcq: number; frq: number }> = {};
 
     subjectQuestions.forEach((q: QuestionBankItem) => {
-      const topic = q.topic || 'Uncategorized';
-      if (!stats[topic]) {
-        stats[topic] = { total: 0, easy: 0, medium: 0, hard: 0, mcq: 0, frq: 0 };
+      let topicName = q.topic || 'Uncategorized';
+
+      // Resolve topic name if q.topic is an ID
+      const matchingTopic = topics.find(t => t.id === topicName || t.name === topicName);
+      if (matchingTopic) {
+        topicName = matchingTopic.name;
       }
 
-      stats[topic].total++;
+      if (!stats[topicName]) {
+        stats[topicName] = { total: 0, easy: 0, medium: 0, hard: 0, mcq: 0, frq: 0 };
+      }
+
+      stats[topicName].total++;
 
       const difficulty = q.difficulty?.toLowerCase();
-      if (difficulty === 'easy') stats[topic].easy++;
-      else if (difficulty === 'medium') stats[topic].medium++;
-      else if (difficulty === 'hard') stats[topic].hard++;
+      if (difficulty === 'easy') stats[topicName].easy++;
+      else if (difficulty === 'medium') stats[topicName].medium++;
+      else if (difficulty === 'hard') stats[topicName].hard++;
 
       const type = q.type?.toLowerCase();
-      if (type === 'mcq') stats[topic].mcq++;
-      else if (type === 'frq') stats[topic].frq++;
+      if (type === 'mcq') stats[topicName].mcq++;
+      else if (type === 'frq') stats[topicName].frq++;
     });
 
     return stats;
-  }, [subjectQuestions]);
+  }, [subjectQuestions, topics]);
 
   // Get available count for current rule form selection
   const getAvailableCount = () => {
@@ -152,8 +159,11 @@ const CreateExamPage: React.FC = () => {
 
     // We need to filter the actual questions list to get the precise count
     // because stats above are aggregated separately
+    const selectedTopic = topics.find(t => t.name === ruleForm.topicName);
+    const selectedTopicId = selectedTopic?.id;
+
     const filteredQuestions = subjectQuestions.filter(q =>
-      (q.topic === ruleForm.topicName) &&
+      (q.topic === ruleForm.topicName || (selectedTopicId && q.topic === selectedTopicId)) &&
       (q.difficulty?.toLowerCase() === ruleForm.difficultyName.toLowerCase()) &&
       (q.type?.toLowerCase() === ruleForm.questionType.toLowerCase())
     );
@@ -166,33 +176,52 @@ const CreateExamPage: React.FC = () => {
   // Helper: count questions by topic + difficulty + type
   const getTypeCountForDifficulty = (type: 'mcq' | 'frq') => {
     if (!ruleForm.topicName || !ruleForm.difficultyName) return 0;
+
+    const selectedTopic = topics.find(t => t.name === ruleForm.topicName);
+    const selectedTopicId = selectedTopic?.id;
+
     return subjectQuestions.filter(q =>
-      q.topic === ruleForm.topicName &&
+      (q.topic === ruleForm.topicName || (selectedTopicId && q.topic === selectedTopicId)) &&
       q.difficulty?.toLowerCase() === ruleForm.difficultyName.toLowerCase() &&
       q.type?.toLowerCase() === type
     ).length;
   };
 
-  // Calculate number of questions from percentage (rounded)
-  const calculateQuestions = (percentage: number) => {
-    return Math.round((percentage / 100) * totalQuestions);
+  // Calculate percentage from number of questions
+  const calculatePercentage = (numQuestions: number) => {
+    if (totalQuestions <= 0) return 0;
+    return Math.round((numQuestions / totalQuestions) * 100);
   };
 
-  // Total percentage of all rules
-  const totalPercentage = useMemo(() => {
-    return rules.reduce((sum, rule) => sum + (rule.percentage || 0), 0);
-  }, [rules]);
+
+  // Distribution summary by difficulty
+  const distributionSummary = useMemo(() => {
+    const summary = { Easy: 0, Medium: 0, Hard: 0, MCQ: 0, FRQ: 0 };
+    rules.forEach(rule => {
+      // Use logical OR with 0 to ensure we don't count undefined
+      // Removed fallback to calculateQuestions(percentage) because numberOfQuestions is the source of truth
+      const numQ = rule.numberOfQuestions || 0;
+      summary[rule.difficultyName as keyof typeof summary] = (summary[rule.difficultyName as keyof typeof summary] || 0) + numQ;
+      if (rule.questionType === 'mcq') summary.MCQ += numQ;
+      else summary.FRQ += numQ;
+    });
+    return summary;
+  }, [rules]); // Removed totalQuestions dependency as we don't recalculate based on it anymore
+
 
   // Check if any rule exceeds available questions
   const rulesWithAvailability = useMemo(() => {
     return rules.map(rule => {
+      const topicObj = topics.find(t => t.name === rule.topicName);
+      const topicId = topicObj?.id;
+
       const filteredQuestions = subjectQuestions.filter(q =>
-        (q.topic === rule.topicName) &&
+        (q.topic === rule.topicName || (topicId && q.topic === topicId)) &&
         (q.difficulty?.toLowerCase() === rule.difficultyName.toLowerCase()) &&
         (q.type?.toLowerCase() === rule.questionType.toLowerCase())
       );
       const available = filteredQuestions.length;
-      const needed = calculateQuestions(rule.percentage || 0);
+      const needed = rule.numberOfQuestions || 0;
       return {
         ...rule,
         available,
@@ -207,13 +236,6 @@ const CreateExamPage: React.FC = () => {
     return rulesWithAvailability.some(r => r.isExceeded);
   }, [rulesWithAvailability]);
 
-  // Calculate total points of all rules
-  const totalPoints = useMemo(() => {
-    return rules.reduce((sum, rule) => {
-      const numQuestions = calculateQuestions(rule.percentage || 0);
-      return sum + (numQuestions * (rule.points || 1));
-    }, 0);
-  }, [rules, totalQuestions]);
 
   // Check if passingScore is valid (not greater than total points)
   const hasPointsError = useMemo(() => {
@@ -230,9 +252,9 @@ const CreateExamPage: React.FC = () => {
       topicName: '',
       difficultyName: 'Easy',
       questionType: 'mcq',
-      numberOfQuestions: 0,
+      numberOfQuestions: 1,
       points: 1,
-      percentage: 10,
+      percentage: 0,
       numberOfContexts: 0,
     });
     setEditingRuleIndex(null);
@@ -240,32 +262,38 @@ const CreateExamPage: React.FC = () => {
 
   const handleAddRule = () => {
     if (!ruleForm.topicName.trim()) {
-      toast.error('Topic name is required');
+      toast.error('Please select a topic');
       return;
     }
 
-    const percentage = ruleForm.percentage || 0;
-    const calculatedQuestions = calculateQuestions(percentage);
+    const numQuestions = ruleForm.numberOfQuestions || 0;
+    const percentage = calculatePercentage(numQuestions);
 
-    if (calculatedQuestions > availableCount) {
-      toast.error(`Need ${calculatedQuestions} questions but only ${availableCount} available in bank`);
+    if (numQuestions > availableCount) {
+      toast.error(`Need ${numQuestions} questions but only ${availableCount} available in bank`);
       return;
     }
 
-    // Check total percentage does not exceed 100%
-    const currentTotalPercentage = editingRuleIndex !== null
-      ? totalPercentage - (rules[editingRuleIndex]?.percentage || 0)
-      : totalPercentage;
-
-    if (currentTotalPercentage + percentage > 100) {
-      toast.error(`Total percentage cannot exceed 100% (current: ${currentTotalPercentage}%)`);
+    if (numQuestions <= 0) {
+      toast.error('Number of questions must be greater than 0');
       return;
     }
 
-    // Update numberOfQuestions from percentage
+    // Check total questions does not exceed totalQuestions
+    const currentTotalQuestions = editingRuleIndex !== null
+      ? rules.reduce((sum, r, i) => sum + (i === editingRuleIndex ? 0 : (r.numberOfQuestions || 0)), 0)
+      : rules.reduce((sum, r) => sum + (r.numberOfQuestions || 0), 0);
+
+    if (currentTotalQuestions + numQuestions > totalQuestions) {
+      toast.error(`Total questions cannot exceed ${totalQuestions} (current: ${currentTotalQuestions})`);
+      return;
+    }
+
+    // Save rule with calculated percentage
     const ruleToSave = {
       ...ruleForm,
-      numberOfQuestions: calculatedQuestions,
+      numberOfQuestions: numQuestions,
+      percentage: percentage,
       numberOfContexts: ruleForm.numberOfContexts || 0,
     };
 
@@ -326,9 +354,10 @@ const CreateExamPage: React.FC = () => {
       setTokenCostError('Cost must be greater than 0');
       hasErrors = true;
     }
-    // Validate total percentage must be 100%
-    if (totalPercentage !== 100) {
-      setRulesError(`Total percentage must equal 100% (current: ${totalPercentage}%)`);
+    // Validate total allocated questions must equal totalQuestions
+    const currentTotalAllocated = rules.reduce((sum, r) => sum + (r.numberOfQuestions || 0), 0);
+    if (currentTotalAllocated !== totalQuestions) {
+      setRulesError(`Total allocated questions (${currentTotalAllocated}) must equal Total Questions (${totalQuestions})`);
       hasErrors = true;
     }
     // Validate no rule exceeds available questions
@@ -369,10 +398,11 @@ const CreateExamPage: React.FC = () => {
         await updateTemplateDetails(examId, updateData);
         navigate('/teacher/templates');
       } else {
-        // Recalculate numberOfQuestions from percentage before sending API
-        const processedRules = rules.map(rule => ({
+        // Use numberOfQuestions directly and remove percentage from payload
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const processedRules = rules.map(({ percentage, ...rule }) => ({
           ...rule,
-          numberOfQuestions: calculateQuestions(rule.percentage || 0),
+          numberOfQuestions: rule.numberOfQuestions,
           numberOfContexts: rule.numberOfContexts || 0,
         }));
 
@@ -439,10 +469,11 @@ const CreateExamPage: React.FC = () => {
 
     setAnalyzing(true);
     try {
-      // Recalculate numberOfQuestions from percentage
-      const processedRules = rules.map(rule => ({
+      // Use numberOfQuestions directly and remove percentage from payload
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const processedRules = rules.map(({ percentage, ...rule }) => ({
         ...rule,
-        numberOfQuestions: calculateQuestions(rule.percentage || 0),
+        numberOfQuestions: rule.numberOfQuestions,
         numberOfContexts: rule.numberOfContexts || 0,
       }));
 
@@ -752,15 +783,15 @@ const CreateExamPage: React.FC = () => {
 
         {/* Rules Management */}
         {!isEditMode && (
-          <Card title="Question Rules" className="shadow-sm">
+          <div title="Question Rules" className="shadow-sm">
             <div className="space-y-4">
-              {/* Total Questions Input */}
+              {/* Total Questions + Preset Buttons */}
               <div className="bg-blue-50 p-4 rounded-lg">
-                <div className="flex items-center gap-4 mb-2">
+                <div className="flex items-center gap-4 mb-3">
                   <div className="flex-1">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Total Questions *
-                      <Tooltip title="Total number of questions will be divided by the ratio % of each rule">
+                      <Tooltip title="Total number of questions in the exam. Add rules to allocate questions.">
                         <InfoCircleOutlined className="ml-1 text-gray-400" />
                       </Tooltip>
                     </label>
@@ -777,33 +808,39 @@ const CreateExamPage: React.FC = () => {
                     />
                     {totalQuestionsError && <div className="text-red-500 text-xs mt-1">{totalQuestionsError}</div>}
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-500">Allocated ratio</div>
-                    <Progress
-                      percent={totalPercentage}
-                      status={totalPercentage === 100 ? 'success' : totalPercentage > 100 ? 'exception' : 'active'}
-                      size="small"
-                      style={{ width: 150 }}
-                    />
+
+                  {/* Allocated Questions Count */}
+                  <div className="text-center">
+                    <div className="text-sm text-gray-500 mb-1">Allocated</div>
+                    <div className={`text-2xl font-bold ${rules.reduce((sum, r) => sum + (r.numberOfQuestions || 0), 0) === totalQuestions ? 'text-green-600' : 'text-orange-500'}`}>
+                      {rules.reduce((sum, r) => sum + (r.numberOfQuestions || 0), 0)} / {totalQuestions}
+                    </div>
                   </div>
                 </div>
-                {totalPercentage !== 100 && rules.length > 0 && (
-                  <Alert
-                    message={totalPercentage < 100
-                      ? `Missing ${100 - totalPercentage}% allocation`
-                      : `Exceeds ${totalPercentage - 100}%`
-                    }
-                    type={totalPercentage > 100 ? 'error' : 'warning'}
-                    showIcon
-                    className="mt-3"
-                  />
-                )}
+
+
+
+                {/* Distribution Summary Bar */}
                 {rules.length > 0 && (
-                  <div className="mt-3 p-3 bg-blue-50 rounded-lg flex justify-between items-center">
-                    <span className="text-sm text-gray-700">
-                      Total points: <strong>{totalPoints}</strong> points
-                      | Passing score ({passingScore}): <strong>{Math.ceil(totalPoints * passingScore / 100)}</strong> points
-                    </span>
+                  <div className="mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                    <div className="text-sm font-medium text-gray-700 mb-2">Current Distribution:</div>
+                    <div className="flex gap-4 flex-wrap justify-center">
+                      <Tag color="green" className="px-3 py-1">
+                        Easy: <strong>{distributionSummary.Easy}</strong>
+                      </Tag>
+                      <Tag color="orange" className="px-3 py-1">
+                        Medium: <strong>{distributionSummary.Medium}</strong>
+                      </Tag>
+                      <Tag color="red" className="px-3 py-1">
+                        Hard: <strong>{distributionSummary.Hard}</strong>
+                      </Tag>
+                      <Tag color="blue" className="px-3 py-1">
+                        MCQ: <strong>{distributionSummary.MCQ}</strong>
+                      </Tag>
+                      <Tag color="purple" className="px-3 py-1">
+                        FRQ: <strong>{distributionSummary.FRQ}</strong>
+                      </Tag>
+                    </div>
                   </div>
                 )}
               </div>
@@ -816,13 +853,13 @@ const CreateExamPage: React.FC = () => {
                   block
                   disabled={!selectedSubjectId}
                 >
-                  Add Rule
+                  + Add Rule
                 </Button>
               ) : (
                 <Card size="small" className="border-dashed">
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Topic Name *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Topic *</label>
                       <Select
                         placeholder="Select a topic"
                         value={ruleForm.topicName || undefined}
@@ -855,15 +892,19 @@ const CreateExamPage: React.FC = () => {
                           onChange={(value) => setRuleForm({ ...ruleForm, difficultyName: value })}
                           style={{ width: '100%' }}
                         >
-                          {['Easy', 'Medium', 'Hard'].map(diff => {
+                          {[
+                            { value: 'Easy', label: 'Easy' },
+                            { value: 'Medium', label: 'Medium' },
+                            { value: 'Hard', label: 'Hard' }
+                          ].map(item => {
                             const topicStats = questionStats[ruleForm.topicName];
-                            const count = topicStats ? topicStats[diff.toLowerCase() as 'easy' | 'medium' | 'hard'] : 0;
+                            const count = topicStats ? topicStats[item.value.toLowerCase() as 'easy' | 'medium' | 'hard'] : 0;
                             return (
-                              <Select.Option key={diff} value={diff}>
+                              <Select.Option key={item.value} value={item.value}>
                                 <div className="flex justify-between items-center">
-                                  <span>{diff}</span>
+                                  <span>{item.label}</span>
                                   {ruleForm.topicName && (
-                                    <span className="text-xs text-gray-500">({count})</span>
+                                    <span className="text-xs text-gray-500">({count} Qs)</span>
                                   )}
                                 </div>
                               </Select.Option>
@@ -881,7 +922,7 @@ const CreateExamPage: React.FC = () => {
                         >
                           <Select.Option value="mcq">
                             <div className="flex justify-between items-center">
-                              <span>MCQ</span>
+                              <span>Multiple Choice (MCQ)</span>
                               {ruleForm.topicName && ruleForm.difficultyName && (
                                 <span className="text-xs text-gray-500">
                                   ({getTypeCountForDifficulty('mcq')})
@@ -891,7 +932,7 @@ const CreateExamPage: React.FC = () => {
                           </Select.Option>
                           <Select.Option value="frq">
                             <div className="flex justify-between items-center">
-                              <span>FRQ</span>
+                              <span>Free Response (FRQ)</span>
                               {ruleForm.topicName && ruleForm.difficultyName && (
                                 <span className="text-xs text-gray-500">
                                   ({getTypeCountForDifficulty('frq')})
@@ -906,40 +947,32 @@ const CreateExamPage: React.FC = () => {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Percentage (%)
-                          <Tooltip title={`Equivalent: ${calculateQuestions(ruleForm.percentage || 0)} questions | Available: ${availableCount} questions`}>
+                          Number of Questions *
+                          <Tooltip title={`${availableCount} matching questions available in bank`}>
                             <InfoCircleOutlined className="ml-1 text-gray-400" />
                           </Tooltip>
                         </label>
-                        <div className="flex items-center gap-3">
-                          <Slider
-                            min={5}
-                            max={100}
-                            step={5}
-                            value={ruleForm.percentage || 10}
-                            onChange={(value) => setRuleForm({ ...ruleForm, percentage: value })}
-                            style={{ flex: 1 }}
-                          />
-                          <InputNumber
-                            min={1}
-                            max={100}
-                            value={ruleForm.percentage || 10}
-                            onChange={(value) => setRuleForm({ ...ruleForm, percentage: value || 10 })}
-                            style={{ width: 70 }}
-                            formatter={(value) => `${value}%`}
-                            parser={(value) => Number(value?.replace('%', '') || 10)}
-                          />
-                        </div>
-                        <div className={`text-xs mt-1 ${calculateQuestions(ruleForm.percentage || 0) > availableCount ? 'text-red-500' : 'text-gray-500'}`}>
-                          → {calculateQuestions(ruleForm.percentage || 0)} questions
-                          {calculateQuestions(ruleForm.percentage || 0) > availableCount &&
-                            ` (⚠️ exceeds ${availableCount} available)`
-                          }
+                        <InputNumber
+                          min={1}
+                          max={Math.min(availableCount, totalQuestions)}
+                          value={ruleForm.numberOfQuestions || 1}
+                          onChange={(value) => setRuleForm({ ...ruleForm, numberOfQuestions: value || 1 })}
+                          style={{ width: '100%' }}
+                        />
+                        <div className={`text-xs mt-1 ${(ruleForm.numberOfQuestions || 0) > availableCount ? 'text-red-500' : 'text-gray-500'}`}>
+                          {availableCount > 0 ? (
+                            <>
+                              Available: <strong>{availableCount}</strong> |
+                              Equiv: <strong>{calculatePercentage(ruleForm.numberOfQuestions || 0)}%</strong>
+                            </>
+                          ) : (
+                            <span className="text-red-500">No matching questions</span>
+                          )}
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Points per question</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Points/Question</label>
                         <InputNumber
                           min={1}
                           value={ruleForm.points}
@@ -953,7 +986,7 @@ const CreateExamPage: React.FC = () => {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Number of Contexts
-                          <Tooltip title="E.g. 2 contexts × 1 question/context = 2 questions from reading passages. Set to 0 for no context grouping.">
+                          <Tooltip title="E.g., 2 contexts x 1 question/context = 2 questions from passage. 0 if not needed.">
                             <InfoCircleOutlined className="ml-1 text-gray-400" />
                           </Tooltip>
                         </label>
@@ -965,7 +998,7 @@ const CreateExamPage: React.FC = () => {
                         />
                         {(ruleForm.numberOfContexts || 0) > 0 && (
                           <div className="text-xs text-cyan-600 mt-1">
-                            {ruleForm.numberOfContexts} contexts × {calculateQuestions(ruleForm.percentage || 0)} = {(ruleForm.numberOfContexts || 0) * calculateQuestions(ruleForm.percentage || 0)} questions
+                            {ruleForm.numberOfContexts} contexts × {ruleForm.numberOfQuestions || 0} = {(ruleForm.numberOfContexts || 0) * (ruleForm.numberOfQuestions || 0)} questions
                           </div>
                         )}
                       </div>
@@ -976,7 +1009,7 @@ const CreateExamPage: React.FC = () => {
                         type="primary"
                         onClick={handleAddRule}
                         size="small"
-                        disabled={calculateQuestions(ruleForm.percentage || 0) > availableCount || calculateQuestions(ruleForm.percentage || 0) === 0}
+                        disabled={(ruleForm.numberOfQuestions || 0) > availableCount || (ruleForm.numberOfQuestions || 0) <= 0 || availableCount === 0}
                       >
                         {editingRuleIndex !== null ? 'Update Rule' : 'Add Rule'}
                       </Button>
@@ -1000,9 +1033,8 @@ const CreateExamPage: React.FC = () => {
 
               {rulesError && <div className="text-red-500 text-sm mt-2">{rulesError}</div>}
             </div>
-          </Card>
-        )
-        }
+          </div>
+        )}
       </div>
 
       {/* Analysis Result Modal */}

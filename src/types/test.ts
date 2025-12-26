@@ -106,8 +106,8 @@ export interface ExamRule {
 // Dùng khi tạo mới 1 quy tắc (không cần id)
 export interface CreateExamRulePayload {
   topicName: string;
-  difficultyName: 'Easy' | 'Medium' | 'Hard';
-  questionType: 'mcq' | 'frq';
+  difficultyName: string;
+  questionType: string;
   numberOfQuestions: number;
   points: number;
   percentage?: number; // Frontend-only field
