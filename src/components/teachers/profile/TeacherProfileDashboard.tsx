@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Card, Button, Spin, Badge, Modal } from "antd";
-import { EditOutlined, LockOutlined, FileTextOutlined, UserAddOutlined } from "@ant-design/icons";
+import { EditOutlined, LockOutlined, FileTextOutlined, UserAddOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import { useAuth } from "~/hooks/useAuth";
 import { getCurrentUserApi } from "~/services/authService";
+import TeacherProfileService from "~/services/teacherProfileService";
 import { toast } from "~/components/common/Toast";
 import TeacherChangePasswordForm from "./TeacherChangePasswordForm";
 import EditTeacherProfileForm from "./EditTeacherProfileForm";
@@ -14,6 +15,7 @@ const TeacherProfileDashboard: React.FC = () => {
   const [editProfileModalVisible, setEditProfileModalVisible] = useState(false);
   const [editTeacherProfileModalVisible, setEditTeacherProfileModalVisible] = useState(false);
   const [changePasswordModalVisible, setChangePasswordModalVisible] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
 
   const profile = user?.teacherProfile;
 
@@ -39,6 +41,33 @@ const TeacherProfileDashboard: React.FC = () => {
     logout();
     toast.success('Password changed successfully! Please login again.');
     window.location.href = '/auth';
+  };
+
+  // Function to request verification
+  const handleRequestVerification = async () => {
+    try {
+      setVerifyLoading(true);
+      const response = await TeacherProfileService.requestVerification();
+      if (response.data) {
+        toast.success('Verification request submitted successfully! Please wait for admin approval.');
+        
+        // Call AI review after successful verification request
+        if (user?.id) {
+          try {
+            await TeacherProfileService.getAiReview(user.id);
+          } catch (aiError) {
+            console.error('Error getting AI review:', aiError);
+            // Don't show error to user as this is optional
+          }
+        }
+      }
+    } catch (error: unknown) {
+      console.error('Error requesting verification:', error);
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Failed to submit verification request. Please try again.');
+    } finally {
+      setVerifyLoading(false);
+    }
   };
 
   if (authLoading) {
@@ -120,6 +149,18 @@ const TeacherProfileDashboard: React.FC = () => {
                     >
                       Change Password
                     </Button>
+                    {profile && !profile.isVerified && (
+                      <Button
+                        type="primary"
+                        icon={<CheckCircleOutlined />}
+                        onClick={handleRequestVerification}
+                        loading={verifyLoading}
+                        size="small"
+                        style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                      >
+                        Register Verify
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

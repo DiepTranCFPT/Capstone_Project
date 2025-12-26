@@ -37,3 +37,29 @@ export interface TeacherStat {
     icon: string;
     color: string;
 }
+
+// Interface for verification request response
+export interface VerificationRequest {
+    id: string;
+    userId: string;
+    teacherId: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    note?: string;
+    reviewedById?: string;
+    reviewedAt?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+// Interface for AI review response
+export interface AiReviewResponse {
+    id: string;
+    syllabusAlignment: number;
+    conceptAccuracy: number;
+    difficultyFit: number;
+    explanationQuality: number;
+    recommendation: string;
+    feedback: string;
+    reviewerType: string;
+    latest: boolean;
+}

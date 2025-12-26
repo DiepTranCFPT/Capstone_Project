@@ -4,7 +4,9 @@ import type { ApiResponse } from "~/types/api";
 import type {
     TeacherProfilePayload,
     TeacherProfileData,
-    UnverifiedTeacherProfile
+    UnverifiedTeacherProfile,
+    VerificationRequest,
+    AiReviewResponse
 } from "~/types/teacherProfile";
 
 const TeacherProfileService = {
@@ -45,6 +47,22 @@ const TeacherProfileService = {
      */
     getUnverifiedProfiles(): Promise<AxiosResponse<ApiResponse<UnverifiedTeacherProfile[]>>> {
         return axiosInstance.get("/api/teacher-profile/unverified");
+    },
+
+    /**
+     * Gửi yêu cầu xác thực hồ sơ giáo viên
+     * POST /api/teacher-profile/request/verify/teacher
+     */
+    requestVerification(): Promise<AxiosResponse<ApiResponse<VerificationRequest>>> {
+        return axiosInstance.post("/api/teacher-profile/request/verify/teacher");
+    },
+
+    /**
+     * Lấy đánh giá AI cho hồ sơ giáo viên
+     * POST /api/teacher-profile/{userId}/ai-review
+     */
+    getAiReview(userId: string): Promise<AxiosResponse<ApiResponse<AiReviewResponse>>> {
+        return axiosInstance.post(`/api/teacher-profile/${userId}/ai-review`);
     },
 };
 
