@@ -196,5 +196,18 @@ const QuestionService = {
   ): Promise<AxiosResponse<BatchCreateQuestionsResponse>> {
     return axiosInstance.post("/questions-v2/batch-create", questions);
   },
+
+  // Export câu hỏi ra file để tạo tài liệu
+  async exportQuestionsToText(
+    subjectId: string,
+    questionIds: string[]
+  ): Promise<AxiosResponse<Blob>> {
+    return axiosInstance.post("/questions-v2/export", {
+      subjectId,
+      questionIds,
+    }, {
+      responseType: 'blob',
+    });
+  },
 };
 export default QuestionService;

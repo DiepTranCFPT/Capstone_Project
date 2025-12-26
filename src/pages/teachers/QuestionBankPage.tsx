@@ -71,6 +71,7 @@ const QuestionBankPage: React.FC = () => {
     importQuestions,
     fetchDuplicates,
     searchQuestions,
+    exportQuestionsToText,
   } = useQuestionBank();
   const { showLoading, hideLoading } = useGlobalLoading();
   const navigate = useNavigate();
@@ -115,6 +116,9 @@ const QuestionBankPage: React.FC = () => {
   const [duplicateIds, setDuplicateIds] = useState<string[]>([]);
   const [duplicatesModalVisible, setDuplicatesModalVisible] = useState(false);
   const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
+
+  // Export to text state
+  const [isExporting, setIsExporting] = useState(false);
 
   //  Filter states
   const [searchText, setSearchText] = useState("");
@@ -715,14 +719,37 @@ const QuestionBankPage: React.FC = () => {
               Clear
             </Button>
           </div>
-          <Button
-            danger
-            type="primary"
-            icon={<DeleteOutlined />}
-            onClick={handleBatchDelete}
-          >
-            Delete Selected
-          </Button>
+          <Space>
+            <Button
+              type="primary"
+              icon={<DownloadOutlined />}
+              onClick={async () => {
+                if (selectedRowKeys.length === 0) return;
+                // Get the subject of first selected question
+                const firstQuestion = filteredData.find(q => selectedRowKeys.includes(q.id));
+                const subjectId = subjects.find(s => s.name === firstQuestion?.subject)?.id;
+                if (!subjectId) {
+                  toast.error("Cannot determine subject for export");
+                  return;
+                }
+                setIsExporting(true);
+                await exportQuestionsToText(subjectId, selectedRowKeys as string[]);
+                setIsExporting(false);
+              }}
+              loading={isExporting}
+              style={{ backgroundColor: "#3CBCB2", borderColor: "#3CBCB2" }}
+            >
+              Export to File
+            </Button>
+            <Button
+              danger
+              type="primary"
+              icon={<DeleteOutlined />}
+              onClick={handleBatchDelete}
+            >
+              Delete Selected
+            </Button>
+          </Space>
         </div>
       )}
 

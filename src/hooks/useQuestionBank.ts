@@ -987,6 +987,71 @@ export const useQuestionBank = () => {
     }
   }, []);
 
+  // 🔹 Export câu hỏi ra file để tạo tài liệu (POST /questions-v2/export)
+  const exportQuestionsToText = useCallback(async (
+    subjectId: string,
+    questionIds: string[]
+  ): Promise<boolean> => {
+    if (questionIds.length === 0) {
+      toast.warning("Please select at least one question to export");
+      return false;
+    }
+
+    try {
+      setLoading(true);
+      const res = await QuestionService.exportQuestionsToText(subjectId, questionIds);
+      // The API returns a file blob
+      const blob = res.data;
+      if (blob && blob.size > 0) {
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        // Try to get filename from Content-Disposition header
+        const contentDisposition = res.headers['content-disposition'];
+        let filename = `questions_export_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+          if (filenameMatch && filenameMatch[1]) {
+            filename = filenameMatch[1].replace(/['"]/g, '');
+          }
+        }
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        toast.success(`Exported ${questionIds.length} question(s) successfully!`);
+        return true;
+      } else {
+        toast.error("Export returned empty content");
+        return false;
+      }
+    } catch (error: unknown) {
+      let errorMessage = "Export questions failed!";
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as { response?: { data?: Blob } };
+        // Try to read error message from blob
+        if (axiosError.response?.data instanceof Blob) {
+          try {
+            const text = await axiosError.response.data.text();
+            const jsonError = JSON.parse(text);
+            if (jsonError.message) {
+              errorMessage = jsonError.message;
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        }
+      }
+      toast.error(errorMessage);
+      console.error("[useQuestionBank] Export questions error:", error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // 🔹 Tìm kiếm câu hỏi (GET /questions-v2/search)
   const searchQuestions = useCallback(async (params: {
     keyword: string;
@@ -1036,6 +1101,7 @@ export const useQuestionBank = () => {
     fetchDuplicates,
     fetchContextDuplicates,
     searchQuestions,
+    exportQuestionsToText,
   };
 };
 
