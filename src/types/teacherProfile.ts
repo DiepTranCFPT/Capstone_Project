@@ -20,6 +20,7 @@ export interface TeacherProfileData {
 }
 
 export interface UnverifiedTeacherProfile {
+    // User info - có thể nested trong object user hoặc flatten
     id: string; // User ID
     email: string;
     firstName: string;
@@ -27,7 +28,20 @@ export interface UnverifiedTeacherProfile {
     imgUrl: string;
     dob: string;
     roles: string[];
+    // Teacher profile data
     teacherProfile: TeacherProfileData;
+    // Optional: latest AI review
+    latestReview?: AiReviewResponse;
+    // For new API structure where user is nested
+    user?: {
+        id: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        imgUrl: string;
+        dob: string;
+        roles: string[];
+    };
 }
 
 // Helper interface for statistics (giữ lại cho UI dashboard nếu cần)
@@ -62,4 +76,5 @@ export interface AiReviewResponse {
     feedback: string;
     reviewerType: string;
     latest: boolean;
+    createdAt?: string;
 }

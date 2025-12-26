@@ -43,10 +43,10 @@ const TeacherProfileService = {
 
     /**
      * Lấy danh sách hồ sơ giáo viên chưa được xác thực
-     * GET /api/teacher-profiles/unverified
+     * GET /api/teacher-profile/teacher/unverify
      */
     getUnverifiedProfiles(): Promise<AxiosResponse<ApiResponse<UnverifiedTeacherProfile[]>>> {
-        return axiosInstance.get("/api/teacher-profile/unverified");
+        return axiosInstance.get("/api/teacher-profile/teacher/unverify");
     },
 
     /**
@@ -63,6 +63,14 @@ const TeacherProfileService = {
      */
     getAiReview(userId: string): Promise<AxiosResponse<ApiResponse<AiReviewResponse>>> {
         return axiosInstance.post(`/api/teacher-profile/${userId}/ai-review`);
+    },
+
+    /**
+     * Lấy yêu cầu xác thực hiện tại của teacher
+     * GET /api/teacher-profile/request/current
+     */
+    getCurrentVerificationRequest(): Promise<AxiosResponse<ApiResponse<VerificationRequest[]>>> {
+        return axiosInstance.get("/api/teacher-profile/request/current");
     },
 };
 
