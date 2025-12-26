@@ -56,6 +56,7 @@ interface QuestionDetail {
     correctAnswer: string;
     explanation: string;
     feedback: string | null;
+    answerContents: string[];
 }
 
 interface AdvancedReportProps {
@@ -104,6 +105,7 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
             studentAnswer: modalContent.question.userAnswer,
             studentAsking: studentQuestion,
             doneBy: user.email,
+            answerContents: modalContent.question.answerContents,
         });
     };
 
@@ -188,7 +190,9 @@ const AdvancedReport: React.FC<AdvancedReportProps> = ({ attemptResultDetail }) 
                 questionContext,
                 imageUrl: q.question.imageUrl || null,
                 audioUrl: q.question.audioUrl || null,
-                originalIndex: index // Keep track of original question number
+                originalIndex: index, // Keep track of original question number
+                answerContents: q.question.type === 'mcq' ? q.question.answers.map(a => cleanAnswerContent(a.content)) : []
+
             };
         });
     }, [attemptResultDetail]);
