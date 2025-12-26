@@ -81,7 +81,7 @@ export const useTeacherProfile = () => {
             if (res.data.code === 0 || res.data.code === 1000) {
                 toast.success("Verify teacher profile successfully!");
                 // Cập nhật lại danh sách unverified sau khi verify thành công
-                setUnverifiedProfiles(prev => prev.filter(p => p.teacherProfile.id !== id));
+                setUnverifiedProfiles(prev => prev.filter(p => (p.teacherProfile?.id || p.id || p.user?.id) !== id));
                 return res.data.data;
             } else {
                 throw new Error(res.data.message || "Failed to verify profile");
@@ -97,6 +97,7 @@ export const useTeacherProfile = () => {
 
     /**
      * Lấy danh sách hồ sơ chưa xác thực (Dành cho Admin)
+     * Sử dụng API GET /api/teacher-profile/teacher/unverify
      */
     const fetchUnverifiedProfiles = useCallback(async () => {
         setLoading(true);
@@ -109,17 +110,43 @@ export const useTeacherProfile = () => {
                 if (Array.isArray(data)) {
                     setUnverifiedProfiles(data);
                 } else if (data) {
-                    // Nếu API trả về 1 object đơn lẻ (như trong ảnh swagger GET), 
-                    // ta bọc nó vào mảng để thống nhất state
                     setUnverifiedProfiles([data as unknown as UnverifiedTeacherProfile]);
                 } else {
                     setUnverifiedProfiles([]);
                 }
             } else {
-                throw new Error(res.data.message || "Failed to fetch unverified profiles");
+                setUnverifiedProfiles([]);
             }
-        } catch (err) {
-            handleError(err, "Failed to fetch unverified profiles");
+        } catch {
+            setUnverifiedProfiles([]);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    /**
+     * Lấy danh sách yêu cầu xác thực hiện tại (Dành cho Admin)
+     * Sử dụng API GET /api/teacher-profile/request/current
+     */
+    const fetchCurrentRequests = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await TeacherProfileService.getCurrentVerificationRequest();
+            if (res.data.code === 0 || res.data.code === 1000) {
+                const data = res.data.data;
+                if (Array.isArray(data)) {
+                    setUnverifiedProfiles(data as unknown as UnverifiedTeacherProfile[]);
+                } else if (data) {
+                    setUnverifiedProfiles([data as unknown as UnverifiedTeacherProfile]);
+                } else {
+                    setUnverifiedProfiles([]);
+                }
+            } else {
+                setUnverifiedProfiles([]);
+            }
+        } catch {
+            setUnverifiedProfiles([]);
         } finally {
             setLoading(false);
         }
@@ -133,7 +160,8 @@ export const useTeacherProfile = () => {
         createProfile,
         updateProfile,
         verifyProfile,
-        fetchUnverifiedProfiles
+        fetchUnverifiedProfiles,
+        fetchCurrentRequests
     };
 };
 

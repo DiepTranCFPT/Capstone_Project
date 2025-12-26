@@ -9,7 +9,6 @@ import {
   Typography,
   Card,
   Modal,
-  Alert,
   Descriptions,
   Tag,
   Divider,
@@ -19,9 +18,10 @@ import {
   SearchOutlined,
   CheckOutlined,
   EyeOutlined,
+  RobotOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-import type { UnverifiedTeacherProfile } from "~/types/teacherProfile";
+import type { UnverifiedTeacherProfile, AiReviewResponse } from "~/types/teacherProfile";
 import { useTeacherProfile } from "~/hooks/useTeacherProfile";
 
 const { Title } = Typography;
@@ -30,13 +30,16 @@ const TeacherManager: React.FC = () => {
   const [searchText, setSearchText] = useState("");
   const [filteredData, setFilteredData] = useState<UnverifiedTeacherProfile[]>([]);
   const [isViewModalVisible, setIsViewModalVisible] = useState(false);
+  const [isAiReviewModalVisible, setIsAiReviewModalVisible] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<UnverifiedTeacherProfile | null>(null);
-  const { unverifiedProfiles, loading, error, fetchUnverifiedProfiles, verifyProfile } = useTeacherProfile();
+  const [selectedAiReview, setSelectedAiReview] = useState<AiReviewResponse | null>(null);
+  const { unverifiedProfiles, loading, fetchUnverifiedProfiles, fetchCurrentRequests, verifyProfile } = useTeacherProfile();
 
-  // Initialize data on component mount
+  // Initialize data on component mount - call both APIs
   useEffect(() => {
     fetchUnverifiedProfiles();
-  }, [fetchUnverifiedProfiles]);
+    fetchCurrentRequests();
+  }, [fetchUnverifiedProfiles, fetchCurrentRequests]);
 
   // Update filtered data when unverified profiles change
   useEffect(() => {
@@ -54,7 +57,7 @@ const TeacherManager: React.FC = () => {
       profile.firstName?.toLowerCase().includes(value.toLowerCase()) ||
       profile.lastName?.toLowerCase().includes(value.toLowerCase()) ||
       profile.email?.toLowerCase().includes(value.toLowerCase()) ||
-      profile.teacherProfile.specialization?.toLowerCase().includes(value.toLowerCase())
+      profile.teacherProfile?.specialization?.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredData(filtered);
   };
@@ -77,61 +80,61 @@ const TeacherManager: React.FC = () => {
     setSelectedProfile(null);
   };
 
+  const handleViewAiReview = (review: AiReviewResponse | undefined) => {
+    if (review) {
+      setSelectedAiReview(review);
+      setIsAiReviewModalVisible(true);
+    }
+  };
+
+  const handleCloseAiReviewModal = () => {
+    setIsAiReviewModalVisible(false);
+    setSelectedAiReview(null);
+  };
+
+  // Get score color based on value
+  const getScoreColor = (score: number) => {
+    if (score >= 4) return 'green';
+    if (score >= 2) return 'orange';
+    return 'red';
+  };
+
   const columns: ColumnsType<UnverifiedTeacherProfile> = [
     {
       title: "Name",
       dataIndex: ["firstName", "lastName"],
       key: "name",
-      render: (_, record) => (
-        <div className="flex items-center gap-3">
-          <Avatar
-            src={record.imgUrl}
-            size={48}
-            className="shadow-sm border-2 border-gray-100"
-          >
-            {record.firstName?.charAt(0)}
-          </Avatar>
-          <div className="flex flex-col">
+      render: (_, record) => {
+        // Handle both API structures: direct fields or nested in user
+        const firstName = record.firstName || record.user?.firstName;
+        const lastName = record.lastName || record.user?.lastName;
+        const imgUrl = record.imgUrl || record.user?.imgUrl;
+        
+        return (
+          <div className="flex items-center gap-3">
+            <Avatar
+              src={imgUrl}
+              size={48}
+              className="shadow-sm border-2 border-gray-100"
+            >
+              {firstName?.charAt(0)}
+            </Avatar>
             <span className="font-semibold text-gray-900">
-              {record.firstName} {record.lastName}
+              {firstName} {lastName}
             </span>
-            <span className="text-sm text-gray-500">{record.email}</span>
           </div>
-        </div>
-      ),
-    },
-    {
-      title: "Qualification",
-      dataIndex: ["teacherProfile", "qualification"],
-      key: "qualification",
-      render: (qualification) => <span className="text-gray-700">{qualification}</span>,
-    },
-    {
-      title: "Specialization",
-      dataIndex: ["teacherProfile", "specialization"],
-      key: "specialization",
-      render: (specialization) => <span className="text-gray-700">{specialization}</span>,
-    },
-    {
-      title: "Experience",
-      dataIndex: ["teacherProfile", "experience"],
-      key: "experience",
-      render: (experience) => <span className="text-gray-700">{experience}</span>,
-    },
-    {
-      title: "Certificates",
-      dataIndex: ["teacherProfile", "certificateUrls"],
-      key: "certificates",
-      render: (certificateUrls: string[]) => (
-        <span className="text-purple-600 font-semibold">{certificateUrls?.length || 0}</span>
-      ),
+        );
+      },
     },
     {
       title: "Applied Date",
       dataIndex: "dob",
       key: "appliedDate",
       align: "center",
-      render: (date) => <span className="text-gray-600">{date}</span>,
+      render: (_, record) => {
+        const dob = record.dob || record.user?.dob;
+        return <span className="text-gray-600">{dob}</span>;
+      },
     },
     {
       title: "Action",
@@ -145,11 +148,20 @@ const TeacherManager: React.FC = () => {
               onClick={() => handleViewProfile(record)}
             />
           </Tooltip>
+          {record.latestReview && (
+            <Tooltip title="AI Review">
+              <Button
+                icon={<RobotOutlined />}
+                onClick={() => handleViewAiReview(record.latestReview)}
+                style={{ color: getScoreColor(record.latestReview.syllabusAlignment) }}
+              />
+            </Tooltip>
+          )}
           <Tooltip title="Approve Profile">
             <Popconfirm
               title="Approve Teacher Profile"
               description="Are you sure you want to approve this teacher profile?"
-              onConfirm={() => handleVerifyProfile(record.teacherProfile.id)}
+              onConfirm={() => handleVerifyProfile(record.teacherProfile?.id || record.id || record.user?.id || '')}
               okText="Approve"
               cancelText="Cancel"
             >
@@ -194,7 +206,7 @@ const TeacherManager: React.FC = () => {
             <Button
               type="primary"
               icon={<CheckOutlined />}
-              onClick={() => fetchUnverifiedProfiles()}
+              onClick={() => { fetchUnverifiedProfiles(); fetchCurrentRequests(); }}
               loading={loading}
               className="bg-blue-600 hover:bg-blue-700 border-0"
             >
@@ -202,17 +214,6 @@ const TeacherManager: React.FC = () => {
             </Button>
           </div>
         </div>
-
-        {/* Error Alert */}
-        {error && (
-          <Alert
-            message="Error"
-            description={error}
-            type="error"
-            showIcon
-            className="mb-4"
-          />
-        )}
 
         {/* Stats */}
         <div className="mb-4">
@@ -239,7 +240,7 @@ const TeacherManager: React.FC = () => {
             className="overflow-x-auto"
             scroll={{ x: 800 }}
             size="middle"
-            rowKey={(record) => record.teacherProfile.id}
+            rowKey={(record) => record.teacherProfile?.id || record.id || record.user?.id || ''}
             loading={loading}
           />
         </div>
@@ -258,24 +259,34 @@ const TeacherManager: React.FC = () => {
         width={800}
         centered
       >
-        {selectedProfile && (
+        {selectedProfile && (() => {
+          // Handle both API structures
+          const firstName = selectedProfile.firstName || selectedProfile.user?.firstName;
+          const lastName = selectedProfile.lastName || selectedProfile.user?.lastName;
+          const email = selectedProfile.email || selectedProfile.user?.email;
+          const imgUrl = selectedProfile.imgUrl || selectedProfile.user?.imgUrl;
+          const dob = selectedProfile.dob || selectedProfile.user?.dob;
+          const userId = selectedProfile.id || selectedProfile.user?.id;
+          const roles = selectedProfile.roles || selectedProfile.user?.roles || [];
+          
+          return (
           <div className="space-y-6">
             {/* Profile Header */}
             <div className="flex items-center gap-3">
               <Avatar
-                src={selectedProfile.imgUrl}
+                src={imgUrl}
                 size={80}
                 className="shadow-md border-2 border-gray-200"
               >
-                {selectedProfile.firstName?.charAt(0)}
+                {firstName?.charAt(0)}
               </Avatar>
               <div>
                 <h2 className="text-xl font-bold text-gray-900">
-                  {selectedProfile.firstName} {selectedProfile.lastName}
+                  {firstName} {lastName}
                 </h2>
-                <p className="text-gray-600">{selectedProfile.email}</p>
+                <p className="text-gray-600">{email}</p>
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {selectedProfile.roles.map((role) => (
+                  {roles.map((role: string) => (
                     <Tag key={role} color="blue">
                       {role}
                     </Tag>
@@ -291,10 +302,10 @@ const TeacherManager: React.FC = () => {
               <h3 className="text-lg font-semibold mb-3">Basic Information</h3>
               <Descriptions bordered column={2} size="small">
                 <Descriptions.Item label="Date of Birth">
-                  {selectedProfile.dob || 'Not provided'}
+                  {dob || 'Not provided'}
                 </Descriptions.Item>
                 <Descriptions.Item label="User ID">
-                  {selectedProfile.id}
+                  {userId}
                 </Descriptions.Item>
               </Descriptions>
             </div>
@@ -306,26 +317,26 @@ const TeacherManager: React.FC = () => {
               <h3 className="text-lg font-semibold mb-3">Teacher Profile</h3>
               <Descriptions bordered column={1} size="small">
                 <Descriptions.Item label="Qualification">
-                  {selectedProfile.teacherProfile.qualification || 'Not provided'}
+                  {selectedProfile.teacherProfile?.qualification || 'Not provided'}
                 </Descriptions.Item>
                 <Descriptions.Item label="Specialization">
-                  {selectedProfile.teacherProfile.specialization || 'Not provided'}
+                  {selectedProfile.teacherProfile?.specialization || 'Not provided'}
                 </Descriptions.Item>
                 <Descriptions.Item label="Experience">
-                  {selectedProfile.teacherProfile.experience || 'Not provided'}
+                  {selectedProfile.teacherProfile?.experience || 'Not provided'}
                 </Descriptions.Item>
                 <Descriptions.Item label="Biography">
-                  {selectedProfile.teacherProfile.biography || 'Not provided'}
+                  {selectedProfile.teacherProfile?.biography || 'Not provided'}
                 </Descriptions.Item>
                 <Descriptions.Item label="Rating">
-                  {selectedProfile.teacherProfile.rating ? `${selectedProfile.teacherProfile.rating}/5` : 'Not rated'}
+                  {selectedProfile.teacherProfile?.rating ? `${selectedProfile.teacherProfile.rating}/5` : 'Not rated'}
                 </Descriptions.Item>
                 <Descriptions.Item label="Certificates">
-                  {selectedProfile.teacherProfile.certificateUrls?.length > 0
+                  {selectedProfile.teacherProfile?.certificateUrls?.length > 0
                     ? `${selectedProfile.teacherProfile.certificateUrls.length} certificate(s) uploaded`
                     : 'No certificates uploaded'
                   }
-                  {selectedProfile.teacherProfile.certificateUrls?.length > 0 && (
+                  {selectedProfile.teacherProfile?.certificateUrls?.length > 0 && (
                     <div className="mt-2">
                       <ul className="list-disc list-inside text-sm text-gray-600">
                         {selectedProfile.teacherProfile.certificateUrls.map((url, index) => (
@@ -345,11 +356,95 @@ const TeacherManager: React.FC = () => {
                   )}
                 </Descriptions.Item>
                 <Descriptions.Item label="Verification Status">
-                  <Tag color={selectedProfile.teacherProfile.isVerified ? 'green' : 'orange'}>
-                    {selectedProfile.teacherProfile.isVerified ? 'Verified' : 'Pending Verification'}
+                  <Tag color={selectedProfile.teacherProfile?.isVerified ? 'green' : 'orange'}>
+                    {selectedProfile.teacherProfile?.isVerified ? 'Verified' : 'Pending Verification'}
                   </Tag>
                 </Descriptions.Item>
               </Descriptions>
+            </div>
+          </div>
+        );
+        })()}
+      </Modal>
+
+      {/* AI Review Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <RobotOutlined className="text-purple-500" />
+            AI Review Analysis
+          </div>
+        }
+        open={isAiReviewModalVisible}
+        onCancel={handleCloseAiReviewModal}
+        footer={[
+          <Button key="close" onClick={handleCloseAiReviewModal}>
+            Close
+          </Button>,
+        ]}
+        width={600}
+        centered
+      >
+        {selectedAiReview && (
+          <div className="space-y-4">
+            {/* Scores */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Evaluation Scores</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="text-sm text-gray-500">Syllabus Alignment</div>
+                  <div className={`text-2xl font-bold text-${getScoreColor(selectedAiReview.syllabusAlignment)}-600`}>
+                    {selectedAiReview.syllabusAlignment}/5
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="text-sm text-gray-500">Concept Accuracy</div>
+                  <div className={`text-2xl font-bold text-${getScoreColor(selectedAiReview.conceptAccuracy)}-600`}>
+                    {selectedAiReview.conceptAccuracy}/5
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="text-sm text-gray-500">Difficulty Fit</div>
+                  <div className={`text-2xl font-bold text-${getScoreColor(selectedAiReview.difficultyFit)}-600`}>
+                    {selectedAiReview.difficultyFit}/5
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="text-sm text-gray-500">Explanation Quality</div>
+                  <div className={`text-2xl font-bold text-${getScoreColor(selectedAiReview.explanationQuality)}-600`}>
+                    {selectedAiReview.explanationQuality}/5
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Divider />
+
+            {/* Recommendation */}
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Recommendation</h3>
+              <Tag 
+                color={selectedAiReview.recommendation?.toLowerCase().includes('qualified') && !selectedAiReview.recommendation?.toLowerCase().includes('not') ? 'green' : 'red'}
+                className="text-base px-3 py-1"
+              >
+                {selectedAiReview.recommendation}
+              </Tag>
+            </div>
+
+            {/* Feedback */}
+            <div>
+              <h3 className="text-lg font-semibold mb-2">AI Feedback</h3>
+              <div className="bg-blue-50 p-4 rounded-lg text-gray-700 leading-relaxed">
+                {selectedAiReview.feedback}
+              </div>
+            </div>
+
+            {/* Meta Info */}
+            <div className="flex items-center gap-4 text-sm text-gray-500">
+              <span><RobotOutlined /> Reviewed by: {selectedAiReview.reviewerType}</span>
+              {selectedAiReview.createdAt && (
+                <span>• {new Date(selectedAiReview.createdAt).toLocaleString()}</span>
+              )}
             </div>
           </div>
         )}
