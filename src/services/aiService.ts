@@ -196,19 +196,24 @@ export const askAiStudentDashboard = async (
 /**
  * Generate questions from text using AI
  * @param subjectId - The subject ID for the questions
- * @param text - The raw text containing questions (correct answers marked with *)
+ * @param rawText - The raw text containing questions (correct answers marked with *)
+ * @param topicName - Optional topic name for all generated questions
  * @returns Promise with the generated questions array directly
  */
 export const generateQuestionsFromText = async (
     subjectId: string,
-    text: string
+    rawText: string,
+    topicName?: string
 ): Promise<AIGeneratedQuestion[]> => {
     const response = await axiosInstance.post<AIGeneratedQuestion[]>(
         `/ai/generate-questions/${subjectId}`,
-        text,
+        {
+            rawText,
+            topicName: topicName || undefined
+        },
         {
             headers: {
-                'Content-Type': 'text/plain'
+                'Content-Type': 'application/json'
             }
         }
     );

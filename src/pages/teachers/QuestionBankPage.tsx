@@ -28,6 +28,8 @@ import {
   PictureOutlined,
   AudioOutlined,
   RobotOutlined,
+  SortAscendingOutlined,
+  SortDescendingOutlined,
 } from "@ant-design/icons";
 import type { QuestionBankItem, NewQuestion, QuestionImportResponse } from "~/types/question";
 import type { ColumnsType } from "antd/es/table";
@@ -66,6 +68,8 @@ const QuestionBankPage: React.FC = () => {
     batchDeleteQuestions,
     fetchQuestions,
     fetchByUserId,
+    fetchBySubjectId,
+    fetchByTopicId,
     getQuestionById,
     downloadImportTemplate,
     importQuestions,
@@ -125,7 +129,10 @@ const QuestionBankPage: React.FC = () => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
-  const [selectedTopic, setSelectedTopic] = useState<string>("");
+  const [selectedTopicId, setSelectedTopicId] = useState<string>("");
+
+  // Sort state
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   // Pagination state (controlled) - giúp chuyển trang ổn định dù dataSource thay đổi do filter/sort
   const [tablePagination, setTablePagination] = useState({
@@ -135,7 +142,7 @@ const QuestionBankPage: React.FC = () => {
 
   const { current, pageSize } = tablePagination;
 
-  // Server-side pagination: mỗi lần đổi trang / pageSize / search thì gọi lại API
+  // Server-side pagination: mỗi lần đổi trang / pageSize / search / sort / subject / topic thì gọi lại API
   useEffect(() => {
     const pageNo = Math.max(0, current - 1);
     const keyword = searchText.trim();
@@ -143,15 +150,21 @@ const QuestionBankPage: React.FC = () => {
     // Nếu có keyword, sử dụng searchQuestions API
     if (keyword) {
       searchQuestions({ keyword, pageNo, pageSize });
+    } else if (selectedTopicId) {
+      // Nếu có topic được chọn, sử dụng fetchByTopicId API (uưu tiên topic hơn subject)
+      fetchByTopicId(selectedTopicId, { pageNo, pageSize, sorts: sortDirection });
+    } else if (selectedSubjectId) {
+      // Nếu có subject được chọn, sử dụng fetchBySubjectId API
+      fetchBySubjectId(selectedSubjectId, { pageNo, pageSize, sorts: sortDirection });
     } else {
-      // Không có keyword, fetch theo user hoặc tất cả
+      // Không có keyword, topic và subject, fetch theo user hoặc tất cả
       if (teacherId) {
-        fetchByUserId(teacherId, { pageNo, pageSize });
+        fetchByUserId(teacherId, { pageNo, pageSize, sorts: sortDirection });
       } else {
         fetchQuestions({ pageNo, pageSize });
       }
     }
-  }, [teacherId, current, pageSize, searchText, fetchByUserId, fetchQuestions, searchQuestions]);
+  }, [teacherId, current, pageSize, searchText, sortDirection, selectedSubjectId, selectedTopicId, fetchByUserId, fetchBySubjectId, fetchByTopicId, fetchQuestions, searchQuestions]);
 
   //  Đóng modal
   const handleCloseModal = () => {
@@ -349,7 +362,8 @@ const QuestionBankPage: React.FC = () => {
     setSelectedDifficulty("all");
     setSelectedType("all");
     setSelectedSubjectId("");
-    setSelectedTopic("");
+    setSelectedTopicId("");
+    setSortDirection("desc");
     setTablePagination((prev) => ({ ...prev, current: 1 }));
   };
 
@@ -419,7 +433,7 @@ const QuestionBankPage: React.FC = () => {
     }
   };
 
-  // �🔍 Lọc dữ liệu hiển thị
+  // 🔍 Lọc dữ liệu hiển thị (chỉ filter client-side những trường chưa có API hỗ trợ)
   const filteredData = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();
 
@@ -430,12 +444,7 @@ const QuestionBankPage: React.FC = () => {
           return false;
         }
 
-        const subject = q.subject || "";
-        // Filter by subject name (get subject name from selectedSubjectId)
-        const selectedSubjectName = subjects.find(s => s.id === selectedSubjectId)?.name || "";
-        if (selectedSubjectId && subject !== selectedSubjectName) {
-          return false;
-        }
+        // Subject filter đã được xử lý bởi API, không cần filter client-side
 
         const difficulty = q.difficulty || "";
         if (
@@ -445,10 +454,7 @@ const QuestionBankPage: React.FC = () => {
           return false;
         }
 
-        const topic = (q.topic || "").trim();
-        if (selectedTopic && topic !== selectedTopic) {
-          return false;
-        }
+        // Topic filter đã được xử lý bởi API, không cần filter client-side
 
         const type = q.type || "";
         if (selectedType !== "all" && type !== selectedType) {
@@ -457,25 +463,23 @@ const QuestionBankPage: React.FC = () => {
 
         return true;
       })
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt || 0).getTime() -
-          new Date(a.createdAt || 0).getTime()
-      );
+      .sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0).getTime();
+        const dateB = new Date(b.createdAt || 0).getTime();
+        return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+      });
   }, [
     questionBank,
     searchText,
-    selectedSubjectId,
     selectedDifficulty,
-    selectedTopic,
     selectedType,
-    subjects,
+    sortDirection,
   ]);
 
   // Khi thay đổi filter/search, reset về trang 1 để tránh bị kẹt ở trang không còn dữ liệu
   useEffect(() => {
     setTablePagination((prev) => ({ ...prev, current: 1 }));
-  }, [searchText, selectedSubjectId, selectedDifficulty, selectedTopic, selectedType]);
+  }, [searchText, selectedSubjectId, selectedDifficulty, selectedTopicId, selectedType]);
 
   // Fetch topics when subject is selected
   useEffect(() => {
@@ -650,7 +654,7 @@ const QuestionBankPage: React.FC = () => {
           value={selectedSubjectId || undefined}
           onChange={(value) => {
             setSelectedSubjectId(value || "");
-            setSelectedTopic(""); // Reset topic when subject changes
+            setSelectedTopicId(""); // Reset topic when subject changes
           }}
           placeholder="All Subjects"
           allowClear
@@ -664,8 +668,8 @@ const QuestionBankPage: React.FC = () => {
           ))}
         </Select>
         <Select
-          value={selectedTopic || undefined}
-          onChange={(value) => setSelectedTopic(value || "")}
+          value={selectedTopicId || undefined}
+          onChange={(value) => setSelectedTopicId(value || "")}
           placeholder="All Topics"
           allowClear
           className="w-48"
@@ -673,7 +677,7 @@ const QuestionBankPage: React.FC = () => {
           disabled={!selectedSubjectId}
         >
           {topics.map((topic) => (
-            <Option key={topic.id} value={topic.name}>
+            <Option key={topic.id} value={topic.id}>
               {topic.name}
             </Option>
           ))}
@@ -698,6 +702,15 @@ const QuestionBankPage: React.FC = () => {
           <Option value="all">All Types</Option>
           <Option value="mcq">MCQ</Option>
           <Option value="frq">FRQ</Option>
+        </Select>
+        <Select
+          value={sortDirection}
+          onChange={setSortDirection}
+          className="w-40"
+          suffixIcon={sortDirection === 'desc' ? <SortDescendingOutlined /> : <SortAscendingOutlined />}
+        >
+          <Option value="desc">Newest First</Option>
+          <Option value="asc">Oldest First</Option>
         </Select>
         <Button onClick={clearFilters}>Clear Filters</Button>
       </div>

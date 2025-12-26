@@ -706,23 +706,37 @@ export const useQuestionBank = () => {
   // }, [normalizeQuestions]);
 
   // 🔹 Lấy theo môn học (subjectId)
-  const fetchBySubjectId = useCallback(async (subjectId: string, params?: { pageNo?: number; pageSize?: number }) => {
+  const fetchBySubjectId = useCallback(async (subjectId: string, params?: { pageNo?: number; pageSize?: number; sorts?: string }) => {
     try {
       setLoading(true);
-      // Use large pageSize to get all questions for statistics calculation
-      const queryParams = { pageSize: 1000, ...params };
-      const res = await QuestionService.getBySubjectId(subjectId, queryParams);
+      const res = await QuestionService.getBySubjectId(subjectId, params);
       setQuestions(normalizeQuestions(res.data?.data));
+      setPageMeta(extractPageMeta(res.data?.data));
     } catch (error) {
       toast.error("Failed to load questions by subject!");
       console.error(error);
     } finally {
       setLoading(false);
     }
-  }, [normalizeQuestions]);
+  }, [normalizeQuestions, extractPageMeta]);
+
+  // 🔹 Lấy theo topic (topicId)
+  const fetchByTopicId = useCallback(async (topicId: string, params?: { pageNo?: number; pageSize?: number; sorts?: string }) => {
+    try {
+      setLoading(true);
+      const res = await QuestionService.getByTopicId(topicId, params);
+      setQuestions(normalizeQuestions(res.data?.data));
+      setPageMeta(extractPageMeta(res.data?.data));
+    } catch (error) {
+      toast.error("Failed to load questions by topic!");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [normalizeQuestions, extractPageMeta]);
 
   // 🔹 Lấy theo userId (thay cho teacherId)
-  const fetchByUserId = useCallback(async (userId: string, params?: { pageNo?: number; pageSize?: number; keyword?: string }) => {
+  const fetchByUserId = useCallback(async (userId: string, params?: { pageNo?: number; pageSize?: number; keyword?: string; sorts?: string }) => {
     try {
       setLoading(true);
       const res = await QuestionService.getByUserId(userId, params);
@@ -1090,7 +1104,7 @@ export const useQuestionBank = () => {
     deleteQuestion,
     batchDeleteQuestions,
     fetchByUserId,
-    // fetchByTopicId, // Method not available in service yet
+    fetchByTopicId,
     fetchBySubjectId,
     downloadImportTemplate,
     importQuestions,
