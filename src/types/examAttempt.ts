@@ -6,6 +6,14 @@ import type {
 } from "~/types/test";
 
 /**
+ * Suspicious activity log entry
+ */
+export interface SuspiciousActivityLog {
+  message: string;
+  createdAt: string;
+}
+
+/**
  * Payload cho API /exam-attempts/start-single
  */
 export interface StartSinglePayload {
@@ -92,6 +100,7 @@ export interface AttemptResultDetail {
   doneBy: string;
   comment?: string;
   questions: AttemptResultQuestion[];
+  suspiciousActivityLogs?: SuspiciousActivityLog[];
 }
 
 /**
@@ -179,6 +188,10 @@ export interface TeacherExamAttemptItem {
   examId: string;
   doneBy: string;
   score: number;
+  apResult?: {
+    scaledScore: number;
+    qualificationMessage: string;
+  };
   passingScore: number;
   startTime: string;
   endTime: string;
@@ -186,4 +199,5 @@ export interface TeacherExamAttemptItem {
   comment: string;
   rating: number;
   isLate: boolean;
+  suspiciousActivityLogs?: SuspiciousActivityLog[];
 }

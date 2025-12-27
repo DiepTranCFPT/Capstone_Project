@@ -31,6 +31,10 @@ interface HistoryRecord {
   startTime: string;
   endTime: string | null;
   rating: number | null;
+  suspiciousActivityLogs?: {
+    message: string;
+    createdAt: string;
+  }[];
 }
 
 /**
