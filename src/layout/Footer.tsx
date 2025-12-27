@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const Footer: React.FC = () => {
   return (
@@ -10,35 +11,13 @@ const Footer: React.FC = () => {
           <h3 className="text-xl font-bold mb-2">GET IN TOUCH!</h3>
           <div className="w-24 h-[2px] bg-white mb-4" />
           <p className="text-base mb-6">
-            Fusce varius, dolor tempor interdum tristiquei bibendum.
+            Hỗ trợ học tập và luyện thi AP hiệu quả.
           </p>
           <div className="flex items-center mb-3">
-            <img
-              className="w-6 h-6 mr-2"
-              src="https://placehold.co/23x23"
-              alt="phone"
-            />
-            <span className="font-semibold">123-456-789</span>
+            <span className="font-semibold">039-882-7576</span>
           </div>
           <div className="flex items-center mb-6">
-            <span className="font-semibold">aplmscapstone@gmail.com</span>
-          </div>
-          <div className="flex space-x-4">
-            <img
-              className="w-6 h-6"
-              src="https://placehold.co/25x25"
-              alt="icon1"
-            />
-            <img
-              className="w-6 h-6"
-              src="https://placehold.co/25x25"
-              alt="icon2"
-            />
-            <img
-              className="w-6 h-6"
-              src="https://placehold.co/25x25"
-              alt="icon3"
-            />
+            <span className="font-semibold">trancaodiep28022003@gmail.com</span>
           </div>
         </div>
 
@@ -47,10 +26,26 @@ const Footer: React.FC = () => {
           <h3 className="text-xl font-bold mb-2">ABOUT US</h3>
           <div className="w-14 h-[2px] bg-white mb-4" />
           <ul className="space-y-3 text-sm">
-            <li>Resource center</li>
-            <li>Careers</li>
-            <li>Instructor</li>
-            <li>Become A Teacher</li>
+            <li>
+              <Link to="/materials" className="hover:text-teal-400 transition-colors">
+                Resource center
+              </Link>
+            </li>
+            <li>
+              <Link to="/blog" className="hover:text-teal-400 transition-colors">
+                Careers
+              </Link>
+            </li>
+            {/* <li>
+              <Link to="/ranking" className="hover:text-teal-400 transition-colors">
+                Instructor
+              </Link>
+            </li>
+            <li>
+              <Link to="/ranking" className="hover:text-teal-400 transition-colors">
+                Teacher Ratings
+              </Link>
+            </li> */}
           </ul>
         </div>
 
@@ -59,10 +54,26 @@ const Footer: React.FC = () => {
           <h3 className="text-xl font-bold mb-2">USEFUL LINKS</h3>
           <div className="w-14 h-[2px] bg-white mb-4" />
           <ul className="space-y-3 text-sm">
-            <li>All Courses</li>
-            <li>Digital Marketing</li>
-            <li>Design & Branding</li>
-            <li>News & Blogs</li>
+            <li>
+              <Link to="/materials" className="hover:text-teal-400 transition-colors">
+                All Courses
+              </Link>
+            </li>
+            <li>
+              <Link to="/community" className="hover:text-teal-400 transition-colors">
+                Community
+              </Link>
+            </li>
+            <li>
+              <Link to="/exam-test" className="hover:text-teal-400 transition-colors">
+                Exam Practice
+              </Link>
+            </li>
+            <li>
+              <Link to="/blog" className="hover:text-teal-400 transition-colors">
+                News & Blogs
+              </Link>
+            </li>
           </ul>
         </div>
 
