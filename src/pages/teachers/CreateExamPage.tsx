@@ -20,7 +20,7 @@ const CreateExamPage: React.FC = () => {
 
   // const { user } = useAuth();
   const { createNewTemplate, updateTemplateDetails, fetchTemplateById, currentTemplate, loading: savingTemplate, analyzeTemplate } = useExamTemplates();
-  const { subjects } = useSubjects();
+  const { subjects, fetchSubjects } = useSubjects();
   const { topics, fetchTopicsBySubject } = useQuestionTopics();
 
   // Use useQuestionBank to fetch questions for stats
@@ -30,6 +30,11 @@ const CreateExamPage: React.FC = () => {
     loading: loadingQuestions
   } = useQuestionBank();
   const { showLoading, hideLoading } = useGlobalLoading();
+
+  // Fetch all subjects on mount
+  useEffect(() => {
+    fetchSubjects({ pageNo: 0, pageSize: 10000 });
+  }, [fetchSubjects]);
 
   // Template form states
   const [templateTitle, setTemplateTitle] = useState<string>('');
@@ -112,7 +117,7 @@ const CreateExamPage: React.FC = () => {
   useEffect(() => {
     if (selectedSubjectId) {
       fetchTopicsBySubject(selectedSubjectId);
-      fetchBySubjectId(selectedSubjectId, { pageNo: 0, pageSize: 1000 });
+      fetchBySubjectId(selectedSubjectId, { pageNo: 0, pageSize: 10000 });
     }
   }, [selectedSubjectId, fetchTopicsBySubject, fetchBySubjectId]);
 
@@ -1015,7 +1020,13 @@ const CreateExamPage: React.FC = () => {
                       <div className="flex items-center gap-2 mb-3">
                         <Switch
                           checked={isAdvancedMode}
-                          onChange={setIsAdvancedMode}
+                          onChange={(checked) => {
+                            setIsAdvancedMode(checked);
+                            // When enabling advanced mode, set numberOfContexts to 1 if it's 0
+                            if (checked && (ruleForm.numberOfContexts || 0) === 0) {
+                              setRuleForm({ ...ruleForm, numberOfContexts: 1 });
+                            }
+                          }}
                           size="small"
                         />
                         <label className="text-sm font-medium text-gray-700">

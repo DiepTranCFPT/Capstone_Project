@@ -293,7 +293,7 @@ export interface BrowseExamTemplateParams {
   minRating?: number;
   pageNo?: number;
   pageSize?: number;
-  sorts?: string[];
+  sorts?: string;
 }
 
 // Types for GET /exam-templates/ratings/{id} API

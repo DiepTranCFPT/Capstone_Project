@@ -285,6 +285,7 @@ const QuestionContextSection: React.FC<QuestionContextSectionProps> = ({
                                     size="large"
                                     showSearch
                                     optionFilterProp="children"
+                                    style={{ width: "100%" }}
                                     notFoundContent={
                                         loadingSubjects ? (
                                             <Spin size="small" />

@@ -266,7 +266,7 @@ function App() {
                 <ParentLayout />
               </ProtectedRoute>}>
               <Route path="dashboard" element={<ParentDashboardPage />} />
-              <Route path="notification" element={<NotificationCenterPage />} />
+              <Route path="notifications" element={<NotificationCenterPage />} />
               <Route path="profile" element={<ParentProfileDashboard />} />
               <Route path="link-student" element={<LinkStudentPage />} />
               <Route path="children" element={<ChildrenListPage />} />

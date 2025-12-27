@@ -26,12 +26,17 @@ const ExamTestPage: React.FC = () => {
         totalElements,
         handlePageChange
     } = useBrowseExamTemplates();
-    const { subjects, loading: subjectsLoading } = useSubjects();
+    const { subjects, loading: subjectsLoading, fetchSubjects } = useSubjects();
     const { teachers, loading: teachersLoading } = useTeachersList({ pageNo: 0, pageSize: 100 });
     const { startSingleAttempt, startComboAttempt, startComboRandomAttempt } = useExamAttempt();
     // const { isAuthenticated } = useAuth();
     const navigation = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
+
+    // Fetch all subjects on mount
+    useEffect(() => {
+        fetchSubjects({ pageNo: 0, pageSize: 10000 });
+    }, [fetchSubjects]);
 
     // State for WaitResultModal
     const [showWaitResultModal, setShowWaitResultModal] = useState(false);

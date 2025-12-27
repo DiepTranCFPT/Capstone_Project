@@ -1,4 +1,4 @@
- import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 // import { toast } from "~/components/common/Toast";
 import ExamTemplateService from "~/services/examService";
 import type { ApiResponse } from "~/types/api";
@@ -13,8 +13,9 @@ export const useBrowseExamTemplates = (
 
   // Trạng thái phân trang và filter
   const [params, setParams] = useState<BrowseExamTemplateParams>({
-    pageNo: 0,
+    pageNo: 1,
     pageSize: 10,
+    sorts: 'createAt:desc',
     ...initialParams,
   });
 
@@ -47,7 +48,7 @@ export const useBrowseExamTemplates = (
           setTotalPages(pageData.totalPage || 0);
           setParams((prev) => ({
             ...prev,
-            pageNo: pageData.pageNo || 0,
+            pageNo: pageData.pageNo || 1,
             pageSize: pageData.pageSize || 10,
           }));
         } else {
@@ -75,7 +76,7 @@ export const useBrowseExamTemplates = (
     (filters: Omit<BrowseExamTemplateParams, "pageNo" | "pageSize">) => {
       // Create new params with only pageSize preserved, and merge with new filters
       const newParams: BrowseExamTemplateParams = {
-        pageNo: 0,
+        pageNo: 1,
         pageSize: params.pageSize || 10,
         ...filters, // Only include filters that are actually set
       };
@@ -87,10 +88,10 @@ export const useBrowseExamTemplates = (
 
   /**
    * Hàm để xử lý khi Ant Design Table thay đổi trang hoặc kích thước trang.
-   * Antd pagination là 1-based, nên ta trừ 1.
+   * Antd pagination và API đều là 1-based.
    */
   const handlePageChange = (newPage: number, newSize: number) => {
-    const newParams = { ...params, pageNo: newPage - 1, pageSize: newSize };
+    const newParams = { ...params, pageNo: newPage, pageSize: newSize };
     setParams(newParams);
     fetchTemplates(newParams);
   };
@@ -99,7 +100,7 @@ export const useBrowseExamTemplates = (
     templates,
     loading,
     error,
-    pageNo: (params.pageNo || 0) + 1, // Chuyển 0-based (API) sang 1-based (cho Antd Table)
+    pageNo: params.pageNo || 1, // API và UI đều dùng 1-based
     pageSize: params.pageSize || 10,
     totalElements,
     totalPages,
