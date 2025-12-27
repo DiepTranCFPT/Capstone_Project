@@ -340,64 +340,66 @@ const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
             />
           </Form.Item>
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* Subject */}
-            <Form.Item
-              label={
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  <BookOutlined className="text-[#3CBCB2]" />
-                  Subject
-                </span>
+          {/* Subject */}
+          <Form.Item
+            label={
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <BookOutlined className="text-[#3CBCB2]" />
+                Subject
+              </span>
+            }
+            required
+          >
+            <Select
+              showSearch
+              optionFilterProp="label"
+              placeholder="Select subject"
+              value={formData.subject || undefined}
+              onChange={(value) =>
+                handleChange("subject", (value ?? "") as NewQuestion["subject"])
               }
-              required
+              loading={subjectsLoading}
+              allowClear
+              size="large"
             >
-              <Select
-                showSearch
-                optionFilterProp="label"
-                placeholder="Select subject"
-                value={formData.subject || undefined}
-                onChange={(value) =>
-                  handleChange("subject", (value ?? "") as NewQuestion["subject"])
-                }
-                options={subjectOptions}
-                loading={subjectsLoading}
-                allowClear
-                size="large"
-                style={{ width: "100%" }}
-              />
-            </Form.Item>
+              {subjectOptions.map((option) => (
+                <Option key={option.value} value={option.value}>
+                  {option.label}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-            {/* Topic */}
-            <Form.Item
-              label={
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  <FolderOutlined className="text-[#3CBCB2]" />
-                  Topic
-                </span>
+          {/* Topic */}
+          <Form.Item
+            label={
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <FolderOutlined className="text-[#3CBCB2]" />
+                Topic
+              </span>
+            }
+            required
+          >
+            <Select
+              showSearch
+              optionFilterProp="label"
+              placeholder="Select topic"
+              value={formData.topic || undefined}
+              onChange={(value) =>
+                handleChange("topic", (value ?? "") as NewQuestion["topic"])
               }
-              required
+              loading={topicsLoading}
+              allowClear
+              size="large"
+              disabled={!formData.subject}
             >
-              <Select
-                showSearch
-                optionFilterProp="label"
-                placeholder="Select topic"
-                value={formData.topic || undefined}
-                onChange={(value) =>
-                  handleChange("topic", (value ?? "") as NewQuestion["topic"])
-                }
-                loading={topicsLoading}
-                allowClear
-                size="large"
-                style={{ width: "100%" }}
-              >
-                {topicOptions.map((option) => (
-                  <Option key={option.value} value={option.value}>
-                    {option.label}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-          </div>
+              {topicOptions.map((option) => (
+                <Option key={option.value} value={option.value}>
+                  {option.label}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
 
           <div className="grid grid-cols-2 gap-4">
             {/* Difficulty */}

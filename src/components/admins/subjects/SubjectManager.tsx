@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import {
   Table,
   Button,
@@ -27,6 +27,7 @@ const { TextArea } = Input;
 const SubjectManager: React.FC = () => {
   const {
     subjects,
+    pageInfo,
     loading,
     fetchSubjects,
     createSubject,
@@ -35,7 +36,8 @@ const SubjectManager: React.FC = () => {
   } = useSubjects();
 
   const [searchText, setSearchText] = useState("");
-  const [filteredData, setFilteredData] = useState<Subject[]>(subjects);
+  const [pageNo, setPageNo] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -44,27 +46,20 @@ const SubjectManager: React.FC = () => {
   const [saving, setSaving] = useState(false);
 
   React.useEffect(() => {
-    fetchSubjects();
-  }, [fetchSubjects]);
-
-  const applyFilters = useCallback((search: string) => {
-    const filtered = subjects.filter((subject) => {
-      const matchesSearch =
-        subject.name.toLowerCase().includes(search.toLowerCase()) ||
-        (subject.description && subject.description.toLowerCase().includes(search.toLowerCase()));
-
-      return matchesSearch;
-    });
-    setFilteredData(filtered);
-  }, [subjects]);
-
-  React.useEffect(() => {
-    applyFilters(searchText);
-  }, [subjects, searchText, applyFilters]);
+    fetchSubjects({ pageNo, pageSize, keyword: searchText || undefined });
+  }, [pageNo, pageSize, searchText, fetchSubjects]);
 
   const handleSearch = (value: string) => {
     setSearchText(value);
-    applyFilters(value);
+    setPageNo(1); // Reset to first page when searching
+  };
+
+  const handlePageChange = (page: number, size: number) => {
+    setPageNo(page);
+    if (size !== pageSize) {
+      setPageSize(size);
+      setPageNo(1); // Reset to first page when page size changes
+    }
   };
 
   const handleAddSubject = () => {
@@ -225,15 +220,18 @@ const SubjectManager: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200">
           <Table
             columns={columns}
-            dataSource={filteredData}
+            dataSource={subjects}
             pagination={{
-              pageSize: 10,
+              current: pageNo,
+              pageSize: pageSize,
+              total: pageInfo?.totalElement ?? pageInfo?.totalElements ?? 0,
               showSizeChanger: true,
               showQuickJumper: true,
               showTotal: (total, range) =>
                 `${range[0]}-${range[1]} of ${total} subjects`,
               className: "px-4 py-2",
               size: "small",
+              onChange: handlePageChange,
             }}
             rowClassName="hover:bg-gray-50 transition-colors duration-200"
             className="overflow-x-auto"

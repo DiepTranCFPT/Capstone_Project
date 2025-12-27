@@ -54,7 +54,7 @@ const NotificationDropdown: React.FC = () => {
 
     // Format full date time
     const formatDateTime = (dateString: string) => {
-        return new Date(dateString).toLocaleString('vi-VN', {
+        return new Date(dateString).toLocaleString('en-US', {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
@@ -328,8 +328,8 @@ const NotificationDropdown: React.FC = () => {
                         </div>
 
                         {/* Metadata */}
-                        <div className="flex items-center justify-between text-sm text-gray-500 border-t pt-4">
-                            <span>To: {selectedNotification.receiverEmail}</span>
+                        <div className="flex items-center justify-end text-sm text-gray-500 border-t pt-4">
+                            {/* <span>To: {selectedNotification.receiverEmail}</span> */}
                             <span className={`px-2 py-0.5 rounded-full text-xs ${selectedNotification.read ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
                                 {selectedNotification.read ? 'Read' : 'Unread'}
                             </span>

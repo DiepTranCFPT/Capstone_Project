@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import type { Subject, NewSubject } from "~/types/subject";
 import type { PageInfo } from "~/types/pagination";
 import SubjectService from "~/services/subjectService";
@@ -40,7 +40,7 @@ export const useSubjects = () => {
     try {
       const res = await SubjectService.create(data);
       toast.success("Create subject successfully");
-      fetchSubjects();
+      fetchSubjects({ pageNo: 0, pageSize: 10000 });
       return res.data.data;
     } catch {
       toast.error("Failed to create subject");
@@ -53,7 +53,7 @@ export const useSubjects = () => {
     try {
       const res = await SubjectService.update(id, data);
       toast.success("Update subject successfully");
-      fetchSubjects();
+      fetchSubjects({ pageNo: 0, pageSize: 10000 });
       return res.data.data;
     } catch {
       toast.error("Failed to update subject");
@@ -66,16 +66,12 @@ export const useSubjects = () => {
     try {
       await SubjectService.delete(id);
       toast.success("Delete subject successfully");
-      fetchSubjects();
+      fetchSubjects({ pageNo: 0, pageSize: 10000 });
     } catch {
       toast.error("Failed to delete subject");
     }
   }, [fetchSubjects]);
 
-  // 🔹 Fetch khi mount
-  useEffect(() => {
-    fetchSubjects();
-  }, [fetchSubjects]);
 
   return {
     subjects,

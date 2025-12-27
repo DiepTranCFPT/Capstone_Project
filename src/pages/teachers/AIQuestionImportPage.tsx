@@ -74,7 +74,7 @@ const AIQuestionImportPage: React.FC = () => {
     const [inputText, setInputText] = useState<string>("");
 
     // Hooks
-    const { subjects, loading: loadingSubjects } = useSubjects();
+    const { subjects, loading: loadingSubjects, fetchSubjects } = useSubjects();
     const { topics, fetchTopicsBySubject, loading: loadingTopics } = useQuestionTopics();
     const {
         isGenerating,
@@ -87,6 +87,11 @@ const AIQuestionImportPage: React.FC = () => {
         deleteQuestion,
         reset: resetAI,
     } = useAIQuestionImport();
+
+    // Fetch all subjects on mount
+    useEffect(() => {
+        fetchSubjects({ pageNo: 0, pageSize: 10000 });
+    }, [fetchSubjects]);
 
     // Fetch topics when subject is selected
     useEffect(() => {

@@ -325,12 +325,12 @@ const QuestionBankPage: React.FC = () => {
         // Pass NewQuestion directly - useQuestionBank will transform it to API format
         // console.log("[QuestionBankPage] Updating question with ID:", editingQuestion.id);
         await updateQuestion(editingQuestion.id, newQuestion);
-        toast.success("Question updated successfully!");
+        // Hook already shows success toast - removed duplicate
         setEditingQuestion(null);
       } else {
         // console.log("[QuestionBankPage] Creating new question");
         await createQuestion(newQuestion);
-        toast.success("Question added successfully!");
+        // Hook already shows success toast - removed duplicate
       }
       // Only fetch and close modal on success
       // Use fetchByUserId if teacherId exists, otherwise fetch all
@@ -491,7 +491,7 @@ const QuestionBankPage: React.FC = () => {
 
   // Fetch subjects on mount
   useEffect(() => {
-    fetchSubjects({ pageNo: 0, pageSize: 100 });
+    fetchSubjects({ pageNo: 0, pageSize: 1000 });
   }, [fetchSubjects]);
 
   // 🧾 Cấu hình cột bảng

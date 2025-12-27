@@ -85,7 +85,7 @@ const TeacherSidebar: React.FC = () => {
                     </div>
                     {!collapsed && (
                         <div className='flex flex-col px-2'>
-                            <p className="font-semibold">{user.firstName}</p>
+                            <p className="font-semibold">{user.firstName} {user.lastName}</p>
                             <p className="text-xs text-gray-500">{user.email}</p>
                         </div>
                     )}

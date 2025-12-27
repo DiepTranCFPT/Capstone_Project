@@ -57,7 +57,7 @@ const QuestionTopicManager: React.FC = () => {
     const [sortOrder, setSortOrder] = useState<"ascend" | "descend" | null>(null);
 
     useEffect(() => {
-        fetchSubjects();
+        fetchSubjects({ pageNo: 0, pageSize: 10000 });
     }, [fetchSubjects]);
 
     // Fetch topics with server-side pagination and sorting
