@@ -24,7 +24,6 @@ const isLessonCompletedFromServer = (lesson: Lesson): boolean => {
   if (typeof anyLesson.completed === "boolean") return anyLesson.completed;
   if (typeof anyLesson.isCompleted === "boolean") return anyLesson.isCompleted;
 
-  // Không tự suy luận từ progress/lastWatchedSecond để tránh mở khóa nhầm.
   return false;
 };
 
