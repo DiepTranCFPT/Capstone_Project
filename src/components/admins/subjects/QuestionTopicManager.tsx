@@ -15,7 +15,6 @@ import {
     PlusOutlined,
     EditOutlined,
     DeleteOutlined,
-    SearchOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import type { SorterResult } from "antd/es/table/interface";
@@ -41,7 +40,6 @@ const QuestionTopicManager: React.FC = () => {
 
     const { subjects, fetchSubjects } = useSubjects();
 
-    const [searchText, setSearchText] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTopic, setEditingTopic] = useState<QuestionTopic | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -77,11 +75,10 @@ const QuestionTopicManager: React.FC = () => {
             await fetchTopics({
                 pageNo: pagination.current - 1, // API uses 0-based page
                 pageSize: pagination.pageSize,
-                keyword: searchText || undefined,
                 sorts: sorts.length > 0 ? sorts : undefined,
             });
         }
-    }, [fetchTopics, fetchTopicsBySubject, pagination.current, pagination.pageSize, searchText, sortField, sortOrder, selectedSubject]);
+    }, [fetchTopics, fetchTopicsBySubject, pagination.current, pagination.pageSize, sortField, sortOrder, selectedSubject]);
 
     useEffect(() => {
         loadTopics();
@@ -108,12 +105,6 @@ const QuestionTopicManager: React.FC = () => {
             setSortField(null);
             setSortOrder(null);
         }
-    };
-
-    // Handle search with debounce reset to page 1
-    const handleSearch = (value: string) => {
-        setSearchText(value);
-        setPagination((prev) => ({ ...prev, current: 1 })); // Reset to first page
     };
 
     const handleSubjectFilter = (value: string | null) => {
@@ -275,16 +266,6 @@ const QuestionTopicManager: React.FC = () => {
 
                     {/* Search and Add Button */}
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                        <Input.Search
-                            placeholder="Search topics..."
-                            value={searchText}
-                            onChange={(e) => setSearchText(e.target.value)}
-                            onSearch={handleSearch}
-                            allowClear
-                            className="max-w-md"
-                            prefix={<SearchOutlined className="text-gray-400" />}
-                            loading={loading}
-                        />
 
                         <Select
                             placeholder="Filter by Subject"
