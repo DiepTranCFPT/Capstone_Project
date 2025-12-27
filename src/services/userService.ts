@@ -108,6 +108,16 @@ const UserService = {
     const response = await axiosInstance.get<TeacherListResponse>("/users/teachers", { params });
     return response.data;
   },
+
+  // --- 6. Teacher Verification ---
+
+  // POST /users/{userId}/reject: Reject teacher verification request (Admin only)
+  async rejectTeacherVerification(userId: string, note?: string): Promise<{ code: number; message: string }> {
+    const response = await axiosInstance.post(`/users/${userId}/reject`, null, {
+      params: note ? { note } : undefined,
+    });
+    return response.data;
+  },
 };
 
 export default UserService;

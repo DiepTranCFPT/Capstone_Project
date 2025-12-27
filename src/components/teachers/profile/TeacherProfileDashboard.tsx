@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Card, Button, Spin, Badge, Modal } from "antd";
+import { Card, Button, Spin, Badge, Modal, Table, Tag } from "antd";
 import { EditOutlined, LockOutlined, FileTextOutlined, UserAddOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import { useAuth } from "~/hooks/useAuth";
 import { getCurrentUserApi } from "~/services/authService";
@@ -9,6 +9,7 @@ import TeacherChangePasswordForm from "./TeacherChangePasswordForm";
 import EditTeacherProfileForm from "./EditTeacherProfileForm";
 import AvatarUpload from "~/components/students/profile/AvatarUpload";
 import EditProfileForm from "~/components/students/profile/EditProfileForm";
+import type { VerificationRequest } from "~/types/teacherProfile";
 
 const TeacherProfileDashboard: React.FC = () => {
   const { user, loading: authLoading, logout } = useAuth();
@@ -17,6 +18,8 @@ const TeacherProfileDashboard: React.FC = () => {
   const [changePasswordModalVisible, setChangePasswordModalVisible] = useState(false);
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [checkRequestLoading, setCheckRequestLoading] = useState(false);
+  const [requestListModalVisible, setRequestListModalVisible] = useState(false);
+  const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>([]);
 
   const profile = user?.teacherProfile;
 
@@ -71,7 +74,7 @@ const TeacherProfileDashboard: React.FC = () => {
     }
   };
 
-  // Function to check current verification request status
+  // Function to check current verification request status - opens modal with list
   const handleCheckCurrentRequest = async () => {
     try {
       setCheckRequestLoading(true);
@@ -79,14 +82,12 @@ const TeacherProfileDashboard: React.FC = () => {
       if (response.data?.data) {
         const data = response.data.data;
         // Handle both array and object response
-        const requestData = Array.isArray(data) ? data[0] : data;
-        if (requestData) {
-          toast.success(`Request Status: ${requestData.status || 'Pending'}. Created at: ${requestData.createdAt ? new Date(requestData.createdAt).toLocaleString('vi-VN') : 'N/A'}`);
-        } else {
-          toast.info('No verification request found.');
-        }
+        const requests = Array.isArray(data) ? data : [data];
+        setVerificationRequests(requests as VerificationRequest[]);
+        setRequestListModalVisible(true);
       } else {
-        toast.info('No verification request found.');
+        setVerificationRequests([]);
+        setRequestListModalVisible(true);
       }
     } catch (error: unknown) {
       console.error('Error checking verification request:', error);
@@ -352,6 +353,72 @@ const TeacherProfileDashboard: React.FC = () => {
               }, 100);
             }}
           />
+        </Modal>
+
+        {/* Verification Requests List Modal */}
+        <Modal
+          title={
+            <div className="flex items-center gap-2">
+              <FileTextOutlined className="text-blue-500" />
+              Verification Request History
+            </div>
+          }
+          open={requestListModalVisible}
+          onCancel={() => setRequestListModalVisible(false)}
+          footer={[
+            <Button key="close" onClick={() => setRequestListModalVisible(false)}>
+              Close
+            </Button>,
+          ]}
+          width={700}
+          destroyOnClose
+        >
+          {verificationRequests.length > 0 ? (
+            <Table
+              dataSource={verificationRequests}
+              columns={[
+                {
+                  title: 'Status',
+                  dataIndex: 'status',
+                  key: 'status',
+                  render: (status: string) => (
+                    <Tag color={
+                      status === 'APPROVED' ? 'green' :
+                      status === 'REJECTED' ? 'red' :
+                      status === 'PENDING' ? 'orange' : 'default'
+                    }>
+                      {status || 'PENDING'}
+                    </Tag>
+                  ),
+                },
+                {
+                  title: 'Note',
+                  dataIndex: 'note',
+                  key: 'note',
+                  render: (note: string) => note || '-',
+                },
+                {
+                  title: 'Created At',
+                  dataIndex: 'createdAt',
+                  key: 'createdAt',
+                  render: (date: string) => date ? new Date(date).toLocaleString('vi-VN') : '-',
+                },
+                {
+                  title: 'Updated At',
+                  dataIndex: 'updatedAt',
+                  key: 'updatedAt',
+                  render: (date: string) => date ? new Date(date).toLocaleString('vi-VN') : '-',
+                },
+              ]}
+              rowKey="id"
+              pagination={false}
+              size="small"
+            />
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              No verification requests found.
+            </div>
+          )}
         </Modal>
       </div>
     </div>
