@@ -343,7 +343,7 @@ const TestReportsPage: React.FC = () => {
                         style={{ backgroundColor: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
                     >
                         <Pagination
-                            current={(pageInfo?.pageNo || 0) + 1}
+                            current={pageInfo?.pageNo || 1}
                             total={pageInfo?.totalElements || pageInfo?.totalElement || 0}
                             pageSize={pageInfo?.pageSize || 10}
                             showSizeChanger

@@ -525,17 +525,17 @@ export const useExamAttemptHistory = () => {
 
   // Initial load
   useEffect(() => {
-    fetchHistory(0, 10, currentSorts);
+    fetchHistory(1, 10, currentSorts);
   }, [fetchHistory]);
 
   // Handle sort change - call API with new sort
   const handleSortChange = useCallback((newSorts: string[]) => {
     setCurrentSorts(newSorts);
-    fetchHistory(0, pageInfo?.pageSize || 10, newSorts);
+    fetchHistory(1, pageInfo?.pageSize || 10, newSorts);
   }, [fetchHistory, pageInfo?.pageSize]);
 
   const handlePageChange = (newPage: number, newSize: number) => {
-    fetchHistory(newPage - 1, newSize, currentSorts);
+    fetchHistory(newPage, newSize, currentSorts);
   };
 
   return {
