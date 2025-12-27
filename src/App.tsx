@@ -96,6 +96,7 @@ import WalletPage from "./pages/students/WalletPage";
 import AdminDashboardPage from "./pages/admins/AdminDashboardPage";
 import TokenPaymentManagerPage from "./pages/admins/TokenPaymentManagerPage";
 import AdminNotificationsPage from "./pages/admins/NotificationsPage";
+import ProfitPercentagePage from "./pages/admins/ProfitPercentagePage";
 import TeacherProfilePage from "./pages/teachers/TeacherProfilePage";
 import TeacherDetailPage from "./pages/teachers/TeacherDetailPage";
 import TeacherRatingsViewPage from "./pages/teachers/TeacherRatingsViewPage";
@@ -166,6 +167,7 @@ function App() {
               <Route path="communities" element={<CommunityManagerPage />} />
               <Route path="community" element={<CommunityPage />} />
               <Route path="notifications" element={<AdminNotificationsPage />} />
+              <Route path="profit-percentage" element={<ProfitPercentagePage />} />
             </Route>
 
             {/* Main routes with Layout */}
