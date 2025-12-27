@@ -34,9 +34,6 @@ const CommunitySidebar: React.FC<CommunitySidebarProps> = ({
           </div>
           <FiChevronRight className="text-gray-400" />
         </div>
-        <span className="text-xs text-gray-500">
-          {community.memberCount ?? 0} members
-        </span>
       </button>
     );
   };

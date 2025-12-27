@@ -12,7 +12,7 @@ import { useLesson } from "~/hooks/useLesson";
 import type { Lesson } from "~/types/lesson";
 import { PlayCircleOutlined, FileTextOutlined, ClockCircleOutlined } from "@ant-design/icons";
 import { useLearningMaterialRatings } from "~/hooks/useLearningMaterialRatings";
-import { FaStar } from "react-icons/fa";
+import { FaStar, FaCheckCircle } from "react-icons/fa";
 import type { LearningMaterialRating } from "~/types/learningMaterialRating";
 import { toast } from "~/components/common/Toast";
 
@@ -473,9 +473,14 @@ const MaterialDetailTab: React.FC<MaterialDetailTabProps> = ({ material }) => {
                     {/* Thông tin */}
                     <div className="flex-1 space-y-4">
                       <div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                          {instructor.firstName} {instructor.lastName}
-                        </h3>
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-2xl font-bold text-gray-900">
+                            {instructor.firstName} {instructor.lastName}
+                          </h3>
+                          {instructor.teacherProfile?.isVerified && (
+                            <FaCheckCircle className="text-blue-500 text-xl" title="Verified Teacher" />
+                          )}
+                        </div>
                         {instructor.roles && instructor.roles.length > 0 && (
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-teal-50 text-teal-700 border border-teal-200">
                             {instructor.roles.map(role => {
