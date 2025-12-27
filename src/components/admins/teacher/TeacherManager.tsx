@@ -19,12 +19,16 @@ import {
   CheckOutlined,
   EyeOutlined,
   RobotOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import type { UnverifiedTeacherProfile, AiReviewResponse } from "~/types/teacherProfile";
 import { useTeacherProfile } from "~/hooks/useTeacherProfile";
+import UserService from "~/services/userService";
+import { message } from "antd";
 
 const { Title } = Typography;
+const { TextArea } = Input;
 
 const TeacherManager: React.FC = () => {
   const [searchText, setSearchText] = useState("");
@@ -33,6 +37,10 @@ const TeacherManager: React.FC = () => {
   const [isAiReviewModalVisible, setIsAiReviewModalVisible] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<UnverifiedTeacherProfile | null>(null);
   const [selectedAiReview, setSelectedAiReview] = useState<AiReviewResponse | null>(null);
+  const [isRejectModalVisible, setIsRejectModalVisible] = useState(false);
+  const [rejectingProfileId, setRejectingProfileId] = useState<string | null>(null);
+  const [rejectNote, setRejectNote] = useState("");
+  const [rejectLoading, setRejectLoading] = useState(false);
   const { unverifiedProfiles, loading, fetchUnverifiedProfiles, verifyProfile } = useTeacherProfile();
 
   // Initialize data on component mount - call both APIs
@@ -89,6 +97,36 @@ const TeacherManager: React.FC = () => {
   const handleCloseAiReviewModal = () => {
     setIsAiReviewModalVisible(false);
     setSelectedAiReview(null);
+  };
+
+  // Reject handlers
+  const handleOpenRejectModal = (profileId: string) => {
+    setRejectingProfileId(profileId);
+    setRejectNote("");
+    setIsRejectModalVisible(true);
+  };
+
+  const handleCloseRejectModal = () => {
+    setIsRejectModalVisible(false);
+    setRejectingProfileId(null);
+    setRejectNote("");
+  };
+
+  const handleConfirmReject = async () => {
+    if (!rejectingProfileId) return;
+    
+    setRejectLoading(true);
+    try {
+      await UserService.rejectTeacherVerification(rejectingProfileId, rejectNote || undefined);
+      message.success("Teacher profile rejected successfully");
+      handleCloseRejectModal();
+      await fetchUnverifiedProfiles();
+    } catch (error) {
+      console.error("Failed to reject teacher profile:", error);
+      message.error("Failed to reject teacher profile");
+    } finally {
+      setRejectLoading(false);
+    }
   };
 
   // Get score color based on value
@@ -156,6 +194,15 @@ const TeacherManager: React.FC = () => {
               />
             </Tooltip>
           )}
+          <Tooltip title="Reject Profile">
+            <Button
+              danger
+              icon={<CloseOutlined />}
+              onClick={() => handleOpenRejectModal(record.id || record.user?.id || '')}
+            >
+              Reject
+            </Button>
+          </Tooltip>
           <Tooltip title="Approve Profile">
             <Popconfirm
               title="Approve Teacher Profile"
@@ -268,6 +315,14 @@ const TeacherManager: React.FC = () => {
           const userId = selectedProfile.id || selectedProfile.user?.id;
           const roles = selectedProfile.roles || selectedProfile.user?.roles || [];
           
+          // Handle teacherProfile from different sources
+          const teacherProfile = selectedProfile.teacherProfile || 
+            (selectedProfile as unknown as { user?: { teacherProfile?: typeof selectedProfile.teacherProfile } }).user?.teacherProfile;
+          
+          // Debug log
+          console.log('selectedProfile:', selectedProfile);
+          console.log('teacherProfile:', teacherProfile);
+          
           return (
           <div className="space-y-6">
             {/* Profile Header */}
@@ -316,29 +371,29 @@ const TeacherManager: React.FC = () => {
               <h3 className="text-lg font-semibold mb-3">Teacher Profile</h3>
               <Descriptions bordered column={1} size="small">
                 <Descriptions.Item label="Qualification">
-                  {selectedProfile.teacherProfile?.qualification || 'Not provided'}
+                  {teacherProfile?.qualification || 'Not provided'}
                 </Descriptions.Item>
                 <Descriptions.Item label="Specialization">
-                  {selectedProfile.teacherProfile?.specialization || 'Not provided'}
+                  {teacherProfile?.specialization || 'Not provided'}
                 </Descriptions.Item>
                 <Descriptions.Item label="Experience">
-                  {selectedProfile.teacherProfile?.experience || 'Not provided'}
+                  {teacherProfile?.experience || 'Not provided'}
                 </Descriptions.Item>
                 <Descriptions.Item label="Biography">
-                  {selectedProfile.teacherProfile?.biography || 'Not provided'}
+                  {teacherProfile?.biography || 'Not provided'}
                 </Descriptions.Item>
                 <Descriptions.Item label="Rating">
-                  {selectedProfile.teacherProfile?.rating ? `${selectedProfile.teacherProfile.rating}/5` : 'Not rated'}
+                  {teacherProfile?.rating ? `${teacherProfile.rating}/5` : 'Not rated'}
                 </Descriptions.Item>
                 <Descriptions.Item label="Certificates">
-                  {selectedProfile.teacherProfile?.certificateUrls?.length > 0
-                    ? `${selectedProfile.teacherProfile.certificateUrls.length} certificate(s) uploaded`
+                  {teacherProfile?.certificateUrls?.length > 0
+                    ? `${teacherProfile.certificateUrls.length} certificate(s) uploaded`
                     : 'No certificates uploaded'
                   }
-                  {selectedProfile.teacherProfile?.certificateUrls?.length > 0 && (
+                  {teacherProfile?.certificateUrls?.length > 0 && (
                     <div className="mt-2">
                       <ul className="list-disc list-inside text-sm text-gray-600">
-                        {selectedProfile.teacherProfile.certificateUrls.map((url, index) => (
+                        {teacherProfile.certificateUrls.map((url, index) => (
                           <li key={index}>
                             <a
                               href={url}
@@ -355,8 +410,8 @@ const TeacherManager: React.FC = () => {
                   )}
                 </Descriptions.Item>
                 <Descriptions.Item label="Verification Status">
-                  <Tag color={selectedProfile.teacherProfile?.isVerified ? 'green' : 'orange'}>
-                    {selectedProfile.teacherProfile?.isVerified ? 'Verified' : 'Pending Verification'}
+                  <Tag color={teacherProfile?.isVerified ? 'green' : 'orange'}>
+                    {teacherProfile?.isVerified ? 'Verified' : 'Pending Verification'}
                   </Tag>
                 </Descriptions.Item>
               </Descriptions>
@@ -447,6 +502,51 @@ const TeacherManager: React.FC = () => {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Reject Profile Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2 text-red-600">
+            <CloseOutlined />
+            Reject Teacher Profile
+          </div>
+        }
+        open={isRejectModalVisible}
+        onCancel={handleCloseRejectModal}
+        footer={[
+          <Button key="cancel" onClick={handleCloseRejectModal}>
+            Cancel
+          </Button>,
+          <Button
+            key="reject"
+            type="primary"
+            danger
+            loading={rejectLoading}
+            onClick={handleConfirmReject}
+          >
+            Confirm Reject
+          </Button>,
+        ]}
+        width={500}
+        centered
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Are you sure you want to reject this teacher profile? Please provide a reason for rejection (optional).
+          </p>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Rejection Note (optional)
+            </label>
+            <TextArea
+              rows={4}
+              placeholder="Enter reason for rejection..."
+              value={rejectNote}
+              onChange={(e) => setRejectNote(e.target.value)}
+            />
+          </div>
+        </div>
       </Modal>
     </div>
   );
