@@ -146,20 +146,21 @@ const QuestionBankPage: React.FC = () => {
   useEffect(() => {
     const pageNo = current; // API uses 1-indexed, so use current directly
     const keyword = searchText.trim();
+    const sorts = `createAt:${sortDirection}`; // Format: "createdAt:desc" or "createdAt:asc"
 
     // Nếu có keyword, sử dụng searchQuestions API
     if (keyword) {
       searchQuestions({ keyword, pageNo, pageSize });
     } else if (selectedTopicId) {
       // Nếu có topic được chọn, sử dụng fetchByTopicId API (ưu tiên topic hơn subject)
-      fetchByTopicId(selectedTopicId, { pageNo, pageSize, sorts: sortDirection });
+      fetchByTopicId(selectedTopicId, { pageNo, pageSize, sorts });
     } else if (selectedSubjectId) {
       // Nếu có subject được chọn, sử dụng fetchBySubjectId API
-      fetchBySubjectId(selectedSubjectId, { pageNo, pageSize, sorts: sortDirection });
+      fetchBySubjectId(selectedSubjectId, { pageNo, pageSize, sorts });
     } else {
       // Không có keyword, topic và subject, fetch theo user hoặc tất cả
       if (teacherId) {
-        fetchByUserId(teacherId, { pageNo, pageSize, sorts: sortDirection });
+        fetchByUserId(teacherId, { pageNo, pageSize, sorts });
       } else {
         fetchQuestions({ pageNo, pageSize });
       }
