@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Table, Button, Tag, Typography, Space } from 'antd';
-import { ArrowLeftOutlined, TrophyOutlined, FileTextOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, TrophyOutlined, FileTextOutlined, BookOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useParent } from '~/hooks/useParent';
 import { useParentDashboardStats } from '~/hooks/useParentDashboardStats';
-import type { ChildExamHistoryItem } from '~/types/parent';
+import { useAuth } from '~/hooks/useAuth';
+import type { ChildExamHistoryItem, ChildCompletedSubject } from '~/types/parent';
 import ChildDetailStats from '~/components/parents/ChildDetailStats';
 import dayjs from 'dayjs';
 import Loading from '~/components/common/Loading';
@@ -15,12 +16,16 @@ const { Text } = Typography;
 const StudentDetailPage: React.FC = () => {
   const { studentId } = useParams<{ studentId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     examHistory,
     historyPageInfo,
     loadingHistory,
     fetchChildren,
-    fetchChildExamHistory
+    fetchChildExamHistory,
+    completedSubjects,
+    loadingCompletedSubjects,
+    fetchChildCompletedSubjects,
   } = useParent();
 
   // Fetch detailed stats for charts
@@ -38,6 +43,13 @@ const StudentDetailPage: React.FC = () => {
       fetchChildExamHistory(studentId, currentPage, pageSize);
     }
   }, [studentId, currentPage, pageSize, fetchChildExamHistory]);
+
+  // Fetch completed subjects
+  useEffect(() => {
+    if (studentId && user?.id) {
+      fetchChildCompletedSubjects(studentId, user.id);
+    }
+  }, [studentId, user?.id, fetchChildCompletedSubjects]);
 
 
   const columns: ColumnsType<ChildExamHistoryItem> = [
@@ -94,6 +106,43 @@ const StudentDetailPage: React.FC = () => {
     },
   ];
 
+  // Columns for completed subjects
+  const completedSubjectsColumns: ColumnsType<ChildCompletedSubject> = [
+    {
+      title: 'Subject',
+      dataIndex: 'subjectName',
+      key: 'subjectName',
+      render: (name: string) => <Text strong>{name || 'N/A'}</Text>,
+    },
+    {
+      title: 'Progress',
+      dataIndex: 'percent',
+      key: 'percent',
+      render: (percent: number) => (
+        <Tag color={percent >= 100 ? 'green' : percent >= 50 ? 'orange' : 'red'}>
+          {percent?.toFixed(1) || '0.0'}%
+        </Tag>
+      ),
+    },
+    {
+      title: 'Lessons',
+      key: 'lessons',
+      render: (_, record) => (
+        <Text>{record.completedLessons}/{record.totalLessons}</Text>
+      ),
+    },
+    {
+      title: 'Status',
+      dataIndex: 'completed',
+      key: 'completed',
+      render: (completed: boolean) => (
+        <Tag color={completed ? 'success' : 'processing'}>
+          {completed ? 'Completed' : 'In Progress'}
+        </Tag>
+      ),
+    },
+  ];
+
   if (!studentId && !loadingHistory) {
     return (
       <div className="p-6">
@@ -128,6 +177,36 @@ const StudentDetailPage: React.FC = () => {
           loading={statsLoading}
         />
       </div>
+
+      {/* Completed Subjects Section */}
+      <Card 
+        title={
+          <div className="flex items-center gap-2">
+            <BookOutlined className="text-blue-500" />
+            <span>Completed Subjects</span>
+          </div>
+        }
+        className="mb-6"
+      >
+        {loadingCompletedSubjects ? (
+          <Loading />
+        ) : (
+          <Table
+            columns={completedSubjectsColumns}
+            dataSource={completedSubjects}
+            rowKey="subjectId"
+            pagination={{
+              pageSize: 5,
+              showSizeChanger: true,
+              pageSizeOptions: ['5', '10', '20'],
+              showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} subjects`,
+            }}
+            locale={{
+              emptyText: 'No completed subjects yet',
+            }}
+          />
+        )}
+      </Card>
 
       <Card title="Exam history" extra={<FileTextOutlined />}>
         {loadingHistory ? (
