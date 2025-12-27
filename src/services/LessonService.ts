@@ -62,10 +62,11 @@ const LessonService = {
 
   saveProgress(
     lessonId: string,
-    lastWatchedSecond: number
+    lastWatchedSecond: number,
+    completed: boolean = false
   ): Promise<AxiosResponse<ApiResponse<null>>> {
     return axiosInstance.put(`/lessons/${lessonId}/progress`, null, {
-      params: { lastWatchedSecond },
+      params: { lastWatchedSecond, completed },
     });
   },
 
