@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import ParentService from "~/services/parentService";
-import type { ChildInfo, ChildExamHistoryItem } from "~/types/parent";
+import type { ChildInfo, ChildExamHistoryItem, ChildCompletedSubject } from "~/types/parent";
 import { toast } from "~/components/common/Toast";
 import type { PageInfo } from "~/types/pagination";
 
@@ -10,6 +10,10 @@ export const useParent = () => {
     const [examHistory, setExamHistory] = useState<ChildExamHistoryItem[]>([]);
     const [historyPageInfo, setHistoryPageInfo] = useState<PageInfo<ChildExamHistoryItem> | null>(null);
     const [loadingHistory, setLoadingHistory] = useState(false);
+    
+    // Completed subjects state
+    const [completedSubjects, setCompletedSubjects] = useState<ChildCompletedSubject[]>([]);
+    const [loadingCompletedSubjects, setLoadingCompletedSubjects] = useState(false);
 
     // Lấy danh sách con cái
     const fetchChildren = useCallback(async () => {
@@ -84,6 +88,36 @@ export const useParent = () => {
         }
     }, []);
 
+    // Lấy danh sách môn học đã hoàn thành của con
+    const fetchChildCompletedSubjects = useCallback(async (studentId: string, parentId: string) => {
+        setLoadingCompletedSubjects(true);
+        try {
+            const res = await ParentService.getChildCompletedSubjects(studentId, parentId);
+            console.log("Completed subjects response:", res.data);
+            
+            // Handle different response formats
+            let subjects: ChildCompletedSubject[] = [];
+            
+            if (Array.isArray(res.data)) {
+                // Direct array response
+                subjects = res.data;
+            } else if (res.data?.data && Array.isArray(res.data.data)) {
+                // Wrapped in { data: [...] }
+                subjects = res.data.data;
+            } else if (res.data?.code === 0 || res.data?.code === 1000) {
+                const data = res.data.data;
+                subjects = Array.isArray(data) ? data : [];
+            }
+            
+            setCompletedSubjects(subjects);
+        } catch (error) {
+            console.error("Failed to fetch completed subjects:", error);
+            toast.error("Không thể tải danh sách môn học đã hoàn thành.");
+        } finally {
+            setLoadingCompletedSubjects(false);
+        }
+    }, []);
+
     const updateParentProfile = async (data: { occupation: string }) => {
         setLoading(true);
         try {
@@ -117,5 +151,10 @@ export const useParent = () => {
         loadingHistory,
         fetchChildExamHistory,
         updateParentProfile,
+
+        // Completed subjects
+        completedSubjects,
+        loadingCompletedSubjects,
+        fetchChildCompletedSubjects,
     };
 };

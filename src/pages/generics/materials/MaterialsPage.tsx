@@ -8,6 +8,8 @@ import useLearningMaterialsTeacher from "~/hooks/useLearningMaterialsTeacher";
 import { useAuth } from "~/hooks/useAuth";
 import type { LearningMaterialSearchParams } from "~/types/learningMaterial";
 
+const ITEMS_PER_PAGE = 12;
+
 const MaterialsPage: React.FC = () => {
   const { user } = useAuth();
 
@@ -15,6 +17,7 @@ const MaterialsPage: React.FC = () => {
   const [subject, setSubject] = useState("All");
   const [teacher, setTeacher] = useState("All");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
 
   // Hook để lấy materials public (fallback khi không search)
   const { materials: publicMaterials, loading: publicLoading, error: publicError } = usePublicMaterials();
@@ -30,6 +33,11 @@ const MaterialsPage: React.FC = () => {
 
     return () => clearTimeout(timer);
   }, [search]);
+
+  // Reset visible count when filters change
+  useEffect(() => {
+    setVisibleCount(ITEMS_PER_PAGE);
+  }, [debouncedSearch, subject, teacher]);
 
   useEffect(() => {
     if (!user) return; // Không gọi API search nếu chưa login, chỉ dùng public materials
@@ -111,11 +119,25 @@ const MaterialsPage: React.FC = () => {
 
         <div className="col-span-12 md:col-span-9">
           {filtered.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filtered.slice(0, 12).map((m) => (
-                <MaterialCard key={m.id} material={m} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filtered.slice(0, visibleCount).map((m) => (
+                  <MaterialCard key={m.id} material={m} />
+                ))}
+              </div>
+              
+              {/* Show More Button */}
+              {filtered.length > visibleCount && (
+                <div className="flex justify-center mt-8">
+                  <button
+                    onClick={() => setVisibleCount(prev => prev + ITEMS_PER_PAGE)}
+                    className="px-8 py-3 bg-white border-2 border-orange-500 text-orange-500 font-semibold rounded-full hover:bg-orange-500 hover:text-white transition-all duration-300 shadow-md hover:shadow-lg"
+                  >
+                    Show More ({filtered.length - visibleCount} remaining)
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <p className="text-gray-500 text-center">No materials found.</p>
           )}

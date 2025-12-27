@@ -6,7 +6,8 @@ import type {
     ChildInfo,
     ChildExamHistoryItem,
     LinkStudentPayload,
-    UnlinkStudentPayload
+    UnlinkStudentPayload,
+    ChildCompletedSubject
 } from "~/types/parent";
 
 const ParentService = {
@@ -57,6 +58,19 @@ const ParentService = {
         data: { occupation: string }
     ): Promise<AxiosResponse<ApiResponse<string>>> => {
         return axiosInstance.put("/parents/me", data);
+    },
+
+    /**
+     * Lấy danh sách môn học đã hoàn thành của con
+     * GET /parents/children/{studentId}/subjects/completed
+     */
+    getChildCompletedSubjects: (
+        studentId: string,
+        parentId: string
+    ): Promise<AxiosResponse<ApiResponse<ChildCompletedSubject[]>>> => {
+        return axiosInstance.get(`/parents/children/${studentId}/subjects/progress`, {
+            params: { parentId, studentId }
+        });
     },
 };
 

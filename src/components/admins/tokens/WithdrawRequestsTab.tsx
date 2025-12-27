@@ -401,16 +401,7 @@ const WithdrawRequestsTab: React.FC = () => {
 
         {/* History Table */}
         <Table
-          columns={[
-            ...withdrawRequestColumns.filter(col => col.key !== "action"),
-            {
-              title: "Completed At",
-              dataIndex: "updatedAt",
-              key: "updatedAt",
-              width: 150,
-              render: (date) => date ? new Date(date).toLocaleDateString('en-US') : "N/A",
-            },
-          ]}
+          columns={withdrawRequestColumns.filter(col => col.key !== "action")}
           dataSource={filteredHistoryRequests}
           rowKey="transactionId"
           loading={allLoading}

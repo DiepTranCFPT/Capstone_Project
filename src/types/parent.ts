@@ -46,3 +46,12 @@ export interface ConnectionCodeResponse {
   message: string;
   data: string; // The connection code
 }
+
+export interface ChildCompletedSubject {
+  subjectId: string;
+  subjectName: string;
+  totalLessons: number;
+  completedLessons: number;
+  completed: boolean;
+  percent: number;
+}

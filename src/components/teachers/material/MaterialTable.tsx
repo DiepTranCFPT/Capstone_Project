@@ -85,11 +85,7 @@ const MaterialTable: React.FC<Props> = ({
       dataIndex: "subjectName",
       key: "subjectName",
     },
-    {
-      title: "Author",
-      dataIndex: "authorName",
-      key: "authorName",
-    },
+
     {
       title: "Price",
       key: "price",
