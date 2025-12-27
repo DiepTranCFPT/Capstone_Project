@@ -201,7 +201,7 @@ function App() {
               <Route path="/flashcards/:id" element={<FlashcardDetailPage />} />
               <Route path="/flashcards/:id/edit" element={<FlashcardEditPage />} />
               <Route path="/flashcards/:id/quiz" element={<FlashcardQuizPage />} />
-
+              <Route path="notification" element={<NotificationCenterPage />} />
             </Route>
 
             {/* Student routes with StudentLayout */}
@@ -266,7 +266,7 @@ function App() {
                 <ParentLayout />
               </ProtectedRoute>}>
               <Route path="dashboard" element={<ParentDashboardPage />} />
-              <Route path="notifications" element={<NotificationCenterPage />} />
+              <Route path="notification" element={<NotificationCenterPage />} />
               <Route path="profile" element={<ParentProfileDashboard />} />
               <Route path="link-student" element={<LinkStudentPage />} />
               <Route path="children" element={<ChildrenListPage />} />

@@ -105,7 +105,7 @@ const NotificationDropdown: React.FC = () => {
     // Navigate to notifications page
     const handleViewAll = () => {
         setOpen(false);
-        navigate('/notifications');
+        navigate('notification');
     };
 
     // Notification item component
