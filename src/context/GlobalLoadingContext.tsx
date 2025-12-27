@@ -42,8 +42,8 @@ export const GlobalLoadingProvider: React.FC<{ children: React.ReactNode }> = ({
       {state.isLoading && (
         <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-6 px-6">
-            <div className="w-20 h-20 rounded-3xl bg-blue-600/90 flex items-center justify-center shadow-2xl">
-              <span className="text-3xl text-white font-semibold">📘</span>
+            <div className="w-20 h-20 rounded-3xl bg-white/10 flex items-center justify-center shadow-2xl animate-bounce">
+              <img src="/logo-ap.png" alt="AP Logo" className="w-14 h-14 object-contain animate-pulse" />
             </div>
             <div className="text-center space-y-2">
               <p className="text-2xl font-semibold text-white">
