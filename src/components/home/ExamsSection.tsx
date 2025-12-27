@@ -1,21 +1,33 @@
 import React from "react";
 import { PiExam } from "react-icons/pi";
 import { useNavigate } from "react-router-dom";
+import { Carousel } from "antd";
 import { useBrowseExamTemplates } from "~/hooks/useExamBrowser";
+import "~/styles/carousel.css";
 
 const ExamsSection: React.FC = () => {
   // Fetch more exams to ensure we get enough free ones after filtering
   const { templates, loading } = useBrowseExamTemplates({ pageNo: 0, pageSize: 100 });
 
-  // Filter for free exams and limit to 3 for display
-  const filteredTemplates = templates
-    .filter((template) => template.tokenCost === 0)
-    .slice(0, 3);
+  // Filter for free exams
+  const filteredTemplates = templates.filter((template) => template.tokenCost === 0);
   const navigate = useNavigate();
 
   const handleExamClick = () => {
     // Navigate to exam details page
     navigate(`/exam-test`);
+  };
+
+  // Group exams into slides (3 per slide)
+  const getExamSlides = () => {
+    const slides: Array<typeof filteredTemplates> = [];
+    const itemsPerSlide = 3;
+
+    for (let i = 0; i < filteredTemplates.length; i += itemsPerSlide) {
+      slides.push(filteredTemplates.slice(i, i + itemsPerSlide));
+    }
+
+    return slides;
   };
 
   if (loading) {
@@ -40,10 +52,10 @@ const ExamsSection: React.FC = () => {
         Explore Free Online Exams
       </h2>
 
-      {/* Danh sách exams */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 w-full max-w-6xl">
+      {/* Carousel hiển thị exams */}
+      <div className="w-full max-w-6xl">
         {filteredTemplates.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center justify-center py-8 md:py-16 px-4">
+          <div className="flex flex-col items-center justify-center py-8 md:py-16 px-4">
             <div className="bg-white rounded-full p-6 md:p-8 shadow-lg mb-4 md:mb-6">
               <svg className="w-16 h-16 md:w-24 md:h-24 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -61,93 +73,100 @@ const ExamsSection: React.FC = () => {
             </div>
           </div>
         ) : (
-          filteredTemplates.map((exam) => (
-            <div
-              key={exam.id}
-              className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-4 md:p-6 border border-gray-100 flex flex-col h-full"
-            >
-              {/* Header with Subject Badge */}
-              <div className="flex items-start justify-between mb-2 md:mb-3">
-                <span className="inline-block px-2 md:px-3 py-0.5 md:py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
-                  {exam.subject.name}
-                </span>
-                <div className="flex items-center gap-1">
-                  <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                  </svg>
-                  <span className="text-xs md:text-sm font-bold text-gray-700">
-                    {exam.averageRating > 0 ? exam.averageRating.toFixed(1) : 'N/A'}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    ({exam.totalRatings})
-                  </span>
+          <Carousel
+            arrows
+            autoplay
+            autoplaySpeed={5000}
+            dots={true}
+            dotPosition="bottom"
+            className="exams-carousel"
+            infinite={false}
+          >
+            {getExamSlides().map((slide, slideIndex) => (
+              <div key={slideIndex}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 px-2 pb-6">
+                  {slide.map((exam) => (
+                    <div
+                      key={exam.id}
+                      className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-4 md:p-6 border border-gray-100 flex flex-col h-full"
+                    >
+                      {/* Header with Subject Badge */}
+                      <div className="flex items-start justify-between mb-2 md:mb-3">
+                        <span className="inline-block px-2 md:px-3 py-0.5 md:py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
+                          {exam.subject.name}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                          </svg>
+                          <span className="text-xs md:text-sm font-bold text-gray-700">
+                            {exam.averageRating > 0 ? exam.averageRating.toFixed(1) : 'N/A'}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            ({exam.totalRatings})
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Title */}
+                      <h3 className="text-base md:text-lg font-bold text-gray-800 mb-2 md:mb-3 line-clamp-2 flex-grow">
+                        {exam.title}
+                      </h3>
+
+                      {/* Description */}
+                      <p className="text-xs md:text-sm text-gray-600 mb-3 md:mb-4 line-clamp-2">
+                        {exam.description || "No description available"}
+                      </p>
+
+                      {/* Metadata */}
+                      <div className="space-y-1.5 md:space-y-2 mb-3 md:mb-4">
+                        <div className="flex items-center gap-2 text-xs md:text-sm text-gray-600">
+                          <svg className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          <span className="truncate">{exam.createdBy}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs md:text-sm">
+                          <div className="flex items-center gap-1.5 md:gap-2 text-gray-600">
+                            <svg className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>{exam.duration} mins</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-gray-600">
+                            <svg className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <span>{exam.totalTakers} takers</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer with Passing Score */}
+                      <div className="pt-2 md:pt-3 border-t border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500">Passing Score</span>
+                          <span className="text-xs md:text-sm font-bold text-emerald-600">{exam.passingScore}</span>
+                        </div>
+                      </div>
+                      {/* Action Button */}
+                      <button
+                        onClick={() => handleExamClick()}
+                        className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 text-white mt-4 px-6 py-3 rounded-lg text-sm font-bold hover:from-teal-500 hover:to-emerald-600 transition-all duration-300 shadow-md hover:shadow-lg">
+                        Explore Exam Now
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              {/* Title */}
-              <h3 className="text-base md:text-lg font-bold text-gray-800 mb-2 md:mb-3 line-clamp-2 flex-grow">
-                {exam.title}
-              </h3>
-
-              {/* Description */}
-              <p className="text-xs md:text-sm text-gray-600 mb-3 md:mb-4 line-clamp-2">
-                {exam.description || "No description available"}
-              </p>
-
-              {/* Metadata */}
-              <div className="space-y-1.5 md:space-y-2 mb-3 md:mb-4">
-                <div className="flex items-center gap-2 text-xs md:text-sm text-gray-600">
-                  <svg className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <span className="truncate">{exam.createdBy}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs md:text-sm">
-                  <div className="flex items-center gap-1.5 md:gap-2 text-gray-600">
-                    <svg className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>{exam.duration} mins</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-gray-600">
-                    <svg className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    <span>{exam.totalTakers} takers</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer with Passing Score */}
-              <div className="pt-2 md:pt-3 border-t border-gray-100">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Passing Score</span>
-                  <span className="text-xs md:text-sm font-bold text-emerald-600">{exam.passingScore}</span>
-                </div>
-              </div>
-              {/* Action Button */}
-              <button
-                onClick={() => handleExamClick()}
-                className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 text-white mt-4 px-6 py-3 rounded-lg text-sm font-bold hover:from-teal-500 hover:to-emerald-600 transition-all duration-300 shadow-md hover:shadow-lg">
-                Explore Exam Now
-              </button>
-            </div>
-          ))
+            ))}
+          </Carousel>
         )}
-      </div>
-
-      {/* Nút điều hướng (trái & phải) */}
-      <div className="flex justify-between w-full max-w-6xl mt-6 md:mt-10 px-4">
-        <button className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-emerald-700 text-white rounded-full text-sm md:text-base hover:bg-emerald-800 transition-colors">
-          ←
-        </button>
-        <button className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-emerald-700 text-white rounded-full text-sm md:text-base hover:bg-emerald-800 transition-colors">
-          →
-        </button>
       </div>
     </div>
   );
 };
 
 export default ExamsSection;
+
 

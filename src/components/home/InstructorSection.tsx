@@ -1,8 +1,10 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { FaChalkboardTeacher } from "react-icons/fa";
+import { Carousel } from "antd";
 import { useTeachersList } from "~/hooks/useTeachersList";
 import { useAuth } from "~/hooks/useAuth";
+import "~/styles/carousel.css";
 
 const InstructorSection: React.FC = () => {
   const { teachers, loading } = useTeachersList({ pageNo: 0, pageSize: 10 });
@@ -16,6 +18,18 @@ const InstructorSection: React.FC = () => {
       return;
     }
     navigate(`/teacher-detail/${teacherId}`);
+  };
+
+  // Group teachers into slides (4 per slide for desktop, 2 for tablet, 1 for mobile)
+  const getTeacherSlides = () => {
+    const slides: Array<typeof teachers> = [];
+    const itemsPerSlide = 4;
+
+    for (let i = 0; i < teachers.length; i += itemsPerSlide) {
+      slides.push(teachers.slice(i, i + itemsPerSlide));
+    }
+
+    return slides;
   };
 
   if (loading) {
@@ -41,10 +55,10 @@ const InstructorSection: React.FC = () => {
         Meet Our Expert Teachers
       </h2>
 
-      {/* Danh sách instructor */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 w-full max-w-6xl">
+      {/* Carousel hiển thị instructor */}
+      <div className="w-full max-w-6xl instructor-carousel-wrapper">
         {teachers.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center justify-center py-16 px-4">
+          <div className="flex flex-col items-center justify-center py-16 px-4">
             <div className="bg-white rounded-full p-8 shadow-lg mb-6">
               <svg className="w-24 h-24 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -56,41 +70,57 @@ const InstructorSection: React.FC = () => {
             </p>
           </div>
         ) : (
-          teachers.map((teacher) => (
-            <div
-              key={teacher.id}
-              onClick={() => handleTeacherClick(teacher.id)}
-              className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer transform hover:-translate-y-1"
-            >
-              {/* Avatar */}
-              <div className="w-full h-56 bg-gradient-to-br from-teal-100 to-emerald-100 flex items-center justify-center overflow-hidden">
-                {teacher.imgUrl ? (
-                  <img
-                    src={teacher.imgUrl}
-                    alt={`${teacher.firstName} ${teacher.lastName}`}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="text-6xl font-bold text-teal-600">
-                    {teacher.firstName.charAt(0)}{teacher.lastName.charAt(0)}
-                  </div>
-                )}
-              </div>
+          <Carousel
+            arrows
+            autoplay
+            autoplaySpeed={5000}
+            dots={{ className: "instructor-carousel-dots" }}
+            dotPosition="bottom"
+            className="instructor-carousel pb-4"
+            infinite={false}
+          >
+            {getTeacherSlides().map((slide, slideIndex) => (
+              <div key={slideIndex}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 px-2 pb-6">
+                  {slide.map((teacher) => (
+                    <div
+                      key={teacher.id}
+                      onClick={() => handleTeacherClick(teacher.id)}
+                      className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 cursor-pointer transform hover:-translate-y-1"
+                    >
+                      {/* Avatar */}
+                      <div className="w-full h-56 bg-gradient-to-br from-teal-100 to-emerald-100 flex items-center justify-center overflow-hidden">
+                        {teacher.imgUrl ? (
+                          <img
+                            src={teacher.imgUrl}
+                            alt={`${teacher.firstName} ${teacher.lastName}`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="text-6xl font-bold text-teal-600">
+                            {teacher.firstName.charAt(0)}{teacher.lastName.charAt(0)}
+                          </div>
+                        )}
+                      </div>
 
-              {/* Info */}
-              <div className="p-4 text-center">
-                <p className="text-black text-lg font-semibold mb-1">
-                  {teacher.firstName} {teacher.lastName}
-                </p>
-                <p className="text-teal-600 text-sm font-medium">Teacher</p>
-                {teacher.teacherProfile?.specialization && (
-                  <p className="text-gray-500 text-xs mt-1">
-                    {teacher.teacherProfile.specialization}
-                  </p>
-                )}
+                      {/* Info */}
+                      <div className="p-4 text-center">
+                        <p className="text-black text-lg font-semibold mb-1">
+                          {teacher.firstName} {teacher.lastName}
+                        </p>
+                        <p className="text-teal-600 text-sm font-medium">Teacher</p>
+                        {teacher.teacherProfile?.specialization && (
+                          <p className="text-gray-500 text-xs mt-1">
+                            {teacher.teacherProfile.specialization}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))
+            ))}
+          </Carousel>
         )}
       </div>
     </div>
@@ -98,3 +128,4 @@ const InstructorSection: React.FC = () => {
 };
 
 export default InstructorSection;
+

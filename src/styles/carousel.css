@@ -1,0 +1,109 @@
+/* Shared Carousel Styles for Home Components */
+
+/* Common styles for all carousels */
+.instructor-carousel .slick-prev,
+.instructor-carousel .slick-next,
+.exams-carousel .slick-prev,
+.exams-carousel .slick-next,
+.trending-carousel .slick-prev,
+.trending-carousel .slick-next {
+  width: 26px !important;
+  height: 26px !important;
+  z-index: 100 !important;
+  background: #0d9488 !important;
+  border: 2px solid #0d9488 !important;
+  border-radius: 50% !important;
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.3s ease !important;
+}
+
+.instructor-carousel .slick-prev:hover,
+.instructor-carousel .slick-next:hover,
+.exams-carousel .slick-prev:hover,
+.exams-carousel .slick-next:hover,
+.trending-carousel .slick-prev:hover,
+.trending-carousel .slick-next:hover {
+  background: #0d9488 !important;
+  border-color: #0d9488 !important;
+  box-shadow: 0 6px 16px rgba(13, 148, 136, 0.4) !important;
+  transform: scale(1.05) !important;
+}
+
+.instructor-carousel .slick-prev,
+.exams-carousel .slick-prev,
+.trending-carousel .slick-prev {
+  left: -26px !important;
+}
+
+.instructor-carousel .slick-next,
+.exams-carousel .slick-next,
+.trending-carousel .slick-next {
+  right: -26px !important;
+}
+
+.instructor-carousel .slick-prev:before,
+.instructor-carousel .slick-next:before,
+.exams-carousel .slick-prev:before,
+.exams-carousel .slick-next:before,
+.trending-carousel .slick-prev:before,
+.trending-carousel .slick-next:before {
+  font-size: 24px !important;
+  color: white !important;
+  opacity: 1 !important;
+  font-weight: bold !important;
+}
+
+/* Dots styling */
+.instructor-carousel .slick-dots li button,
+.exams-carousel .slick-dots li button,
+.trending-carousel .slick-dots li button {
+  background: #94a3b8 !important;
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 50% !important;
+}
+
+.instructor-carousel .slick-dots li.slick-active button,
+.exams-carousel .slick-dots li.slick-active button,
+.trending-carousel .slick-dots li.slick-active button {
+  background: #0d9488 !important;
+  width: 14px !important;
+  height: 14px !important;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .instructor-carousel .slick-prev,
+  .instructor-carousel .slick-next,
+  .exams-carousel .slick-prev,
+  .exams-carousel .slick-next,
+  .trending-carousel .slick-prev,
+  .trending-carousel .slick-next {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .instructor-carousel .slick-prev,
+  .exams-carousel .slick-prev,
+  .trending-carousel .slick-prev {
+    left: -22px !important;
+  }
+
+  .instructor-carousel .slick-next,
+  .exams-carousel .slick-next,
+  .trending-carousel .slick-next {
+    right: -22px !important;
+  }
+
+  .instructor-carousel .slick-prev:before,
+  .instructor-carousel .slick-next:before,
+  .exams-carousel .slick-prev:before,
+  .exams-carousel .slick-next:before,
+  .trending-carousel .slick-prev:before,
+  .trending-carousel .slick-next:before {
+    font-size: 20px !important;
+  }
+}

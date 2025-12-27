@@ -3,6 +3,7 @@ import ExamCard from '~/components/exam/ExamCard';
 import TokenConfirmationModal from '~/components/common/TokenConfirmationModal';
 import WaitResultModal from '~/components/exam/WaitResultModal';
 import { FiSearch, FiLoader } from 'react-icons/fi';
+import { Pagination } from 'antd';
 import Section from '~/components/exam/Section';
 import { useBrowseExamTemplates } from '~/hooks/useExamBrowser';
 import { useSubjects } from '~/hooks/useSubjects';
@@ -15,7 +16,16 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 // Subjects will be fetched from API
 
 const ExamTestPage: React.FC = () => {
-    const { templates, loading: examsLoading, error: examsError, applyFilters } = useBrowseExamTemplates();
+    const {
+        templates,
+        loading: examsLoading,
+        error: examsError,
+        applyFilters,
+        pageNo,
+        pageSize,
+        totalElements,
+        handlePageChange
+    } = useBrowseExamTemplates();
     const { subjects, loading: subjectsLoading } = useSubjects();
     const { teachers, loading: teachersLoading } = useTeachersList({ pageNo: 0, pageSize: 100 });
     const { startSingleAttempt, startComboAttempt, startComboRandomAttempt } = useExamAttempt();
@@ -625,17 +635,34 @@ const ExamTestPage: React.FC = () => {
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {filteredExams.map((exam: Exam) => (
-                                            <ExamCard
-                                                exams={exam}
-                                                key={exam.id}
-                                                onStartExam={handleStartExamClick}
-                                                isLoading={isStartingSingleTest}
-                                                loadingExamId={loadingExamId ?? undefined}
-                                            />
-                                        ))}
-                                    </div>
+                                    <>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {filteredExams.map((exam: Exam) => (
+                                                <ExamCard
+                                                    exams={exam}
+                                                    key={exam.id}
+                                                    onStartExam={handleStartExamClick}
+                                                    isLoading={isStartingSingleTest}
+                                                    loadingExamId={loadingExamId ?? undefined}
+                                                />
+                                            ))}
+                                        </div>
+
+                                        {/* Pagination */}
+                                        {totalElements > 0 && (
+                                            <div className="flex justify-center mt-8">
+                                                <Pagination
+                                                    current={pageNo}
+                                                    pageSize={pageSize}
+                                                    total={totalElements}
+                                                    onChange={handlePageChange}
+                                                    showSizeChanger
+                                                    showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} exams`}
+                                                    pageSizeOptions={['10', '20', '30', '50']}
+                                                />
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
 
