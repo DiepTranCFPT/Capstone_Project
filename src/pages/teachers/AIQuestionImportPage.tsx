@@ -16,6 +16,7 @@ import {
     Space,
     Divider,
     Checkbox,
+    Popconfirm,
 } from "antd";
 import {
     RobotOutlined,
@@ -83,6 +84,7 @@ const AIQuestionImportPage: React.FC = () => {
         generateQuestions,
         createQuestions,
         updateQuestion,
+        deleteQuestion,
         reset: resetAI,
     } = useAIQuestionImport();
 
@@ -163,7 +165,13 @@ D. Mark Twain`;
     // Render editable question form
     const renderQuestionPreview = (question: AIGeneratedQuestion, index: number) => {
         const correctAnswers = question.answers.filter((a) => a.isCorrect);
-        const hasContext = question.context && question.context.content;
+        // Show context UI if ANY of the 4 context fields has a value
+        const hasContext = question.context && (
+            question.context.title ||
+            question.context.content ||
+            question.context.imageUrl ||
+            question.context.audioUrl
+        );
 
         // Update answer at specific index
         const updateAnswer = (answerIndex: number, updates: Partial<typeof question.answers[0]>) => {
@@ -227,6 +235,25 @@ D. Mark Twain`;
                             <Tag color={correctAnswers.length > 0 ? "green" : "red"}>
                                 {correctAnswers.length} correct
                             </Tag>
+                            <Tooltip title="Delete this question">
+                                <Popconfirm
+                                    title="Delete this question?"
+                                    description="Are you sure you want to remove this question?"
+                                    onConfirm={() => deleteQuestion(index)}
+                                    okText="Yes"
+                                    cancelText="No"
+                                >
+                                    <Button
+                                        type="primary"
+                                        danger
+                                        size="small"
+                                        icon={<DeleteOutlined />}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        Delete
+                                    </Button>
+                                </Popconfirm>
+                            </Tooltip>
                         </div>
                     </div>
                 }
