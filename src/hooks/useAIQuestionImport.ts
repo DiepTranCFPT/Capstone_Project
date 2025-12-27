@@ -16,6 +16,7 @@ export interface UseAIQuestionImportReturn {
     generateQuestions: (subjectId: string, text: string, topicName?: string) => Promise<boolean>;
     createQuestions: (questions: AIGeneratedQuestion[]) => Promise<boolean>;
     updateQuestion: (index: number, updates: Partial<AIGeneratedQuestion>) => void;
+    deleteQuestion: (index: number) => void;
     reset: () => void;
 }
 
@@ -124,6 +125,26 @@ export const useAIQuestionImport = (): UseAIQuestionImportReturn => {
     }, []);
 
     /**
+     * Delete a question from the list
+     * @param index - Index of the question to delete
+     */
+    const deleteQuestion = useCallback((index: number) => {
+        let shouldShowToast = false;
+        setGeneratedQuestions((prev) => {
+            if (prev.length <= 1) {
+                toast.warning("You must have at least 1 question.");
+                return prev;
+            }
+            shouldShowToast = true;
+            return prev.filter((_, i) => i !== index);
+        });
+        // Only show toast if deletion actually happened
+        if (shouldShowToast) {
+            toast.success("Question deleted.");
+        }
+    }, []);
+
+    /**
      * Reset all states
      */
     const reset = useCallback(() => {
@@ -141,6 +162,7 @@ export const useAIQuestionImport = (): UseAIQuestionImportReturn => {
         generateQuestions,
         createQuestions,
         updateQuestion,
+        deleteQuestion,
         reset,
     };
 };
