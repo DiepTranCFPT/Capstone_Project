@@ -147,7 +147,8 @@ const LessonDetailsSection: React.FC<LessonDetailsSectionProps> = ({
                 try {
                   await LessonService.saveProgress(
                     lesson.id,
-                    Math.floor(currentTime)
+                    Math.floor(currentTime),
+                    false
                   );
                 } catch (error) {
                   // Không hiển thị lỗi để tránh làm phiền người dùng khi đang xem video
@@ -178,7 +179,7 @@ const LessonDetailsSection: React.FC<LessonDetailsSectionProps> = ({
                 try {
                   // Khi video kết thúc, currentTime sẽ bằng duration
                   const finalTime = Math.floor(videoElement.duration);
-                  await LessonService.saveProgress(lesson.id, finalTime);
+                  await LessonService.saveProgress(lesson.id, finalTime, true);
                   // Cập nhật maxWatchedTime để đảm bảo đồng bộ
                   maxWatchedTimeRef.current = videoElement.duration;
                 } catch (error) {

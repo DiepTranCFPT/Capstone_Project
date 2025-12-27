@@ -221,10 +221,7 @@ const CommunityPage: React.FC = () => {
         [communities, selectedCommunityId]
     );
 
-    const onlineEstimate = useMemo(() => {
-        const members = Number(currentCommunity?.memberCount ?? 0);
-        return members > 0 ? Math.max(1, Math.round(members * 0.08)) : 0;
-    }, [currentCommunity]);
+
 
     return (
         <div className="bg-[#f5f7fb] min-h-screen">
@@ -285,8 +282,6 @@ const CommunityPage: React.FC = () => {
                         {/* Right sidebar */}
                         <CommunityInfoSidebar
                             description={currentCommunity?.description}
-                            memberCount={currentCommunity?.memberCount}
-                            onlineEstimate={onlineEstimate}
                         />
                     </div>
                 </div>
