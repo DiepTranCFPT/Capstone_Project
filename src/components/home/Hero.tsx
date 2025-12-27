@@ -9,27 +9,18 @@ const Hero : React.FC = () => {
           </div>
 
           <h1 className="text-4xl md:text-5xl font-bold leading-snug">
-            Start learning from the world’s{" "}
-            <span className="text-teal-700 font-normal">best institutions</span>
+           Master AP Subjects with Premium’s{" "}
+            <span className="text-teal-700 font-normal">Curated Learning Resources.</span>
           </h1>
 
           <div className="flex items-center gap-4">
             <button className="bg-teal-500 text-white px-6 py-3 rounded-full font-bold hover:bg-teal-600 transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg">
               Get Started
             </button>
-            <button className="flex items-center gap-2 text-black font-medium group">
-              <span className="w-10 h-10 flex items-center justify-center bg-white rounded-full shadow">
-                ▶
-              </span>
-              <span className="relative">
-                Watch the video
-                <span className="block h-[2px] bg-teal-500 scale-x-0 origin-left transition-transform duration-300 group-hover:scale-x-100" />
-              </span>
-            </button>
           </div>
 
           <p className="text-2xl font-bold">
-            Explore <span className="text-teal-700">1350+</span> Courses within Subject
+            Explore <span className="text-teal-700">20+</span> Courses within Subject
           </p>
         </div>
 
@@ -41,7 +32,7 @@ const Hero : React.FC = () => {
             className="rounded-[40px] shadow-lg object-cover"
           />
           <div className="absolute bottom-10 right-10 bg-white p-4 rounded-lg shadow">
-            <p className="text-teal-700 text-2xl font-bold">256+</p>
+            <p className="text-teal-700 text-2xl font-bold">5+</p>
             <p className="text-gray-700 text-sm font-semibold">CRASHED COURSES</p>
           </div>
         </div>

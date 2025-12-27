@@ -40,7 +40,7 @@ const MaterialsPage: React.FC = () => {
       const searchParams: LearningMaterialSearchParams = {
         keyword: debouncedSearch.trim() || "",
         pageNo: 0,
-        pageSize: 100,
+        pageSize: 120,
       };
 
       if (subject !== "All" || teacher !== "All") {
@@ -112,7 +112,7 @@ const MaterialsPage: React.FC = () => {
         <div className="col-span-12 md:col-span-9">
           {filtered.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filtered.map((m) => (
+              {filtered.slice(0, 12).map((m) => (
                 <MaterialCard key={m.id} material={m} />
               ))}
             </div>

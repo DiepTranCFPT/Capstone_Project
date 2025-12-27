@@ -22,9 +22,9 @@ interface WalletSummary {
 }
 
 export interface IncomeChartPoint {
-  label: string; // ví dụ: "Jan 2025" hoặc "05/2025"
-  monthKey: string; // dạng YYYY-MM để dễ sort
-  total: number; // tổng thu nhập trong tháng
+  label: string; 
+  monthKey: string; 
+  total: number; 
 }
 
 const formatCurrency = (amount: number): string => {

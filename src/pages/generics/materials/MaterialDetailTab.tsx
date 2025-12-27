@@ -24,7 +24,7 @@ interface MaterialDetailTabProps {
 interface RatingWithStudentName extends LearningMaterialRating {
   studentName?: string;
   userName?: string;
-  userId?: string; // Có thể API trả về userId thay vì studentId
+  userId?: string; 
   student?: {
     firstName?: string;
     lastName?: string;
