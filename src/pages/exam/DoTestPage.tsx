@@ -24,6 +24,15 @@ import {
     MdCancel
 } from 'react-icons/md';
 
+// Helper function to clear all proctoring-related localStorage items
+const clearAllProctoringData = () => {
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+        if (key.includes('proctoring_violation')) {
+            localStorage.removeItem(key);
+        }
+    });
+};
 
 const DoTestPage: React.FC = () => {
     const { examId, attemptId } = useParams<{ examId?: string, testType?: 'full' | 'mcq' | 'frq', attemptId?: string }>();
@@ -546,9 +555,8 @@ const DoTestPage: React.FC = () => {
                     localStorage.removeItem(`exam_started_at_${examAttemptId}`);
                     localStorage.removeItem(`exam_remaintime_received_at_${examAttemptId}`);
                     localStorage.removeItem(`exam_remaintime_value_${examAttemptId}`);
-                    // Clear proctoring violations data
-                    localStorage.removeItem(`proctoring_violation_counts_${examAttemptId}`);
-                    localStorage.removeItem(`proctoring_violations_${examAttemptId}`);
+                    // Clear ALL proctoring violations data (current + old attempts)
+                    clearAllProctoringData();
                 }
                 // Clear exam specific attempt data
                 if (examId) {
@@ -580,9 +588,8 @@ const DoTestPage: React.FC = () => {
             localStorage.removeItem(`exam_started_at_${examAttemptId}`);
             localStorage.removeItem(`exam_remaintime_received_at_${examAttemptId}`);
             localStorage.removeItem(`exam_remaintime_value_${examAttemptId}`);
-            // Clear proctoring violations data
-            localStorage.removeItem(`proctoring_violation_counts_${examAttemptId}`);
-            localStorage.removeItem(`proctoring_violations_${examAttemptId}`);
+            // Clear ALL proctoring violations data (current + old attempts)
+            clearAllProctoringData();
         }
 
         // Stop proctoring

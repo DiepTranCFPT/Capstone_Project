@@ -54,6 +54,7 @@ const CreateExamPage: React.FC = () => {
   // Rule form states
   const [showRuleForm, setShowRuleForm] = useState(false);
   const [editingRuleIndex, setEditingRuleIndex] = useState<number | null>(null);
+  const [isAdvancedMode, setIsAdvancedMode] = useState(false); // Toggle for simple/advanced mode
   const [ruleForm, setRuleForm] = useState<CreateExamRulePayload>({
     topicName: '',
     difficultyName: 'Easy',
@@ -258,6 +259,7 @@ const CreateExamPage: React.FC = () => {
       numberOfContexts: 0,
     });
     setEditingRuleIndex(null);
+    setIsAdvancedMode(false); // Reset to simple mode
   };
 
   const handleAddRule = () => {
@@ -266,16 +268,42 @@ const CreateExamPage: React.FC = () => {
       return;
     }
 
-    const numQuestions = ruleForm.numberOfQuestions || 0;
+    // Determine number of questions and contexts based on mode
+    let numQuestions: number;
+    let numContexts: number;
+
+    if (isAdvancedMode) {
+      // Advanced Mode: Validate contexts and questions per context
+      numContexts = ruleForm.numberOfContexts || 0;
+      const questionsPerContext = ruleForm.numberOfQuestions || 0;
+
+      if (numContexts <= 0) {
+        toast.error('Number of contexts must be greater than 0 in advanced mode');
+        return;
+      }
+
+      if (questionsPerContext <= 0) {
+        toast.error('Questions per context must be greater than 0');
+        return;
+      }
+
+      // Total questions = contexts × questions per context
+      numQuestions = numContexts * questionsPerContext;
+    } else {
+      // Simple Mode: Use total questions directly, contexts = 0
+      numQuestions = ruleForm.numberOfQuestions || 0;
+      numContexts = 0;
+
+      if (numQuestions <= 0) {
+        toast.error('Number of questions must be greater than 0');
+        return;
+      }
+    }
+
     const percentage = calculatePercentage(numQuestions);
 
     if (numQuestions > availableCount) {
       toast.error(`Need ${numQuestions} questions but only ${availableCount} available in bank`);
-      return;
-    }
-
-    if (numQuestions <= 0) {
-      toast.error('Number of questions must be greater than 0');
       return;
     }
 
@@ -289,12 +317,12 @@ const CreateExamPage: React.FC = () => {
       return;
     }
 
-    // Save rule with calculated percentage
+    // Save rule with calculated values
     const ruleToSave = {
       ...ruleForm,
-      numberOfQuestions: numQuestions,
+      numberOfQuestions: isAdvancedMode ? ruleForm.numberOfQuestions : numQuestions,
       percentage: percentage,
-      numberOfContexts: ruleForm.numberOfContexts || 0,
+      numberOfContexts: numContexts,
     };
 
     if (editingRuleIndex !== null) {
@@ -982,26 +1010,73 @@ const CreateExamPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Number of Contexts
-                          <Tooltip title="E.g., 2 contexts x 1 question/context = 2 questions from passage. 0 if not needed.">
+                    {/* Toggle for Advanced Configuration */}
+                    <div className="border-t pt-3 mt-2">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Switch
+                          checked={isAdvancedMode}
+                          onChange={setIsAdvancedMode}
+                          size="small"
+                        />
+                        <label className="text-sm font-medium text-gray-700">
+                          Advanced Configuration
+                          <Tooltip title="Enable to specify exact number of reading passages/contexts and questions per passage">
                             <InfoCircleOutlined className="ml-1 text-gray-400" />
                           </Tooltip>
                         </label>
-                        <InputNumber
-                          min={0}
-                          value={ruleForm.numberOfContexts || 0}
-                          onChange={(value) => setRuleForm({ ...ruleForm, numberOfContexts: value || 0 })}
-                          style={{ width: '100%' }}
-                        />
-                        {(ruleForm.numberOfContexts || 0) > 0 && (
-                          <div className="text-xs text-cyan-600 mt-1">
-                            {ruleForm.numberOfContexts} contexts × {ruleForm.numberOfQuestions || 0} = {(ruleForm.numberOfContexts || 0) * (ruleForm.numberOfQuestions || 0)} questions
-                          </div>
-                        )}
                       </div>
+
+                      {!isAdvancedMode ? (
+                        <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                          <div className="text-xs text-blue-700">
+                            <strong>Simple Mode:</strong> The system will automatically find appropriate reading passages and standalone questions to reach your specified total ({ruleForm.numberOfQuestions || 0} questions).
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-purple-50 p-3 rounded border border-purple-200 space-y-3">
+                          <div className="text-xs text-purple-700 mb-2">
+                            <strong>Advanced Mode:</strong> Specify exact structure for reading passages
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Number of Passages
+                                <Tooltip title="Number of reading passages/contexts to include">
+                                  <InfoCircleOutlined className="ml-1 text-gray-400" />
+                                </Tooltip>
+                              </label>
+                              <InputNumber
+                                min={1}
+                                value={ruleForm.numberOfContexts || 1}
+                                onChange={(value) => setRuleForm({ ...ruleForm, numberOfContexts: value || 1 })}
+                                style={{ width: '100%' }}
+                                size="small"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Questions per Passage
+                                <Tooltip title="Maximum questions per reading passage">
+                                  <InfoCircleOutlined className="ml-1 text-gray-400" />
+                                </Tooltip>
+                              </label>
+                              <InputNumber
+                                min={1}
+                                value={ruleForm.numberOfQuestions || 1}
+                                onChange={(value) => setRuleForm({ ...ruleForm, numberOfQuestions: value || 1 })}
+                                style={{ width: '100%' }}
+                                size="small"
+                              />
+                            </div>
+                          </div>
+                          {(ruleForm.numberOfContexts || 0) > 0 && (ruleForm.numberOfQuestions || 0) > 0 && (
+                            <div className="text-xs text-purple-700 font-medium mt-2">
+                              → System will find {ruleForm.numberOfContexts} passage(s), with up to {ruleForm.numberOfQuestions} question(s) each.
+                              Total: approximately {(ruleForm.numberOfContexts || 0) * (ruleForm.numberOfQuestions || 0)} questions.
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex gap-2">
@@ -1076,7 +1151,7 @@ const CreateExamPage: React.FC = () => {
           )}
         </div>
       </Modal>
-    </div>
+    </div >
   );
 };
 

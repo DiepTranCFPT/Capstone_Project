@@ -65,7 +65,7 @@ const QuestionService = {
     subjectId: string,
     params?: { pageNo?: number; pageSize?: number; sorts?: string }
   ): Promise<AxiosResponse<ApiResponse<QuestionBankItem[]>>> {
-    return axiosInstance.get(`/questions-v2/subject/${subjectId}`, { params });
+    return axiosInstance.get(`/questions-v2/me/subject/${subjectId}`, { params });
   },
 
   //  Lấy danh sách câu hỏi theo topicId
@@ -73,7 +73,7 @@ const QuestionService = {
     topicId: string,
     params?: { pageNo?: number; pageSize?: number; sorts?: string }
   ): Promise<AxiosResponse<ApiResponse<QuestionBankItem[]>>> {
-    return axiosInstance.get(`/questions-v2/topic/${topicId}`, { params });
+    return axiosInstance.get(`/questions-v2/me/topic/${topicId}`, { params });
   },
 
   //  Tìm kiếm câu hỏi (search)
@@ -146,7 +146,7 @@ const QuestionService = {
   async createContext(
     data: CreateQuestionContextRequest
   ): Promise<AxiosResponse<QuestionContextResponse>> {
-    return axiosInstance.post("/questions-v2/context", data);
+    return axiosInstance.post("/questions-v2/context/me", data);
   },
 
   // Cập nhật question context
