@@ -41,6 +41,7 @@ const SubjectManager: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingSubjectId, setDeletingSubjectId] = useState<string | null>(null);
   const [form] = Form.useForm();
+  const [saving, setSaving] = useState(false);
 
   React.useEffect(() => {
     fetchSubjects();
@@ -107,6 +108,7 @@ const SubjectManager: React.FC = () => {
 
   const handleModalOk = async () => {
     try {
+      setSaving(true);
       const values = await form.validateFields();
       if (editingSubject) {
         await updateSubject(editingSubject.id, values);
@@ -121,6 +123,8 @@ const SubjectManager: React.FC = () => {
     } catch (error) {
       toast.error("Failed to save subject");
       console.log(error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -246,6 +250,7 @@ const SubjectManager: React.FC = () => {
           open={isModalOpen}
           onOk={handleModalOk}
           onCancel={() => setIsModalOpen(false)}
+          confirmLoading={saving}
         >
           <Form form={form} layout="vertical" className="mt-4">
             <Form.Item

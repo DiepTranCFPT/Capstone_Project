@@ -41,22 +41,22 @@ const getScoreColor = (score: number, passingScore: number) => {
 const TeacherExamAttemptsPage: React.FC = () => {
     const { attempts, pageInfo, loading, error, fetchTeacherExamAttempts } = useTeacherExamAttempts();
     const [currentSort, setCurrentSort] = useState<string>('createdAt:desc');
-    const [currentPage, setCurrentPage] = useState<number>(0);
+    const [currentPage, setCurrentPage] = useState<number>(1);
     const [currentPageSize, setCurrentPageSize] = useState<number>(10);
     const [searchText, setSearchText] = useState<string>('');
 
     useEffect(() => {
-        fetchTeacherExamAttempts({ pageNo: 0, pageSize: 10, sorts: [currentSort] });
+        fetchTeacherExamAttempts({ pageNo: 1, pageSize: 10, sorts: [currentSort] });
     }, [fetchTeacherExamAttempts]);
 
     const handleSortChange = (value: string) => {
         setCurrentSort(value);
-        setCurrentPage(0);
-        fetchTeacherExamAttempts({ pageNo: 0, pageSize: currentPageSize, sorts: [value] });
+        setCurrentPage(1);
+        fetchTeacherExamAttempts({ pageNo: 1, pageSize: currentPageSize, sorts: [value] });
     };
 
     const handleTableChange = (pagination: { current?: number; pageSize?: number }) => {
-        const page = (pagination.current || 1) - 1;
+        const page = pagination.current || 1; // API uses 1-indexed
         const size = pagination.pageSize || 10;
         setCurrentPage(page);
         setCurrentPageSize(size);
@@ -198,7 +198,7 @@ const TeacherExamAttemptsPage: React.FC = () => {
                 onChange={handleTableChange}
                 scroll={{ x: 1200 }}
                 pagination={{
-                    current: (pageInfo?.pageNo ?? currentPage) + 1,
+                    current: pageInfo?.pageNo ?? currentPage, // Both use 1-indexed
                     pageSize: pageInfo?.pageSize ?? currentPageSize,
                     total: pageInfo?.totalElement ?? pageInfo?.totalElements ?? 0,
                     showSizeChanger: true,

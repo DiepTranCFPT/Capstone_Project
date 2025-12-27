@@ -144,14 +144,14 @@ const QuestionBankPage: React.FC = () => {
 
   // Server-side pagination: mỗi lần đổi trang / pageSize / search / sort / subject / topic thì gọi lại API
   useEffect(() => {
-    const pageNo = Math.max(0, current - 1);
+    const pageNo = current; // API uses 1-indexed, so use current directly
     const keyword = searchText.trim();
 
     // Nếu có keyword, sử dụng searchQuestions API
     if (keyword) {
       searchQuestions({ keyword, pageNo, pageSize });
     } else if (selectedTopicId) {
-      // Nếu có topic được chọn, sử dụng fetchByTopicId API (uưu tiên topic hơn subject)
+      // Nếu có topic được chọn, sử dụng fetchByTopicId API (ưu tiên topic hơn subject)
       fetchByTopicId(selectedTopicId, { pageNo, pageSize, sorts: sortDirection });
     } else if (selectedSubjectId) {
       // Nếu có subject được chọn, sử dụng fetchBySubjectId API
@@ -335,13 +335,13 @@ const QuestionBankPage: React.FC = () => {
       // Use fetchByUserId if teacherId exists, otherwise fetch all
       if (teacherId) {
         await fetchByUserId(teacherId, {
-          pageNo: Math.max(0, tablePagination.current - 1),
+          pageNo: tablePagination.current,
           pageSize: tablePagination.pageSize,
           keyword: searchText.trim() ? searchText.trim() : undefined,
         });
       } else {
         await fetchQuestions({
-          pageNo: Math.max(0, tablePagination.current - 1),
+          pageNo: tablePagination.current,
           pageSize: tablePagination.pageSize,
           keyword: searchText.trim() ? searchText.trim() : undefined,
         });
@@ -413,13 +413,13 @@ const QuestionBankPage: React.FC = () => {
       if (result && result.successCount > 0) {
         if (teacherId) {
           await fetchByUserId(teacherId, {
-            pageNo: Math.max(0, tablePagination.current - 1),
+            pageNo: tablePagination.current,
             pageSize: tablePagination.pageSize,
             keyword: searchText.trim() ? searchText.trim() : undefined,
           });
         } else {
           await fetchQuestions({
-            pageNo: Math.max(0, tablePagination.current - 1),
+            pageNo: tablePagination.current,
             pageSize: tablePagination.pageSize,
             keyword: searchText.trim() ? searchText.trim() : undefined,
           });

@@ -26,7 +26,7 @@ const StudentDetailPage: React.FC = () => {
   // Fetch detailed stats for charts
   const { stats: childStats, loading: statsLoading } = useParentDashboardStats(studentId || null);
 
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1); // API uses 1-indexed
   const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
@@ -138,15 +138,15 @@ const StudentDetailPage: React.FC = () => {
             dataSource={examHistory}
             rowKey="attemptId"
             pagination={{
-              current: currentPage + 1,
+              current: currentPage, // Both use 1-indexed
               pageSize: pageSize,
               total: historyPageInfo?.totalElement || historyPageInfo?.totalElements || 0,
               onChange: (page, newPageSize) => {
                 if (newPageSize !== pageSize) {
                   setPageSize(newPageSize);
-                  setCurrentPage(0);
+                  setCurrentPage(1); // Reset to first page (1-indexed)
                 } else {
-                  setCurrentPage(page - 1);
+                  setCurrentPage(page); // No conversion needed
                 }
               },
               showSizeChanger: true,

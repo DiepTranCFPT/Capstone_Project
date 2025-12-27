@@ -41,6 +41,7 @@ const UserManagement: React.FC = () => {
     isVerified,
     isLocked,
     setPageNo,
+    setPageSize,
     setKeyword,
     setRole,
     setIsVerified,
@@ -278,10 +279,16 @@ const UserManagement: React.FC = () => {
             dataSource={users}
             loading={loading}
             pagination={{
-              current: pageNo + 1, // API is 0-indexed, Antd is 1-indexed
+              current: pageNo, // Both API and UI use 1-indexed
               pageSize: pageSize,
               total: total,
-              onChange: (p) => setPageNo(p - 1),
+              onChange: (p) => {
+                setPageNo(p); // No conversion needed
+              },
+              onShowSizeChange: (_current, size) => {
+                setPageSize(size);
+                setPageNo(1); // Reset to first page (1-indexed)
+              },
               showSizeChanger: true,
               showQuickJumper: true,
               showTotal: (total, range) =>
