@@ -258,16 +258,42 @@ D. Mark Twain`;
                                         rows={4}
                                     />
                                 </div>
-                                {question.context?.imageUrl && (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-                                        <Input
-                                            value={question.context?.imageUrl || ""}
-                                            onChange={(e) => updateContext({ imageUrl: e.target.value })}
-                                            placeholder="Image URL..."
-                                        />
-                                    </div>
-                                )}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                                    <Input
+                                        value={question.context?.imageUrl || ""}
+                                        onChange={(e) => updateContext({ imageUrl: e.target.value })}
+                                        placeholder="Image URL..."
+                                    />
+                                    {question.context?.imageUrl && (
+                                        <div className="mt-2">
+                                            <img
+                                                src={question.context.imageUrl}
+                                                alt="Context preview"
+                                                className="max-w-full h-auto rounded border"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Audio URL</label>
+                                    <Input
+                                        value={question.context?.audioUrl || ""}
+                                        onChange={(e) => updateContext({ audioUrl: e.target.value })}
+                                        placeholder="Audio URL..."
+                                    />
+                                    {question.context?.audioUrl && (
+                                        <div className="mt-2">
+                                            <audio controls className="w-full">
+                                                <source src={question.context.audioUrl} />
+                                                Your browser does not support the audio element.
+                                            </audio>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -332,6 +358,46 @@ D. Mark Twain`;
                             rows={3}
                             className="text-base"
                         />
+                    </div>
+
+                    {/* Question Media - Editable */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Question Image URL</label>
+                            <Input
+                                value={question.imageUrl || ""}
+                                onChange={(e) => updateQuestion(index, { imageUrl: e.target.value })}
+                                placeholder="Image URL for this question..."
+                            />
+                            {question.imageUrl && (
+                                <div className="mt-2">
+                                    <img
+                                        src={question.imageUrl}
+                                        alt="Question preview"
+                                        className="max-w-full h-auto rounded border"
+                                        onError={(e) => {
+                                            e.currentTarget.style.display = 'none';
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Question Audio URL</label>
+                            <Input
+                                value={question.audioUrl || ""}
+                                onChange={(e) => updateQuestion(index, { audioUrl: e.target.value })}
+                                placeholder="Audio URL for this question..."
+                            />
+                            {question.audioUrl && (
+                                <div className="mt-2">
+                                    <audio controls className="w-full">
+                                        <source src={question.audioUrl} />
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Answers - Editable */}

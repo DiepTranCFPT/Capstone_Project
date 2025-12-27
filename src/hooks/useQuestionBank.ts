@@ -1,5 +1,4 @@
 import { useState, useCallback } from "react";
-import { message } from "antd";
 import QuestionService from "~/services/QuestionService";
 import axiosInstance from "~/configs/axios";
 import type {
@@ -390,7 +389,7 @@ export const useQuestionBank = () => {
       setQuestions(normalizeQuestions(res.data?.data)); // getAll trả về PageInfo / PaginationResponse
       setPageMeta(extractPageMeta(res.data?.data));
     } catch (error) {
-      message.error("Unable to load question list!");
+      toast.error("Unable to load question list!");
       console.error(error);
     } finally {
       setLoading(false);
@@ -448,7 +447,7 @@ export const useQuestionBank = () => {
       }
       return null;
     } catch (error) {
-      message.error("Unable to load question details!");
+      toast.error("Unable to load question details!");
       console.error(error);
       return null;
     }
@@ -631,7 +630,7 @@ export const useQuestionBank = () => {
       return res.data?.data;
     } catch (error: unknown) {
       // Extract error message from backend response
-      let errorMessage = "Tạo câu hỏi thất bại!";
+      let errorMessage = "Create question failed!";
       if (error && typeof error === "object" && "response" in error) {
         const axiosError = error as { response?: { data?: { message?: string; errors?: unknown } } };
         const responseData = axiosError.response?.data;
@@ -639,11 +638,11 @@ export const useQuestionBank = () => {
           errorMessage = responseData.message;
         } else if (responseData?.errors) {
           console.error("[useQuestionBank] Validation errors:", responseData.errors);
-          errorMessage = "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.";
+          errorMessage = "Invalid data. Please check again.";
         }
         console.error("[useQuestionBank] Error response:", responseData);
       }
-      message.error(errorMessage);
+      toast.error(errorMessage);
       console.error("[useQuestionBank] Create question error:", error);
       throw error;
     }
@@ -808,7 +807,7 @@ export const useQuestionBank = () => {
           errorMessage = axiosError.response.data.message;
         }
       }
-      message.error(errorMessage);
+      toast.error(errorMessage);
       console.error(error);
       throw error;
     } finally {
@@ -850,7 +849,7 @@ export const useQuestionBank = () => {
       setLoading(true);
       const res = await QuestionService.createContext(data);
       if (res.data.code === 0 || res.data.code === 1000) {
-        message.success("Tạo context thành công!");
+        toast.success("Create context successfully!");
         return res.data.data;
       } else {
         toast.error(res.data.message || "Create context failed!");
