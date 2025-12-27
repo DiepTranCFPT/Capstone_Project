@@ -9,7 +9,7 @@ export const useAdminUsers = () => {
     const [total, setTotal] = useState(0);
 
     // Pagination & Filters state
-    const [pageNo, setPageNo] = useState(0); // API uses 0-indexed pageNo
+    const [pageNo, setPageNo] = useState(1); // API uses 1-indexed pageNo (starts from 1)
     const [pageSize, setPageSize] = useState(10);
     const [keyword, setKeyword] = useState("");
     const [role, setRole] = useState<string | undefined>(undefined);
@@ -30,10 +30,12 @@ export const useAdminUsers = () => {
                 sorts: sorts.length > 0 ? sorts : undefined,
             };
 
+            console.log('🔍 fetchUsers called with params:', params);
             const res = await DashboardService.getUsersDashboard(params);
             const data = res.data;
             setUsers(data?.items ?? []);
             setTotal(data?.totalElement ?? 0);
+            console.log('✅ Fetched users:', data?.items?.length, 'Total:', data?.totalElement);
         } catch (error) {
             const err = error as unknown as { message?: string; response?: { status?: number; data?: unknown } };
             console.error("Failed to fetch admin users:", err);
@@ -65,7 +67,7 @@ export const useAdminUsers = () => {
         if (updates.isLocked !== undefined) setIsLocked(updates.isLocked);
         if (updates.sorts !== undefined) setSorts(updates.sorts);
 
-        setPageNo(0); // Reset to first page on filter change
+        setPageNo(1); // Reset to first page on filter change (1-indexed)
     };
 
     return {

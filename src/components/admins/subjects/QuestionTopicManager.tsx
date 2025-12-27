@@ -48,6 +48,7 @@ const QuestionTopicManager: React.FC = () => {
     const [deletingTopicId, setDeletingTopicId] = useState<string | null>(null);
     const [form] = Form.useForm();
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+    const [saving, setSaving] = useState(false);
 
     // Pagination & Sorting state
     const [pagination, setPagination] = useState({
@@ -161,6 +162,7 @@ const QuestionTopicManager: React.FC = () => {
 
     const handleModalOk = async () => {
         try {
+            setSaving(true);
             const values = await form.validateFields();
             if (editingTopic) {
                 await updateTopic(editingTopic.id, values);
@@ -173,6 +175,8 @@ const QuestionTopicManager: React.FC = () => {
         } catch (error) {
             toast.error("Failed to save question topic");
             console.log(error);
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -345,6 +349,7 @@ const QuestionTopicManager: React.FC = () => {
                     open={isModalOpen}
                     onOk={handleModalOk}
                     onCancel={() => setIsModalOpen(false)}
+                    confirmLoading={saving}
                 >
                     <Form form={form} layout="vertical" className="mt-4">
                         <Form.Item

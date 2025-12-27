@@ -76,21 +76,21 @@ const TeacherReviewQueuePage: React.FC = () => {
     // Hook trả về danh sách queue, trạng thái loading và lỗi
     const { queue, pageInfo, loading, error, fetchReviewQueue } = useTeacherReviewQueue();
     const [currentSort, setCurrentSort] = useState<string>('createdAt:desc');
-    const [currentPage, setCurrentPage] = useState<number>(0);
+    const [currentPage, setCurrentPage] = useState<number>(1); // API uses 1-indexed
     const [currentPageSize, setCurrentPageSize] = useState<number>(10);
 
     React.useEffect(() => {
-        fetchReviewQueue({ pageNo: 0, pageSize: 10, sorts: [currentSort] });
+        fetchReviewQueue({ pageNo: 1, pageSize: 10, sorts: [currentSort] });
     }, [fetchReviewQueue]);
 
     const handleSortChange = (value: string) => {
         setCurrentSort(value);
-        setCurrentPage(0); // Reset to first page when sorting changes
-        fetchReviewQueue({ pageNo: 0, pageSize: currentPageSize, sorts: [value] });
+        setCurrentPage(1); // Reset to first page (1-indexed)
+        fetchReviewQueue({ pageNo: 1, pageSize: currentPageSize, sorts: [value] });
     };
 
     const handleTableChange = (pagination: { current?: number; pageSize?: number }) => {
-        const page = (pagination.current || 1) - 1; // API uses 0-indexed pages
+        const page = pagination.current || 1; // API uses 1-indexed
         const size = pagination.pageSize || 10;
         setCurrentPage(page);
         setCurrentPageSize(size);
@@ -135,7 +135,7 @@ const TeacherReviewQueuePage: React.FC = () => {
                 loading={loading}
                 onChange={handleTableChange}
                 pagination={{
-                    current: (pageInfo?.pageNo ?? currentPage) + 1,
+                    current: pageInfo?.pageNo ?? currentPage, // Both use 1-indexed
                     pageSize: pageInfo?.pageSize ?? currentPageSize,
                     total: pageInfo?.totalElement ?? pageInfo?.totalElements ?? 0,
                     showSizeChanger: true,
