@@ -9,8 +9,10 @@ import {
   CheckCircleOutlined,
   DollarOutlined,
   BulbOutlined,
-  RobotOutlined
+  RobotOutlined,
+  ReadOutlined
 } from '@ant-design/icons';
+import { useRegisteredMaterials } from '~/hooks/useRegisteredMaterials';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 // import CardAnalytics from './CardAnalytics';
 import { useAuth } from '~/hooks/useAuth';
@@ -37,6 +39,7 @@ const getGreeting = (): string => {
 const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
   const { stats, overall, financial, examStats, loading, refetch } = useStudentDashboardStats();
+  const { materials: registeredMaterials } = useRegisteredMaterials();
   const navigate = useNavigate();
 
   // State for on-demand AI recommendation
@@ -177,7 +180,7 @@ const StudentDashboard: React.FC = () => {
         </div>
 
         {/* Quick Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-xl shadow-md p-4 text-center">
             <div className="flex justify-center mb-2">
               <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
@@ -186,6 +189,15 @@ const StudentDashboard: React.FC = () => {
             </div>
             <div className="text-2xl font-bold text-gray-900">{stats?.totalExamsTaken || 0}</div>
             <div className="text-sm text-gray-500">Exams Taken</div>
+          </div>
+          <div className="bg-white rounded-xl shadow-md p-4 text-center">
+            <div className="flex justify-center mb-2">
+              <div className="p-2 bg-teal-100 rounded-lg text-teal-600">
+                <ReadOutlined />
+              </div>
+            </div>
+            <div className="text-2xl font-bold text-gray-900">{registeredMaterials.length}</div>
+            <div className="text-sm text-gray-500">Materials</div>
           </div>
           <div className="bg-white rounded-xl shadow-md p-4 text-center">
             <div className="flex justify-center mb-2">
