@@ -16,13 +16,29 @@ export interface ParentTransactionItem {
 interface ParentRecentTransactionsProps {
   transactions: ParentTransactionItem[];
   loading?: boolean;
+  onViewAll?: () => void;
 }
 
-const ParentRecentTransactions: React.FC<ParentRecentTransactionsProps> = ({ transactions, loading }) => {
+const ParentRecentTransactions: React.FC<ParentRecentTransactionsProps> = ({ 
+  transactions, 
+  loading,
+  onViewAll 
+}) => {
   return (
     <Card
       title={<span className="font-semibold text-gray-800">Recent transactions</span>}
-      extra={<a href="#" className="text-indigo-600 font-semibold">View all</a>}
+      extra={
+        <a 
+          href="#" 
+          className="text-indigo-600 font-semibold"
+          onClick={(e) => {
+            e.preventDefault();
+            onViewAll?.();
+          }}
+        >
+          View all
+        </a>
+      }
       className="shadow-md border border-gray-100"
       headStyle={{ background: "#f8fafc" }}
     >

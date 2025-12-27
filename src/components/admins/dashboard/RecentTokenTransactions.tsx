@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Spin, Empty } from 'antd';
-import { FiArrowUpRight, FiClock, FiArrowRight } from 'react-icons/fi';
+import { FiArrowUpRight, FiClock, FiArrowRight, FiArrowUp } from 'react-icons/fi';
 import TokenTransactionService from '~/services/tokenTransactionService';
 import type { UserTokenTransaction } from '~/types/tokenTransaction';
 
@@ -19,6 +19,7 @@ const RecentTokenTransactions: React.FC<RecentTokenTransactionsProps> = ({
 }) => {
     const [transactions, setTransactions] = useState<UserTokenTransaction[]>([]);
     const [loading, setLoading] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     useEffect(() => {
         const fetchTransactions = async () => {
@@ -49,8 +50,9 @@ const RecentTokenTransactions: React.FC<RecentTokenTransactionsProps> = ({
             const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
             return bTime - aTime;
         });
+        if (isExpanded) return sorted;
         return pageSize > 0 ? sorted.slice(0, pageSize) : sorted;
-    }, [transactions, pageSize]);
+    }, [transactions, pageSize, isExpanded]);
 
     const formatAmount = (val?: number) =>
         new Intl.NumberFormat("vi-VN", {
@@ -68,9 +70,12 @@ const RecentTokenTransactions: React.FC<RecentTokenTransactionsProps> = ({
                     <h3 className="text-lg font-semibold text-slate-800">{title}</h3>
                     <p className="text-sm text-slate-400">{description}</p>
                 </div>
-                <button className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 inline-flex items-center gap-1">
-                    {viewAllLabel}
-                    <FiArrowRight />
+                <button 
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 inline-flex items-center gap-1"
+                >
+                    {isExpanded ? "Collapse" : viewAllLabel}
+                    {isExpanded ? <FiArrowUp /> : <FiArrowRight />}
                 </button>
             </div>
             {loading ? (

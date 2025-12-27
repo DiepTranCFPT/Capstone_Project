@@ -1,12 +1,15 @@
 import React, { useEffect } from "react";
 import { Search } from "lucide-react";
 import { useSubjects } from "~/hooks/useSubjects";
+import { useTeachers } from "~/hooks/useTeachers";
 
 interface FiltersProps {
   search: string;
   setSearch: (value: string) => void;
   subject: string;
   setSubject: (value: string) => void;
+  teacher: string;
+  setTeacher: (value: string) => void;
 }
 
 const Filters: React.FC<FiltersProps> = ({
@@ -14,8 +17,11 @@ const Filters: React.FC<FiltersProps> = ({
   setSearch,
   subject,
   setSubject,
+  teacher,
+  setTeacher,
 }) => {
-  const { subjects, fetchSubjects, loading } = useSubjects();
+  const { subjects, fetchSubjects, loading: loadingSubjects } = useSubjects();
+  const { teachers, loading: loadingTeachers } = useTeachers();
 
   useEffect(() => {
     fetchSubjects({ pageNo: 0, pageSize: 1000 });
@@ -47,7 +53,7 @@ const Filters: React.FC<FiltersProps> = ({
       <div>
         <h3 className="text-sm font-semibold text-gray-700 mb-3">Subject</h3>
         <div className="space-y-2">
-          {loading ? (
+          {loadingSubjects ? (
             <p className="text-sm text-gray-500">Loading subjects...</p>
           ) : (
             <>
@@ -74,6 +80,44 @@ const Filters: React.FC<FiltersProps> = ({
                     className="text-indigo-600 focus:ring-indigo-500"
                   />
                   {s.name}
+                </label>
+              ))}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Teacher Filter */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">Teacher</h3>
+        <div className="space-y-2">
+          {loadingTeachers ? (
+            <p className="text-sm text-gray-500">Loading teachers...</p>
+          ) : (
+            <>
+              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                <input
+                  type="radio"
+                  name="teacher"
+                  checked={teacher === "All"}
+                  onChange={() => setTeacher("All")}
+                  className="text-indigo-600 focus:ring-indigo-500"
+                />
+                All
+              </label>
+              {teachers.map((t) => (
+                <label
+                  key={t.id}
+                  className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer"
+                >
+                  <input
+                    type="radio"
+                    name="teacher"
+                    checked={teacher === t.id}
+                    onChange={() => setTeacher(t.id)}
+                    className="text-indigo-600 focus:ring-indigo-500"
+                  />
+                  {t.name}
                 </label>
               ))}
             </>

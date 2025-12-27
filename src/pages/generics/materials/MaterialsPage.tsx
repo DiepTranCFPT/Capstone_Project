@@ -13,6 +13,7 @@ const MaterialsPage: React.FC = () => {
 
   const [search, setSearch] = useState("");
   const [subject, setSubject] = useState("All");
+  const [teacher, setTeacher] = useState("All");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   // Hook để lấy materials public (fallback khi không search)
@@ -33,7 +34,7 @@ const MaterialsPage: React.FC = () => {
   useEffect(() => {
     if (!user) return; // Không gọi API search nếu chưa login, chỉ dùng public materials
     
-    const hasActiveFilters = debouncedSearch.trim() || subject !== "All";
+    const hasActiveFilters = debouncedSearch.trim() || subject !== "All" || teacher !== "All";
     
     if (hasActiveFilters) {
       const searchParams: LearningMaterialSearchParams = {
@@ -42,19 +43,19 @@ const MaterialsPage: React.FC = () => {
         pageSize: 100,
       };
 
-      if (subject !== "All") {
+      if (subject !== "All" || teacher !== "All") {
 
         searchMaterials(searchParams);
       } else {
         searchMaterials(searchParams);
       }
     }
-  }, [debouncedSearch, subject, searchMaterials, user]);
+  }, [debouncedSearch, subject, teacher, searchMaterials, user]);
 
   // Xác định materials để hiển thị
   // Nếu chưa login, chỉ dùng public materials và filter ở client-side
   // Nếu đã login, dùng API search khi có filter
-  const hasActiveFilters = debouncedSearch.trim() || subject !== "All";
+  const hasActiveFilters = debouncedSearch.trim() || subject !== "All" || teacher !== "All";
   const materials = (user && hasActiveFilters) ? searchResults : publicMaterials;
   const loading = (user && hasActiveFilters) ? searchLoading : publicLoading;
   const error = (user && hasActiveFilters) ? null : publicError;
@@ -78,6 +79,12 @@ const MaterialsPage: React.FC = () => {
       if (!matchesSubject) return false;
     }
 
+    // Filter theo teacher
+    if (teacher !== "All") {
+      const matchesTeacher = m.authorId === teacher;
+      if (!matchesTeacher) return false;
+    }
+
     return true;
   });
 
@@ -96,6 +103,8 @@ const MaterialsPage: React.FC = () => {
               setSearch={setSearch}
               subject={subject}
               setSubject={setSubject}
+              teacher={teacher}
+              setTeacher={setTeacher}
             />
           </div>
         </div>

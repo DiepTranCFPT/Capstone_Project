@@ -46,12 +46,7 @@ const MyWalletPage = () => {
       hint: "Total income in current month",
       iconBg: "bg-indigo-100 text-indigo-600",
     },
-    {
-      label: "Pending Processing",
-      value: formatCurrency(walletSummary.pendingAmount),
-      hint: "Expected within 24h",
-      iconBg: "bg-amber-100 text-amber-600",
-    },
+
   ];
 
   const visibleTransactions = showAllTransactions
@@ -92,7 +87,7 @@ const MyWalletPage = () => {
         </header>
 
         {/* Summary cards */}
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2">
           {summaryCards.map((card) => (
             <div key={card.label} className="rounded-3xl bg-white p-6 shadow-lg">
               <div className="flex items-center justify-between">
