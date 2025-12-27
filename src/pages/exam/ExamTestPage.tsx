@@ -117,6 +117,7 @@ const ExamTestPage: React.FC = () => {
     const [activeSubTab, setActiveSubTab] = useState<'selfSelected' | 'platformSelected'>('selfSelected');
     const [selectedRatingFilter, setSelectedRatingFilter] = useState<string>('');
     const [selectedTeacherFilter, setSelectedTeacherFilter] = useState<string>('');
+    const [selectedVerificationFilter, setSelectedVerificationFilter] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [selectedSubjectsForCombined, setSelectedSubjectsForCombined] = useState<string[]>([]);
     const [selectedExamsForCombined, setSelectedExamsForCombined] = useState<Exam[]>([]);
@@ -168,7 +169,7 @@ const ExamTestPage: React.FC = () => {
 
     // Create stable filter object (for API)
     const currentFilters = useMemo(() => {
-        const filters: { subject?: string; minRating?: number; teacherId?: string } = {};
+        const filters: { subject?: string; minRating?: number; teacherId?: string; sorts?: string } = {};
         if (selectedCategory !== "All") {
             filters.subject = selectedCategory;
         }
@@ -178,8 +179,11 @@ const ExamTestPage: React.FC = () => {
         if (selectedTeacherFilter) {
             filters.teacherId = selectedTeacherFilter;
         }
+        if (selectedVerificationFilter) {
+            filters.sorts = selectedVerificationFilter;
+        }
         return filters;
-    }, [selectedCategory, selectedRatingFilter, selectedTeacherFilter]);
+    }, [selectedCategory, selectedRatingFilter, selectedTeacherFilter, selectedVerificationFilter]);
 
     // Client-side filtering by title only
     const filteredExams = useMemo(() => {
@@ -419,6 +423,15 @@ const ExamTestPage: React.FC = () => {
                                                 {teacher.firstName} {teacher.lastName}
                                             </option>
                                         ))}
+                                    </select>
+                                    <select
+                                        value={selectedVerificationFilter}
+                                        onChange={(e) => setSelectedVerificationFilter(e.target.value)}
+                                        className="px-5 py-2 text-sm font-medium rounded-full border border-gray-300 bg-white text-gray-700 focus:ring-teal-500 focus:border-teal-500"
+                                    >
+                                        <option value="">All Exams</option>
+                                        <option value="isVerified:desc">Verified First</option>
+                                        <option value="isVerified:asc">Unverified First</option>
                                     </select>
                                 </div>
                                 {/* Search Bar */}
