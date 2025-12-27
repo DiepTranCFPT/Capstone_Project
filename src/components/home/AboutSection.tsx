@@ -1,5 +1,6 @@
 import React from "react";
-import { FaHeadset, FaUsers, FaGraduationCap } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import { FaHeadset } from "react-icons/fa";
 
 const AboutSection: React.FC = () => {
   return (
@@ -38,7 +39,7 @@ const AboutSection: React.FC = () => {
               </div>
               <div className="text-white text-sm font-bold">
                 <p>ONLINE SUPPORT</p>
-                <p>+0123456789</p>
+                <p>0398827576</p>
               </div>
             </div>
           </div>
@@ -61,54 +62,23 @@ const AboutSection: React.FC = () => {
 
             {/* Title */}
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
-              Over 10 Years in Distant Learning for Skill Development
+            A New Era of AP Mastery & Digital Learning Resources
             </h2>
 
             {/* Description */}
             <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
-              Compellingly procrastinate equity invested markets with efficient
-              process improvements. Actualize mission-critical partnerships with
-              integrated portals. Authoritatively optimize low-risk high-yield
-              metrics and plug-and-play potentialities.
-            </p>
+Advanced Placement (AP) is a program organized by the College Board that offers courses and exams equivalent to college coursework, allowing students to familiarize themselves with and deepen their college credits right from high school.
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
-              {/* Stat 1 */}
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-white rounded-full border border-black/10 shadow-sm flex items-center justify-center">
-                  <FaUsers className="w-6 h-6 text-teal-500" />
-                </div>
-                <div>
-                  <span className="text-teal-600 text-xl sm:text-2xl font-bold block">
-                    9.5k+
-                  </span>
-                  <span className="text-gray-500 text-xs sm:text-sm">
-                    Active students taking courses
-                  </span>
-                </div>
-              </div>
+Established in the 1950s, the AP program helps high school students experience and get acquainted with the university learning environment right from the time they are in school. The AP program offers 38 courses in 7 areas: Arts, Science, English, History, Math, Computer Science, and Languages.            </p>
 
-              {/* Stat 2 */}
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-white rounded-full border border-black/10 shadow-sm flex items-center justify-center">
-                  <FaGraduationCap className="w-6 h-6 text-teal-500" />
-                </div>
-                <div>
-                  <span className="text-teal-600 text-xl sm:text-2xl font-bold block">
-                    6.7k+
-                  </span>
-                  <span className="text-gray-500 text-xs sm:text-sm">
-                    Completed certifications
-                  </span>
-                </div>
-              </div>
-            </div>
+            {/* Learn More Button */}
+            <Link 
+              to="/blog" 
+              className="inline-block mt-4 px-8 py-3 bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-full transition-colors duration-300 shadow-md hover:shadow-lg"
+            >
+              Learn More
+            </Link>
 
-            {/* CTA Button */}
-            <button className="mt-4 px-8 py-3 bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-full transition-colors duration-300 shadow-md hover:shadow-lg">
-              Start Free Trial
-            </button>
           </div>
         </div>
       </div>

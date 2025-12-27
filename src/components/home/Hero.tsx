@@ -28,17 +28,6 @@ const Hero : React.FC = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Avatars */}
-            <div className="flex -space-x-3">
-              <img src="https://placehold.co/55x55" className="w-12 h-12 rounded-full border-2 border-white" />
-              <img src="https://placehold.co/55x55" className="w-12 h-12 rounded-full border-2 border-white" />
-              <img src="https://placehold.co/55x55" className="w-12 h-12 rounded-full border-2 border-white" />
-              <img src="https://placehold.co/55x55" className="w-12 h-12 rounded-full border-2 border-white" />
-            </div>
-            <span className="text-gray-800">10k Enrolment</span>
-          </div>
-
           <p className="text-2xl font-bold">
             Explore <span className="text-teal-700">1350+</span> Courses within Subject
           </p>

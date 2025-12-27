@@ -108,6 +108,7 @@ import MyCertificatesPage from "./pages/students/MyCertificatesPage";
 import NotificationPage from "./pages/notification/NotificationPage";
 import { NotificationProvider } from "./context/NotificationContext";
 import NotificationModal from "./components/notification/NotificationModal";
+import Blog from "./components/blog/Blog";
 
 // Layout Wrapper for common UI elements
 const Layout = () => (
@@ -192,6 +193,7 @@ function App() {
               <Route path="/wallet/result" element={<PaymentResult />} />
               <Route path="/notifications" element={<NotificationPage />} />
               <Route path="/teacher-detail/:teacherId" element={<TeacherDetailPage />} />
+              <Route path="/blog" element={<Blog />} />
 
               {/* Flashcard routes */}
               <Route path="/flashcards" element={<FlashcardsPage />} />
