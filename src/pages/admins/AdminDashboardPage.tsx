@@ -13,7 +13,7 @@ const AdminDashboardPage: React.FC = () => {
     const { stats: examStats, loading: examLoading } = useAdminExamStats();
 
     // Revenue filters (dùng chung cho Total Revenue và Revenue Chart)
-    const [selectedYear, setSelectedYear] = useState<string>("");
+    const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
     const [selectedMonth, setSelectedMonth] = useState<string>("");
     const [selectedDay, setSelectedDay] = useState<string>("");
 

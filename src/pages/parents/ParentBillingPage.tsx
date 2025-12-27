@@ -15,6 +15,7 @@ import TopUpModal from "~/components/parents/wallet/TopUpModal";
 import TransferModal from "~/components/parents/wallet/TransferModal";
 import PaymentService from "~/services/PaymentService";
 import type { ParentTransactionRaw } from "~/types/payment";
+import TransactionHistoryModal from "~/components/parents/wallet/TransactionHistoryModal";
 
 const ParentBillingPage: React.FC = () => {
   // Balance from API
@@ -34,6 +35,7 @@ const ParentBillingPage: React.FC = () => {
   const { transfer, loading: transferLoading } = useTransferParentToStudent();
   const [transactions, setTransactions] = useState<ParentTransactionItem[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
 
   const randomId = () => `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const quickAmounts = [200000, 500000, 1000000, 2000000];
@@ -173,7 +175,17 @@ const ParentBillingPage: React.FC = () => {
         />
       </div>
 
-      <ParentRecentTransactions transactions={transactions} loading={transactionsLoading} />
+      <ParentRecentTransactions 
+        transactions={transactions.slice(0, 5)} 
+        loading={transactionsLoading} 
+        onViewAll={() => setHistoryModalOpen(true)}
+      />
+
+      <TransactionHistoryModal
+        open={historyModalOpen}
+        onCancel={() => setHistoryModalOpen(false)}
+        transactions={transactions}
+      />
 
       <TopUpModal
         open={modalOpen}
