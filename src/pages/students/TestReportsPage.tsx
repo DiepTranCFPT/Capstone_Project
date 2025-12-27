@@ -21,6 +21,10 @@ interface HistoryRecord {
     status?: 'COMPLETED' | 'PENDING_GRADING';
     isLate?: boolean;
     apResult?: ApResult;
+    suspiciousActivityLogs?: {
+        message: string;
+        createdAt: string;
+    }[];
 }
 
 // Primary color: #3CBCB2

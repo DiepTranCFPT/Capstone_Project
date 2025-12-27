@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiInfo, FiLoader } from 'react-icons/fi';
-import { Modal, Input, Button } from 'antd';
+import { FiInfo, FiLoader, FiAlertTriangle } from 'react-icons/fi';
+import { Modal, Input, Button, Collapse } from 'antd';
 import ResultSummary from '~/components/test-result/ResultSummary';
 import AdvancedReport from '~/components/test-result/AdvancedReport';
 import { useParams } from 'react-router-dom';
@@ -111,6 +111,82 @@ const TestResultPage: React.FC = () => {
                                 attemptResultDetail={attemptResultDetail}
                                 onReviewRequest={handleReviewRequest}
                             />
+
+                            {/* Suspicious Activity Logs Section */}
+                            {attemptResultDetail.suspiciousActivityLogs && attemptResultDetail.suspiciousActivityLogs.length > 0 && (
+                                <div className="bg-orange-50 border-2 border-orange-200 rounded-lg overflow-hidden">
+                                    <Collapse
+                                        defaultActiveKey={['1']}
+                                        ghost
+                                        expandIconPosition="end"
+                                        items={[
+                                            {
+                                                key: '1',
+                                                label: (
+                                                    <div className="flex items-center gap-3 py-2">
+                                                        <FiAlertTriangle className="text-orange-600 text-xl flex-shrink-0" />
+                                                        <div>
+                                                            <h3 className="font-bold text-lg text-orange-800 m-0">
+                                                                Suspicious Activity Detected
+                                                            </h3>
+                                                            <p className="text-sm text-orange-600 m-0">
+                                                                {attemptResultDetail.suspiciousActivityLogs.length} activity log(s) recorded during this exam
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ),
+                                                children: (
+                                                    <div className="px-4 pb-4">
+                                                        <div className="bg-white rounded-lg border border-orange-200 p-4">
+                                                            <p className="text-sm text-gray-600 mb-4">
+                                                                The following activities were detected during your exam session:
+                                                            </p>
+                                                            <div className="space-y-3">
+                                                                {attemptResultDetail.suspiciousActivityLogs
+                                                                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                                                                    .map((log, index) => {
+                                                                        const messageType = log.message.split(':')[0].trim();
+                                                                        const messageContent = log.message.split(':').slice(1).join(':').trim();
+
+                                                                        return (
+                                                                            <div
+                                                                                key={index}
+                                                                                className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border border-orange-100"
+                                                                            >
+                                                                                <FiAlertTriangle className="text-orange-500 mt-1 flex-shrink-0" />
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <div className="flex items-start justify-between gap-2 mb-1">
+                                                                                        <span className="inline-block px-2 py-1 bg-orange-200 text-orange-800 text-xs font-semibold rounded">
+                                                                                            {messageType.replace(/_/g, ' ')}
+                                                                                        </span>
+                                                                                        <span className="text-xs text-gray-500 whitespace-nowrap">
+                                                                                            {new Date(log.createdAt).toLocaleString('vi-VN', {
+                                                                                                timeZone: 'Asia/Ho_Chi_Minh',
+                                                                                                day: '2-digit',
+                                                                                                month: '2-digit',
+                                                                                                year: 'numeric',
+                                                                                                hour: '2-digit',
+                                                                                                minute: '2-digit',
+                                                                                                second: '2-digit',
+                                                                                            })}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <p className="text-sm text-gray-700 m-0 break-words">
+                                                                                        {messageContent}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ),
+                                            },
+                                        ]}
+                                    />
+                                </div>
+                            )}
 
                             <div className="bg-white p-6 rounded-lg shadow border border-gray-300">
                                 <h3 className="font-bold text-xl mb-4">Answering Review</h3>
