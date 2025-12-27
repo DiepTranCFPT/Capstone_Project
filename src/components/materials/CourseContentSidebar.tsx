@@ -52,7 +52,7 @@ const CourseContentSidebar: React.FC<CourseContentSidebarProps> = ({
     <div className="bg-white rounded-xl shadow-sm lg:w-96 xl:w-[420px] lg:flex-shrink-0 flex flex-col h-fit lg:max-h-[calc(100vh-120px)]">
       <div className="p-6 pb-4 border-b border-gray-100">
         <h3 className="text-lg font-semibold text-gray-900">Course Content</h3>
-        <p className="text-xs text-gray-500 mt-1">{lessons.length} bài học</p>
+        <p className="text-xs text-gray-500 mt-1">{lessons.length} Lessons</p>
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 py-2">

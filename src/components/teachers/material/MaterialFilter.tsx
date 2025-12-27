@@ -14,11 +14,11 @@ const MaterialFilter: React.FC<Props> = ({ materials, setFilteredData, onSearchK
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [subjectFilter, setSubjectFilter] = useState("all");
-  const [authorFilter, setAuthorFilter] = useState("all");
+
 
   const uniqueTypes = [...new Set(materials.map((m) => m.typeName))];
   const uniqueSubjects = [...new Set(materials.map((m) => m.subjectName))];
-  const uniqueAuthors = [...new Set(materials.map((m) => m.authorName))];
+
 
   // Bọc applyFilters trong useCallback để tránh warning
   const applyFilters = useCallback(() => {
@@ -37,15 +37,11 @@ const MaterialFilter: React.FC<Props> = ({ materials, setFilteredData, onSearchK
       const matchesType = typeFilter === "all" || item.typeName === typeFilter;
       const matchesSubject =
         subjectFilter === "all" || item.subjectName === subjectFilter;
-      const matchesAuthor =
-        authorFilter === "all" || item.authorName === authorFilter;
-
       return (
         matchesSearch &&
         matchesStatus &&
         matchesType &&
-        matchesSubject &&
-        matchesAuthor
+        matchesSubject
       );
     });
 
@@ -56,7 +52,6 @@ const MaterialFilter: React.FC<Props> = ({ materials, setFilteredData, onSearchK
     statusFilter,
     typeFilter,
     subjectFilter,
-    authorFilter,
     setFilteredData,
   ]);
 
@@ -76,7 +71,7 @@ const MaterialFilter: React.FC<Props> = ({ materials, setFilteredData, onSearchK
     setStatusFilter("all");
     setTypeFilter("all");
     setSubjectFilter("all");
-    setAuthorFilter("all");
+
     setFilteredData(materials);
     onSearchKeyword?.("");
   };
@@ -140,26 +135,12 @@ const MaterialFilter: React.FC<Props> = ({ materials, setFilteredData, onSearchK
         ]}
       />
 
-      {/* Filter by author */}
-      <Select
-        placeholder="Author"
-        value={authorFilter}
-        onChange={setAuthorFilter}
-        className="min-w-32"
-        options={[
-          { label: "All authors", value: "all" },
-          ...uniqueAuthors.map((author) => ({
-            label: author,
-            value: author,
-          })),
-        ]}
-      />
+
 
       {/* Reset filters button */}
       {(statusFilter !== "all" ||
         typeFilter !== "all" ||
         subjectFilter !== "all" ||
-        authorFilter !== "all" ||
         searchText) && (
         <Button
           type="text"
