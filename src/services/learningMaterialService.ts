@@ -72,8 +72,8 @@ const LearningMaterialService = {
     return axiosInstance.get(`/learning-materials/registered`, { params });
   },
 
-  getPublic(): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {
-    return axiosInstance.get(`/learning-materials/public`);
+  getPublic(params?: LearningMaterialQuery): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {
+    return axiosInstance.get(`/learning-materials/public`, { params });
   },
 
   getMyMaterials(): Promise<AxiosResponse<ApiResponse<LearningMaterial[]>>> {

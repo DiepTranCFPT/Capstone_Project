@@ -264,15 +264,7 @@ const LessonDetailsSection: React.FC<LessonDetailsSectionProps> = ({
                 </div>
               ),
             },
-            {
-              key: "transcript",
-              label: "Transcript",
-              children: (
-                <div className="p-6">
-                  <p className="text-gray-500">Transcript will be updated soon.</p>
-                </div>
-              ),
-            },
+
             {
               key: "notes",
               label: "Notes",

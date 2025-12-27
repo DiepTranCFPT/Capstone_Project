@@ -38,7 +38,7 @@ export const usePublicMaterials = () => {
       setLoading(true);
       setError(null);
 
-      const res: ApiResponse<LearningMaterial[]> = (await LearningMaterialService.getPublic()).data;
+      const res: ApiResponse<LearningMaterial[]> = (await LearningMaterialService.getPublic({ pageSize: 12 })).data;
       const materials = toLearningMaterialArray(res.data);
 
       setData(materials);
