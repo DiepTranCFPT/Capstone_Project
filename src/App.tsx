@@ -43,7 +43,6 @@ import TestReportDetailPage from "./pages/students/TestReportDetailPage";
 import GroupDetailPage from "./pages/community/GroupDetailPage";
 
 import ProfileDashboard from "./components/students/profile/ProfileDashboard";
-import LearningPathwayPage from "./pages/pathway/LearningPathwayPage";
 
 // --- Admin Imports ---
 import AdminLayout from "./layout/admin/AdminLayout";
@@ -188,7 +187,6 @@ function App() {
                 element={<GroupDetailPage />}
               />
               <Route path="/ranking" element={<RankingPage />} />
-              <Route path="learning-pathway" element={<LearningPathwayPage />} />
               <Route path="/wallet" element={<WalletPage />} />
               <Route path="/wallet/result" element={<PaymentResult />} />
               <Route path="/notifications" element={<NotificationPage />} />
