@@ -393,15 +393,11 @@ const LessonModal: React.FC<LessonModalProps> = ({
             size="small"
             dataSource={sortedLessons}
             renderItem={(lesson) => {
-              const secondary = lesson.url ?? lesson.file ?? lesson.description;
               return (
                 <List.Item className="!flex !items-center">
                   <div className="flex w-full items-center justify-between gap-3">
                     <div className="flex flex-col flex-1 min-w-0">
                       <span className="font-medium">{getLessonTitle(lesson)}</span>
-                      {secondary && (
-                        <span className="text-gray-500 text-xs break-all">{secondary}</span>
-                      )}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <Tooltip title="View lesson">

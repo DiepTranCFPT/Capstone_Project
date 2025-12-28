@@ -11,7 +11,7 @@ const Footer: React.FC = () => {
           <h3 className="text-xl font-bold mb-2">GET IN TOUCH!</h3>
           <div className="w-24 h-[2px] bg-white mb-4" />
           <p className="text-base mb-6">
-            Hỗ trợ học tập và luyện thi AP hiệu quả.
+            Support for AP learning and practice.
           </p>
           <div className="flex items-center mb-3">
             <span className="font-semibold">039-882-7576</span>

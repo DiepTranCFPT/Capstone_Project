@@ -31,10 +31,10 @@ const TeacherDashboardPage: React.FC = () => {
     const topicData = useMemo(() => {
         if (!stats?.questionsByTopic) return [];
         return Object.entries(stats.questionsByTopic).map(([topic, count]) => ({
-            topic: topic.length > 15 ? topic.substring(0, 15) + '...' : topic,
+            topic: topic.length > 20 ? topic.substring(0, 20) + '...' : topic,
             fullTopic: topic,
             count: count
-        })).sort((a, b) => b.count - a.count).slice(0, 8);
+        })).sort((a, b) => b.count - a.count).slice(0, 10);
     }, [stats]);
 
     if (loading) {
@@ -126,14 +126,30 @@ const TeacherDashboardPage: React.FC = () => {
                             variant="borderless"
                             className="rounded-lg shadow-sm"
                         >
-                            <div style={{ height: 300 }}>
+                            <div style={{ height: 400 }}>
                                 {topicData.length > 0 ? (
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={topicData}>
+                                        <BarChart data={topicData} margin={{ bottom: 60, left: 10, right: 10 }}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                            <XAxis dataKey="topic" tick={{ fontSize: 12 }} />
+                                            <XAxis
+                                                dataKey="topic"
+                                                tick={{ fontSize: 11 }}
+                                                angle={-45}
+                                                textAnchor="end"
+                                                height={80}
+                                            />
                                             <YAxis tick={{ fontSize: 12 }} />
-                                            <Tooltip />
+                                            <Tooltip content={({ active, payload }) => {
+                                                if (active && payload && payload.length) {
+                                                    return (
+                                                        <div className="bg-white p-3 border border-gray-200 rounded shadow-lg">
+                                                            <p className="font-semibold text-gray-800">{payload[0].payload.fullTopic}</p>
+                                                            <p className="text-sm text-gray-600">Questions: {payload[0].value}</p>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }} />
                                             <Bar dataKey="count" fill={PRIMARY_COLOR} radius={[4, 4, 0, 0]} />
                                         </BarChart>
                                     </ResponsiveContainer>

@@ -100,6 +100,10 @@ const CreateExamPage: React.FC = () => {
       setIsActive(currentTemplate.isActive);
       setSelectedSubjectId(currentTemplate.subject.id);
       setTokenCost(currentTemplate.tokenCost);
+      // Load scoreMapping if available
+      if (currentTemplate.scoreMapping) {
+        setScoreMapping(currentTemplate.scoreMapping);
+      }
       // Convert ExamRule[] to CreateExamRulePayload[]
       // API returns ExamRule with topicName/difficultyName for the form
       const convertedRules: CreateExamRulePayload[] = currentTemplate.rules.map((rule: ExamRule) => ({
@@ -379,28 +383,33 @@ const CreateExamPage: React.FC = () => {
       toast.error('Subject must be selected');
       hasErrors = true;
     }
-    if (rules.length === 0) {
-      setRulesError('At least one rule must be added');
-      hasErrors = true;
+
+    // Rules validation only applies in create mode
+    if (!isEditMode) {
+      if (rules.length === 0) {
+        setRulesError('At least one rule must be added');
+        hasErrors = true;
+      }
+      // Validate total allocated questions must equal totalQuestions
+      const currentTotalAllocated = rules.reduce((sum, r) => sum + (r.numberOfQuestions || 0), 0);
+      if (currentTotalAllocated !== totalQuestions) {
+        setRulesError(`Total allocated questions (${currentTotalAllocated}) must equal Total Questions (${totalQuestions})`);
+        hasErrors = true;
+      }
+      // Validate no rule exceeds available questions
+      if (hasAvailabilityErrors) {
+        setRulesError('Some rules require more questions than available in the bank');
+        hasErrors = true;
+      }
+      // Validate totalQuestions
+      if (totalQuestions <= 0) {
+        setTotalQuestionsError('Total questions must be greater than 0');
+        hasErrors = true;
+      }
     }
+
     if (tokenCost < 0) {
       setTokenCostError('Cost must be greater than 0');
-      hasErrors = true;
-    }
-    // Validate total allocated questions must equal totalQuestions
-    const currentTotalAllocated = rules.reduce((sum, r) => sum + (r.numberOfQuestions || 0), 0);
-    if (currentTotalAllocated !== totalQuestions) {
-      setRulesError(`Total allocated questions (${currentTotalAllocated}) must equal Total Questions (${totalQuestions})`);
-      hasErrors = true;
-    }
-    // Validate no rule exceeds available questions
-    if (hasAvailabilityErrors) {
-      setRulesError('Some rules require more questions than available in the bank');
-      hasErrors = true;
-    }
-    // Validate totalQuestions
-    if (totalQuestions <= 0) {
-      setTotalQuestionsError('Total questions must be greater than 0');
       hasErrors = true;
     }
     // Validate hasPointsError
@@ -426,6 +435,7 @@ const CreateExamPage: React.FC = () => {
           isActive: isActive,
           subjectId: selectedSubjectId,
           tokenCost: tokenCost,
+          scoreMapping: scoreMapping, // Include score mapping
         };
 
         await updateTemplateDetails(examId, updateData);

@@ -9,7 +9,6 @@ import {
 } from '@ant-design/icons';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
 import type { StudentExamStats } from '~/types/dashboard';
 import Loading from '../common/Loading';
@@ -38,14 +37,8 @@ export const ChildDetailStats: React.FC<ChildDetailStatsProps> = ({ stats, loadi
         topic: topic.length > 12 ? topic.substring(0, 12) + '...' : topic,
         fullTopic: topic,
         score: score
-    })).slice(0, 8);
+    }));
 
-    // For radar chart
-    const radarData = Object.entries(stats.topicPerformance || {}).map(([topic, score]) => ({
-        subject: topic.length > 10 ? topic.substring(0, 10) + '...' : topic,
-        score: score,
-        fullMark: 100
-    })).slice(0, 6);
 
     return (
         <div>
@@ -112,58 +105,31 @@ export const ChildDetailStats: React.FC<ChildDetailStatsProps> = ({ stats, loadi
             </Row>
 
             {/* Charts */}
-            <Row gutter={[16, 16]} className="mb-6">
-                <Col xs={24} lg={12}>
-                    <Card title="Topic performance" className="shadow-sm h-full">
-                        <div style={{ height: 280 }}>
-                            {topicData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={topicData}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                        <XAxis dataKey="topic" tick={{ fontSize: 11 }} />
-                                        <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
-                                        <Tooltip
-                                            formatter={(value: number) => [`${value.toFixed(1)}`, 'Score']}
-                                            labelFormatter={(label) => {
-                                                const item = topicData.find(d => d.topic === label);
-                                                return item?.fullTopic || label;
-                                            }}
-                                        />
-                                        <Bar dataKey="score" fill={PRIMARY_COLOR} radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            ) : (
-                                <Empty description="No data available" />
-                            )}
-                        </div>
-                    </Card>
-                </Col>
-                <Col xs={24} lg={12}>
-                    <Card title="Ability analysis" className="shadow-sm h-full">
-                        <div style={{ height: 280 }}>
-                            {radarData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <RadarChart data={radarData}>
-                                        <PolarGrid />
-                                        <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} />
-                                        <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
-                                        <Radar
-                                            name="Score"
-                                            dataKey="score"
-                                            stroke={PRIMARY_COLOR}
-                                            fill={PRIMARY_COLOR}
-                                            fillOpacity={0.5}
-                                        />
-                                        <Tooltip />
-                                    </RadarChart>
-                                </ResponsiveContainer>
-                            ) : (
-                                <Empty description="No data available" />
-                            )}
-                        </div>
-                    </Card>
-                </Col>
-            </Row>
+
+
+            <Card title="Percentage of correct answers in the topic" className="shadow-sm h-full">
+                <div style={{ height: 280 }}>
+                    {topicData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={topicData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="topic" tick={{ fontSize: 11 }} />
+                                <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
+                                <Tooltip
+                                    formatter={(value: number) => [`${value.toFixed(1)}`, 'Score']}
+                                    labelFormatter={(label) => {
+                                        const item = topicData.find(d => d.topic === label);
+                                        return item?.fullTopic || label;
+                                    }}
+                                />
+                                <Bar dataKey="score" fill={PRIMARY_COLOR} radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <Empty description="No data available" />
+                    )}
+                </div>
+            </Card>
 
             {/* Recent Attempts Table */}
             <Card
@@ -174,6 +140,7 @@ export const ChildDetailStats: React.FC<ChildDetailStatsProps> = ({ stats, loadi
                     </span>
                 }
                 className="shadow-sm"
+                style={{ marginTop: '20px' }}
             >
                 <Table
                     dataSource={stats.recentAttempts || []}

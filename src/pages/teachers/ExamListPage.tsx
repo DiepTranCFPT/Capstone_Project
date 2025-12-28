@@ -104,12 +104,6 @@ const ExamListPage: React.FC = () => {
       ),
     },
     {
-      title: 'Created',
-      dataIndex: 'createdBy',
-      key: 'createdBy',
-      render: (createdBy: string) => createdBy,
-    },
-    {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => (
