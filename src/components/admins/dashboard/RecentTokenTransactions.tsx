@@ -115,11 +115,9 @@ const RecentTokenTransactions: React.FC<RecentTokenTransactionsProps> = ({
                                     <p className="text-lg font-bold text-emerald-600">
                                         {formatAmount(item.amount)}
                                     </p>
-                                    {isSuccess && (
+                                    {isSuccess && item.balanceAfter != null && typeof item.balanceAfter === "number" && (
                                         <p className="text-xs text-slate-400 mt-1">
-                                            Balance after: {item.balanceAfter != null && typeof item.balanceAfter === "number" 
-                                                ? formatAmount(item.balanceAfter) 
-                                                : "N/A"}
+                                            Balance after: {formatAmount(item.balanceAfter)}
                                         </p>
                                     )}
                                     <p
