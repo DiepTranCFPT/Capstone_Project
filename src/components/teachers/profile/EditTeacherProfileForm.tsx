@@ -1,18 +1,17 @@
 import React, { useEffect } from 'react';
-import { Form, Input, Button, message, Card, DatePicker } from 'antd';
+import { Form, Input, Button, message, Card } from 'antd';
 import {
   UserOutlined,
   BookOutlined,
   PlusOutlined,
   DeleteOutlined
 } from '@ant-design/icons';
-import dayjs from 'dayjs';
+
 import { useTeacherProfile } from '~/hooks/useTeacherProfile';
 import type { User } from '~/types/auth';
 import type { TeacherProfilePayload } from '~/types/teacherProfile';
 
 interface TeacherProfileFormValues {
-  dateOfBirth: dayjs.Dayjs;
   qualification: string;
   specialization: string;
   experience: string;
@@ -38,7 +37,6 @@ const EditTeacherProfileForm: React.FC<EditTeacherProfileFormProps> = ({ current
     if (mode === 'update' && currentUser && currentUser.teacherProfile) {
       const { teacherProfile } = currentUser;
       const profileForForm = {
-        dateOfBirth: teacherProfile.dateOfBirth ? dayjs(teacherProfile.dateOfBirth) : undefined,
         qualification: teacherProfile.qualification,
         specialization: teacherProfile.specialization,
         experience: teacherProfile.experience,
@@ -53,7 +51,7 @@ const EditTeacherProfileForm: React.FC<EditTeacherProfileFormProps> = ({ current
 
   const handleSubmit = async (values: TeacherProfileFormValues) => {
     const payload: TeacherProfilePayload = {
-      dateOfBirth: values.dateOfBirth ? values.dateOfBirth.format('YYYY-MM-DD') : (currentUser.dob ? (typeof currentUser.dob === 'string' ? currentUser.dob : currentUser.dob) : '2000-01-01'),
+      dateOfBirth: currentUser.dob || '1995-01-01',
       qualification: values.qualification,
       specialization: values.specialization,
       experience: values.experience,
@@ -90,37 +88,7 @@ const EditTeacherProfileForm: React.FC<EditTeacherProfileFormProps> = ({ current
         disabled={loading}
         className="space-y-6"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Personal Information Section */}
-          <Card
-            title={
-              <div className="flex items-center gap-2">
-                <UserOutlined className="text-blue-500" />
-                Basic Information
-              </div>
-            }
-            className="shadow-sm"
-          >
-            <div className="space-y-4">
-              <Form.Item
-                label="Date of Birth *"
-                name="dateOfBirth"
-                rules={[{ required: true, message: 'Please select your date of birth!' }]}
-              >
-                <DatePicker
-                  placeholder="Select date of birth"
-                  format="DD/MM/YYYY"
-                  className="w-full"
-                  disabledDate={(current) => {
-                    const hundredYearsAgo = dayjs().subtract(100, 'years');
-                    const eighteenYearsAgo = dayjs().subtract(18, 'years');
-                    return current && (current > eighteenYearsAgo || current < hundredYearsAgo);
-                  }}
-                />
-              </Form.Item>
-            </div>
-          </Card>
-
+        <div className="grid grid-cols-1 gap-6">
           {/* Teaching Information Section */}
           <Card
             title={
