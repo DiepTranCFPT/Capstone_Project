@@ -432,6 +432,7 @@ const ExamTestPage: React.FC = () => {
                                         <option value="">All Exams</option>
                                         <option value="isVerified:desc">Verified First</option>
                                         <option value="isVerified:asc">Unverified First</option>
+                                        <option value="pendingReview:asc">Pending Review First</option>
                                     </select>
                                 </div>
                                 {/* Search Bar */}
