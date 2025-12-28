@@ -153,11 +153,17 @@ const WalletPage = () => {
       typeof tx.type === "string"
         ? safeUpper(tx.type)
         : tx.type && typeof tx.type === "object"
-        ? safeUpper((tx.type as Record<string, unknown>).name as string)
-        : "";
+          ? safeUpper((tx.type as Record<string, unknown>).name as string)
+          : "";
 
     const description = safeUpper(tx.description as string | undefined);
     const externalRef = safeUpper((tx as Record<string, unknown>).externalReference as string | undefined);
+
+    // Check for withdrawal transactions first - these should always be outgoing (not income)
+    const withdrawalHints = ["WITHDRAWAL", "WITHDRAW"];
+    if (withdrawalHints.some((k) => typeLabel.includes(k) || description.includes(k) || externalRef.includes(k))) {
+      return false;
+    }
 
     const walletTopUpHints = ["TOP UP WALLET", "TOPUP", "AP_WALLET", "WALLET"];
     const paymentLearningHints = ["PAYMENT_LEARNING", "PAYMENT LEARNING"];
@@ -178,9 +184,8 @@ const WalletPage = () => {
     const baseClass = "rounded-2xl p-3";
     return (
       <span
-        className={`${baseClass} ${
-          isIncome ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
-        }`}
+        className={`${baseClass} ${isIncome ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
+          }`}
       >
         {isIncome ? <FiArrowUpRight /> : <FiArrowDownRight />}
       </span>

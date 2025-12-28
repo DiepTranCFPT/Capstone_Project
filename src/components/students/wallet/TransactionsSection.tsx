@@ -73,15 +73,15 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({
       <div className="mt-6 divide-y divide-slate-100">
         {txLoading && transactions.length === 0
           ? Array.from({ length: 4 }).map((_, idx) => (
-              <div key={`skeleton-${idx}`} className="flex animate-pulse items-center gap-4 py-4">
-                <div className="h-12 w-12 rounded-2xl bg-slate-100" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 w-1/3 rounded bg-slate-100" />
-                  <div className="h-3 w-2/4 rounded bg-slate-100" />
-                </div>
-                <div className="h-4 w-20 rounded bg-slate-100" />
+            <div key={`skeleton-${idx}`} className="flex animate-pulse items-center gap-4 py-4">
+              <div className="h-12 w-12 rounded-2xl bg-slate-100" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-1/3 rounded bg-slate-100" />
+                <div className="h-3 w-2/4 rounded bg-slate-100" />
               </div>
-            ))
+              <div className="h-4 w-20 rounded bg-slate-100" />
+            </div>
+          ))
           : null}
 
         {!txLoading && transactions.length === 0 && (
@@ -112,9 +112,8 @@ const TransactionsSection: React.FC<TransactionsSectionProps> = ({
               </div>
               <div className="text-right">
                 <p
-                  className={`text-lg font-bold ${
-                    isIncome ? "text-emerald-600" : "text-red-500"
-                  }`}
+                  className={`text-lg font-bold ${isIncome ? "text-emerald-600" : "text-red-500"
+                    }`}
                 >
                   {signedAmount}
                 </p>

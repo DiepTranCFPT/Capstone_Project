@@ -22,9 +22,9 @@ interface WalletSummary {
 }
 
 export interface IncomeChartPoint {
-  label: string; 
-  monthKey: string; 
-  total: number; 
+  label: string;
+  monthKey: string;
+  total: number;
 }
 
 const formatCurrency = (amount: number): string => {
@@ -54,9 +54,19 @@ const getTransactionType = (
   type: unknown,
   amount: number
 ): "income" | "withdraw" => {
-  // Đảm bảo chỉ gọi toUpperCase khi type là string
-  const typeStr =
-    typeof type === "string" ? type.toUpperCase() : "";
+  // Extract type string from either string type or object type with name property
+  let typeStr = "";
+  if (typeof type === "string") {
+    typeStr = type.toUpperCase();
+  } else if (type && typeof type === "object") {
+    const typeName = (type as Record<string, unknown>).name;
+    typeStr = typeof typeName === "string" ? typeName.toUpperCase() : "";
+  }
+
+  // Check for withdrawal transactions first - these should always be outgoing
+  if (typeStr.includes("WITHDRAWAL") || typeStr.includes("WITHDRAW")) {
+    return "withdraw";
+  }
 
   // Nếu type là "DEPOSIT" hoặc "INCOME" hoặc amount > 0 thì là thu nhập
   if (
@@ -116,8 +126,8 @@ const getStatusText = (status: string): string => {
 const transformUserTokenTransaction = (
   transaction: UserTokenTransaction
 ): TransactionDisplay => {
-  // API token-transaction/user không có type string, nên suy ra bằng amount
-  const type = getTransactionType("", transaction.amount);
+  // Pass transaction.type to properly detect WITHDRAWAL and other transaction types
+  const type = getTransactionType(transaction.type, transaction.amount);
   const amount = Math.abs(transaction.amount);
   const formattedAmount = formatCurrency(amount);
   const amountWithSign =
